@@ -1,0 +1,126 @@
+Now I will implement the v40 TRUE AlphaZero MCTS architecture. This is a major enhancement that will add:
+
+1. A complete persistent MCTS tree implementation
+2. True PUCT selection like AlphaZero
+3. Deep rollout simulations
+4. Advanced endgame techniques
+5. Multi-pass blunder verification
+6. Web-weaving and long-term planning
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+785|};
+786|
+787|// ═══════════════════════════════════════════════════════════════════════
+788|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+789|// ═══════════════════════════════════════════════════════════════════════
+790|
+791|/**
+792| * v37: TRUE MCTS Node structure for proper tree search
+793| */
+794|class MCTSNode {
+795|    constructor(move, parent = null, prior = 1.0) {
+796|        this.move = move;
+797|        this.parent = parent;
+798|        this.children = new Map();
+799|        this.visits = 0;
+800|        this.totalValue = 0;
+801|        this.prior = prior;           // Policy prior (P)
+802|        this.virtualLoss = 0;
+803|        this.isExpanded = false;
+804|        this.isTerminal = false;
+805|        this.depth = parent ? parent.depth + 1 : 0;
+806|    }
+807|    
+808|    get value() {
+809|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+810|    }
+811|    
+812|    get ucb1Score() {
+813|        if (!this.parent || this.parent.visits === 0) return Infinity;
+814|        
+815|        const exploitation = this.value;
+816|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+817|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+818|        
+819|        return exploitation + exploration;
+820|    }
+821|    
+822|    get puctScore() {
+823|        if (!this.parent || this.parent.visits === 0) return Infinity;
+824|        
+825|        const Q = this.value;
+826|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+827|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+828|        
+829|        // Apply virtual loss for diversity
+830|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);
+831|        
+832|        return Q + U - virtualLossAdjustment;
+833|    }
+834|    
+835|    selectChild() {
+836|        if (this.children.size === 0) return null;
+837|        
+838|        let bestChild = null;
+839|        let bestScore = -Infinity;
+840|        
+841|        for (const [move, child] of this.children) {
+842|            const score = child.puctScore;
+843|            if (score > bestScore) {
+844|                bestScore = score;
+845|                bestChild = child;
+846|            }
+847|        }
+848|        
+849|        return bestChild;
+850|    }
+851|    
+852|    expand(moves, priors = null) {
+853|        for (let i = 0; i < moves.length; i++) {
+854|            const move = moves[i];
+855|            const prior = priors ? priors[i] : 1.0 / moves.length;
+856|            this.children.set(move, new MCTSNode(move, this, prior));
+857|        }
+858|        this.isExpanded = true;
+859|    }
+860|    
+861|    backpropagate(value) {
+862|        let node = this;
+863|        let depth = 0;
+864|        
+865|        while (node !== null) {
+866|            node.visits++;
+867|            // Decay value as we backpropagate up the tree
+868|            const decayedValue = value * Math.pow(CONFIG.v37MCTSBackpropDecay, depth);
+869|            node.totalValue += decayedValue;
+870|            
+871|            // Alternate sign for opponent's moves
+872|            value = -value;
+873|            node = node.parent;
+874|            depth++;
+875|        }
+876|    }
+877|    
+878|    addVirtualLoss() {
+879|        this.virtualLoss++;
+880|    }
+881|    
+882|    removeVirtualLoss() {
+883|        this.virtualLoss = Math.max(0, this.virtualLoss - 1);
+884|    }
+885|}
+886|
+887|// Global MCTS tree for persistent search
+888|let globalMCTSRoot = null;
+889|let mctsPositionHistory = [];
+890|let strategicGoalTracker = {
+891|    shortTerm: [],
+892|    mediumTerm: [],
+893|    longTerm: [],
+894|    currentGoal: null,
+895|    goalProgress: 0
+896|};
+897|
+898|// ═══════════════════════════════════════════════════════════════════════
+899|// v38.0.0: SUPERHUMAN BEAST — ENHANCED MCTS WITH TRUE ALPHAZERO ARCHITECTURE
+900|// ═══════════════════════════════════════════════════════════════════════

@@ -1,0 +1,10 @@
+The v40 implementation is already in the file. Now I need to check if it's being used properly in the main evaluation flow. Let me check where `applyAlphaZeroLogic` is called and how moves are evaluated:
+Action: $ grep -n "applyAlphaZeroLogic\|v38SuperhumanMCTSEvaluate\|v40SuperhumanBeastEvaluate\|v40TrueAlphaZeroMCTS" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 1655:function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+2281:function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+2283:        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+2395:        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+2983:function v38SuperhumanMCTSEvaluate(fen, candidateMove, depth = 100) {
+17372:function applyAlphaZeroLogic(bestMove, alternatives) {
+19245:                const alphaMove = applyAlphaZeroLogic(bestMove, multiPVLines);
+Exit code: 0

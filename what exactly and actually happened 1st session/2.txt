@@ -1,0 +1,104 @@
+
+Action: $ wc -l "/app/Lichess Bot-AlphaZero-Pure.user.js" && grep -n "function " "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -100
+Observation: 17729 /app/Lichess Bot-AlphaZero-Pure.user.js
+64:function debugLog(prefix, ...args) {
+1064:function sampleDirichlet(alpha, k) {
+1082:function sampleGamma(alpha, beta) {
+1114:function gaussianRandom() {
+1164:function v38SuperhumanMCTSEvaluate(fen, candidateMove, depth = 100) {
+1294:function v38MultiPassBlunderCheck(fen, move, board, activeColor) {
+1362:function v38DetectMatingNetThreat(fen, move, board, activeColor) {
+1428:function v38DetectCriticalPromotionThreat(fen, move, board, activeColor) {
+1458:function v38VerifyNoHangingPieces(fen, move, board, activeColor) {
+1506:function v38ImmediateMoveRejection(move, board, activeColor) {
+1573:function v38DeepStrategicEvaluation(fen, move, board, activeColor) {
+1617:function v38EvaluateGoalAlignment(fen, move, board, activeColor) {
+1648:function v38EvaluatePlanConsistency(move, activeColor) {
+1674:function v38EvaluatePositionTrajectory(fen, move, board, activeColor) {
+1691:function v38EvaluateSpaceProjection(fen, move, board, activeColor) {
+1714:function v38EvaluatePawnLongTerm(fen, move, board, activeColor) {
+1741:function v38EvaluatePieceTrajectory(toSquare, pieceType, board, activeColor) {
+1779:function v38PerfectPositionalJudgment(fen, move, board, activeColor) {
+1832:function v38EvaluateCenterControl(board, activeColor) {
+1861:function v38FlawlessEndgameTechnique(fen, move, board, activeColor) {
+1907:function v38EvaluateEndgameKingActivity(fen, move, board, activeColor) {
+1929:function v38EvaluateOpposition(board, activeColor) {
+1972:function v38EvaluateEndgamePassedPawns(board, activeColor) {
+1994:function v38EvaluateZugzwangPotential(fen, move, board, activeColor) {
+2029:function v38EvaluateKeySquareControl(board, activeColor) {
+2051:function v38EvaluateRuleOfSquare(board, activeColor) {
+2097:function v38UncannyWebWeaving(fen, move, board, activeColor) {
+2133:function v38EvaluateMultiFrontPressure(board, activeColor) {
+2173:function v38EvaluateThreatWeb(fen, move, board, activeColor) {
+2209:function v38EvaluatePressureBuildup(fen, move, board, activeColor) {
+2233:function v38EvaluatePositionSqueeze(board, activeColor) {
+2264:function v38EvaluateDomination(board, activeColor) {
+2295:function v38AlienPatternRecognition(fen, move, board, activeColor) {
+2347:function v38RecognizeOutpost(square, pieceType, board, activeColor) {
+2399:function v38RecognizeBattery(square, pieceType, board, activeColor) {
+2465:function v38RecognizeWeakColorComplex(board, activeColor) {
+2495:function v38RecognizeRookPatterns(square, board, activeColor) {
+2533:function v38RecognizeFianchetto(square, board, activeColor) {
+2547:function v38DelayedGratificationEval(fen, move, board, activeColor) {
+2582:function v38EvaluateRepositioning(move, board, activeColor) {
+2611:function v38ResilienceAndCounterplay(fen, move, board, activeColor) {
+2646:function v38EvaluateCounterplayGeneration(fen, move, board, activeColor) {
+2672:function v38EvaluateTrickyDefense(move, board, activeColor) {
+2699:function v38EvaluateComplications(fen, move, board, activeColor) {
+2719:function v38EvaluateFortressPotential(board, activeColor) {
+2769:function v38InitiativeAndTempo(fen, move, board, activeColor) {
+2819:function preMoveCalculationSafetyScan(fen) {
+2936:function detectCriticalQueenThreat(fen, board, activeColor) {
+3002:function findQueenDefenseMoves(board, activeColor, queenSquare, attackerSquare, attackerPiece) {
+3036:function findQueenEscapeSquares(board, activeColor, queenSquare) {
+3087:function isSquareAttackedByEnemy(board, targetSquare, ourColor, excludeSquare) {
+3110:function findCaptureMove(board, activeColor, targetSquare) {
+3132:function findBlockingMoves(board, activeColor, attackerSquare, targetSquare, attackerPiece) {
+3181:function canPieceMoveTo(piece, fromSquare, toSquare, color, board) {
+3244:function canPieceAttackSquareWithBoard(pieceType, fromSquare, toSquare, color, board) {
+3303:function detectCriticalRookThreats(fen, board, activeColor) {
+3345:function detectImmediateKnightForkThreats(fen, board, activeColor) {
+3420:function detectImmediateDiscoveryThreats(fen, board, activeColor) {
+3445:function isUsefulMove(move, fen, moveNumber) {
+3522:function trackTempo(move, fen, moveNumber) {
+3550:function resetTempoTracking() {
+3572:function detectCrisisMode(fen, currentEval) {
+3615:function getCrisisResponse(level) {
+3629:function evaluateCrisisModeMove(fen, move, board, activeColor, currentEval) {
+3734:function evaluatePieceCentrality(square) {
+3745:function isPassiveCrisisMove(move, fen, board, activeColor) {
+3795:function evaluatePieceActivityRegression(fromSquare, toSquare, pieceType, activeColor) {
+3849:function doesMoveGiveCheck(fen, move, board, activeColor) {
+3883:function resetCrisisMode() {
+3899:function evaluateDelayedGratificationV32(fen, move, board, activeColor) {
+3945:function evaluatePositionImprovementPotential(fromSquare, toSquare, pieceType, board, activeColor) {
+3985:function evaluateOutpostPotential(square, board, activeColor) {
+4024:function evaluateFileOpennessForRook(fileIndex, board, activeColor) {
+4051:function evaluateBishopDiagonalScope(square, board) {
+4080:function evaluateProphylacticValueV32(fen, move, board, activeColor) {
+4113:function getEnemyKeySquares(board, enemyColor) {
+4132:function findEnemyPassedPawns(board, enemyColor) {
+4150:function evaluateQuietStrengthening(fen, move, board, activeColor) {
+4178:function countDefendedPieces(board, activeColor) {
+4200:function evaluateFutureThreatPreparation(fen, move, board, activeColor) {
+4231:function evaluateBatteryPotential(square, board, activeColor, partnerPiece) {
+4268:function evaluateEndgamePreparation(fen, move, board, activeColor) {
+4310:function evaluateFlawlessEndgameV32(fen, move, board, activeColor) {
+4347:function evaluateEndgameKingActivityV32(fen, move, board, activeColor) {
+4405:function evaluateOppositionV32(fen, move, board, activeColor) {
+4447:function evaluatePassedPawnHandlingV32(fen, move, board, activeColor) {
+4490:function findOwnPassedPawns(board, activeColor) {
+4508:function evaluateZugzwangPotentialV32(fen, move, board, activeColor) {
+4548:function getKingMoves(square) {
+4572:function isSquareAttackedByColor(board, square, attackingColor) {
+4593:function countMaterial(board) {
+4609:function evaluateTriangulationV32(fen, move, board, activeColor) {
+4626:function evaluateEndgamePieceActivityV32(fen, move, board, activeColor) {
+4656:function comprehensiveTacticalScan(fen, move) {
+4742:function detectAllHangingPieces(fen, move, board, activeColor) {
+4797:function getAttackersOfSquare(board, targetSquare, attackingColor) {
+4826:function canPieceAttack(pieceType, fromFile, fromRank, toFile, toRank, board, color) {
+4873:function isPathClear(fromFile, fromRank, toFile, toRank, board) {
+4895:function detectAllForks(fen, move, board, activeColor) {
+4966:function getKnightMoves(square) {
+Exit code: 0

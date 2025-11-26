@@ -1,0 +1,81 @@
+Now I understand the full picture. The v40 implementation exists but isn't being integrated into the main scoring flow. I need to modify `computeCombinedScore` to include the v40 evaluation. Let me create a comprehensive fix that integrates the v40 MCTS into the main flow:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+    try {
+        // Get engine Q-value (normalized)
+        const engine_Q = engineScore;
+        
+        // Get rollout Q-value (normalized, default to engine if not provided)
+        const rollout_Q = rolloutScore !== undefined ? rolloutScore : engineScore;
+        
+        // Get policy prior (softmax of MultiPV)
+        const policyPrior = computePolicyPrior(move, alternatives);
+        
+        // Normalize policy prior to centipawn bonus scale (-50..+50)
+        // Higher probability = positive bonus, lower = negative
+        const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
+        
+        // TRUE ALPHAZERO weighted merge
+        const combinedScore = (
+            TRUE_ALPHAZERO.qWeight * engine_Q +
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q +
+            normalizedPolicyPrior // Policy as bonus, not multiplied by weight
+        );
+        
+        debugLog(\"[Q+POLICY]\", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)} → combined=${combinedScore.toFixed(1)}cp`);
+        
+        return combinedScore;
+    } catch (e) {
+        debugLog(\"[Q+POLICY]\", \"⚠️ Error computing combined score:\", e.message);
+        return engineScore;
+    }
+}" --new-str "function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+    try {
+        // Get engine Q-value (normalized)
+        const engine_Q = engineScore;
+        
+        // Get rollout Q-value (normalized, default to engine if not provided)
+        const rollout_Q = rolloutScore !== undefined ? rolloutScore : engineScore;
+        
+        // Get policy prior (softmax of MultiPV)
+        const policyPrior = computePolicyPrior(move, alternatives);
+        
+        // Normalize policy prior to centipawn bonus scale (-50..+50)
+        // Higher probability = positive bonus, lower = negative
+        const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // v40.0.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION
+        // Add v40's deep positional/strategic/tactical evaluation
+        // ═══════════════════════════════════════════════════════════════════
+        let v40Bonus = 0;
+        if (CONFIG.v40Enabled && fen) {
+            try {
+                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+                // Scale v40 score contribution (weighted at 15% influence)
+                v40Bonus = v40Score * 0.15;
+                
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}: v40Score=${v40Score.toFixed(1)} → bonus=${v40Bonus.toFixed(1)}cp`);
+            } catch (e) {
+                debugLog(\"[V40_INTEGRATE]\", `⚠️ v40 evaluation error: ${e.message}`);
+                v40Bonus = 0;
+            }
+        }
+        
+        // TRUE ALPHAZERO weighted merge WITH v40 superhuman bonus
+        const combinedScore = (
+            TRUE_ALPHAZERO.qWeight * engine_Q +
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q +
+            normalizedPolicyPrior + // Policy as bonus, not multiplied by weight
+            v40Bonus                // v40 superhuman beast contribution
+        );
+        
+        debugLog(\"[Q+POLICY]\", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
+        
+        return combinedScore;
+    } catch (e) {
+        debugLog(\"[Q+POLICY]\", \"⚠️ Error computing combined score:\", e.message);
+        return engineScore;
+    }
+}"
+Observation: Edit was successful.

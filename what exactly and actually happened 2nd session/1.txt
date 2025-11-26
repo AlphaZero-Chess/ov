@@ -1,0 +1,224 @@
+Now I have a complete understanding from the last session. The v40 configuration was added, but the implementation still needs to be properly integrated. Let me view the current state of the file to understand what's actually implemented and what needs to be added/fixed:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+780|    v39DelayedPayoffHorizon: 50,             // Look 50 moves for delayed payoff
+781|    v39QuietMoveAppreciation: 3000,          // Value quiet improving moves
+782|    v39LongTermInvestment: 4000,             // Value long-term positional gains
+783|    v39PatientManeuveringBonus: 3500,        // Reward patient play
+784|    v39StrategicPatience: 2500,              // Value strategic patience
+785|    // ═══════════════════════════════════════════════════════════════════════
+786|    // v40.0.0: TRUE ALPHAZERO REPLICA — SUPERHUMAN BEAST
+787|    // ═══════════════════════════════════════════════════════════════════════
+788|    // "A paradigm-shifter, almost ALIEN, with moves prioritizing deep understanding"
+789|    // "CRUSH Stockfish with flawless endgame, perfect positional judgment, ZERO blunders"
+790|    // ═══════════════════════════════════════════════════════════════════════
+791|    
+792|    // v40: MASTER SWITCH - Enable v40 TRUE AlphaZero
+793|    v40Enabled: true,
+794|    
+795|    // v40: TRUE PERSISTENT MCTS — AlphaZero's Core (PARADIGM SHIFT)
+796|    // This is the REAL implementation - tree persists across moves
+797|    v40PersistentTreeEnabled: true,         // TRUE persistent tree across moves
+798|    v40MCTSSimulations: 10000,              // MASSIVE simulation count (5000→10000)
+799|    v40MCTSMaxDepth: 500,                   // Maximum tree depth (400→500)
+800|    v40PUCTConstant: 2.5,                   // PUCT exploration constant (AlphaZero optimal)
+801|    v40FPUReduction: 0.25,                  // First Play Urgency reduction
+802|    v40DirichletAlpha: 0.3,                 // Dirichlet noise alpha (paper value)
+803|    v40DirichletEpsilon: 0.25,              // Noise weight at root
+804|    v40BackpropGamma: 0.998,                // Discount factor for backpropagation
+805|    v40VirtualLoss: 3,                      // Virtual loss for parallel search diversity
+806|    v40TreeReuseFraction: 0.95,             // Fraction of tree to reuse between moves
+807|    v40MinVisitsBeforeExpand: 1,            // Minimum visits before node expansion
+808|    v40ProgressiveWideningC: 1.5,           // Progressive widening constant
+809|    v40ProgressiveWideningA: 0.5,           // Progressive widening exponent
+810|    v40TemperatureMoves: 30,                // Moves to use temperature for selection
+811|    v40Temperature: 1.0,                    // Temperature for move selection
+812|    v40TemperatureDropoff: 0.7,             // Temperature after X moves
+813|    
+814|    // v40: ENHANCED VALUE NETWORK EMULATION — Holistic Position Understanding
+815|    v40ValueNetMaterial: 0.85,              // Material weight in value
+816|    v40ValueNetMobility: 0.50,              // Mobility weight
+817|    v40ValueNetKingSafety: 0.60,            // King safety weight  
+818|    v40ValueNetPawnStructure: 0.55,         // Pawn structure weight
+819|    v40ValueNetSpaceControl: 0.50,          // Space control weight
+820|    v40ValueNetInitiative: 0.60,            // Initiative/tempo weight
+821|    v40ValueNetCoordination: 0.55,          // Piece coordination weight
+822|    v40ValueNetCenter: 0.50,                // Center control weight
+823|    v40ValueNetOutposts: 0.45,              // Outpost control weight
+824|    v40ValueNetWeakSquares: 0.50,           // Weak square exploitation weight
+825|    v40ValueNetProphylaxis: 0.45,           // Prophylaxis weight
+826|    v40ValueNetTension: 0.40,               // Maintain/release tension wisely
+827|    
+828|    // v40: POLICY NETWORK EMULATION — Move Prior Estimation
+829|    v40PolicyCaptureBonus: 0.15,            // Prior bonus for captures
+830|    v40PolicyCheckBonus: 0.20,              // Prior bonus for checks
+831|    v40PolicyCentralBonus: 0.10,            // Prior bonus for central moves
+832|    v40PolicyDevelopmentBonus: 0.15,        // Prior bonus for development
+833|    v40PolicyCastlingBonus: 0.25,           // Prior bonus for castling
+834|    v40PolicyPromotionBonus: 0.30,          // Prior bonus for promotion
+835|    v40PolicyTacticalBonus: 0.20,           // Prior bonus for tactical motifs
+836|    v40PolicyPassedPawnBonus: 0.15,         // Prior bonus for passed pawn advances
+837|    
+838|    // v40: EXTENDED STRATEGIC HORIZON — 30+ Move Deep Planning
+839|    v40StrategicHorizon: 200,               // Plan 200+ moves ahead (120→200)
+840|    v40DelayedGratificationWeight: 8000,    // Massive bonus for long-term (5000→8000)
+841|    v40WebWeavingDepth: 200,                // Web-weaving analysis depth (150→200)
+842|    v40StrategicGoalWeight: 800.0,          // Strategic goal weight (600→800)
+843|    v40PositionalSqueezeBonus: 6000,        // Squeeze bonus (4000→6000)
+844|    v40QuietStrengtheningBonus: 4000,       // Quiet move bonus (3000→4000)
+845|    v40LongTermPlanReward: 6000,            // Plan consistency reward (4000→6000)
+846|    v40StrategicConsistencyBonus: 4500,     // Sticking to plan bonus (3000→4500)
+847|    v40StrategicThreadsMax: 12,             // Track 12 strategic threads (8→12)
+848|    v40StrategicPatience: 8000,             // Patient maneuvering bonus (5000→8000)
+849|    v40PropagatingWeaknessValue: 4000,      // Weakness exploitation (2500→4000)
+850|    
+851|    // v40: ZERO BLUNDER SYSTEM — 30+ Move Multi-Pass Verification
+852|    v40TacticalHorizon: 100,                // 100 ply tactical horizon (80→100)
+853|    v40BlunderThreshold: -10,               // Stricter blunder threshold (-15→-10)
+854|    v40VerificationPasses: 12,              // 12 verification passes (8→12)
+855|    v40MatingNetHorizon: 80,                // Mating net detection (60→80)
+856|    v40PromotionHorizon: 80,                // Promotion threat detection (60→80)
+857|    v40PinSkewersHorizon: 50,               // Pin/skewer detection (40→50)
+858|    v40ForkHorizon: 50,                     // Fork detection (40→50)
+859|    v40BackRankMateHorizon: 60,             // Back rank mate detection (50→60)
+860|    v40DiscoveredAttackHorizon: 45,         // Discovered attack detection
+861|    v40TrapHorizon: 50,                     // Trap detection (40→50)
+862|    v40ZwischenzugHorizon: 35,              // In-between move detection (25→35)
+863|    v40DesperadoHorizon: 40,                // Desperado piece detection (30→40)
+864|    v40DeepBlunderScan: true,               // Enable deep blunder scanning
+865|    v40MultiPassTactical: true,             // Multi-pass tactical verification
+866|    
+867|    // v40: FLAWLESS ENDGAME — Philidor, Lucena, Opposition, Triangulation
+868|    v40EndgameEnabled: true,
+869|    v40EndgameOppositionDepth: 120,         // Opposition analysis (100→120)
+870|    v40EndgameTriangulationDepth: 100,      // Triangulation depth (80→100)
+871|    v40EndgameZugzwangDepth: 90,            // Zugzwang detection (70→90)
+872|    v40EndgameKingActivity: 7000,           // King activity (5000→7000)
+873|    v40EndgamePassedPawnValue: 8000,        // Passed pawn value (6000→8000)
+874|    v40EndgameBlockadeValue: 7000,          // Blockade value (5500→7000)
+875|    v40EndgameKeySquareControl: 7000,       // Key square bonus (5000→7000)
+876|    v40EndgameDistantOpposition: 4500,      // Distant opposition (3000→4500)
+877|    v40EndgameVirtualOpposition: 3500,      // Virtual opposition (2500→3500)
+878|    v40EndgameDiagonalOpposition: 4000,     // Diagonal opposition (2800→4000)
+879|    v40EndgameOutflanking: 5000,            // Outflanking (3500→5000)
+880|    v40EndgameShouldering: 4500,            // Shouldering (3000→4500)
+881|    v40EndgameReserveTempo: 5500,           // Reserve tempo (4000→5500)
+882|    v40EndgamePhilidorRecog: true,          // Philidor position recognition
+883|    v40EndgameLucenaRecog: true,            // Lucena position recognition
+884|    v40EndgameVannuttRecog: true,           // Vannut position handling
+885|    v40EndgameRuleOfSquare: true,           // Rule of the square calculation
+886|    v40EndgamePawnRace: true,               // Precise pawn race calculation
+887|    v40EndgameWrongBishop: true,            // Wrong bishop detection
+888|    v40EndgameFortress: true,               // Fortress recognition
+889|    v40EndgameStaleMateTrap: true,          // Stalemate trap awareness
+890|    v40EndgameCorrespondence: true,         // Corresponding squares
+891|    
+892|    // v40: RESILIENCE & COUNTERPLAY — Never Give Up
+893|    v40ResilienceEnabled: true,
+894|    v40CounterplayPriority: 12000,          // Counterplay priority (8000→12000)
+895|    v40ResilienceBonus: 6000,               // Resilient defense (4000→6000)
+896|    v40ActiveDefenseMultiplier: 5.0,        // Active defense (4.0→5.0)
+897|    v40FortressBonus: 7000,                 // Fortress construction (5000→7000)
+898|    v40SwindleAwareness: true,              // Look for swindles
+899|    v40DesperationCounterplay: true,        // Generate complications
+900|    v40DrawingResourceScan: true,           // Scan for drawing resources
+901|    v40TrickyDefenseBonus: 4500,            // Tricky defense (3000→4500)
+902|    v40PerpetualCheckScan: true,            // Perpetual check scanning
+903|    v40FortressPatternRecog: true,          // Fortress pattern recognition
+904|    v40CounterAttackPreference: 5000,       // Counterattack vs passive (3500→5000)
+905|    v40ComplicationCreation: 3500,          // Creating complexity (2500→3500)
+906|    v40PracticalChancesWeight: 4500,        // Practical chances (3000→4500)
+907|    
+908|    // v40: WEB-WEAVING — Multi-Front Strategic Pressure (ALIEN TIER)
+909|    v40WebWeavingEnabled: true,
+910|    v40MultiFrontPressure: 8000,            // Multi-front attack (5000→8000)
+911|    v40PressureBuildupBonus: 4500,          // Pressure buildup (3000→4500)
+912|    v40CoordinatedThreatBonus: 6000,        // Coordinated threats (4000→6000)
+913|    v40SqueezePatternBonus: 5000,           // Position squeeze (3500→5000)
+914|    v40DominationBonus: 8000,               // Total domination (5000→8000)
+915|    v40StrategicAsphyxiation: 7000,         // Cut off opponent plans (4500→7000)
+916|    v40CrossfireBonus: 5000,                // Multiple pieces on same target (3500→5000)
+917|    v40CentralAsphyxiation: 5500,           // Central domination squeeze (3500→5500)
+918|    
+919|    // v40: PATTERN RECOGNITION — Neural Network Emulation
+920|    v40PatternEnabled: true,
+921|    v40OutpostValue: 3500,                  // Outpost bonus (2500→3500)
+922|    v40BatteryValue: 4000,                  // Battery bonus (3000→4000)
+923|    v40FianchettoValue: 1600,               // Fianchetto (1200→1600)
+924|    v40OpenFileValue: 2400,                 // Open file (1800→2400)
+925|    v40SeventhRankValue: 3500,              // 7th rank (2500→3500)
+926|    v40ConnectedRooksValue: 2200,           // Connected rooks (1600→2200)
+927|    v40LongDiagonalValue: 2200,             // Long diagonal (1600→2200)
+928|    v40WeakColorComplexValue: 2800,         // Weak color complex (2000→2800)
+929|    v40IsolatedPawnPenalty: -2000,          // Isolated pawn (-1500→-2000)
+930|    v40BackwardPawnPenalty: -1600,          // Backward pawn (-1200→-1600)
+931|    v40DoubledPawnPenalty: -1400,           // Doubled pawn (-1000→-1400)
+932|    v40RookOnSeventhPair: 6000,             // Both rooks on 7th (4000→6000)
+933|    v40MinorPieceOutpost: 2800,             // Minor piece outpost (2000→2800)
+934|    v40BishopPairBonus: 1000,               // Bishop pair (800→1000)
+935|    v40BadBishopPenalty: -1400,             // Bad bishop (-1000→-1400)
+936|    v40KnightCentralization: 2000,          // Knight centralization (1500→2000)
+937|    v40KnightOutpostD5E5: 4000,             // Knight on d5/e5 (3000→4000)
+938|    
+939|    // v40: INITIATIVE & TEMPO — Absolute Dominance
+940|    v40InitiativeValue: 800,                // Per tempo value (600→800)
+941|    v40TempoGainBonus: 600,                 // Tempo gain (450→600)
+942|    v40DevelopmentUrgency: 6.0,             // Development urgency (4.5→6.0)
+943|    v40InitiativeChainBonus: 3500,          // Consecutive initiative (2500→3500)
+944|    v40ForcingMovePreference: 2000,         // Forcing moves (1500→2000)
+945|    v40AttackMomentumBonus: 3000,           // Attack momentum (2000→3000)
+946|    v40DevelopmentLeadBonus: 2000,          // Per undeveloped enemy piece (1500→2000)
+947|    v40WastedMovesPenalty: -2000,           // Tempo-wasting (-1500→-2000)
+948|    v40DoubleMovePenalty: -1600,            // Same piece twice early (-1200→-1600)
+949|    v40QueenEarlyPenalty: -1400,            // Queen out early (-1000→-1400)
+950|    
+951|    // v40: PREDICTIVE OUTCOME MODELING — See The Future
+952|    v40PredictiveEnabled: true,
+953|    v40OutcomeSimulationDepth: 80,          // Simulate 80 moves ahead (60→80)
+954|    v40WinProbabilityTracking: true,        // Win probability tracking
+955|    v40PositionTrajectory: true,            // Position trajectory tracking
+956|    v40TrendAnalysis: true,                 // Evaluation trend analysis
+957|    v40SimulationRollouts: 300,             // Rollouts per outcome sim (200→300)
+958|    v40FutureThreatPrediction: true,        // Future threat prediction
+959|    v40CriticalMomentDetection: true,       // Critical moment detection
+960|    v40TrajectoryMemory: 80,                // Positions to remember (50→80)
+961|};
+962|
+963|// ═══════════════════════════════════════════════════════════════════════
+964|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+965|// ═══════════════════════════════════════════════════════════════════════
+966|
+967|/**
+968| * v37: TRUE MCTS Node structure for proper tree search
+969| */
+970|class MCTSNode {
+971|    constructor(move, parent = null, prior = 1.0) {
+972|        this.move = move;
+973|        this.parent = parent;
+974|        this.children = new Map();
+975|        this.visits = 0;
+976|        this.totalValue = 0;
+977|        this.prior = prior;           // Policy prior (P)
+978|        this.virtualLoss = 0;
+979|        this.isExpanded = false;
+980|        this.isTerminal = false;
+981|        this.depth = parent ? parent.depth + 1 : 0;
+982|    }
+983|    
+984|    get value() {
+985|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+986|    }
+987|    
+988|    get ucb1Score() {
+989|        if (!this.parent || this.parent.visits === 0) return Infinity;
+990|        
+991|        const exploitation = this.value;
+992|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+993|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+994|        
+995|        return exploitation + exploration;
+996|    }
+997|    
+998|    get puctScore() {
+999|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1000|        

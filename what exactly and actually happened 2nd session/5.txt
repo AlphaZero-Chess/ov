@@ -1,0 +1,109 @@
+I can see the issue now. The `applyAlphaZeroLogic` function is using the old `TRUE_ALPHAZERO` system and doesn't integrate the new v40 MCTS. I need to integrate the v40 implementation into the main evaluation flow. Let me check where `computeCombinedScore` is and modify it to use v40:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+16595|    
+16596|    // NEW: Boost depth when winning to find fastest conversion
+16597|    if (multiPVLines.length > 0 && multiPVLines[0].score > CONFIG.winningThreshold) {
+16598|        depth = Math.max(depth, CONFIG.winningDepth);
+16599|        debugLog("[ENGINE]", `🔥 Winning position - boosting depth for conversion (${depth})`);
+16600|    }
+16601|    
+16602|    // Detect classical/rapid time controls and boost depth significantly
+16603|    if (timeLeft > 180000) {
+16604|        // Classical (>3 minutes) - use maximum depth
+16605|        depth = CONFIG.classicalDepth;
+16606|        debugLog("[ENGINE]", "📚 Classical time control - using max depth");
+16607|    } else if (timeLeft > 120000) {
+16608|        // Rapid (>2 minutes) - boost depth
+16609|        depth = Math.min(depth + 4, CONFIG.classicalDepth);
+16610|        debugLog("[ENGINE]", "⚡ Rapid time control - boosting depth");
+16611|    } else if (timeLeft > 60000) {
+16612|        // Blitz (>1 minute) - moderate boost
+16613|        depth = Math.min(depth + 2, 28);
+16614|    } else if (timeLeft > 30000) {
+16615|        // Short blitz (>30s) - small boost
+16616|        depth = Math.min(depth + 1, 26);
+16617|    } else if (timeLeft < 10000) {
+16618|        // Time pressure - reduce depth slightly
+16619|        depth = Math.max(depth - 1, 18);
+16620|    }
+16621|    
+16622|    // Complex positions deserve deeper search
+16623|    if (positionComplexity > 0.75 && timeLeft > 20000) {
+16624|        depth = Math.min(depth + 1, CONFIG.classicalDepth);
+16625|    }
+16626|    
+16627|    // NEW v5.0.0: Endgame with advantage - maximize depth for perfect technique
+16628|    if (phase === "endgame" && timeLeft > 30000) {
+16629|        depth = Math.min(depth + 3, CONFIG.classicalDepth);
+16630|        debugLog("[ENGINE]", "🎯 Endgame - maximizing depth for perfect conversion");
+16631|    }
+16632|    
+16633|    // NEW v5.0.0: Pawn race detection - need maximum depth
+16634|    if (currentFen && typeof currentFen === 'string' && detectPawnRace(currentFen)) {
+16635|        depth = Math.min(depth + 3, CONFIG.classicalDepth);
+16636|        debugLog("[ENGINE]", "🏁 Pawn race detected - boosting depth for calculation");
+16637|    }
+16638|    
+16639|    // NEW v4.3.0: Defensive mode - boost depth when behind for accuracy
+16640|    if (multiPVLines.length > 0) {
+16641|        const currentEval = multiPVLines[0].score;
+16642|        
+16643|        if (currentEval < CONFIG.defensiveThresholdMild) {
+16644|            depth = Math.min(depth + CONFIG.defensiveDepthBonus, CONFIG.classicalDepth);
+16645|            debugLog("[ENGINE]", `🛡️ Defensive mode - boosting depth for accuracy (${depth})`);
+16646|        }
+16647|    }
+16648|    
+16649|    // NEW v4.3.0: Passed pawn danger - boost depth to find best defense
+16650|    if (currentFen && typeof currentFen === 'string') {
+16651|        const hasDanger = detectPassedPawnDanger(currentFen);
+16652|        if (hasDanger) {
+16653|            depth = Math.min(depth + CONFIG.passedPawnDepthBonus, CONFIG.classicalDepth);
+16654|            debugLog("[ENGINE]", `🚨 Passed pawn danger - boosting depth (${depth})`);
+16655|        }
+16656|    }
+16657|    
+16658|    // NEW v6.0.0: Opponent threat response - boost depth
+16659|    if (lastOpponentMove) {
+16660|        const threatLevel = analyzeOpponentThreats(lastOpponentMove, currentFen, multiPVLines);
+16661|        if (threatLevel >= 2 && timeLeft > 15000) {
+16662|            depth = Math.min(depth + CONFIG.threatResponseDepth, CONFIG.classicalDepth);
+16663|            debugLog("[ENGINE]", `⚠️ Responding to threats - boosting depth (${depth})`);
+16664|        }
+16665|    }
+16666|    
+16667|    return depth;
+16668|}
+16669|
+16670|// ═══════════════════════════════════════════════════════════════════════
+16671|// ALPHAZERO ESSENCE MODE FUNCTIONS (v17.0.0)
+16672|// ═══════════════════════════════════════════════════════════════════════
+16673|
+16674|/**
+16675| * NEW v18.0.0: Compute policy prior from MultiPV lines
+16676| * Uses softmax distribution over engine evaluations
+16677| * Returns 0..1 probability (normalized)
+16678| */
+16679|function computePolicyPrior(move, alternatives) {
+16680|    try {
+16681|        if (!alternatives || alternatives.length === 0) return 0.5;
+16682|        
+16683|        // Find move in alternatives
+16684|        const moveIndex = alternatives.findIndex(m => m.move === move);
+16685|        if (moveIndex === -1) return 0.01; // Move not in top alternatives
+16686|        
+16687|        // Compute softmax over scores
+16688|        const scores = alternatives.map(a => a.score);
+16689|        const maxScore = Math.max(...scores);
+16690|        
+16691|        // Softmax with temperature=100 (moderate sharpness)
+16692|        const expScores = scores.map(s => Math.exp((s - maxScore) / 100));
+16693|        const sumExp = expScores.reduce((a, b) => a + b, 0);
+16694|        const probabilities = expScores.map(e => e / sumExp);
+16695|        
+16696|        const policyPrior = probabilities[moveIndex];
+16697|        
+16698|        // Clamp to min/max policy bias
+16699|        const clampedPrior = Math.max(
+16700|            TRUE_ALPHAZERO.minPolicyBias,

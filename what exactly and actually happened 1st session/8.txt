@@ -1,0 +1,204 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+5600|        
+5601|        // v37: IMMEDIATE REJECTION of known terrible moves
+5602|        const immediateReject = v37ImmediateReject(candidateMove, board, activeColor);
+5603|        if (immediateReject.reject) {
+5604|            debugLog("[MCTS_v37]", `🛑 IMMEDIATE REJECTION: ${immediateReject.reason}`);
+5605|            return immediateReject.penalty;
+5606|        }
+5607|        
+5608|        // v37: Create or reuse tree node for this move
+5609|        const moveNode = new MCTSNode(candidateMove, null, 1.0);
+5610|        
+5611|        // v37: Initialize evaluation components
+5612|        let tacticalScore = 0;
+5613|        let strategicScore = 0;
+5614|        let positionalScore = 0;
+5615|        let endgameScore = 0;
+5616|        let patternScore = 0;
+5617|        let webWeavingScore = 0;
+5618|        
+5619|        // ═══════════════════════════════════════════════════════════════════
+5620|        // PHASE 1: ZERO BLUNDER VERIFICATION (Critical safety check)
+5621|        // ═══════════════════════════════════════════════════════════════════
+5622|        
+5623|        const blunderCheck = v37ZeroBlunderVerification(fen, candidateMove, board, activeColor);
+5624|        if (!blunderCheck.safe) {
+5625|            debugLog("[MCTS_v37]", `🚨 BLUNDER DETECTED: ${blunderCheck.reason}`);
+5626|            return blunderCheck.penalty;
+5627|        }
+5628|        tacticalScore = blunderCheck.score;
+5629|        
+5630|        // ═══════════════════════════════════════════════════════════════════
+5631|        // PHASE 2: 50+ MOVE STRATEGIC HORIZON (AlphaZero's signature)
+5632|        // ═══════════════════════════════════════════════════════════════════
+5633|        
+5634|        strategicScore = v37DeepStrategicPlanning(fen, candidateMove, board, activeColor, 
+5635|            CONFIG.v37StrategicHorizon);
+5636|        
+5637|        // ═══════════════════════════════════════════════════════════════════
+5638|        // PHASE 3: PERFECT POSITIONAL JUDGMENT
+5639|        // ═══════════════════════════════════════════════════════════════════
+5640|        
+5641|        positionalScore = v37HolisticPositionalEvaluation(fen, candidateMove, board, activeColor);
+5642|        
+5643|        // ═══════════════════════════════════════════════════════════════════
+5644|        // PHASE 4: ENDGAME PERFECTION (Flawless technique)
+5645|        // ═══════════════════════════════════════════════════════════════════
+5646|        
+5647|        endgameScore = v37FlawlessEndgameEvaluation(fen, candidateMove, board, activeColor);
+5648|        
+5649|        // ═══════════════════════════════════════════════════════════════════
+5650|        // PHASE 5: PATTERN RECOGNITION (Alien-tier understanding)
+5651|        // ═══════════════════════════════════════════════════════════════════
+5652|        
+5653|        patternScore = v37PatternRecognition(fen, candidateMove, board, activeColor);
+5654|        
+5655|        // ═══════════════════════════════════════════════════════════════════
+5656|        // PHASE 6: WEB-WEAVING EVALUATION (AlphaZero's uncanny ability)
+5657|        // ═══════════════════════════════════════════════════════════════════
+5658|        
+5659|        webWeavingScore = v37WebWeavingEvaluation(fen, candidateMove, board, activeColor);
+5660|        
+5661|        // ═══════════════════════════════════════════════════════════════════
+5662|        // PHASE 7: DELAYED GRATIFICATION (Moves that pay off later)
+5663|        // ═══════════════════════════════════════════════════════════════════
+5664|        
+5665|        const delayedGratification = v37DelayedGratificationEvaluation(fen, candidateMove, 
+5666|            board, activeColor);
+5667|        
+5668|        // ═══════════════════════════════════════════════════════════════════
+5669|        // COMBINED TRANSCENDENT SCORE
+5670|        // ═══════════════════════════════════════════════════════════════════
+5671|        
+5672|        // Crisis mode adjustment
+5673|        let crisisAdjustment = 0;
+5674|        if (crisisModeActive) {
+5675|            crisisAdjustment = v37CrisisEvaluation(fen, candidateMove, board, activeColor);
+5676|        }
+5677|        
+5678|        // Weighted combination (AlphaZero-style)
+5679|        const transcendentScore = 
+5680|            tacticalScore * 0.20 +           // 20% tactical safety
+5681|            strategicScore * 0.25 +          // 25% long-term strategy
+5682|            positionalScore * 0.20 +         // 20% positional judgment
+5683|            endgameScore * 0.10 +            // 10% endgame technique
+5684|            patternScore * 0.10 +            // 10% pattern recognition
+5685|            webWeavingScore * 0.10 +         // 10% web-weaving
+5686|            delayedGratification * 0.05 +    // 5% delayed gratification
+5687|            crisisAdjustment;                // Crisis mode bonus/penalty
+5688|        
+5689|        // Update node statistics
+5690|        moveNode.visits++;
+5691|        moveNode.totalValue = transcendentScore;
+5692|        
+5693|        debugLog("[MCTS_v37]", `📊 Score breakdown for ${candidateMove}:`);
+5694|        debugLog("[MCTS_v37]", `   Tactical: ${tacticalScore.toFixed(0)}`);
+5695|        debugLog("[MCTS_v37]", `   Strategic: ${strategicScore.toFixed(0)}`);
+5696|        debugLog("[MCTS_v37]", `   Positional: ${positionalScore.toFixed(0)}`);
+5697|        debugLog("[MCTS_v37]", `   Endgame: ${endgameScore.toFixed(0)}`);
+5698|        debugLog("[MCTS_v37]", `   Pattern: ${patternScore.toFixed(0)}`);
+5699|        debugLog("[MCTS_v37]", `   WebWeave: ${webWeavingScore.toFixed(0)}`);
+5700|        debugLog("[MCTS_v37]", `   Delayed: ${delayedGratification.toFixed(0)}`);
+5701|        debugLog("[MCTS_v37]", `   Crisis: ${crisisAdjustment.toFixed(0)}`);
+5702|        debugLog("[MCTS_v37]", `   🎯 TOTAL: ${transcendentScore.toFixed(1)}`);
+5703|        
+5704|        return transcendentScore;
+5705|        
+5706|    } catch (e) {
+5707|        debugLog("[MCTS_v37]", `⚠️ Error: ${e.message}`);
+5708|        return trueMCTSEvaluate(fen, candidateMove, depth); // Fallback
+5709|    }
+5710|}
+5711|
+5712|/**
+5713| * v37.0.0: Immediate rejection of known terrible moves
+5714| */
+5715|function v37ImmediateReject(move, board, activeColor) {
+5716|    const result = { reject: false, reason: '', penalty: 0 };
+5717|    
+5718|    const fromSquare = move.substring(0, 2);
+5719|    const toSquare = move.substring(2, 4);
+5720|    const piece = board.get(fromSquare);
+5721|    
+5722|    if (!piece) return result;
+5723|    
+5724|    const pieceType = piece.toLowerCase();
+5725|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+5726|    const toRank = parseInt(toSquare[1]) - 1;
+5727|    const backRank = activeColor === 'w' ? 0 : 7;
+5728|    const secondRank = activeColor === 'w' ? 1 : 6;
+5729|    
+5730|    // v37: KNIGHTS - "A knight on the rim is dim"
+5731|    if (pieceType === 'n') {
+5732|        // Corner squares = ABSOLUTE REJECTION
+5733|        if ((toFile === 0 || toFile === 7) && (toRank === 0 || toRank === 7)) {
+5734|            result.reject = true;
+5735|            result.reason = `Knight to corner ${toSquare} - CATASTROPHIC`;
+5736|            result.penalty = -50000;
+5737|            return result;
+5738|        }
+5739|        
+5740|        // Back rank = SEVERE REJECTION (Nh1, Na1 disasters)
+5741|        if (toRank === backRank) {
+5742|            result.reject = true;
+5743|            result.reason = `Knight to back rank ${toSquare} - DISASTER`;
+5744|            result.penalty = -30000;
+5745|            return result;
+5746|        }
+5747|        
+5748|        // Second rank = BAD (Ne2, Nb2 disasters)
+5749|        if (toRank === secondRank && (toFile === 0 || toFile === 1 || toFile === 6 || toFile === 7)) {
+5750|            result.reject = true;
+5751|            result.reason = `Knight to edge second rank ${toSquare} - BAD`;
+5752|            result.penalty = -20000;
+5753|            return result;
+5754|        }
+5755|        
+5756|        // Rim files in general
+5757|        if (toFile === 0 || toFile === 7) {
+5758|            // Not immediate rejection but heavy penalty
+5759|            result.penalty = -CONFIG.knightOnRimPenalty;
+5760|        }
+5761|    }
+5762|    
+5763|    // v37: Passive piece retreats in crisis
+5764|    if (crisisModeActive && crisisLevel >= 2) {
+5765|        const fromRank = parseInt(fromSquare[1]) - 1;
+5766|        const isRetreat = (activeColor === 'w') ? (toRank < fromRank) : (toRank > fromRank);
+5767|        
+5768|        if (isRetreat && !board.get(toSquare)) { // Retreating without capturing
+5769|            result.reject = true;
+5770|            result.reason = `Passive retreat ${move} in CRISIS - FORBIDDEN`;
+5771|            result.penalty = -25000;
+5772|            return result;
+5773|        }
+5774|    }
+5775|    
+5776|    return result;
+5777|}
+5778|
+5779|/**
+5780| * v37.0.0: ZERO BLUNDER VERIFICATION - 30+ move tactical horizon
+5781| * Ensures no tactical oversights by scanning deep for threats
+5782| */
+5783|function v37ZeroBlunderVerification(fen, move, board, activeColor) {
+5784|    const result = { safe: true, score: 0, reason: '' };
+5785|    
+5786|    try {
+5787|        // Standard tactical scan
+5788|        const tacticalScan = comprehensiveTacticalScan(fen, move);
+5789|        if (!tacticalScan.safe) {
+5790|            result.safe = false;
+5791|            result.reason = `Tactical danger: ${tacticalScan.totalDanger}`;
+5792|            result.penalty = -tacticalScan.totalDanger * 4;
+5793|            return result;
+5794|        }
+5795|        
+5796|        // Activity violation check
+5797|        const activityCheck = checkPieceActivityViolation(move, board, activeColor);
+5798|        if (activityCheck.isViolation) {
+5799|            result.safe = false;
+5800|            result.reason = activityCheck.reason;

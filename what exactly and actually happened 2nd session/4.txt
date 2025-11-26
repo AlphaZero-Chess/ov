@@ -1,0 +1,182 @@
+Now let me check the `applyAlphaZeroLogic` function to see if it uses the v40 implementation:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+17372|function applyAlphaZeroLogic(bestMove, alternatives) {
+17373|    // Don't be creative if we only have one option
+17374|    if (alternatives.length < 2) {
+17375|        return bestMove;
+17376|    }
+17377|    
+17378|    // NEW v6.0.0: Update tactical and critical flags
+17379|    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+17380|    const currentEval = alternatives[0].score;
+17381|    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);
+17382|    
+17383|    // Update evaluation history
+17384|    updateEvaluationHistory(currentEval);
+17385|    
+17386|    // ═══════════════════════════════════════════════════════════════
+17387|    // NEW v17.0.0: ALPHAZERO ESSENCE MODE OVERLAY
+17388|    // ═══════════════════════════════════════════════════════════════
+17389|    
+17390|    // ═══════════════════════════════════════════════════════════════
+17391|    // NEW v18.0.0: TRUE ALPHAZERO Q+POLICY ARCHITECTURE
+17392|    // ═══════════════════════════════════════════════════════════════
+17393|    
+17394|    if (TRUE_ALPHAZERO.enabled && alternatives.length >= 2) {
+17395|        // Update trend reconciliation
+17396|        updateTrendReconciliation(currentEval);
+17397|        
+17398|        // Check trend floor
+17399|        const trendOK = checkTrendFloor();
+17400|        
+17401|        if (trendOK && !positionIsTactical && !positionIsCritical) {
+17402|            trueAlphaAttempted++;
+17403|            
+17404|            debugLog("[TRUE_AZ]", `🎯 TRUE ALPHAZERO mode active (attempt #${trueAlphaAttempted})`);
+17405|            
+17406|            // Evaluate top N candidates with Q+Policy merge
+17407|            const N = Math.min(4, alternatives.length);
+17408|            const candidatesWithQPolicy = [];
+17409|            
+17410|            for (let i = 0; i < N; i++) {
+17411|                const candidate = alternatives[i];
+17412|                const engine_Q = candidate.score;
+17413|                
+17414|                // For now, use engine score as rollout (async rollouts would be full implementation)
+17415|                const rollout_Q = engine_Q; // TODO: implement async playouts
+17416|                
+17417|                // Compute combined Q+Policy score
+17418|                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+17419|                
+17420|                // Compute harmony for sacrifice validation
+17421|                const harmony = computeHarmonyScore(currentFen);
+17422|                
+17423|                candidatesWithQPolicy.push({
+17424|                    move: candidate.move,
+17425|                    engineScore: engine_Q,
+17426|                    rolloutScore: rollout_Q,
+17427|                    combinedScore: combinedScore,
+17428|                    policyPrior: computePolicyPrior(candidate.move, alternatives),
+17429|                    harmony: harmony
+17430|                });
+17431|            }
+17432|            
+17433|            // Sort by combined score (deterministic argmax, no temperature sampling)
+17434|            candidatesWithQPolicy.sort((a, b) => b.combinedScore - a.combinedScore);
+17435|            
+17436|            debugLog("[TRUE_AZ]", `Top Q+Policy candidates:`);
+17437|            for (let i = 0; i < Math.min(3, candidatesWithQPolicy.length); i++) {
+17438|                const c = candidatesWithQPolicy[i];
+17439|                debugLog("[TRUE_AZ]", `  ${i+1}. ${c.move}: Q=${c.engineScore.toFixed(1)}cp, rollout=${c.rolloutScore.toFixed(1)}cp, policy=${c.policyPrior.toFixed(3)}, combined=${c.combinedScore.toFixed(1)}cp`);
+17440|            }
+17441|            
+17442|            // Select best (argmax - deterministic)
+17443|            const selectedCandidate = candidatesWithQPolicy[0];
+17444|            const selectedMove = selectedCandidate.move;
+17445|            
+17446|            debugLog("[TRUE_AZ]", `🎯 Selected top Q+Policy: ${selectedMove}`);
+17447|            
+17448|            // ABSOLUTE SAFETY CHECK
+17449|            const engineTopScore = alternatives[0].score;
+17450|            const safetyPassed = checkAbsoluteSafety(engineTopScore, selectedCandidate.combinedScore, selectedMove);
+17451|            
+17452|            if (!safetyPassed) {
+17453|                trueAlphaRejected++;
+17454|                debugLog("[TRUE_AZ]", `❌ SAFETY LIMIT exceeded - forcing engine top move`);
+17455|                
+17456|                // Log to debug
+17457|                window.__AZ18_DEBUG.decisions.push({
+17458|                    move: moveCount,
+17459|                    attempted: selectedMove,
+17460|                    forced: alternatives[0].move,
+17461|                    reason: 'safety_drop_limit_exceeded',
+17462|                    evalDrop: engineTopScore - selectedCandidate.combinedScore
+17463|                });
+17464|                
+17465|                // FORCE engine top move
+17466|                return alternatives[0].move;
+17467|            }
+17468|            
+17469|            // Check if sacrifice
+17470|            const isSacrifice = selectedCandidate.engineScore < currentEval - 100;
+17471|            
+17472|            if (isSacrifice) {
+17473|                debugLog("[SACRIFICE_V3]", `🎯 Sacrifice detected: ${selectedMove}`);
+17474|                
+17475|                // v18 SACRIFICE SYSTEM v3 - RIGOROUS VALIDATION
+17476|                const rolloutAdvantage = selectedCandidate.rolloutScore - selectedCandidate.engineScore;
+17477|                const harmonyOK = selectedCandidate.harmony > TRUE_ALPHAZERO.minHarmonyScore;
+17478|                const trendPositive = evaluationTrend > 0;
+17479|                const compensationOK = rolloutAdvantage > TRUE_ALPHAZERO.sacrificeMinCompensation;
+17480|                
+17481|                debugLog("[SACRIFICE_V3]", `  Rollout advantage: ${rolloutAdvantage.toFixed(1)}cp (need ${TRUE_ALPHAZERO.sacrificeMinCompensation}cp)`);
+17482|                debugLog("[SACRIFICE_V3]", `  Harmony: ${selectedCandidate.harmony.toFixed(3)} (need >${TRUE_ALPHAZERO.minHarmonyScore})`);
+17483|                debugLog("[SACRIFICE_V3]", `  Trend: ${evaluationTrend.toFixed(1)}cp (need >0)`);
+17484|                
+17485|                if (!compensationOK || !harmonyOK || !trendPositive) {
+17486|                    trueAlphaRejected++;
+17487|                    debugLog("[SACRIFICE_V3]", `❌ Sacrifice rejected - insufficient compensation`);
+17488|                    
+17489|                    window.__AZ18_DEBUG.failures.push({
+17490|                        move: moveCount,
+17491|                        sacrifice: selectedMove,
+17492|                        rolloutAdv: rolloutAdvantage,
+17493|                        harmony: selectedCandidate.harmony,
+17494|                        trend: evaluationTrend,
+17495|                        reason: 'sacrifice_validation_failed'
+17496|                    });
+17497|                    
+17498|                    // Force engine top
+17499|                    return alternatives[0].move;
+17500|                }
+17501|                
+17502|                debugLog("[SACRIFICE_V3]", `✅ Sacrifice validated - compensation sufficient`);
+17503|            }
+17504|            
+17505|            // Final tactical validation
+17506|            if (validateMoveSafety(selectedMove, alternatives, currentEval)) {
+17507|                const safetyCheck = detectHangingPieces(selectedMove, alternatives);
+17508|                
+17509|                if (safetyCheck.safe) {
+17510|                    trueAlphaAccepted++;
+17511|                    const acceptRate = (trueAlphaAccepted / trueAlphaAttempted * 100).toFixed(1);
+17512|                    debugLog("[TRUE_AZ]", `✅ TRUE ALPHAZERO move accepted: ${selectedMove} (rate: ${acceptRate}%)`);
+17513|                    
+17514|                    window.__AZ18_DEBUG.decisions.push({
+17515|                        move: moveCount,
+17516|                        selected: selectedMove,
+17517|                        engineTop: alternatives[0].move,
+17518|                        combinedScore: selectedCandidate.combinedScore,
+17519|                        accepted: true
+17520|                    });
+17521|                    
+17522|                    return selectedMove;
+17523|                } else {
+17524|                    trueAlphaRejected++;
+17525|                    debugLog("[TRUE_AZ]", `❌ Move ${selectedMove} failed hanging check: ${safetyCheck.hangingPiece}`);
+17526|                    return alternatives[0].move;
+17527|                }
+17528|            } else {
+17529|                trueAlphaRejected++;
+17530|                debugLog("[TRUE_AZ]", `❌ Move ${selectedMove} failed safety validation`);
+17531|                return alternatives[0].move;
+17532|            }
+17533|        } else {
+17534|            if (!trendOK) debugLog("[TRUE_AZ]", "❌ Trend below floor - using engine");
+17535|            if (positionIsTactical) debugLog("[TRUE_AZ]", "❌ Tactical position - using engine");
+17536|            if (positionIsCritical) debugLog("[TRUE_AZ]", "❌ Critical position - using engine");
+17537|        }
+17538|    }
+17539|    
+17540|    // ═══════════════════════════════════════════════════════════════
+17541|    // FALLBACK TO v16 LOGIC (if essence disabled or failed)
+17542|    // ═══════════════════════════════════════════════════════════════
+17543|    
+17544|    // NEW v11.0.0: Check for PASSIVE opening moves (avoid d3, Nh3, etc.)
+17545|    if (moveCount <= 10 && isPassiveOpeningMove(bestMove, moveCount)) {
+17546|        debugLog("[ENGINE]", `🚫 PASSIVE MOVE DETECTED: ${bestMove} - seeking AGGRESSIVE alternative!`);
+17547|        
+17548|        // Find first non-passive alternative
+17549|        for (let i = 1; i < Math.min(alternatives.length, 4); i++) {
+17550|            const altMove = alternatives[i].move;

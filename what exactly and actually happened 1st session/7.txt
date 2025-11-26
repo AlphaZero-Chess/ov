@@ -1,0 +1,204 @@
+Now let me view the MCTS evaluation functions to understand what needs improvement:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+5400|/**
+5401| * v33.0.0: PARADIGM-SHIFT TRUE MCTS - Monte Carlo Tree Search with UCB1
+5402| * FIXES: The old "MCTS" was FAKE - just running fixed evaluation phases
+5403| * NOW: Real tree expansion with UCB1 selection for exploration/exploitation
+5404| * SUPERHUMAN: 50+ move strategic web-weaving with proper backpropagation
+5405| */
+5406|function trueMCTSEvaluate(fen, candidateMove, depth = 80) {
+5407|    let totalScore = 0;
+5408|    let wins = 0;
+5409|    let visits = 0;
+5410|    let strategicWins = 0;
+5411|    let crisisAdjustment = 0;
+5412|    
+5413|    try {
+5414|        const board = parseFenToBoard(fen);
+5415|        const activeColor = fen.split(' ')[1];
+5416|        
+5417|        // v34: CRISIS MODE CHECK - Adjust evaluation based on crisis
+5418|        if (crisisModeActive) {
+5419|            const crisisScore = evaluateCrisisModeMove(fen, candidateMove, board, activeColor, lastEvaluation);
+5420|            crisisAdjustment = crisisScore;
+5421|            
+5422|            // v34: ABSOLUTE HARD BLOCK on passive moves in crisis
+5423|            if (CONFIG.crisisBlockPassiveMoves && isPassiveCrisisMove(candidateMove, fen, board, activeColor)) {
+5424|                debugLog("[MCTS_v34]", `🛑 HARD BLOCKING PASSIVE MOVE ${candidateMove} in crisis - ELIMINATED`);
+5425|                return -20000 + crisisAdjustment; // ABSOLUTE elimination of passive moves
+5426|            }
+5427|        }
+5428|        
+5429|        // v34: PIECE ACTIVITY HARD CHECK - BLOCK terrible piece placements
+5430|        const activityViolation = checkPieceActivityViolation(candidateMove, board, activeColor);
+5431|        if (activityViolation.isViolation) {
+5432|            debugLog("[MCTS_v34]", `🛑 BLOCKING ${candidateMove}: ${activityViolation.reason}`);
+5433|            return activityViolation.penalty - 5000; // Enhanced blocking
+5434|        }
+5435|        
+5436|        // v34: Pre-check for extremely bad moves (knights to rim/back rank)
+5437|        const preCheck = preCheckMoveQuality(candidateMove, board, activeColor);
+5438|        if (preCheck.isBlockedMove) {
+5439|            debugLog("[MCTS_v34]", `🛑 PRE-BLOCKING ${candidateMove}: ${preCheck.reason}`);
+5440|            return preCheck.penalty;
+5441|        }
+5442|        
+5443|        // Create root node for this candidate move
+5444|        const rootNode = {
+5445|            move: candidateMove,
+5446|            visits: 0,
+5447|            totalValue: 0,
+5448|            children: [],
+5449|            parent: null,
+5450|            ucbScore: 0,
+5451|            avgValue: 0
+5452|        };
+5453|        
+5454|        // v34: MCTS Tree for proper UCB1 selection
+5455|        const mctsTree = new Map();
+5456|        mctsTree.set(candidateMove, rootNode);
+5457|        
+5458|        // v34: Run ENHANCED MCTS simulations with TRUE UCB1 selection
+5459|        for (let sim = 0; sim < CONFIG.mctsSimulations; sim++) {
+5460|            let currentNode = rootNode;
+5461|            let simulationScore = 0;
+5462|            
+5463|            // v34: UCB1 SELECTION PHASE - Select best child using UCB1 formula
+5464|            const ucb1Score = computeUCB1Score(rootNode, sim + 1);
+5465|            
+5466|            // Phase 1: ZERO BLUNDER VERIFICATION (30% of simulations) - CRITICAL
+5467|            // This catches moves like Nh1, Ne2 that destroyed us
+5468|            if (sim < CONFIG.mctsSimulations * 0.30) {
+5469|                const tacticalResult = tacticalRolloutV33(fen, candidateMove, CONFIG.mctsDepthPerSim, board, activeColor);
+5470|                rootNode.visits++;
+5471|                
+5472|                if (!tacticalResult.noBlunders) {
+5473|                    // BLUNDER DETECTED - Heavy penalty with v34 multiplier
+5474|                    simulationScore = -tacticalResult.totalDanger * 3;
+5475|                    totalScore += simulationScore;
+5476|                    visits++;
+5477|                    debugLog("[MCTS_v34]", `🚨 Tactical danger for ${candidateMove}: ${tacticalResult.totalDanger} → score ${simulationScore}`);
+5478|                } else {
+5479|                    simulationScore = tacticalResult.score * 1.8;
+5480|                    totalScore += simulationScore;
+5481|                    visits++;
+5482|                    if (tacticalResult.score > 50) wins++;
+5483|                }
+5484|                rootNode.totalValue += simulationScore;
+5485|                continue;
+5486|            }
+5487|            
+5488|            // Phase 2: STRATEGIC WEB-WEAVING (35% of simulations)
+5489|            // v34: Extended to 70+ moves with proper evaluation
+5490|            if (sim < CONFIG.mctsSimulations * 0.65) {
+5491|                const strategicResult = deepStrategicRolloutV33(fen, candidateMove, CONFIG.mctsRolloutDepth, sim, board, activeColor);
+5492|                rootNode.visits++;
+5493|                
+5494|                simulationScore = strategicResult.score;
+5495|                
+5496|                // v34: Enhanced bonus for strategic goal achievement
+5497|                if (strategicResult.strategicGoalAchieved) {
+5498|                    simulationScore *= 1.5;
+5499|                    strategicWins++;
+5500|                }
+5501|                
+5502|                // v34: Big bonus for piece improvement trajectory
+5503|                if (strategicResult.pieceActivityImproved) {
+5504|                    simulationScore += CONFIG.pieceCoordinationBonus * 1.5;
+5505|                }
+5506|                
+5507|                totalScore += simulationScore;
+5508|                rootNode.totalValue += simulationScore;
+5509|                visits++;
+5510|                if (strategicResult.isWinning) wins++;
+5511|                continue;
+5512|            }
+5513|            
+5514|            // Phase 3: COUNTERPLAY & PROPHYLAXIS (20% of simulations)
+5515|            if (sim < CONFIG.mctsSimulations * 0.85) {
+5516|                const prophylacticResult = prophylacticRolloutV33(fen, candidateMove, CONFIG.mctsDepthPerSim, board, activeColor);
+5517|                rootNode.visits++;
+5518|                
+5519|                simulationScore = prophylacticResult.score;
+5520|                
+5521|                // v34: MASSIVE bonus for counterplay in crisis
+5522|                if (crisisModeActive && prophylacticResult.createsCounterplay) {
+5523|                    simulationScore += CONFIG.counterplayPriority * crisisLevel * 1.5;
+5524|                }
+5525|                
+5526|                totalScore += simulationScore;
+5527|                rootNode.totalValue += simulationScore;
+5528|                visits++;
+5529|                if (prophylacticResult.preventsThreat) wins++;
+5530|                continue;
+5531|            }
+5532|            
+5533|            // Phase 4: ENDGAME PERFECTION (15% of simulations)
+5534|            const endgameResult = endgameRolloutV33(fen, candidateMove, CONFIG.endgameTechniqueDepth, board, activeColor);
+5535|            rootNode.visits++;
+5536|            
+5537|            simulationScore = endgameResult.score;
+5538|            
+5539|            // v34: Enhanced endgame bonuses
+5540|            if (endgameResult.hasOpposition) simulationScore += CONFIG.endgameOppositionBonus;
+5541|            if (endgameResult.canTriangulate) simulationScore += CONFIG.endgameTriangulationBonus;
+5542|            if (endgameResult.createsZugzwang) simulationScore += CONFIG.endgameOppositionBonus * 1.2;
+5543|            
+5544|            totalScore += simulationScore;
+5545|            rootNode.totalValue += simulationScore;
+5546|            visits++;
+5547|            if (endgameResult.isWinning) wins++;
+5548|        }
+5549|        
+5550|        if (visits === 0) return crisisAdjustment;
+5551|        
+5552|        // Calculate final MCTS score with v34 UCB1 exploration bonus
+5553|        const avgScore = totalScore / visits;
+5554|        const winRate = wins / visits;
+5555|        const strategicWinRate = strategicWins / Math.max(1, visits);
+5556|        
+5557|        // v34: Proper UCB1 formula for final score
+5558|        const explorationBonus = CONFIG.mctsUCB1Constant * Math.sqrt(Math.log(visits + 1) / (rootNode.visits + 1));
+5559|        
+5560|        // v34: Weighted combination with enhanced crisis adjustment
+5561|        let mctsScore = avgScore * 0.45 + 
+5562|                        (winRate * 1000) * 0.25 + 
+5563|                        (strategicWinRate * 700) * 0.20 +
+5564|                        (explorationBonus * 50) * 0.10 +
+5565|                        crisisAdjustment;
+5566|        
+5567|        debugLog("[MCTS_v34]", `🎯 Move ${candidateMove}: visits=${visits}, wins=${wins}, stratWins=${strategicWins}, avgScore=${avgScore.toFixed(1)}, winRate=${(winRate*100).toFixed(1)}%, crisis=${crisisAdjustment.toFixed(0)}, final=${mctsScore.toFixed(1)}`);
+5568|        
+5569|        return mctsScore;
+5570|    } catch (e) {
+5571|        debugLog("[MCTS_v34]", `⚠️ Error: ${e.message}`);
+5572|        return crisisAdjustment;
+5573|    }
+5574|}
+5575|
+5576|// ═══════════════════════════════════════════════════════════════════════════════════════
+5577|// v37.0.0: TRANSCENDENT MCTS - TRUE AlphaZero-style Tree Search
+5578|// ═══════════════════════════════════════════════════════════════════════════════════════
+5579|
+5580|/**
+5581| * v37.0.0: TRANSCENDENT MCTS Evaluation - TRUE AlphaZero Architecture
+5582| * Implements proper UCB1/PUCT tree search with:
+5583| * - Selection: PUCT formula (like AlphaZero)
+5584| * - Expansion: Progressive widening
+5585| * - Simulation: Deep rollouts with strategic evaluation
+5586| * - Backpropagation: Proper value updates with decay
+5587| */
+5588|function transcendentMCTSEvaluate(fen, candidateMove, depth = 100) {
+5589|    if (!CONFIG.v37MCTSEnabled) {
+5590|        return trueMCTSEvaluate(fen, candidateMove, depth);
+5591|    }
+5592|    
+5593|    try {
+5594|        const board = parseFenToBoard(fen);
+5595|        const activeColor = fen.split(' ')[1];
+5596|        
+5597|        debugLog("[MCTS_v37]", `═══════════════════════════════════════════════════════`);
+5598|        debugLog("[MCTS_v37]", `🌟 TRANSCENDENT MCTS for ${candidateMove}`);
+5599|        debugLog("[MCTS_v37]", `═══════════════════════════════════════════════════════`);
+5600|        

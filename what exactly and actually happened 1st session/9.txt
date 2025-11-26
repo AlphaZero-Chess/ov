@@ -1,0 +1,295 @@
+Now let me see where the engine message handler is and how moves are scored:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+17209|function setupChessEngineOnMessage() {
+17210|    let engineOutput = "";
+17211|    
+17212|    chessEngine.onmessage = function (event) {
+17213|        if (event.includes("bestmove") || event.includes("multipv")) {
+17214|            debugLog("[ENGINE]", event);
+17215|        }
+17216|        
+17217|        engineOutput += event + "\n";
+17218|        
+17219|        if (event.includes("multipv")) {
+17220|            const lines = parseMultiPV(event);
+17221|            if (lines.length > 0) {
+17222|                for (let line of lines) {
+17223|                    const existingIndex = multiPVLines.findIndex(l => l.move === line.move);
+17224|                    if (existingIndex >= 0) {
+17225|                        multiPVLines[existingIndex] = line;
+17226|                    } else {
+17227|                        multiPVLines.push(line);
+17228|                    }
+17229|                }
+17230|            }
+17231|        }
+17232|        
+17233|        if (event && event.includes("bestmove")) {
+17234|            const moveParts = event.split(" ");
+17235|            bestMove = moveParts[1];
+17236|            
+17237|            // Clear calculation timeout
+17238|            if (calculationTimeout) {
+17239|                clearTimeout(calculationTimeout);
+17240|                calculationTimeout = null;
+17241|            }
+17242|            
+17243|            // Validate move format
+17244|            if (!bestMove || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(bestMove)) {
+17245|                debugLog("[ENGINE]", "❌ Invalid move from engine:", bestMove);
+17246|                calculationLock = false;
+17247|                opponentMoveConfirmed = false;
+17248|                debugLog("[LOCK]", "🔓 Calculation lock RELEASED (invalid move)");
+17249|                return;
+17250|            }
+17251|            
+17252|            let finalMove = bestMove;
+17253|            
+17254|            // ═══════════════════════════════════════════════════════════════
+17255|            // v28.0.0 CRITICAL: BACK-RANK MATE DETECTION - FIRST CHECK
+17256|            // This is the MOST IMPORTANT check - must catch Re1# patterns
+17257|            // ═══════════════════════════════════════════════════════════════
+17258|            const board = parseFenToBoard(currentFen);
+17259|            const activeColor = currentFen.split(' ')[1];
+17260|            const backRankThreat = detectBackRankMateThreat(currentFen, board, activeColor);
+17261|            
+17262|            if (backRankThreat.threatened) {
+17263|                debugLog("[SUPREME]", `🚨🚨🚨 BACK-RANK MATE THREAT DETECTED!`);
+17264|                debugLog("[SUPREME]", `   Enemy ${backRankThreat.attackerType} on ${backRankThreat.attackingPiece} threatens ${backRankThreat.mateSquare}`);
+17265|                
+17266|                // MUST find a move that addresses this threat
+17267|                const emergencyResponse = findBackRankMateDefense(currentFen, board, activeColor, backRankThreat, multiPVLines);
+17268|                if (emergencyResponse) {
+17269|                    debugLog("[SUPREME]", `🛡️ EMERGENCY: Using ${emergencyResponse} to prevent back-rank mate!`);
+17270|                    finalMove = emergencyResponse;
+17271|                } else {
+17272|                    debugLog("[SUPREME]", `⚠️ No clear defense found - using engine's top move`);
+17273|                    finalMove = multiPVLines.length > 0 ? multiPVLines[0].move : bestMove;
+17274|                }
+17275|            }
+17276|            
+17277|            // ═══════════════════════════════════════════════════════════════
+17278|            // v21.0.0 SUPREME: ABSOLUTE BLUNDER PREVENTION
+17279|            // ═══════════════════════════════════════════════════════════════
+17280|            
+17281|            // SUPREME CHECK 1: Queen under attack detection
+17282|            const queenThreat = detectQueenUnderAttack(currentFen);
+17283|            if (queenThreat.underAttack) {
+17284|                debugLog("[SUPREME]", "🚨🚨🚨 QUEEN IS UNDER ATTACK! Emergency mode activated!");
+17285|                
+17286|                // Find move that addresses Queen threat
+17287|                if (!moveAddressesQueenThreat(bestMove, queenThreat, currentFen)) {
+17288|                    const defenseMove = findBestDefensiveMove(multiPVLines, queenThreat, currentFen);
+17289|                    if (defenseMove) {
+17290|                        debugLog("[SUPREME]", `🛡️ OVERRIDING ${bestMove} → ${defenseMove} to save Queen!`);
+17291|                        finalMove = defenseMove;
+17292|                    }
+17293|                }
+17294|            }
+17295|            
+17296|            // SUPREME CHECK 2: Catastrophic blunder check (losing >700cp)
+17297|            if (isCatastrophicBlunder(finalMove, multiPVLines)) {
+17298|                debugLog("[SUPREME]", "🚨🚨🚨 CATASTROPHIC BLUNDER BLOCKED!");
+17299|                // Force best engine move
+17300|                finalMove = multiPVLines[0].move;
+17301|            }
+17302|            
+17303|            // SUPREME CHECK 3: Run full supreme safety validation
+17304|            const supremeCheck = supremeSafetyValidation(finalMove, multiPVLines, currentFen);
+17305|            if (!supremeCheck.safe) {
+17306|                debugLog("[SUPREME]", `🛡️ Supreme safety BLOCKED ${finalMove}: ${supremeCheck.reason}`);
+17307|                if (supremeCheck.suggestedMove) {
+17308|                    finalMove = supremeCheck.suggestedMove;
+17309|                    debugLog("[SUPREME]", `🛡️ Using suggested move: ${finalMove}`);
+17310|                } else {
+17311|                    finalMove = multiPVLines[0].move;
+17312|                }
+17313|            }
+17314|            
+17315|            // CRITICAL: Check if bestmove loses material without compensation
+17316|            if (multiPVLines.length > 0) {
+17317|                const topEval = multiPVLines[0].score;
+17318|                
+17319|                // If top move evaluation is very bad (losing material), investigate
+17320|                if (topEval < -80 && gamePhase === "opening") {
+17321|                    debugLog("[ENGINE]", `⚠️ WARNING: Best move eval ${topEval}cp in opening - possible blunder!`);
+17322|                    
+17323|                    // In opening, never accept moves with eval < -80 (likely hanging material)
+17324|                    if (multiPVLines.length > 1 && multiPVLines[1].score > topEval + 100) {
+17325|                        debugLog("[ENGINE]", `🛡️ SAFETY: Rejecting likely blunder, using 2nd best move`);
+17326|                        debugLog("[ENGINE]", `   Best: ${bestMove} (${topEval}cp) → Using: ${multiPVLines[1].move} (${multiPVLines[1].score}cp)`);
+17327|                        finalMove = multiPVLines[1].move;
+17328|                    }
+17329|                }
+17330|                
+17331|                // v21.0.0: SUPREME eval drop detection
+17332|                // If eval is catastrophically bad (-800 or worse), something is VERY wrong
+17333|                if (topEval < -800) {
+17334|                    debugLog("[SUPREME]", `🚨 CATASTROPHIC eval ${topEval}cp - likely losing Queen!`);
+17335|                    // Don't just play the top move - verify it addresses the problem
+17336|                    const emergencyCheck = supremeSafetyValidation(multiPVLines[0].move, multiPVLines, currentFen);
+17337|                    if (emergencyCheck.safe) {
+17338|                        finalMove = multiPVLines[0].move;
+17339|                    }
+17340|                }
+17341|            }
+17342|            
+17343|            // v22.0.0 ULTIMATE: HOLISTIC EVALUATION INTEGRATION
+17344|            // Evaluate position comprehensively to understand true quality
+17345|            const holisticEval = evaluatePositionHolistically(currentFen, moveCount);
+17346|            
+17347|            // v23.0.0: STRATEGIC WEB EVALUATION - TRUE ALPHAZERO
+17348|            // Evaluate long-term strategic value of candidate moves
+17349|            const strategicWebScores = [];
+17350|            if (multiPVLines.length > 0) {
+17351|                for (let i = 0; i < Math.min(multiPVLines.length, 5); i++) {
+17352|                    const line = multiPVLines[i];
+17353|                    const webScore = evaluateStrategicWeb(currentFen, line.move, multiPVLines);
+17354|                    strategicWebScores.push({ move: line.move, webScore: webScore });
+17355|                    
+17356|                    if (webScore > 200) {
+17357|                        debugLog("[STRATEGIC_WEB]", `✨ Move ${line.move} has exceptional strategic value: ${webScore.toFixed(0)}`);
+17358|                    }
+17359|                }
+17360|            }
+17361|            
+17362|            // Apply penalties/bonuses based on holistic understanding
+17363|            if (multiPVLines.length > 0) {
+17364|                // Adjust move preferences based on holistic factors
+17365|                for (let i = 0; i < multiPVLines.length; i++) {
+17366|                    const line = multiPVLines[i];
+17367|                    let adjustedScore = line.score;
+17368|                    
+17369|                    // v23.0.0: Add strategic web score to evaluation
+17370|                    const webData = strategicWebScores.find(s => s.move === line.move);
+17371|                    if (webData) {
+17372|                        const webBonus = webData.webScore * CONFIG.strategicWebWeight / 100;
+17373|                        adjustedScore += webBonus;
+17374|                        if (webBonus > 50) {
+17375|                            debugLog("[STRATEGIC_WEB]", `🕸️ Move ${line.move} boosted by ${webBonus.toFixed(0)}cp for strategic web`);
+17376|                        }
+17377|                    }
+17378|                    
+17379|                    // CRITICAL: King safety penalty for moves that don't address king danger
+17380|                    if (holisticEval.kingSafety < 3 && moveCount > 8) {
+17381|                        // King is in danger - prioritize safety
+17382|                        adjustedScore -= 200; // Huge penalty
+17383|                        debugLog("[HOLISTIC]", `⚠️ Move ${line.move} penalized for king danger (safety: ${holisticEval.kingSafety.toFixed(1)})`);
+17384|                    }
+17385|                    
+17386|                    // v23.0.0: ABSOLUTE PRIORITY - Castling in opening/middlegame
+17387|                    if ((line.move === 'e1g1' || line.move === 'e8g8' || line.move === 'e1c1' || line.move === 'e8c8') 
+17388|                        && moveCount <= 15 && holisticEval.kingSafety < 7) {
+17389|                        adjustedScore += 300; // MASSIVE bonus for castling
+17390|                        debugLog("[HOLISTIC]", `👑 Move ${line.move} CASTLING - adding 300cp bonus!`);
+17391|                    }
+17392|                    
+17393|                    // Bonus for moves in positions with good development
+17394|                    if (holisticEval.development > 7 && gamePhase === "opening") {
+17395|                        adjustedScore += 30; // Good development bonus
+17396|                    }
+17397|                    
+17398|                    // v23.0.0: Penalty for time-wasting moves in opening
+17399|                    if (moveCount <= 15 && (line.move.startsWith('a2a3') || line.move.startsWith('h2h3') || 
+17400|                                             line.move.startsWith('a7a6') || line.move.startsWith('h7h6'))) {
+17401|                        adjustedScore -= 150; // Huge penalty for time-wasting
+17402|                        debugLog("[HOLISTIC]", `⏰ Move ${line.move} penalized for time-wasting in opening`);
+17403|                    }
+17404|                    
+17405|                    // Bonus for moves maintaining center control
+17406|                    if (holisticEval.centerControl > 7) {
+17407|                        adjustedScore += 20;
+17408|                    }
+17409|                    
+17410|                    line.holisticAdjustedScore = adjustedScore;
+17411|                }
+17412|                
+17413|                // Re-sort by holistic-adjusted scores
+17414|                multiPVLines.sort((a, b) => b.holisticAdjustedScore - a.holisticAdjustedScore);
+17415|                
+17416|                // If king safety is critical, force the safest move
+17417|                if (holisticEval.kingSafety < 2 && moveCount > 10) {
+17418|                    debugLog("[HOLISTIC]", "🚨 CRITICAL KING SAFETY - forcing defensive move!");
+17419|                    finalMove = multiPVLines[0].move; // Use adjusted-score top move
+17420|                }
+17421|            }
+17422|            
+17423|            // Apply AlphaZero logic (only if not already overridden by safety check)
+17424|            if (finalMove === bestMove && multiPVLines.length > 1 && !queenThreat.underAttack && holisticEval.kingSafety >= 3) {
+17425|                debugLog("[ENGINE]", `🔍 MultiPV: ${multiPVLines.map(l => `${l.move}(${l.score})`).join(', ')}`);
+17426|                const alphaMove = applyAlphaZeroLogic(bestMove, multiPVLines);
+17427|                
+17428|                // v21.0.0: Validate AlphaZero move with SUPREME safety
+17429|                const alphaCheck = supremeSafetyValidation(alphaMove, multiPVLines, currentFen);
+17430|                if (alphaCheck.safe && !isCatastrophicBlunder(alphaMove, multiPVLines)) {
+17431|                    finalMove = alphaMove;
+17432|                } else {
+17433|                    debugLog("[SUPREME]", `🛡️ AlphaZero move ${alphaMove} failed safety, keeping ${finalMove}`);
+17434|                }
+17435|                
+17436|                // Validate selected move
+17437|                if (!finalMove || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(finalMove)) {
+17438|                    debugLog("[ENGINE]", "❌ Invalid move from logic, using bestMove");
+17439|                    finalMove = bestMove;
+17440|                }
+17441|            }
+17442|            
+17443|            // v21.0.0: FINAL SUPREME CHECK before sending
+17444|            const finalCheck = supremeSafetyValidation(finalMove, multiPVLines, currentFen);
+17445|            if (!finalCheck.safe && finalCheck.suggestedMove) {
+17446|                debugLog("[SUPREME]", `🛡️ FINAL CHECK failed for ${finalMove}, using ${finalCheck.suggestedMove}`);
+17447|                finalMove = finalCheck.suggestedMove;
+17448|            }
+17449|            
+17450|            // v23.0.0: PERFECT ENDGAME CONVERSION
+17451|            if (gamePhase === 'endgame' && multiPVLines.length > 0 && multiPVLines[0].score > 150) {
+17452|                const endgameMove = ensurePerfectEndgameConversion(currentFen, multiPVLines, multiPVLines[0].score);
+17453|                if (endgameMove && endgameMove !== finalMove) {
+17454|                    debugLog("[ENDGAME]", `👑 Endgame conversion: ${finalMove} → ${endgameMove}`);
+17455|                    finalMove = endgameMove;
+17456|                }
+17457|            }
+17458|            
+17459|            // v23.0.0: CHECK BLACKLIST ONE FINAL TIME
+17460|            if (isBlacklistedMove(finalMove, moveCount)) {
+17461|                debugLog("[BLACKLIST]", `🚫 FINAL CHECK: ${finalMove} is blacklisted!`);
+17462|                // Find first non-blacklisted move
+17463|                for (const line of multiPVLines) {
+17464|                    if (!isBlacklistedMove(line.move, moveCount)) {
+17465|                        finalMove = line.move;
+17466|                        debugLog("[BLACKLIST]", `   Using alternative: ${finalMove}`);
+17467|                        break;
+17468|                    }
+17469|                }
+17470|            }
+17471|            
+17472|            // Log evaluation
+17473|            if (multiPVLines.length > 0 && multiPVLines[0].score !== undefined) {
+17474|                const evalScore = (multiPVLines[0].score / 100).toFixed(2);
+17475|                debugLog("[ENGINE]", `📊 Eval: ${evalScore > 0 ? '+' : ''}${evalScore}`);
+17476|            }
+17477|            
+17478|            // Release lock and reset state
+17479|            calculationLock = false;
+17480|            calculationStartTime = 0;
+17481|            currentCalculatingColor = null;
+17482|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED (move ready)");
+17483|            
+17484|            sendMove(finalMove);
+17485|            engineOutput = "";
+17486|            multiPVLines = [];
+17487|        }
+17488|    };
+17489|}
+17490|
+17491|// ═══════════════════════════════════════════════════════════════════════
+17492|// v17.0.0: ESSENCE MODE REPORTING
+17493|// ═══════════════════════════════════════════════════════════════════════
+17494|
+17495|/**
+17496| * NEW v17.0.0: Report essence mode statistics
+17497| * Call from console: reportEssenceStats()
+17498| */
+17499|function reportTrueAlphaStats() {
+17500|    const acceptRate = trueAlphaAttempted > 0 ? 

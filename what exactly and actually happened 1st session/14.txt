@@ -1,0 +1,54 @@
+Now let me add the TRUE AlphaZero MCTS implementation. First, let me find a good place to add it:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1150|     */
+1151|    expand(moves, priors = null, isRoot = false) {
+1152|        const numMoves = moves.length;
+1153|        const uniformPrior = 1.0 / numMoves;
+1154|        
+1155|        for (let i = 0; i < numMoves; i++) {
+1156|            const move = moves[i];
+1157|            let prior = priors ? priors[i] : uniformPrior;
+1158|            
+1159|            // v38: Add Dirichlet noise at root for exploration
+1160|            if (isRoot && CONFIG.v38DirichletAlpha && CONFIG.v38DirichletEpsilon) {
+1161|                const noise = sampleDirichlet(CONFIG.v38DirichletAlpha, numMoves)[i];
+1162|                prior = (1 - CONFIG.v38DirichletEpsilon) * prior + CONFIG.v38DirichletEpsilon * noise;
+1163|            }
+1164|            
+1165|            this.children.set(move, new V38MCTSNode(move, this, prior));
+1166|        }
+1167|        this.isExpanded = true;
+1168|    }
+1169|    
+1170|    /**
+1171|     * v38: Enhanced backpropagation with decay
+1172|     */
+1173|    backpropagate(value) {
+1174|        let node = this;
+1175|        let depth = 0;
+1176|        const decay = CONFIG.v38BackpropDecay || 0.995;
+1177|        
+1178|        while (node !== null) {
+1179|            node.visits++;
+1180|            
+1181|            // Decay value as we backpropagate up the tree
+1182|            const decayedValue = value * Math.pow(decay, depth);
+1183|            node.totalValue += decayedValue;
+1184|            
+1185|            // Alternate sign for opponent's moves
+1186|            value = -value;
+1187|            node = node.parent;
+1188|            depth++;
+1189|        }
+1190|    }
+1191|    
+1192|    addVirtualLoss() {
+1193|        this.virtualLoss += CONFIG.v38VirtualLoss || 3;
+1194|    }
+1195|    
+1196|    removeVirtualLoss() {
+1197|        this.virtualLoss = Math.max(0, this.virtualLoss - (CONFIG.v38VirtualLoss || 3));
+1198|    }
+1199|    
+1200|    /**

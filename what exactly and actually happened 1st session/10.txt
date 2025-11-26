@@ -1,0 +1,113 @@
+Now I have a comprehensive understanding of the codebase. The current implementation has "fake" MCTS - the functions create nodes but don't actually build and traverse a persistent tree. Let me now implement the TRUE AlphaZero-style MCTS with all the requested enhancements.
+
+Based on the analysis, I will create a v40 implementation that:
+1. **TRUE Persistent MCTS** - Real tree that persists across moves
+2. **PUCT Selection** - Exactly like AlphaZero paper
+3. **Real Rollouts** - Deep simulations with proper evaluation
+4. **Backpropagation** - Proper value propagation through tree
+5. **Enhanced Endgame** - Opposition, triangulation, zugzwang, Philidor, Lucena
+6. **Extended Horizon** - 30+ move deep planning
+7. **Zero Blunders** - Multi-pass verification
+8. **Resilience** - Counterplay, fortress, swindles
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1|// ==UserScript==
+2|// @name         Lichess Bot - TRANSCENDENT ALPHAZERO v38
+3|// @description  TRUE AlphaZero Replica - SUPERHUMAN BEAST - Crushes Stockfish - Flawless Endgame - Perfect Positional Judgment - Zero Blunders - Alien Web-Weaving - 50+ Move Deep Planning
+4|// @author       AlphaZero Transcendent Edition v38
+5|// @version      38.0.0-TRANSCENDENT
+6|// @match         *://lichess.org/*
+7|// @run-at        document-idle
+8|// @grant         none
+9|// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/del@refs/heads/main/stockfish1.js
+10|// ==/UserScript==
+11|
+12|/**
+13| * ═══════════════════════════════════════════════════════════════════════════════════════════
+14| * v38.0.0 TRANSCENDENT ALPHAZERO — "THE SUPERHUMAN BEAST"
+15| * ═══════════════════════════════════════════════════════════════════════════════════════════
+16| * 
+17| * ██████████████████████████████████████████████████████████████████████████████████████████
+18| * █                                                                                        █
+19| * █    "A paradigm-shifter, a level that felt almost ALIEN, with moves that               █
+20| * █     prioritized DEEP UNDERSTANDING over brute-force calculation."                     █
+21| * █                                                                                        █
+22| * █    "A SUPERHUMAN BEAST that can CRUSH Stockfish, with FLAWLESS endgame play,          █
+23| * █     PERFECT positional judgment, and ZERO blunders, and an uncanny ability            █
+24| * █     to weave long-term strategic webs that humans could barely comprehend."           █
+25| * █                                                                                        █
+26| * █    v38 PARADIGM: TRUE PERSISTENT MCTS Tree Search, PUCT Selection (like AlphaZero),   █
+27| * █    50+ Move Strategic Horizon, Multi-Pass Blunder Verification, Neural Pattern        █
+28| * █    Recognition, Perfect Endgame Technique, Delayed Gratification Mastery,             █
+29| * █    Uncanny Web-Weaving, Initiative Tracking, ABSOLUTE ZERO TACTICAL OVERSIGHTS        █
+30| * █                                                                                        █
+31| * ██████████████████████████████████████████████████████████████████████████████████████████
+32| * 
+33| * ═══════════════════════════════════════════════════════════════════════════════════════════
+34| * v38 MISSION: SUPERHUMAN BEAST that CRUSHES Stockfish through:
+35| * 
+36| * 1. TRUE PERSISTENT MCTS with proper PUCT selection (AlphaZero's secret)
+37| * 2. 50+ move strategic planning with DELAYED GRATIFICATION mastery
+38| * 3. PERFECT positional judgment (material, mobility, king safety, pawn structure)
+39| * 4. FLAWLESS endgame play with opposition, triangulation, zugzwang, key squares
+40| * 5. ZERO blunders through 30+ move multi-pass tactical verification
+41| * 6. UNCANNY "web-weaving" - strategic pressure building across multiple fronts
+42| * 7. RESILIENCE - counter-play generation when behind
+43| * 8. ALIEN-TIER pattern recognition (outposts, batteries, weak squares, pawn structures)
+44| * 
+45| * v38 CRITICAL IMPROVEMENTS:
+46| * - TRUE persistent MCTS tree (reused across moves)
+47| * - PUCT selection formula (exactly like AlphaZero paper)
+48| * - Multi-pass tactical verification (3 independent checks)
+49| * - Deep strategic rollouts with position evaluation at each step
+50| * - Enhanced web-weaving detection for multi-front pressure
+51| * - Superior endgame technique with key square control
+52| * - Initiative tracking with tempo evaluation
+53| * - Predictive outcome modeling 30+ moves deep
+54| * ═══════════════════════════════════════════════════════════════════════════════════════════
+55| */
+56|
+57|'use strict';
+58|
+59|// ═══════════════════════════════════════════════════════════════════════
+60|// DEBUG MODE - Set to false after validation
+61|// ═══════════════════════════════════════════════════════════════════════
+62|const DEBUG_MODE = true;
+63|
+64|function debugLog(prefix, ...args) {
+65|    if (DEBUG_MODE) {
+66|        console.log(`${prefix}`, ...args);
+67|    }
+68|}
+69|
+70|// ═══════════════════════════════════════════════════════════════════════
+71|// EDGE TIMING FIX - Prevents setTimeout violations during deep thinking
+72|// ═══════════════════════════════════════════════════════════════════════
+73|(function() {
+74|    // Force modern high-performance timing API for Edge/modern browsers
+75|    // This prevents the Stockfish WASM module from using the slower Date.now fallback
+76|    // which causes setTimeout violations and interrupts AlphaZero's deep calculation
+77|    if (typeof window !== 'undefined') {
+78|        // Ensure performance.now() is available (it should be in all modern browsers including Edge)
+79|        if (window.performance && typeof window.performance.now === 'function') {
+80|            // Override any legacy timing detection
+81|            // This prevents Edge from being detected as a legacy browser
+82|            Object.defineProperty(window, '_forceModernTiming', {
+83|                value: true,
+84|                writable: false,
+85|                configurable: false
+86|            });
+87|            
+88|            debugLog('[TIMING]', '✅ High-performance timing enforced for deep thinking');
+89|            debugLog('[TIMING]', '✅ Edge setTimeout violations prevented');
+90|        }
+91|    }
+92|})();
+93|
+94|// ═══════════════════════════════════════════════════════════════════════
+95|// PURE ALPHAZERO CONFIGURATION
+96|// ═══════════════════════════════════════════════════════════════════════
+97|
+98|const CONFIG = {
+99|    // v36.0.0: PARADIGM-SHIFT ALPHAZERO — TRUE ALIEN SUPERINTELLIGENCE
+100|    // ═══════════════════════════════════════════════════════════════════════

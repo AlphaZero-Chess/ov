@@ -1,0 +1,184 @@
+Now let me also enhance the v40 functions that are currently stubs with real implementations. Let me look at the helper functions and make them more robust:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2800|    if (maintainsInitiative(move, board, activeColor)) {
+2801|        v40StrategicState.initiativeChain++;
+2802|        score += v40StrategicState.initiativeChain * (CONFIG.v40InitiativeChainBonus || 3500) / 5;
+2803|    } else {
+2804|        v40StrategicState.initiativeChain = 0;
+2805|    }
+2806|    
+2807|    return score;
+2808|}
+2809|
+2810|// ═══════════════════════════════════════════════════════════════════════
+2811|// v40: Helper Functions
+2812|// ═══════════════════════════════════════════════════════════════════════
+2813|
+2814|function findKing(board, color) {
+2815|    const kingChar = color === 'w' ? 'K' : 'k';
+2816|    for (const [square, piece] of board) {
+2817|        if (piece === kingChar) return square;
+2818|    }
+2819|    return null;
+2820|}
+2821|
+2822|function countTotalMaterial(board) {
+2823|    const values = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 0 };
+2824|    let total = 0;
+2825|    for (const [square, piece] of board) {
+2826|        if (piece) total += values[piece.toLowerCase()] || 0;
+2827|    }
+2828|    return total;
+2829|}
+2830|
+2831|function evaluatePawnShield(board, color, kingSquare) {
+2832|    let score = 0;
+2833|    const kingFile = kingSquare.charCodeAt(0);
+2834|    const pawnRank = color === 'w' ? '2' : '7';
+2835|    const pawnChar = color === 'w' ? 'P' : 'p';
+2836|    
+2837|    for (let f = kingFile - 1; f <= kingFile + 1; f++) {
+2838|        if (f >= 97 && f <= 104) {
+2839|            const pawnSquare = String.fromCharCode(f) + pawnRank;
+2840|            if (board.get(pawnSquare) === pawnChar) {
+2841|                score += 30;
+2842|            }
+2843|        }
+2844|    }
+2845|    
+2846|    return score;
+2847|}
+2848|
+2849|function evaluateGoalAlignment(move, plan) {
+2850|    // Simplified alignment check
+2851|    return 0.5;
+2852|}
+2853|
+2854|function evaluatePositionalSqueeze(board, color) {
+2855|    // Simplified squeeze evaluation
+2856|    return 0;
+2857|}
+2858|
+2859|function isQuietStrengtheningMove(move, board, color) {
+2860|    const capturedPiece = board.get(move.substring(2, 4));
+2861|    return !capturedPiece && !move.includes('+');
+2862|}
+2863|
+2864|function isPatientManeuver(move, board, color) {
+2865|    return isQuietStrengtheningMove(move, board, color);
+2866|}
+2867|
+2868|function isOutflankingMove(from, to, enemyKing) {
+2869|    // Simplified outflanking detection
+2870|    return false;
+2871|}
+2872|
+2873|function isPhilidorPosition(board, color) {
+2874|    // Simplified Philidor detection
+2875|    return false;
+2876|}
+2877|
+2878|function isLucenaPosition(board, color) {
+2879|    // Simplified Lucena detection
+2880|    return false;
+2881|}
+2882|
+2883|function isTriangulationMove(move, board, color) {
+2884|    // Simplified triangulation detection
+2885|    return false;
+2886|}
+2887|
+2888|function createsZugzwang(move, board, color) {
+2889|    // Simplified zugzwang detection
+2890|    return false;
+2891|}
+2892|
+2893|function detectMultiFrontPressure(board, color) {
+2894|    return { active: false, fronts: 0 };
+2895|}
+2896|
+2897|function evaluatePressureBuildup(move, board, color) {
+2898|    return 0;
+2899|}
+2900|
+2901|function detectCoordinatedThreats(board, color) {
+2902|    return 0;
+2903|}
+2904|
+2905|function evaluateDomination(board, color) {
+2906|    return 0;
+2907|}
+2908|
+2909|function isOutpostSquare(square, board, color) {
+2910|    // Central squares with no enemy pawn attacks
+2911|    const centralSquares = ['c4', 'c5', 'd4', 'd5', 'e4', 'e5', 'f4', 'f5'];
+2912|    return centralSquares.includes(square);
+2913|}
+2914|
+2915|function createsBattery(move, board, color) {
+2916|    return false;
+2917|}
+2918|
+2919|function isOpenFile(file, board) {
+2920|    for (let rank = 1; rank <= 8; rank++) {
+2921|        const piece = board.get(file + rank);
+2922|        if (piece && piece.toLowerCase() === 'p') return false;
+2923|    }
+2924|    return true;
+2925|}
+2926|
+2927|function isLongDiagonal(square) {
+2928|    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+2929|    const rank = parseInt(square[1]) - 1;
+2930|    return (file === rank) || (file + rank === 7);
+2931|}
+2932|
+2933|function isLongTermInvestment(move, board, color) {
+2934|    return false;
+2935|}
+2936|
+2937|function generatesCounterplay(move, board, color) {
+2938|    return isForcingMoveV40(move, board, color);
+2939|}
+2940|
+2941|function isActiveDefense(move, board, color) {
+2942|    return isForcingMoveV40(move, board, color);
+2943|}
+2944|
+2945|function buildsFortress(move, board, color) {
+2946|    return false;
+2947|}
+2948|
+2949|function createsComplications(move, board, color) {
+2950|    return false;
+2951|}
+2952|
+2953|function isForcingMoveV40(move, board, color) {
+2954|    // Captures or checks
+2955|    const target = board.get(move.substring(2, 4));
+2956|    return !!target || move.includes('+');
+2957|}
+2958|
+2959|function gainsTempo(move, board, color) {
+2960|    return isForcingMoveV40(move, board, color);
+2961|}
+2962|
+2963|function isDevelopmentMoveV40(move, board, color) {
+2964|    const from = move.substring(0, 2);
+2965|    const backRank = color === 'w' ? '1' : '8';
+2966|    return from[1] === backRank;
+2967|}
+2968|
+2969|function maintainsInitiative(move, board, color) {
+2970|    return isForcingMoveV40(move, board, color);
+2971|}
+2972|
+2973|/**
+2974| * v38.0.0: SUPERHUMAN BEAST MCTS — True AlphaZero Architecture
+2975| * 
+2976| * Implements:
+2977| * - Persistent tree search (reuse across moves)
+2978| * - PUCT selection (exactly like AlphaZero paper)
+2979| * - Dirichlet noise at root for exploration
+2980| * - Multi-pass tactical verification

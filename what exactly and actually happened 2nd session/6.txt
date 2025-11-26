@@ -1,0 +1,4 @@
+Now I understand the current structure. The v40 implementation exists but it's not being used in the main evaluation flow. I need to integrate the v40 evaluation into the `computeCombinedScore` function or create a new integration point. Let me view that function:
+Action: $ grep -n "function computeCombinedScore" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 17089:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+Exit code: 0
