@@ -2846,76 +2846,478 @@ function evaluatePawnShield(board, color, kingSquare) {
     return score;
 }
 
+/**
+ * v40: Evaluate goal alignment with strategic plan
+ * True AlphaZero evaluates moves based on how well they fit the plan
+ */
 function evaluateGoalAlignment(move, plan) {
-    // Simplified alignment check
-    return 0.5;
+    if (!plan || !plan.type) return 0.5;
+    
+    let alignment = 0.5;
+    const toSquare = move.substring(2, 4);
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    
+    // Check alignment with plan type
+    switch (plan.type) {
+        case 'kingside_attack':
+            if (toFile >= 5) alignment += 0.2;  // Moves toward kingside
+            break;
+        case 'queenside_attack':
+            if (toFile <= 2) alignment += 0.2;  // Moves toward queenside
+            break;
+        case 'central_control':
+            if (toFile >= 2 && toFile <= 5) alignment += 0.15;
+            break;
+        case 'pawn_storm':
+            if (move[0] === toSquare[0]) alignment += 0.1; // Same piece moving
+            break;
+        case 'piece_coordination':
+            alignment += 0.1;  // Any piece activity is good
+            break;
+    }
+    
+    return Math.min(1.0, Math.max(0, alignment));
 }
 
+/**
+ * v40: Evaluate positional squeeze - how much space we control vs opponent
+ * AlphaZero excels at slowly squeezing positions
+ */
 function evaluatePositionalSqueeze(board, color) {
-    // Simplified squeeze evaluation
-    return 0;
+    let ourSquares = 0;
+    let enemySquares = 0;
+    
+    // Count pieces in advanced positions
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        
+        const isOurs = (piece === piece.toUpperCase()) === (color === 'w');
+        const rank = parseInt(square[1]);
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        
+        // Advanced territory bonus
+        const advancedBonus = color === 'w' ? 
+            (rank >= 5 ? rank - 4 : 0) : 
+            (rank <= 4 ? 5 - rank : 0);
+        
+        // Central bonus
+        const centralBonus = (file >= 2 && file <= 5) ? 1 : 0;
+        
+        if (isOurs) ourSquares += advancedBonus + centralBonus;
+        else enemySquares += advancedBonus + centralBonus;
+    }
+    
+    return (ourSquares - enemySquares) * 5;  // Scale to ~centipawns
 }
 
+/**
+ * v40: Quiet strengthening moves (not captures, not checks)
+ * AlphaZero often plays "quiet" moves that improve position
+ */
 function isQuietStrengtheningMove(move, board, color) {
     const capturedPiece = board.get(move.substring(2, 4));
-    return !capturedPiece && !move.includes('+');
+    if (capturedPiece) return false;  // Not quiet - it's a capture
+    if (move.includes('+')) return false;  // Not quiet - it's a check
+    
+    // Additional checks for quiet strengthening
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(fromSquare);
+    
+    if (!piece) return false;
+    
+    const pieceType = piece.toLowerCase();
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    // Centralizing moves are strengthening
+    const centrality = 4 - Math.abs(toFile - 3.5) - Math.abs(toRank - 3.5);
+    if (centrality > 1) return true;
+    
+    // Piece improvement (rooks to open files, etc.)
+    if (pieceType === 'r' && (toFile === 3 || toFile === 4)) return true;
+    if (pieceType === 'n' && centrality > 0) return true;
+    
+    return true;  // Default quiet moves
 }
 
+/**
+ * v40: Patient maneuvering (slow improvement without forcing)
+ */
 function isPatientManeuver(move, board, color) {
-    return isQuietStrengtheningMove(move, board, color);
+    if (!isQuietStrengtheningMove(move, board, color)) return false;
+    
+    // Patient maneuvers avoid immediate tactical chaos
+    const toSquare = move.substring(2, 4);
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    // Avoid extreme edges (those are usually forcing/tactical)
+    if (toRank === 0 || toRank === 7) return false;
+    if (toFile === 0 || toFile === 7) return false;
+    
+    return true;
 }
 
+/**
+ * v40: King outflanking in endgames
+ * Critical endgame technique - going around enemy king
+ */
 function isOutflankingMove(from, to, enemyKing) {
-    // Simplified outflanking detection
-    return false;
+    if (!enemyKing) return false;
+    
+    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(from[1]) - 1;
+    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(to[1]) - 1;
+    const enemyFile = enemyKing.charCodeAt(0) - 'a'.charCodeAt(0);
+    const enemyRank = parseInt(enemyKing[1]) - 1;
+    
+    // Moving horizontally around enemy king
+    const isHorizontalOutflank = Math.abs(toFile - enemyFile) > Math.abs(fromFile - enemyFile) &&
+                                  Math.abs(toRank - enemyRank) <= 2;
+    
+    // Moving to gain opposition
+    const gainsOpposition = (Math.abs(toFile - enemyFile) === 0 && Math.abs(toRank - enemyRank) === 2) ||
+                            (Math.abs(toRank - enemyRank) === 0 && Math.abs(toFile - enemyFile) === 2);
+    
+    return isHorizontalOutflank || gainsOpposition;
 }
 
+/**
+ * v40: Philidor position detection in rook endgames
+ * Defensive setup with rook on 6th rank
+ */
 function isPhilidorPosition(board, color) {
-    // Simplified Philidor detection
-    return false;
+    let hasRook = false;
+    let hasPawn = false;
+    let kingPos = null;
+    
+    const ourRook = color === 'w' ? 'R' : 'r';
+    const ourKing = color === 'w' ? 'K' : 'k';
+    const enemyPawn = color === 'w' ? 'p' : 'P';
+    const defendingRank = color === 'w' ? '6' : '3';
+    
+    for (const [square, piece] of board) {
+        if (piece === ourRook && square[1] === defendingRank) hasRook = true;
+        if (piece === ourKing) kingPos = square;
+        if (piece === enemyPawn) hasPawn = true;
+    }
+    
+    // Philidor: Our rook on 6th rank, defending against enemy passed pawn
+    return hasRook && hasPawn && kingPos;
 }
 
+/**
+ * v40: Lucena position detection (winning rook endgame)
+ * Pawn on 7th rank with king cut off
+ */
 function isLucenaPosition(board, color) {
-    // Simplified Lucena detection
-    return false;
+    const ourPawn = color === 'w' ? 'P' : 'p';
+    const ourRook = color === 'w' ? 'R' : 'r';
+    const ourKing = color === 'w' ? 'K' : 'k';
+    const promotionRank = color === 'w' ? '7' : '2';
+    
+    let pawnOn7th = false;
+    let hasRook = false;
+    let kingNearPawn = false;
+    
+    let pawnSquare = null;
+    let kingSquare = null;
+    
+    for (const [square, piece] of board) {
+        if (piece === ourPawn && square[1] === promotionRank) {
+            pawnOn7th = true;
+            pawnSquare = square;
+        }
+        if (piece === ourRook) hasRook = true;
+        if (piece === ourKing) kingSquare = square;
+    }
+    
+    // Check if king is near pawn
+    if (pawnSquare && kingSquare) {
+        const fileDiff = Math.abs(pawnSquare.charCodeAt(0) - kingSquare.charCodeAt(0));
+        const rankDiff = Math.abs(parseInt(pawnSquare[1]) - parseInt(kingSquare[1]));
+        kingNearPawn = fileDiff <= 1 && rankDiff <= 2;
+    }
+    
+    return pawnOn7th && hasRook && kingNearPawn;
 }
 
+/**
+ * v40: Triangulation move detection
+ * King moves in triangle to gain tempo
+ */
 function isTriangulationMove(move, board, color) {
-    // Simplified triangulation detection
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(fromSquare);
+    
+    if (!piece || piece.toLowerCase() !== 'k') return false;
+    
+    // Track last few king moves for triangulation pattern
+    if (!v40StrategicState.kingMoveHistory) {
+        v40StrategicState.kingMoveHistory = [];
+    }
+    
+    v40StrategicState.kingMoveHistory.push({ from: fromSquare, to: toSquare });
+    
+    // Keep only last 3 moves
+    if (v40StrategicState.kingMoveHistory.length > 3) {
+        v40StrategicState.kingMoveHistory.shift();
+    }
+    
+    // Check for triangulation (3 king moves forming a triangle)
+    if (v40StrategicState.kingMoveHistory.length === 3) {
+        const moves = v40StrategicState.kingMoveHistory;
+        const squares = new Set([moves[0].from, moves[0].to, moves[1].to, moves[2].to]);
+        // If we visited 3 unique squares and returned close to start
+        if (squares.size === 3) return true;
+    }
+    
     return false;
 }
 
+/**
+ * v40: Zugzwang creation detection
+ * Position where any move worsens position
+ */
 function createsZugzwang(move, board, color) {
-    // Simplified zugzwang detection
+    // Simplified zugzwang detection: if enemy only has king and we're restricting it
+    const enemyColor = color === 'w' ? 'b' : 'w';
+    let enemyPieceCount = 0;
+    let enemyKingSquare = null;
+    const enemyKing = enemyColor === 'w' ? 'K' : 'k';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+        if (isEnemy) {
+            enemyPieceCount++;
+            if (piece === enemyKing) enemyKingSquare = square;
+        }
+    }
+    
+    // Simple zugzwang: enemy only has king or king+pawn
+    if (enemyPieceCount <= 2 && enemyKingSquare) {
+        const ourKingSquare = findKing(board, color);
+        if (ourKingSquare) {
+            // If we're gaining opposition, potential zugzwang
+            const fileDiff = Math.abs(ourKingSquare.charCodeAt(0) - enemyKingSquare.charCodeAt(0));
+            const rankDiff = Math.abs(parseInt(ourKingSquare[1]) - parseInt(enemyKingSquare[1]));
+            return (fileDiff === 0 && rankDiff === 2) || (rankDiff === 0 && fileDiff === 2);
+        }
+    }
+    
     return false;
 }
 
+/**
+ * v40: Multi-front pressure detection
+ * AlphaZero excels at creating threats on multiple fronts
+ */
 function detectMultiFrontPressure(board, color) {
-    return { active: false, fronts: 0 };
+    let queensidePressure = 0;
+    let kingsidePressure = 0;
+    let centralPressure = 0;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isOurs = (piece === piece.toUpperCase()) === (color === 'w');
+        if (!isOurs) continue;
+        
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square[1]) - 1;
+        const advancedRank = color === 'w' ? rank >= 4 : rank <= 3;
+        
+        if (advancedRank && piece.toLowerCase() !== 'k') {
+            if (file <= 2) queensidePressure++;
+            else if (file >= 5) kingsidePressure++;
+            else centralPressure++;
+        }
+    }
+    
+    const fronts = (queensidePressure > 0 ? 1 : 0) + 
+                   (kingsidePressure > 0 ? 1 : 0) + 
+                   (centralPressure > 0 ? 1 : 0);
+    
+    return { 
+        active: fronts >= 2, 
+        fronts: fronts,
+        queenside: queensidePressure,
+        kingside: kingsidePressure,
+        central: centralPressure
+    };
 }
 
+/**
+ * v40: Pressure buildup evaluation
+ */
 function evaluatePressureBuildup(move, board, color) {
-    return 0;
+    const toSquare = move.substring(2, 4);
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    let score = 0;
+    
+    // Advancing toward enemy territory
+    const advance = color === 'w' ? (toRank - 3) : (4 - toRank);
+    if (advance > 0) score += advance * 20;
+    
+    // Moving toward enemy king
+    const enemyKing = findKing(board, color === 'w' ? 'b' : 'w');
+    if (enemyKing) {
+        const enemyFile = enemyKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const dist = Math.abs(toFile - enemyFile);
+        score += (7 - dist) * 15;  // Closer to enemy king = more pressure
+    }
+    
+    return score;
 }
 
+/**
+ * v40: Coordinated threats detection
+ */
 function detectCoordinatedThreats(board, color) {
-    return 0;
+    let coordinatedThreats = 0;
+    const ourPieces = [];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isOurs = (piece === piece.toUpperCase()) === (color === 'w');
+        if (isOurs && piece.toLowerCase() !== 'p' && piece.toLowerCase() !== 'k') {
+            ourPieces.push({ square, piece: piece.toLowerCase() });
+        }
+    }
+    
+    // Check for pieces attacking same area
+    for (let i = 0; i < ourPieces.length; i++) {
+        for (let j = i + 1; j < ourPieces.length; j++) {
+            const p1 = ourPieces[i];
+            const p2 = ourPieces[j];
+            
+            // Same file/rank/diagonal = potential coordination
+            if (p1.square[0] === p2.square[0] || 
+                p1.square[1] === p2.square[1] ||
+                Math.abs(p1.square.charCodeAt(0) - p2.square.charCodeAt(0)) === 
+                Math.abs(parseInt(p1.square[1]) - parseInt(p2.square[1]))) {
+                coordinatedThreats++;
+            }
+        }
+    }
+    
+    return coordinatedThreats;
 }
 
+/**
+ * v40: Position domination evaluation
+ */
 function evaluateDomination(board, color) {
-    return 0;
+    let score = 0;
+    const enemyKing = findKing(board, color === 'w' ? 'b' : 'w');
+    
+    if (!enemyKing) return 0;
+    
+    const enemyFile = enemyKing.charCodeAt(0) - 'a'.charCodeAt(0);
+    const enemyRank = parseInt(enemyKing[1]) - 1;
+    
+    // Check how "trapped" enemy king is
+    let enemyKingMobility = 0;
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            if (df === 0 && dr === 0) continue;
+            const newFile = enemyFile + df;
+            const newRank = enemyRank + dr;
+            if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+                const sq = String.fromCharCode(97 + newFile) + (newRank + 1);
+                const piece = board.get(sq);
+                if (!piece) enemyKingMobility++;
+            }
+        }
+    }
+    
+    // Less enemy king mobility = more domination
+    score = (8 - enemyKingMobility) * 15;
+    
+    return score;
 }
 
+/**
+ * v40: Outpost square detection (protected, can't be attacked by pawns)
+ */
 function isOutpostSquare(square, board, color) {
-    // Central squares with no enemy pawn attacks
-    const centralSquares = ['c4', 'c5', 'd4', 'd5', 'e4', 'e5', 'f4', 'f5'];
-    return centralSquares.includes(square);
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    
+    // Must be in opponent's half
+    const inEnemyTerritory = color === 'w' ? rank >= 4 : rank <= 3;
+    if (!inEnemyTerritory) return false;
+    
+    // Check if can be attacked by enemy pawns
+    const enemyPawn = color === 'w' ? 'p' : 'P';
+    const pawnAttackRanks = color === 'w' ? [rank + 1] : [rank - 1];
+    const pawnAttackFiles = [file - 1, file + 1];
+    
+    for (const r of pawnAttackRanks) {
+        for (const f of pawnAttackFiles) {
+            if (f >= 0 && f <= 7 && r >= 0 && r <= 7) {
+                const sq = String.fromCharCode(97 + f) + (r + 1);
+                // Check all ranks ahead for enemy pawns
+                for (let checkRank = r; checkRank >= 0 && checkRank <= 7; color === 'w' ? checkRank++ : checkRank--) {
+                    const checkSq = String.fromCharCode(97 + f) + (checkRank + 1);
+                    if (board.get(checkSq) === enemyPawn) return false;
+                }
+            }
+        }
+    }
+    
+    return true;
 }
 
+/**
+ * v40: Battery creation detection (Queen+Rook or Queen+Bishop)
+ */
 function createsBattery(move, board, color) {
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(move.substring(0, 2));
+    
+    if (!piece) return false;
+    
+    const pieceType = piece.toLowerCase();
+    const ourQueen = color === 'w' ? 'Q' : 'q';
+    const ourRook = color === 'w' ? 'R' : 'r';
+    const ourBishop = color === 'w' ? 'B' : 'b';
+    
+    // Find our queen
+    let queenSquare = null;
+    for (const [sq, p] of board) {
+        if (p === ourQueen) queenSquare = sq;
+    }
+    
+    if (!queenSquare) return false;
+    
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    const qFile = queenSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const qRank = parseInt(queenSquare[1]) - 1;
+    
+    // Rook battery on same file/rank
+    if (pieceType === 'r' && (toFile === qFile || toRank === qRank)) {
+        return true;
+    }
+    
+    // Bishop battery on same diagonal
+    if (pieceType === 'b' && 
+        Math.abs(toFile - qFile) === Math.abs(toRank - qRank)) {
+        return true;
+    }
+    
     return false;
 }
 
+/**
+ * v40: Check if file is open (no pawns)
+ */
 function isOpenFile(file, board) {
     for (let rank = 1; rank <= 8; rank++) {
         const piece = board.get(file + rank);
@@ -2924,50 +3326,178 @@ function isOpenFile(file, board) {
     return true;
 }
 
+/**
+ * v40: Long diagonal detection (a1-h8 or h1-a8)
+ */
 function isLongDiagonal(square) {
     const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
     const rank = parseInt(square[1]) - 1;
     return (file === rank) || (file + rank === 7);
 }
 
+/**
+ * v40: Long-term investment move detection
+ */
 function isLongTermInvestment(move, board, color) {
+    const piece = board.get(move.substring(0, 2));
+    if (!piece) return false;
+    
+    const pieceType = piece.toLowerCase();
+    const toSquare = move.substring(2, 4);
+    const capturedPiece = board.get(toSquare);
+    
+    // Not an investment if it's a capture
+    if (capturedPiece) return false;
+    
+    // Rook lift (placing rook on 3rd/6th rank for future attack)
+    if (pieceType === 'r') {
+        const toRank = parseInt(toSquare[1]);
+        if ((color === 'w' && toRank === 3) || (color === 'b' && toRank === 6)) {
+            return true;  // Rook lift
+        }
+    }
+    
+    // Pawn advance that creates passed pawn potential
+    if (pieceType === 'p') {
+        const toRank = parseInt(toSquare[1]);
+        if ((color === 'w' && toRank >= 5) || (color === 'b' && toRank <= 4)) {
+            return true;  // Advanced pawn is long-term investment
+        }
+    }
+    
     return false;
 }
 
+/**
+ * v40: Counterplay generation check
+ */
 function generatesCounterplay(move, board, color) {
-    return isForcingMoveV40(move, board, color);
+    if (isForcingMoveV40(move, board, color)) return true;
+    
+    // Check if move creates threats even if not forcing
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(move.substring(0, 2));
+    
+    if (!piece) return false;
+    
+    // Moving toward enemy king = counterplay
+    const enemyKing = findKing(board, color === 'w' ? 'b' : 'w');
+    if (enemyKing) {
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const enemyFile = enemyKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        if (Math.abs(toFile - enemyFile) <= 2) return true;
+    }
+    
+    return false;
 }
 
+/**
+ * v40: Active defense check (defensive but still creating threats)
+ */
 function isActiveDefense(move, board, color) {
-    return isForcingMoveV40(move, board, color);
+    return isForcingMoveV40(move, board, color) || generatesCounterplay(move, board, color);
 }
 
+/**
+ * v40: Fortress building check
+ */
 function buildsFortress(move, board, color) {
+    const piece = board.get(move.substring(0, 2));
+    if (!piece) return false;
+    
+    const pieceType = piece.toLowerCase();
+    const toSquare = move.substring(2, 4);
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    
+    // King moving to corner (potential fortress)
+    if (pieceType === 'k') {
+        if (toFile === 0 || toFile === 7) return true;
+    }
+    
+    // Rook on back rank (defensive fortress)
+    if (pieceType === 'r') {
+        const backRank = color === 'w' ? '1' : '8';
+        if (toSquare[1] === backRank) return true;
+    }
+    
     return false;
 }
 
+/**
+ * v40: Creates complications check (makes position complex)
+ */
 function createsComplications(move, board, color) {
+    const piece = board.get(move.substring(0, 2));
+    const capturedPiece = board.get(move.substring(2, 4));
+    
+    // Captures create complications
+    if (capturedPiece) return true;
+    
+    // Queen moves create complications
+    if (piece && piece.toLowerCase() === 'q') return true;
+    
     return false;
 }
 
+/**
+ * v40: Check if move is forcing (capture, check, or major threat)
+ */
 function isForcingMoveV40(move, board, color) {
-    // Captures or checks
     const target = board.get(move.substring(2, 4));
     return !!target || move.includes('+');
 }
 
+/**
+ * v40: Check if move gains tempo
+ */
 function gainsTempo(move, board, color) {
     return isForcingMoveV40(move, board, color);
 }
 
+/**
+ * v40: Check if move develops a piece
+ */
 function isDevelopmentMoveV40(move, board, color) {
     const from = move.substring(0, 2);
+    const piece = board.get(from);
+    
+    if (!piece) return false;
+    
+    const pieceType = piece.toLowerCase();
     const backRank = color === 'w' ? '1' : '8';
-    return from[1] === backRank;
+    
+    // Knights and bishops leaving back rank
+    if ((pieceType === 'n' || pieceType === 'b') && from[1] === backRank) {
+        return true;
+    }
+    
+    // Castling is development
+    if (move === 'e1g1' || move === 'e1c1' || move === 'e8g8' || move === 'e8c8') {
+        return true;
+    }
+    
+    return false;
 }
 
+/**
+ * v40: Check if move maintains initiative
+ */
 function maintainsInitiative(move, board, color) {
-    return isForcingMoveV40(move, board, color);
+    if (isForcingMoveV40(move, board, color)) return true;
+    
+    // Developing moves maintain initiative in opening
+    if (isDevelopmentMoveV40(move, board, color)) return true;
+    
+    // Advancing pawns maintains initiative
+    const piece = board.get(move.substring(0, 2));
+    if (piece && piece.toLowerCase() === 'p') {
+        const fromRank = parseInt(move.substring(0, 2)[1]);
+        const toRank = parseInt(move.substring(2, 4)[1]);
+        const isAdvance = color === 'w' ? toRank > fromRank : toRank < fromRank;
+        if (isAdvance) return true;
+    }
+    
+    return false;
 }
 
 /**
@@ -17101,14 +17631,34 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
         // Higher probability = positive bonus, lower = negative
         const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
         
-        // TRUE ALPHAZERO weighted merge
+        // ═══════════════════════════════════════════════════════════════════
+        // v40.0.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION
+        // Add v40's deep positional/strategic/tactical evaluation
+        // ═══════════════════════════════════════════════════════════════════
+        let v40Bonus = 0;
+        if (CONFIG.v40Enabled && fen) {
+            try {
+                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+                // Scale v40 score contribution (weighted at 15% influence)
+                v40Bonus = v40Score * 0.15;
+                
+                debugLog("[V40_INTEGRATE]", `Move ${move}: v40Score=${v40Score.toFixed(1)} → bonus=${v40Bonus.toFixed(1)}cp`);
+            } catch (e) {
+                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+                v40Bonus = 0;
+            }
+        }
+        
+        // TRUE ALPHAZERO weighted merge WITH v40 superhuman bonus
         const combinedScore = (
             TRUE_ALPHAZERO.qWeight * engine_Q +
             TRUE_ALPHAZERO.rolloutWeight * rollout_Q +
-            normalizedPolicyPrior // Policy as bonus, not multiplied by weight
+            normalizedPolicyPrior + // Policy as bonus, not multiplied by weight
+            v40Bonus                // v40 superhuman beast contribution
         );
         
-        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)} → combined=${combinedScore.toFixed(1)}cp`);
+        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
         
         return combinedScore;
     } catch (e) {
