@@ -1,0 +1,37 @@
+Now let me check the current v40 implementation status and see what functions exist:
+Action: $ grep -n "function v40\|class V40\|v40Enabled\|v40SuperhumanBeast\|v40TrueAlphaZero" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -40
+Observation: 793:    v40Enabled: true,
+1373:class V40MCTSNode {
+1655:function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+1656:    if (!CONFIG.v40Enabled) {
+1745:function v40InitializeOrReuseTree(fen, legalMoves) {
+1784:function v40CreateNewTree(fen, legalMoves) {
+1809:function v40ValueNetworkEmulation(fen, move, board, activeColor, moveNumber) {
+1872:function v40EvaluateMaterial(board, activeColor) {
+1890:function v40EvaluateMobility(board, activeColor) {
+1924:function v40EvaluateKingSafety(board, activeColor, moveNumber) {
+1958:function v40EvaluatePawnStructure(board, activeColor) {
+2026:function v40EvaluateSpaceControl(board, activeColor) {
+2053:function v40EvaluateInitiative(board, activeColor, moveNumber) {
+2084:function v40EvaluatePieceCoordination(board, activeColor) {
+2125:function v40EvaluateCenterControl(board, activeColor) {
+2152:function v40EvaluateMoveQuality(fen, move, board, activeColor, moveNumber) {
+2217:function v40EvaluateEndgame(board, activeColor) {
+2281:function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+2282:    if (!CONFIG.v40Enabled) {
+2402:function v40MultiPassBlunderCheck(fen, move, board, activeColor) {
+2466:function v40CheckHangingPieces(fen, move, board, activeColor) {
+2475:function v40CheckForForks(fen, move, board, activeColor) {
+2484:function v40CheckPinsSkewers(fen, move, board, activeColor) {
+2493:function v40CheckBackRankMate(fen, move, board, activeColor) {
+2502:function v40ImmediateMoveRejection(move, board, activeColor, moveNumber) {
+2559:function v40DeepStrategicEvaluation(fen, move, board, activeColor, moveNumber) {
+2588:function v40FlawlessEndgameEvaluation(fen, move, board, activeColor) {
+2657:function v40WebWeavingEvaluation(fen, move, board, activeColor) {
+2684:function v40PatternRecognition(fen, move, board, activeColor) {
+2725:function v40DelayedGratificationEval(fen, move, board, activeColor, moveNumber) {
+2749:function v40ResilienceEvaluation(fen, move, board, activeColor) {
+2781:function v40InitiativeEvaluation(fen, move, board, activeColor, moveNumber) {
+17639:        if (CONFIG.v40Enabled && fen) {
+17642:                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+Exit code: 0
