@@ -1,0 +1,44 @@
+Now I understand the structure well. I need to implement a TRUE persistent MCTS with proper tree search. Let me add the v40 configuration and implementation after the v39 section. First, let me find where the CONFIG ends and where I should add the v40 MCTS implementation:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1125|// v39: Global persistent MCTS tree with ENHANCED tracking
+1126|let v38MCTSRoot = null;
+1127|let v38LastPosition = null;
+1128|let v38StrategicPlan = {
+1129|    threads: [],           // Active strategic threads
+1130|    pressure: {},          // Pressure on different areas (queenside, kingside, center)
+1131|    goals: [],             // Current strategic goals (50+ move horizon)
+1132|    trajectory: [],        // Position trajectory tracking
+1133|    initiativeChain: 0,    // Consecutive initiative moves
+1134|    pawnStructureGoal: null, // Target pawn structure (minority attack, pawn storm, etc.)
+1135|    pieceCoordinationPlan: [], // Pieces that need to coordinate
+1136|    weaknessesToExploit: [],   // Target weaknesses in opponent position
+1137|    prophylacticNeeds: [],     // Opponent threats to neutralize
+1138|    longTermSqueezeTargets: [], // Squares/areas to slowly dominate
+1139|    webWeavingPhase: 0,         // Current phase of web-weaving (0-5)
+1140|    delayedGratificationMoves: [], // Moves that will pay off in 30+ moves
+1141|    endgameTransitionPlan: null,   // Plan for transition to endgame
+1142|    spaceAdvantageDirection: null, // Direction of space expansion
+1143|    keySquaresToControl: [],       // Critical squares in current position
+1144|    tempoBalance: 0,               // Running tempo balance
+1145|    sacrificeQueuedForFuture: null, // Positional sacrifice being prepared
+1146|};
+1147|
+1148|// v39: Enhanced win probability and outcome prediction
+1149|let v38WinProbHistory = [];
+1150|let v39PositionEvalHistory = [];  // Track position eval over time
+1151|let v39OutcomeSimulations = [];   // Predicted outcomes from simulations
+1152|let v39MoveQualityScores = new Map(); // Quality assessment per move
+1153|
+1154|/**
+1155| * v38.0.0: SUPERHUMAN BEAST MCTS — True AlphaZero Architecture
+1156| * 
+1157| * Implements:
+1158| * - Persistent tree search (reuse across moves)
+1159| * - PUCT selection (exactly like AlphaZero paper)
+1160| * - Dirichlet noise at root for exploration
+1161| * - Multi-pass tactical verification
+1162| * - Deep strategic evaluation
+1163| */
+1164|function v38SuperhumanMCTSEvaluate(fen, candidateMove, depth = 100) {
+1165|    if (!CONFIG.v38Enabled) {

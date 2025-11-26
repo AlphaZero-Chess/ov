@@ -1,0 +1,51 @@
+
+Action: $ grep -n "calculateMove\|v38SuperhumanMCTSEvaluate\|v38MCTSRoot\|globalMCTSRoot\|mctsRollout\|mctsSimulation\|mcts" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -80
+Observation: 266:    mctsSimulations: 1000,          // v36: MASSIVE Monte Carlo simulations (500→1000)
+267:    mctsDepthPerSim: 150,           // v36: TRANSCENDENT DEPTH per simulation (100→150)
+268:    mctsStrategicWeight: 250.0,     // v36: MCTS evaluation weight (150→250)
+269:    mctsUCB1Constant: 1.41421356,   // UCB1 exploration constant (exact sqrt(2))
+270:    mctsExpansionThreshold: 1,      // v36: Visits before expansion (2→1)
+271:    mctsTreeDepth: 120,             // v36: Maximum tree depth (80→120)
+272:    mctsRolloutDepth: 180,          // v36: Rollout simulation depth (120→180)
+273:    mctsStrategicRollouts: 200,     // v36: Strategic rollouts per move (120→200)
+274:    mctsPruningThreshold: -200,     // v36: Prune moves below this eval (-300→-200)
+277:    mctsTreeEnabled: true,          // v36: NEW - Enable TRUE tree search
+278:    mctsBackpropagation: true,      // v36: NEW - Proper value backpropagation
+279:    mctsExplorationDecay: 0.95,     // v36: NEW - Exploration decay factor
+280:    mctsVirtualLoss: 1.0,           // v36: NEW - Virtual loss for parallel search
+281:    mctsProgressiveWidening: true,  // v36: NEW - Progressive widening
+282:    mctsRaveEnabled: true,          // v36: NEW - RAVE (Rapid Action Value Estimation)
+283:    mctsRaveWeight: 0.5,            // v36: NEW - RAVE weight factor
+888:let globalMCTSRoot = null;
+889:let mctsPositionHistory = [];
+1126:let v38MCTSRoot = null;
+1164:function v38SuperhumanMCTSEvaluate(fen, candidateMove, depth = 100) {
+5455:        const mctsTree = new Map();
+5456:        mctsTree.set(candidateMove, rootNode);
+5459:        for (let sim = 0; sim < CONFIG.mctsSimulations; sim++) {
+5468:            if (sim < CONFIG.mctsSimulations * 0.30) {
+5469:                const tacticalResult = tacticalRolloutV33(fen, candidateMove, CONFIG.mctsDepthPerSim, board, activeColor);
+5490:            if (sim < CONFIG.mctsSimulations * 0.65) {
+5491:                const strategicResult = deepStrategicRolloutV33(fen, candidateMove, CONFIG.mctsRolloutDepth, sim, board, activeColor);
+5515:            if (sim < CONFIG.mctsSimulations * 0.85) {
+5516:                const prophylacticResult = prophylacticRolloutV33(fen, candidateMove, CONFIG.mctsDepthPerSim, board, activeColor);
+5558:        const explorationBonus = CONFIG.mctsUCB1Constant * Math.sqrt(Math.log(visits + 1) / (rootNode.visits + 1));
+5561:        let mctsScore = avgScore * 0.45 + 
+5567:        debugLog("[MCTS_v34]", `🎯 Move ${candidateMove}: visits=${visits}, wins=${wins}, stratWins=${strategicWins}, avgScore=${avgScore.toFixed(1)}, winRate=${(winRate*100).toFixed(1)}%, crisis=${crisisAdjustment.toFixed(0)}, final=${mctsScore.toFixed(1)}`);
+5569:        return mctsScore;
+7050:    const exploration = CONFIG.mctsUCB1Constant * Math.sqrt(Math.log(totalSimulations) / node.visits);
+8495:function mctsEvaluate(fen, candidateMove, depth = 30) {
+8501:        for (let i = 0; i < CONFIG.mctsSimulations; i++) {
+8502:            const rolloutScore = simulateStrategicRollout(fen, candidateMove, CONFIG.mctsDepthPerSim);
+8512:        const weightedScore = averageScore * CONFIG.mctsStrategicWeight / 10;
+9599:    for (let sim = 0; sim < CONFIG.mctsSimulations; sim++) {
+9600:        const simScore = runStrategicRollout(fen, candidateMove, CONFIG.mctsDepthPerSim);
+9605:    strategicScore = strategicScore / CONFIG.mctsSimulations;
+12499:    // Immediately call calculateMove
+12500:    setTimeout(() => calculateMove(), 100);
+16332:    debugLog("[SCHEDULE]", `✅ All checks passed for ${colorName}, proceeding to calculateMove()`);
+16337:    calculateMove();
+16676:function calculateMove() {
+16704:        setTimeout(() => calculateMove(), Math.random() * 500 + 200);
+16987:                calculateMove();
+Exit code: 0

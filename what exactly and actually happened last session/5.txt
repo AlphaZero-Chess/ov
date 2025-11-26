@@ -1,0 +1,204 @@
+Now let me view the key function `calculateMove()` and `v38SuperhumanMCTSEvaluate` to understand the current implementation:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+16676|function calculateMove() {
+16677|    // Safety checks
+16678|    if (!chessEngine) {
+16679|        debugLog("[ENGINE]", "❌ Engine not initialized");
+16680|        return;
+16681|    }
+16682|    
+16683|    if (!currentFen) {
+16684|        debugLog("[ENGINE]", "❌ No FEN position");
+16685|        return;
+16686|    }
+16687|    
+16688|    if (calculationLock) {
+16689|        debugLog("[ENGINE]", "❌ Already calculating");
+16690|        return;
+16691|    }
+16692|    
+16693|    if (!webSocketWrapper || webSocketWrapper.readyState !== 1) {
+16694|        debugLog("[ENGINE]", "❌ WebSocket not ready");
+16695|        return;
+16696|    }
+16697|    
+16698|    // Check for excessive rejections - reset and add randomness
+16699|    if (rejectionCount > 5) {
+16700|        debugLog("[ENGINE]", `⚠️ Too many rejections (${rejectionCount}) - forcing full reset`);
+16701|        lastRejectedMove = null;
+16702|        rejectionCount = 0;
+16703|        // Add small delay to break any timing-related issues
+16704|        setTimeout(() => calculateMove(), Math.random() * 500 + 200);
+16705|        return;
+16706|    }
+16707|    
+16708|    // Extract active color from FEN to know which side to play
+16709|    const fenActiveColor = getActiveColorFromFen(currentFen);
+16710|    if (!fenActiveColor) {
+16711|        debugLog("[ENGINE]", "❌ Cannot extract active color from FEN");
+16712|        return;
+16713|    }
+16714|    
+16715|    const isWhite = (fenActiveColor === 'w');
+16716|    const colorName = isWhite ? 'White' : 'Black';
+16717|    
+16718|    // ═══════════════════════════════════════════════════════════════════
+16719|    // v31.0.0 CRITICAL: PRE-CALCULATION SAFETY SCAN - ZERO BLUNDERS
+16720|    // This MUST run before ANY engine calculation to detect immediate threats
+16721|    // Fixes: Nxc3→Nxd1 blunder where bot played Bd3 ignoring Queen attack
+16722|    // ═══════════════════════════════════════════════════════════════════
+16723|    
+16724|    debugLog("[ENGINE]", "═══════════════════════════════════════════════════════════════");
+16725|    debugLog("[ENGINE]", "🔍 v31.0.0 PRE-CALCULATION CRITICAL SAFETY SCAN STARTING");
+16726|    debugLog("[ENGINE]", "═══════════════════════════════════════════════════════════════");
+16727|    
+16728|    const preSafetyResult = preMoveCalculationSafetyScan(currentFen);
+16729|    
+16730|    // If there's a CRITICAL threat (Queen under attack), force defensive mode
+16731|    if (preSafetyResult.hasCriticalThreat && preSafetyResult.threatLevel >= 3) {
+16732|        debugLog("[ENGINE]", "🚨🚨🚨 EMERGENCY MODE ACTIVATED - QUEEN UNDER DIRECT ATTACK!");
+16733|        debugLog("[ENGINE]", `   Threat: ${preSafetyResult.details}`);
+16734|        debugLog("[ENGINE]", `   Forced defense moves: ${preSafetyResult.forcedDefenseMoves.join(', ')}`);
+16735|        
+16736|        // If we have forced defense moves, try the best one
+16737|        if (preSafetyResult.forcedDefenseMoves.length > 0) {
+16738|            const emergencyMove = preSafetyResult.forcedDefenseMoves[0];
+16739|            
+16740|            // Validate the emergency move format
+16741|            if (emergencyMove && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(emergencyMove)) {
+16742|                debugLog("[ENGINE]", `🛡️ EMERGENCY: Playing forced defensive move: ${emergencyMove}`);
+16743|                
+16744|                // Still use the engine to verify, but prioritize defense
+16745|                // We'll mark this as emergency so the engine handler knows
+16746|                window.__EMERGENCY_DEFENSE_MODE = true;
+16747|                window.__EMERGENCY_DEFENSE_MOVES = preSafetyResult.forcedDefenseMoves;
+16748|                window.__EMERGENCY_THREAT = preSafetyResult;
+16749|            }
+16750|        }
+16751|    } else if (preSafetyResult.hasCriticalThreat && preSafetyResult.threatLevel >= 2) {
+16752|        debugLog("[ENGINE]", "⚠️ DEFENSIVE MODE - Critical threat detected");
+16753|        window.__DEFENSIVE_MODE = true;
+16754|        window.__DEFENSIVE_THREAT = preSafetyResult;
+16755|    } else {
+16756|        // Clear any previous emergency state
+16757|        window.__EMERGENCY_DEFENSE_MODE = false;
+16758|        window.__DEFENSIVE_MODE = false;
+16759|    }
+16760|    
+16761|    // ═══════════════════════════════════════════════════════════════════
+16762|    // END v31.0.0 PRE-CALCULATION SAFETY SCAN
+16763|    // ═══════════════════════════════════════════════════════════════════
+16764|    
+16765|    // Set calculation lock and track color
+16766|    calculationLock = true;
+16767|    calculationStartTime = Date.now();
+16768|    currentCalculatingColor = fenActiveColor;
+16769|    debugLog("[LOCK]", `🔒 Calculation lock SET for ${colorName}`);
+16770|    
+16771|    // Clear position ready flag for this color (we're now calculating)
+16772|    if (isWhite) {
+16773|        whitePositionReady = false;
+16774|    } else {
+16775|        blackPositionReady = false;
+16776|    }
+16777|    
+16778|    debugLog("[ENGINE]", "🎯 Starting calculation...");
+16779|    debugLog("[ENGINE]", `  Color: ${colorName}`);
+16780|    debugLog("[ENGINE]", `  FEN: ${currentFen}`);
+16781|    
+16782|    // Opening book first - BUT SKIP IF IN EMERGENCY MODE
+16783|    const fenKey = currentFen.split(' ').slice(0, 4).join(' ');
+16784|    const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
+16785|    
+16786|    // v31.0.0: Never use book moves when there's a critical threat!
+16787|    if (bookMove && gamePhase === "opening" && !window.__EMERGENCY_DEFENSE_MODE && !preSafetyResult.hasCriticalThreat) {
+16788|        const thinkTime = Math.random() * 900 + 500;
+16789|        
+16790|        debugLog("[ENGINE]", `📖 Book move: ${bookMove} (${(thinkTime/1000).toFixed(1)}s)`);
+16791|        
+16792|        setTimeout(() => {
+16793|            bestMove = bookMove;
+16794|            calculationLock = false;
+16795|            calculationStartTime = 0;
+16796|            currentCalculatingColor = null;
+16797|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+16798|            sendMove(bookMove);
+16799|        }, thinkTime);
+16800|        
+16801|        return;
+16802|    }
+16803|    
+16804|    // v31.0.0: If book move would be used but there's a threat, skip book and use engine
+16805|    if (bookMove && preSafetyResult.hasCriticalThreat) {
+16806|        debugLog("[ENGINE]", `⚠️ SKIPPING book move ${bookMove} due to critical threat - using engine`);
+16807|    }
+16808|    
+16809|    // Engine calculation
+16810|    const isStrategic = isStrategicPosition(currentFen);
+16811|    const depth = getStrategicDepth(gamePhase, isStrategic, timeRemaining);
+16812|    const thinkTime = getAlphaZeroThinkTime(gamePhase, isStrategic, timeRemaining);
+16813|    
+16814|    debugLog("[ENGINE]", `🧠 Depth ${depth}, Time ${(thinkTime/1000).toFixed(1)}s, Strategic: ${isStrategic}`);
+16815|    
+16816|    multiPVLines = [];
+16817|    
+16818|    // Send position to engine with explicit logging
+16819|    const fenCommand = "position fen " + currentFen;
+16820|    debugLog("[ENGINE]", `📤 Sending to Stockfish: ${fenCommand}`);
+16821|    chessEngine.postMessage(fenCommand);
+16822|    
+16823|    // Calculate intelligent movetime
+16824|    let intelligentMoveTime = Math.floor(thinkTime);
+16825|    
+16826|    if (timeRemaining < 10000) intelligentMoveTime = Math.min(intelligentMoveTime, 4000);
+16827|    else if (timeRemaining < 20000) intelligentMoveTime = Math.min(intelligentMoveTime, 6000);
+16828|    else if (timeRemaining < 35000) intelligentMoveTime = Math.min(intelligentMoveTime, 8000);
+16829|    else intelligentMoveTime = Math.min(intelligentMoveTime, 10000);
+16830|    
+16831|    if (isStrategic && timeRemaining > 25000) {
+16832|        intelligentMoveTime = Math.min(intelligentMoveTime * 1.2, 12000);
+16833|    }
+16834|    
+16835|    chessEngine.postMessage(`go depth ${depth} movetime ${intelligentMoveTime}`);
+16836|    debugLog("[ENGINE]", `⏱️ Command: go depth ${depth} movetime ${intelligentMoveTime}`);
+16837|    
+16838|    // Safety timeout
+16839|    const safetyTimeout = intelligentMoveTime + 2000;
+16840|    
+16841|    if (calculationTimeout) {
+16842|        clearTimeout(calculationTimeout);
+16843|    }
+16844|    
+16845|    calculationTimeout = setTimeout(() => {
+16846|        if (calculationLock) {
+16847|            debugLog("[ENGINE]", "⚠️ Safety timeout reached, forcing stop");
+16848|            chessEngine.postMessage("stop");
+16849|            
+16850|            if (multiPVLines.length > 0) {
+16851|                debugLog("[ENGINE]", "🔄 Using best available move from partial calculation");
+16852|                const emergencyMove = multiPVLines[0].move;
+16853|                calculationLock = false;
+16854|                calculationStartTime = 0;
+16855|                currentCalculatingColor = null;
+16856|                debugLog("[LOCK]", "🔓 Calculation lock RELEASED (timeout)");
+16857|                sendMove(emergencyMove);
+16858|            } else {
+16859|                debugLog("[ENGINE]", "❌ No moves available from engine");
+16860|                calculationLock = false;
+16861|                calculationStartTime = 0;
+16862|                currentCalculatingColor = null;
+16863|                debugLog("[LOCK]", "🔓 Calculation lock RELEASED (no moves)");
+16864|            }
+16865|        }
+16866|    }, safetyTimeout);
+16867|}
+16868|
+16869|/**
+16870| * Validate if a move makes sense for the current position
+16871| */
+16872|/**
+16873| * NEW v7.0.0: Enhanced move validation with position improvement checks
+16874| * Validates not just legality but also strategic soundness
+16875| */
+16876|function validateMoveForPosition(move, fen, moveScore, bestScore) {
