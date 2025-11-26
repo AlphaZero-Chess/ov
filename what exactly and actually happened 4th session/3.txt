@@ -1,0 +1,49 @@
+
+Action: $ grep -n "function v40\|class V40\|v40SuperhumanBeast\|v40TrueAlphaZero\|computeCombinedScore" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -50
+Observation: 1417:class V40MCTSNode {
+1699:function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+1789:function v40InitializeOrReuseTree(fen, legalMoves) {
+1828:function v40CreateNewTree(fen, legalMoves) {
+1853:function v40ValueNetworkEmulation(fen, move, board, activeColor, moveNumber) {
+1916:function v40EvaluateMaterial(board, activeColor) {
+1934:function v40EvaluateMobility(board, activeColor) {
+1968:function v40EvaluateKingSafety(board, activeColor, moveNumber) {
+2002:function v40EvaluatePawnStructure(board, activeColor) {
+2070:function v40EvaluateSpaceControl(board, activeColor) {
+2097:function v40EvaluateInitiative(board, activeColor, moveNumber) {
+2128:function v40EvaluatePieceCoordination(board, activeColor) {
+2169:function v40EvaluateCenterControl(board, activeColor) {
+2196:function v40EvaluateMoveQuality(fen, move, board, activeColor, moveNumber) {
+2261:function v40EvaluateEndgame(board, activeColor) {
+2325:function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+2446:function v40MultiPassBlunderCheck(fen, move, board, activeColor) {
+2602:function v40CheckDiscoveredAttacks(fen, move, board, activeColor) {
+2673:function v40IsOnLine(px, py, x1, y1, x2, y2) {
+2692:function v40CheckDesperado(fen, move, board, activeColor) {
+2704:function v40CheckZwischenzug(fen, move, board, activeColor) {
+2714:function v40CheckQueenTrap(fen, move, board, activeColor) {
+2794:function v40CheckOverloadedPieces(fen, move, board, activeColor) {
+2804:function v40CheckMatingNet(fen, move, board, activeColor) {
+2870:function v40CheckPerpetualMiss(fen, move, board, activeColor) {
+2881:function v40CheckHangingPieces(fen, move, board, activeColor) {
+2944:function v40CountAttackers(board, targetSquare, attackingColor) {
+2969:function v40CountDefenders(board, targetSquare, defendingColor) {
+2995:function v40CanPieceAttack(pieceType, fromFile, fromRank, toFile, toRank, board, color) {
+3039:function v40IsPathClear(fromFile, fromRank, toFile, toRank, board) {
+3060:function v40CheckForForks(fen, move, board, activeColor) {
+3157:function v40CheckPinsSkewers(fen, move, board, activeColor) {
+3259:function v40CheckBackRankMate(fen, move, board, activeColor) {
+3365:function v40ImmediateMoveRejection(move, board, activeColor, moveNumber) {
+3422:function v40DeepStrategicEvaluation(fen, move, board, activeColor, moveNumber) {
+3451:function v40FlawlessEndgameEvaluation(fen, move, board, activeColor) {
+3520:function v40WebWeavingEvaluation(fen, move, board, activeColor) {
+3547:function v40PatternRecognition(fen, move, board, activeColor) {
+3588:function v40DelayedGratificationEval(fen, move, board, activeColor, moveNumber) {
+3612:function v40ResilienceEvaluation(fen, move, board, activeColor) {
+3644:function v40InitiativeEvaluation(fen, move, board, activeColor, moveNumber) {
+18482:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+18505:                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+18537:    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+18538:    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+18831:                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+Exit code: 0
