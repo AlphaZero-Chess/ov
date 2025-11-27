@@ -1,0 +1,76 @@
+Session 25 Summary - Continuing from Session 24
+
+WHAT WAS DONE:
+1. Reviewed sessions 1-24 to understand what had been implemented
+2. Found that v40.14 CONFIG was added but functions were NOT implemented
+3. Implemented the v40.14 ABSOLUTE ZERO BLUNDER SUPREME functions:
+
+NEW FUNCTIONS ADDED (lines 13099-13490):
+- v40LookAheadBlunderCheck() - THE MOST CRITICAL: Simulates opponent's best response
+  - For EVERY move, simulate making it
+  - Find ALL possible opponent captures
+  - If opponent can capture FREE = CATASTROPHIC penalty
+  - Specifically detects cases like Bd3 where exd3 captures bishop
+
+- findPawnAttacksOnSquare() - Helper to find pawns attacking a square
+  - Returns array of squares where attacking pawns are located
+  - Used to detect cases like Bd3 being attacked by e4 pawn
+
+- findAllCaptures() - Helper to find ALL possible captures for a color
+  - Returns array of {from, to, piece} for each capture
+  - Used in look-ahead simulation
+
+- getPossibleMovesForPiece() - Helper to get all possible moves for any piece
+  - Handles pawn, knight, bishop, rook, queen, king movements
+  - Returns array of target squares
+
+- v40TripleCheckBlunderVerification() - Run blunder check 3 times
+  - Multiple passes to ensure NO TACTICAL OVERSIGHTS
+  - All passes must agree move is safe
+
+- v40FailSafeBlunderCheck() - FINAL safety check before committing
+  - Returns {isBlunder: bool, score: number, reason: string}
+  - If blunder detected, move is REJECTED
+
+CONFIG VALUES ADDED (lines 1540-1574):
+- v40LookAheadBlunderCheckEnabled: true
+- v40LookAheadDepth: 2
+- v40OpponentCapturesPenalty: -5000000
+- v40OpponentCapturesQueenPenalty: -10000000
+- v40OpponentCapturesRookPenalty: -4000000
+- v40OpponentCapturesMinorPenalty: -2500000
+- v40OpponentCapturesPawnPenalty: -1000000
+- v40PieceOnPawnAttackedSquarePenalty: -8000000
+- v40BishopKnightPawnCaptureAwareness: true
+- v40VerifyAllCapturesEnabled: true
+- v40AnyFreeCaptureAvailablePenalty: -6000000
+- v40TripleCheckEnabled: true
+- v40TripleCheckPasses: 3
+- v40TripleCheckConsensusRequired: true
+- v40FailSafeBlunderRejectionEnabled: true
+- v40BlunderScoreThreshold: -1000000
+- v40AbsoluteZeroBlunderDominance: 1.0
+
+INTEGRATION (lines 28803-28885):
+- Added v40.14 function calls with HIGH multipliers:
+  - lookAheadBlunderScore * 10.0
+  - tripleCheckScore * 5.0
+  - failSafeScore * 10.0
+- Added to v40DeepScore calculation
+- Added debug logging for all v40.14 scores
+
+FILE STATUS:
+- Header updated to v40.14 ABSOLUTE ZERO BLUNDER SUPREME
+- File size: 31,458 lines
+- Syntax check: PASSED (node --check)
+
+THE KEY FIX:
+The main problem was: Bot played Bd3 where exd3 captures the bishop.
+The v40LookAheadBlunderCheck function now:
+1. Simulates making the move
+2. Finds ALL possible opponent captures
+3. Checks if opponent can capture the piece we just moved (or any piece)
+4. If yes and undefended, returns MASSIVE penalty (-8,000,000)
+5. findPawnAttacksOnSquare specifically checks for pawn attacks
+
+This should PREVENT blunders like Bd3 where the piece lands on a pawn-attacked square.
