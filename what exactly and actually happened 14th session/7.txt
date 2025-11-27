@@ -1,0 +1,702 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        // Penalty for moving pawn shield pawns
+        if (movingPiece && movingPiece.toLowerCase() === 'p' && shieldSquares.includes(fromSquare)) {
+            score -= 3000;
+            debugLog(\"[V40_PAWNSHIELD]\", `⚠️ Moving pawn shield pawn from ${fromSquare}`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_PAWNSHIELD]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40: Evaluate goal alignment with strategic plan
+ * True AlphaZero evaluates moves based on how well they fit the plan
+ */" --new-str "        // Penalty for moving pawn shield pawns
+        if (movingPiece && movingPiece.toLowerCase() === 'p' && shieldSquares.includes(fromSquare)) {
+            score -= 3000;
+            debugLog(\"[V40_PAWNSHIELD]\", `⚠️ Moving pawn shield pawn from ${fromSquare}`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_PAWNSHIELD]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.5: CRITICAL TACTICAL BLINDSPOT FIXES
+// From analysis of Nimzowitsch Defense loss: Qxb2 infiltration, Bxb3 hanging rook,
+// Queen+Bishop coordination mate on h1/h2
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.5: QUEEN INFILTRATION DETECTION
+ * Prevents allowing enemy queen to infiltrate into our position like Qxb2
+ */
+function v40QueenInfiltrationDetection(fen, move, board, activeColor) {
+    if (!CONFIG.v40QueenInfiltrationEnabled) return 0;
+    
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find enemy queen
+        let enemyQueen = null;
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (isEnemy && piece.toLowerCase() === 'q') {
+                enemyQueen = square;
+                break;
+            }
+        }
+        
+        if (!enemyQueen) return 0;
+        
+        const queenFile = enemyQueen.charCodeAt(0) - 'a'.charCodeAt(0);
+        const queenRank = parseInt(enemyQueen[1]) - 1;
+        
+        // CHECK 1: Queen in our half of the board (infiltration)
+        const inOurHalf = isWhite ? (queenRank <= 3) : (queenRank >= 4);
+        if (inOurHalf) {
+            penalty -= CONFIG.v40QueenInfiltrationPenalty || -18000;
+            debugLog(\"[V40_QINFIL]\", `🚨 ENEMY QUEEN INFILTRATED to ${enemyQueen}!`);
+            
+            // Extra penalty if queen is on our back rank
+            const ourBackRank = isWhite ? 0 : 7;
+            if (queenRank === ourBackRank || queenRank === ourBackRank + (isWhite ? 1 : -1)) {
+                penalty -= 10000;
+                debugLog(\"[V40_QINFIL]\", `🚨🚨 QUEEN ON BACK RANKS!`);
+            }
+        }
+        
+        // CHECK 2: Queen on b-file attacking b2/b7 (classic infiltration square)
+        if (queenFile === 1) {  // b-file
+            const infiltrationSquare = isWhite ? 'b2' : 'b7';
+            if (enemyQueen === infiltrationSquare) {
+                penalty -= CONFIG.v40AllowQueenInvasionPenalty || -25000;
+                debugLog(\"[V40_QINFIL]\", `🚨🚨🚨 QUEEN ON ${infiltrationSquare} - DISASTER!`);
+            }
+        }
+        
+        // CHECK 3: Queen threatening our rook positions
+        const ourRooks = [];
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+            if (isOurs && piece.toLowerCase() === 'r') {
+                ourRooks.push(square);
+            }
+        }
+        
+        for (const rookSq of ourRooks) {
+            if (canQueenAttackSquare(enemyQueen, rookSq, simBoard)) {
+                penalty -= 8000;
+                debugLog(\"[V40_QINFIL]\", `⚠️ Queen can attack rook on ${rookSq}`);
+            }
+        }
+        
+        // CHECK 4: Queen near our king
+        const ourKing = findKing(simBoard, activeColor);
+        if (ourKing) {
+            const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+            const kingRank = parseInt(ourKing[1]) - 1;
+            
+            if (Math.abs(queenFile - kingFile) <= 2 && Math.abs(queenRank - kingRank) <= 2) {
+                penalty -= CONFIG.v40QueenNearKingPenalty || -12000;
+                debugLog(\"[V40_QINFIL]\", `🚨 ENEMY QUEEN NEAR KING!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_QINFIL]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.5: Helper - Check if queen can attack a square
+ */
+function canQueenAttackSquare(queenSq, targetSq, board) {
+    if (queenSq === targetSq) return false;
+    
+    const qFile = queenSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const qRank = parseInt(queenSq[1]) - 1;
+    const tFile = targetSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(targetSq[1]) - 1;
+    
+    const fileDiff = tFile - qFile;
+    const rankDiff = tRank - qRank;
+    
+    // Queen moves like rook or bishop
+    const isRookMove = fileDiff === 0 || rankDiff === 0;
+    const isBishopMove = Math.abs(fileDiff) === Math.abs(rankDiff);
+    
+    if (!isRookMove && !isBishopMove) return false;
+    
+    // Check path is clear
+    const dx = fileDiff === 0 ? 0 : (fileDiff > 0 ? 1 : -1);
+    const dy = rankDiff === 0 ? 0 : (rankDiff > 0 ? 1 : -1);
+    
+    let x = qFile + dx;
+    let y = qRank + dy;
+    
+    while (x !== tFile || y !== tRank) {
+        const sq = String.fromCharCode(x + 97) + (y + 1);
+        if (board.get(sq)) return false;
+        x += dx;
+        y += dy;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.5: ENHANCED HANGING PIECE DETECTION
+ * Prevents leaving pieces undefended like the rook on b3 taken by Bxb3
+ */
+function v40EnhancedHangingPieceDetection(fen, move, board, activeColor) {
+    if (!CONFIG.v40HangingPieceEnabled) return 0;
+    
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Check all our pieces for hanging status
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+            if (!isOurs) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k' || pieceType === 'p') continue;  // Skip king and pawns
+            
+            // Check if piece is attacked
+            const isAttacked = isSquareAttackedBy(simBoard, square, enemyColor);
+            
+            if (isAttacked) {
+                // Check if piece is defended
+                const isDefended = isSquareAttackedBy(simBoard, square, activeColor);
+                
+                if (!isDefended) {
+                    // HANGING PIECE!
+                    if (pieceType === 'q') {
+                        penalty -= 30000;  // Hanging queen is catastrophic
+                        debugLog(\"[V40_HANGING]\", `🚨🚨🚨 HANGING QUEEN on ${square}!`);
+                    } else if (pieceType === 'r') {
+                        penalty -= CONFIG.v40HangingRookPenalty || -20000;
+                        debugLog(\"[V40_HANGING]\", `🚨🚨 HANGING ROOK on ${square}!`);
+                    } else if (pieceType === 'b' || pieceType === 'n') {
+                        penalty -= CONFIG.v40HangingMinorPenalty || -12000;
+                        debugLog(\"[V40_HANGING]\", `🚨 HANGING ${pieceType.toUpperCase()} on ${square}!`);
+                    }
+                } else {
+                    // Defended but check if attacker is worth less
+                    const attackerValue = getLowestAttackerValue(simBoard, square, enemyColor);
+                    const pieceValue = getPieceValueSimple(pieceType);
+                    
+                    if (attackerValue < pieceValue && attackerValue > 0) {
+                        penalty -= (pieceValue - attackerValue) * 1000;
+                        debugLog(\"[V40_HANGING]\", `⚠️ ${pieceType.toUpperCase()} on ${square} attacked by lower value piece`);
+                    }
+                }
+            }
+        }
+        
+        // Also check if we're leaving pieces undefended after this move
+        if (movingPiece && fromSquare !== toSquare) {
+            // Check what squares we were defending
+            const wasDefendingSquares = getDefendedSquares(board, fromSquare, movingPiece, activeColor);
+            for (const sq of wasDefendingSquares) {
+                const pieceOnSq = simBoard.get(sq);
+                if (pieceOnSq) {
+                    const isOurs = (pieceOnSq === pieceOnSq.toUpperCase()) === (activeColor === 'w');
+                    if (isOurs && !isSquareAttackedBy(simBoard, sq, activeColor)) {
+                        const nowAttacked = isSquareAttackedBy(simBoard, sq, enemyColor);
+                        if (nowAttacked) {
+                            penalty -= CONFIG.v40UndefendedPiecePenalty || -8000;
+                            debugLog(\"[V40_HANGING]\", `⚠️ Left piece undefended on ${sq}`);
+                        }
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_HANGING]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.5: Helper - Check if square is attacked by a color
+ */
+function isSquareAttackedBy(board, targetSquare, attackingColor) {
+    const tFile = targetSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(targetSquare[1]) - 1;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isAttacker = (piece === piece.toUpperCase()) === (attackingColor === 'w');
+        if (!isAttacker) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const pFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(square[1]) - 1;
+        
+        // Check if this piece attacks the target
+        if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, attackingColor)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.5: Helper - Can piece attack square
+ */
+function canPieceAttackSquareV40(pieceType, fromFile, fromRank, toFile, toRank, board, color) {
+    const fileDiff = Math.abs(toFile - fromFile);
+    const rankDiff = Math.abs(toRank - fromRank);
+    
+    switch (pieceType) {
+        case 'p':
+            const direction = color === 'w' ? 1 : -1;
+            return fileDiff === 1 && (toRank - fromRank) === direction;
+            
+        case 'n':
+            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+            
+        case 'b':
+            if (fileDiff !== rankDiff || fileDiff === 0) return false;
+            return isPathClearV40(fromFile, fromRank, toFile, toRank, board);
+            
+        case 'r':
+            if (fileDiff !== 0 && rankDiff !== 0) return false;
+            return isPathClearV40(fromFile, fromRank, toFile, toRank, board);
+            
+        case 'q':
+            if (fileDiff !== rankDiff && fileDiff !== 0 && rankDiff !== 0) return false;
+            return isPathClearV40(fromFile, fromRank, toFile, toRank, board);
+            
+        case 'k':
+            return fileDiff <= 1 && rankDiff <= 1 && (fileDiff > 0 || rankDiff > 0);
+            
+        default:
+            return false;
+    }
+}
+
+/**
+ * v40.5: Helper - Check path is clear for sliding pieces
+ */
+function isPathClearV40(fromFile, fromRank, toFile, toRank, board) {
+    const dx = toFile === fromFile ? 0 : (toFile > fromFile ? 1 : -1);
+    const dy = toRank === fromRank ? 0 : (toRank > fromRank ? 1 : -1);
+    
+    let x = fromFile + dx;
+    let y = fromRank + dy;
+    
+    while (x !== toFile || y !== toRank) {
+        const sq = String.fromCharCode(x + 97) + (y + 1);
+        if (board.get(sq)) return false;
+        x += dx;
+        y += dy;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.5: Helper - Get lowest attacker value
+ */
+function getLowestAttackerValue(board, targetSquare, attackingColor) {
+    let lowestValue = Infinity;
+    const tFile = targetSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(targetSquare[1]) - 1;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isAttacker = (piece === piece.toUpperCase()) === (attackingColor === 'w');
+        if (!isAttacker) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const pFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(square[1]) - 1;
+        
+        if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, attackingColor)) {
+            const value = getPieceValueSimple(pieceType);
+            if (value < lowestValue) lowestValue = value;
+        }
+    }
+    
+    return lowestValue === Infinity ? 0 : lowestValue;
+}
+
+/**
+ * v40.5: Helper - Get simple piece value
+ */
+function getPieceValueSimple(pieceType) {
+    switch (pieceType) {
+        case 'p': return 1;
+        case 'n': return 3;
+        case 'b': return 3;
+        case 'r': return 5;
+        case 'q': return 9;
+        case 'k': return 100;
+        default: return 0;
+    }
+}
+
+/**
+ * v40.5: Helper - Get squares defended by a piece
+ */
+function getDefendedSquares(board, pieceSquare, piece, activeColor) {
+    const defended = [];
+    const pieceType = piece.toLowerCase();
+    const pFile = pieceSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const pRank = parseInt(pieceSquare[1]) - 1;
+    
+    for (let file = 0; file < 8; file++) {
+        for (let rank = 0; rank < 8; rank++) {
+            if (file === pFile && rank === pRank) continue;
+            if (canPieceAttackSquareV40(pieceType, pFile, pRank, file, rank, board, activeColor)) {
+                defended.push(String.fromCharCode(file + 97) + (rank + 1));
+            }
+        }
+    }
+    
+    return defended;
+}
+
+/**
+ * v40.5: KING CORNER SAFETY — Prevent h1/h2 vulnerabilities
+ * Detects when king is in danger from Queen+Bishop coordination
+ */
+function v40KingCornerSafetyEval(fen, move, board, activeColor) {
+    if (!CONFIG.v40KingCornerEnabled) return 0;
+    
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find our king
+        const ourKing = findKing(simBoard, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]) - 1;
+        
+        // CHECK 1: King on h1/h2 (white) or h7/h8 (black) - vulnerable positions
+        const vulnerableSquares = isWhite ? ['h1', 'h2', 'g1'] : ['h8', 'h7', 'g8'];
+        if (vulnerableSquares.includes(ourKing)) {
+            penalty -= 5000;  // Base penalty for corner king
+            debugLog(\"[V40_KINGCORNER]\", `⚠️ King in vulnerable corner position: ${ourKing}`);
+            
+            // Find enemy queen and bishop
+            let enemyQueen = null;
+            let enemyBishops = [];
+            
+            for (const [square, piece] of simBoard) {
+                if (!piece) continue;
+                const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+                if (!isEnemy) continue;
+                
+                if (piece.toLowerCase() === 'q') enemyQueen = square;
+                if (piece.toLowerCase() === 'b') enemyBishops.push(square);
+            }
+            
+            // CHECK 2: Queen+Bishop coordination against corner king
+            if (enemyQueen && enemyBishops.length > 0) {
+                // Check if bishop has diagonal access to king's zone
+                for (const bishopSq of enemyBishops) {
+                    const bFile = bishopSq.charCodeAt(0) - 'a'.charCodeAt(0);
+                    const bRank = parseInt(bishopSq[1]) - 1;
+                    
+                    // Check if bishop is on same diagonal as king area
+                    const sameDiagonal = Math.abs(bFile - kingFile) === Math.abs(bRank - kingRank);
+                    if (sameDiagonal) {
+                        penalty -= CONFIG.v40QueenBishopCoordPenalty || -18000;
+                        debugLog(\"[V40_KINGCORNER]\", `🚨🚨 QUEEN+BISHOP COORDINATION THREAT!`);
+                    }
+                    
+                    // Check if bishop can give check
+                    if (canPieceAttackSquareV40('b', bFile, bRank, kingFile, kingRank, simBoard, enemyColor)) {
+                        penalty -= CONFIG.v40DiagonalAttackToKingPenalty || -12000;
+                        debugLog(\"[V40_KINGCORNER]\", `🚨 Bishop can attack king from ${bishopSq}!`);
+                    }
+                }
+                
+                // Check if queen can reach checking squares
+                const checkingSquares = getQueenCheckingSquares(ourKing, isWhite);
+                for (const checkSq of checkingSquares) {
+                    if (canQueenReachSquareV40(enemyQueen, checkSq, simBoard)) {
+                        penalty -= 8000;
+                        debugLog(\"[V40_KINGCORNER]\", `⚠️ Queen can reach ${checkSq} to check`);
+                    }
+                }
+            }
+            
+            // CHECK 3: Specific h1/h2 vulnerability pattern from the lost game
+            if ((isWhite && (ourKing === 'h1' || ourKing === 'h2')) ||
+                (!isWhite && (ourKing === 'h8' || ourKing === 'h7'))) {
+                penalty -= CONFIG.v40KingH1H2Vulnerability || -20000;
+                debugLog(\"[V40_KINGCORNER]\", `🚨🚨🚨 CRITICAL: King on ${ourKing} - MATE DANGER!`);
+            }
+        }
+        
+        // CHECK 4: Cornered king with limited escape squares
+        const escapeSquares = getKingEscapeSquares(ourKing, simBoard, activeColor);
+        if (escapeSquares.length <= 1) {
+            penalty -= CONFIG.v40KingCornerPenalty || -15000;
+            debugLog(\"[V40_KINGCORNER]\", `🚨 CORNERED KING - Only ${escapeSquares.length} escape squares!`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_KINGCORNER]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.5: Helper - Get queen checking squares around king
+ */
+function getQueenCheckingSquares(kingSquare, isWhite) {
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]) - 1;
+    const squares = [];
+    
+    // All adjacent and line-of-sight squares
+    for (let df = -2; df <= 2; df++) {
+        for (let dr = -2; dr <= 2; dr++) {
+            if (df === 0 && dr === 0) continue;
+            const newFile = kingFile + df;
+            const newRank = kingRank + dr;
+            if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+                squares.push(String.fromCharCode(newFile + 97) + (newRank + 1));
+            }
+        }
+    }
+    
+    return squares;
+}
+
+/**
+ * v40.5: Helper - Can queen reach square (v40 version)
+ */
+function canQueenReachSquareV40(queenSq, targetSq, board) {
+    if (!queenSq || queenSq === targetSq) return false;
+    
+    const qFile = queenSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const qRank = parseInt(queenSq[1]) - 1;
+    const tFile = targetSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(targetSq[1]) - 1;
+    
+    const fileDiff = tFile - qFile;
+    const rankDiff = tRank - qRank;
+    
+    const isRookMove = fileDiff === 0 || rankDiff === 0;
+    const isBishopMove = Math.abs(fileDiff) === Math.abs(rankDiff);
+    
+    if (!isRookMove && !isBishopMove) return false;
+    
+    return isPathClearV40(qFile, qRank, tFile, tRank, board);
+}
+
+/**
+ * v40.5: Helper - Get king escape squares
+ */
+function getKingEscapeSquares(kingSquare, board, activeColor) {
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]) - 1;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    const escapes = [];
+    
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            if (df === 0 && dr === 0) continue;
+            const newFile = kingFile + df;
+            const newRank = kingRank + dr;
+            
+            if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+                const sq = String.fromCharCode(newFile + 97) + (newRank + 1);
+                const piece = board.get(sq);
+                
+                // Check if square is empty or has enemy piece (capturable)
+                const isEmpty = !piece;
+                const hasEnemy = piece && ((piece === piece.toUpperCase()) !== (activeColor === 'w'));
+                
+                if ((isEmpty || hasEnemy) && !isSquareAttackedBy(board, sq, enemyColor)) {
+                    escapes.push(sq);
+                }
+            }
+        }
+    }
+    
+    return escapes;
+}
+
+/**
+ * v40.5: CHECK SEQUENCE DETECTION
+ * Prevents positions where enemy can execute a forcing check sequence
+ */
+function v40CheckSequenceDetection(fen, move, board, activeColor) {
+    if (!CONFIG.v40CheckSequenceEnabled) return 0;
+    
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find our king
+        const ourKing = findKing(simBoard, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]) - 1;
+        
+        // Count enemy pieces that can give check
+        let checkGivingPieces = 0;
+        const checkingSquares = [];
+        
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (!isEnemy) continue;
+            
+            const pieceType = piece.toLowerCase();
+            const pFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const pRank = parseInt(square[1]) - 1;
+            
+            // Can this piece give check currently or soon?
+            if (canPieceAttackSquareV40(pieceType, pFile, pRank, kingFile, kingRank, simBoard, enemyColor)) {
+                checkGivingPieces++;
+                checkingSquares.push(square);
+                debugLog(\"[V40_CHECKSEQ]\", `⚠️ ${pieceType} on ${square} can give check`);
+            }
+            
+            // Check if piece can reach a checking square in 1-2 moves
+            if (pieceType === 'q' || pieceType === 'r' || pieceType === 'b') {
+                const potentialCheckSquares = getPotentialCheckSquares(kingFile, kingRank, pieceType);
+                for (const checkSq of potentialCheckSquares) {
+                    const csFile = checkSq.charCodeAt(0) - 'a'.charCodeAt(0);
+                    const csRank = parseInt(checkSq[1]) - 1;
+                    
+                    if (canPieceAttackSquareV40(pieceType, pFile, pRank, csFile, csRank, simBoard, enemyColor)) {
+                        checkGivingPieces += 0.5;  // Potential check
+                    }
+                }
+            }
+        }
+        
+        if (checkGivingPieces >= 2) {
+            penalty -= CONFIG.v40MultiCheckPenalty || -25000;
+            debugLog(\"[V40_CHECKSEQ]\", `🚨🚨 MULTIPLE CHECK THREATS: ${checkGivingPieces} pieces!`);
+        } else if (checkGivingPieces >= 1) {
+            penalty -= CONFIG.v40CheckSequencePenalty || -20000;
+            debugLog(\"[V40_CHECKSEQ]\", `🚨 CHECK SEQUENCE POSSIBLE`);
+        }
+        
+        // Check for cross-checking patterns (two pieces can check in sequence)
+        if (checkingSquares.length >= 2) {
+            penalty -= 15000;
+            debugLog(\"[V40_CHECKSEQ]\", `🚨🚨🚨 CROSS-CHECK PATTERN DETECTED!`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_CHECKSEQ]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.5: Helper - Get potential checking squares for a piece type
+ */
+function getPotentialCheckSquares(kingFile, kingRank, pieceType) {
+    const squares = [];
+    
+    if (pieceType === 'q' || pieceType === 'r') {
+        // Rook/queen check from same file or rank
+        for (let i = 0; i < 8; i++) {
+            if (i !== kingRank) squares.push(String.fromCharCode(kingFile + 97) + (i + 1));
+            if (i !== kingFile) squares.push(String.fromCharCode(i + 97) + (kingRank + 1));
+        }
+    }
+    
+    if (pieceType === 'q' || pieceType === 'b') {
+        // Bishop/queen check from diagonals
+        for (let d = 1; d <= 7; d++) {
+            if (kingFile + d <= 7 && kingRank + d <= 7) 
+                squares.push(String.fromCharCode(kingFile + d + 97) + (kingRank + d + 1));
+            if (kingFile + d <= 7 && kingRank - d >= 0) 
+                squares.push(String.fromCharCode(kingFile + d + 97) + (kingRank - d + 1));
+            if (kingFile - d >= 0 && kingRank + d <= 7) 
+                squares.push(String.fromCharCode(kingFile - d + 97) + (kingRank + d + 1));
+            if (kingFile - d >= 0 && kingRank - d >= 0) 
+                squares.push(String.fromCharCode(kingFile - d + 97) + (kingRank - d + 1));
+        }
+    }
+    
+    return squares;
+}
+
+/**
+ * v40: Evaluate goal alignment with strategic plan
+ * True AlphaZero evaluates moves based on how well they fit the plan
+ */"
+Observation: Edit was successful.

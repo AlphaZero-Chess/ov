@@ -1,0 +1,49 @@
+Now let me add v40.5 enhancements to address the new game's issues. I'll add CONFIG parameters and new evaluation functions:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.4: TACTICAL DEPTH INCREASE
+    v40TacticalDepthMoves: 8,               // Look 8 moves deep for tactics (was 4)
+    v40ForcingSequenceDepth: 6,             // Forcing sequence depth
+    v40MCTSSimulations: 100000,             // Increased from 50K to 100K
+};" --new-str "    // v40.4: TACTICAL DEPTH INCREASE
+    v40TacticalDepthMoves: 8,               // Look 8 moves deep for tactics (was 4)
+    v40ForcingSequenceDepth: 6,             // Forcing sequence depth
+    v40MCTSSimulations: 100000,             // Increased from 50K to 100K
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.5.0: CRITICAL TACTICAL BLINDSPOT FIXES — From Nimzowitsch Defense loss
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+    v40QueenInfiltrationEnabled: true,
+    v40QueenInfiltrationPenalty: -18000,    // Massive penalty for queen infiltration to our half
+    v40QueenOnOpenFilePenalty: -10000,      // Queen on open file towards our king
+    v40QueenNearKingPenalty: -12000,        // Enemy queen near our king
+    v40AllowQueenInvasionPenalty: -25000,   // Penalty for allowing queen invasion
+    
+    // v40.5: HANGING PIECE DETECTION ENHANCEMENT — Prevent Bxb3 disasters
+    v40HangingPieceEnabled: true,
+    v40HangingRookPenalty: -20000,          // MASSIVE penalty for hanging rook
+    v40HangingMinorPenalty: -12000,         // Penalty for hanging minor piece
+    v40UndefendedPiecePenalty: -8000,       // Penalty for undefended pieces
+    v40LooserCheck: true,                   // Deep check for piece safety
+    
+    // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+    v40KingCornerEnabled: true,
+    v40KingCornerPenalty: -15000,           // Penalty for cornered king
+    v40DiagonalAttackToKingPenalty: -12000, // Bishop diagonal attack
+    v40QueenBishopCoordPenalty: -18000,     // Queen+Bishop coordination penalty
+    v40KingH1H2Vulnerability: -20000,       // Specific h1/h2 vulnerability
+    
+    // v40.5: QUEEN TRADE ANALYSIS — Better understanding of queen exchanges
+    v40QueenTradeEnabled: true,
+    v40BadQueenTradePenalty: -15000,        // Penalty for bad queen trade
+    v40QueenExchangeAnalysis: true,         // Analyze queen exchange consequences
+    
+    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+    v40CheckSequenceEnabled: true,
+    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+    v40MultiCheckPenalty: -25000,           // Multiple checks possible = danger
+    
+    // v40.5: ENHANCED 85% DOMINANCE — Make v40 even more dominant
+    v40Dominance: 0.85,                     // 85% v40 dominance (up from 80%)
+};"
+Observation: Edit was successful.

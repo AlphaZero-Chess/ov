@@ -1,0 +1,54 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+6930|        } else {
+6931|            score -= 8000;
+6932|            debugLog("[V40_PAWNSHIELD]", `🚨 NO PAWN SHIELD - King exposed!`);
+6933|        }
+6934|        
+6935|        // Extra penalty for g2/g7 missing (classic weakness)
+6936|        const criticalPawn = isWhite ? 'g2' : 'g7';
+6937|        if (missingPawns.includes(criticalPawn)) {
+6938|            score -= 5000;
+6939|            debugLog("[V40_PAWNSHIELD]", `🚨 CRITICAL: ${criticalPawn} pawn missing!`);
+6940|        }
+6941|        
+6942|        // Penalty for moving pawn shield pawns
+6943|        if (movingPiece && movingPiece.toLowerCase() === 'p' && shieldSquares.includes(fromSquare)) {
+6944|            score -= 3000;
+6945|            debugLog("[V40_PAWNSHIELD]", `⚠️ Moving pawn shield pawn from ${fromSquare}`);
+6946|        }
+6947|        
+6948|    } catch (e) {
+6949|        debugLog("[V40_PAWNSHIELD]", `Error: ${e.message}`);
+6950|    }
+6951|    
+6952|    return score;
+6953|}
+6954|
+6955|/**
+6956| * v40: Evaluate goal alignment with strategic plan
+6957| * True AlphaZero evaluates moves based on how well they fit the plan
+6958| */
+6959|function evaluateGoalAlignment(move, plan) {
+6960|    if (!plan || !plan.type) return 0.5;
+6961|    
+6962|    let alignment = 0.5;
+6963|    const toSquare = move.substring(2, 4);
+6964|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+6965|    
+6966|    // Check alignment with plan type
+6967|    switch (plan.type) {
+6968|        case 'kingside_attack':
+6969|            if (toFile >= 5) alignment += 0.2;  // Moves toward kingside
+6970|            break;
+6971|        case 'queenside_attack':
+6972|            if (toFile <= 2) alignment += 0.2;  // Moves toward queenside
+6973|            break;
+6974|        case 'central_control':
+6975|            if (toFile >= 2 && toFile <= 5) alignment += 0.15;
+6976|            break;
+6977|        case 'pawn_storm':
+6978|            if (move[0] === toSquare[0]) alignment += 0.1; // Same piece moving
+6979|            break;
+6980|        case 'piece_coordination':
