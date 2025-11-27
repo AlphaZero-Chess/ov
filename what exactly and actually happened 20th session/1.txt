@@ -1,0 +1,39 @@
+
+Action: Based on my analysis:
+
+1. CURRENT STATE (v40.9):
+   - 27,937 lines of JavaScript code
+   - Has extensive v40 evaluation functions
+   - Has MCTS-related structures (MCTSNode, V38MCTSNode)
+   - Session 19 added "Attacked Piece Priority System" to prevent ignoring attacked queens
+
+2. LATEST GAME ANALYSIS:
+The user shared a new game where the bot lost again:
+[White "AlphaZero"] [Black "lichess AI level 8"]
+1. e4 e5 2. d3 Nc6 3. Nf3 Nf6 4. Nc3 d5 5. exd5 Nxd5 6. Bd2 Be7 7. Be2 Be6 8. O-O O-O 
+9. Nxd5 Qxd5 10. Be3 Rad8 11. c4 Qd6 12. Qe1 Bf5 13. Qc3 Rfe8 14. Rad1 Nd4 15. Bxd4 exd4 
+16. Qb3 c5 17. Nd2 Bg5 18. Bf3 Bf4 19. a3 Bxh2+ 20. Kh1 Qh6 21. Bh5 Qxh5 22. Nf3 Bf4+ 
+23. Kg1 Bg4 24. Rd2 Bxf3 25. Ra1 Qh2+ 26. Kf1 Bxg2# 0-1
+
+PROBLEMS IDENTIFIED:
+1. Move 2: d3 instead of d4 (passive opening - AGAIN!)
+2. Move 18: Bf3 putting bishop where it can be captured 
+3. Move 20: Kh1 - king going to corner when attacked
+4. The bot allowed a devastating kingside attack
+
+KEY ISSUES NOT FIXED:
+1. OPENING AGGRESSION - Still playing d3 instead of d4
+2. TACTICAL BLINDNESS - Missing Bxh2+ sacrifice possibilities
+3. KING SAFETY - Not seeing the mating attack developing
+4. The "v40 dominance" system isn't working effectively
+
+The user wants a TRUE AlphaZero replica. What needs to be done:
+1. Force d4 instead of d3 in opening
+2. Better detection of sacrificial attacks on the king
+3. Better mate pattern recognition
+4. The entire evaluation system needs to actually PREVENT these disasters
+
+From Session 19: The implementation added v40AttackedPiecePriorityEval but the bot is STILL making fundamental mistakes.
+
+Let me look at the specific issues in the code and implement REAL fixes for v40.10.
+Observation: Your thought has been logged.

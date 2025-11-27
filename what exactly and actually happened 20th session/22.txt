@@ -1,0 +1,13 @@
+
+Action: $ grep -n "v40AbsoluteOpeningEnforcementEval\|v40GreekGiftDefenseEval\|v40KingHuntDetectionEval\|v40CriticalExchangeEval\|v40MatingAttackAwarenessEval" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 10165:function v40AbsoluteOpeningEnforcementEval(fen, move, board, activeColor, moveNumber) {
+10264:function v40GreekGiftDefenseEval(fen, move, board, activeColor, moveNumber) {
+10356:function v40KingHuntDetectionEval(fen, move, board, activeColor, moveNumber) {
+10473:function v40CriticalExchangeEval(fen, move, board, activeColor, moveNumber) {
+10555:function v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) {
+26098:                const absoluteOpeningScore = v40AbsoluteOpeningEnforcementEval(fen, move, board, activeColor, moveNumber) * 3.0;
+26101:                const greekGiftScore = v40GreekGiftDefenseEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26104:                const kingHuntScore = v40KingHuntDetectionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26107:                const criticalExchangeScore = v40CriticalExchangeEval(fen, move, board, activeColor, moveNumber) * 2.0;
+26110:                const matingAttackScore = v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) * 2.5;
+Exit code: 0

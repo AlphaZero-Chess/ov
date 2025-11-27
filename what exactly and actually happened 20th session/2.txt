@@ -1,0 +1,83 @@
+Let me analyze the game more deeply and check the current opening aggression system:
+Action: $ grep -n "d3\|d4\|OpeningAggression\|v40Opening" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -80
+Observation: 3:// @description  TRUE AlphaZero Replica v40.9 OMNISCIENT - 99% v40 ABSOLUTE DOMINANCE - ATTACKED PIECE PRIORITY - PRE-MOVE THREAT SCAN - PIECE SAFETY ABSOLUTE - FORCED MOVE DETECTION - OPENING AGGRESSION (d4>d3) - EXCHANGE QUALITY - ACTIVE PIECE REQUIREMENT - COUNTERPLAY GENERATION - CENTRAL CONTROL SUPREME - RECAPTURE URGENCY - PIECE ON ATTACKED SQUARE DETECTION - MATERIAL HEMORRHAGE DETECTION - ABSOLUTE BLUNDER CHECK - CENTER PAWN PROTECTION - PAWN TENSION RESOLUTION - QUEEN RAID PREVENTION - TACTICAL PRIORITY OVERRIDE - DEVELOPMENT SAFETY - IMMEDIATE THREAT RESPONSE - Queen Infiltration Detection - Enhanced Hanging Piece Detection - King Corner Safety - Check Sequence Detection - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+1094:    v40OpeningPrinciplesEnabled: true,
+1095:    v40PassiveOpeningPenalty: -15000,       // Penalty for passive opening moves (d3, h3, a3 too early)
+1100:    v40OpeningCentralPawnBonus: 6000,       // Bonus for e4/d4/e5/d5
+1101:    v40OpeningKnightDevBonus: 4000,         // Bonus for knight development
+1102:    v40OpeningCastlingBonus: 8000,          // Bonus for early castling
+1103:    v40OpeningDoubleMovepenalty: -4000,     // Penalty for moving same piece twice
+1104:    v40OpeningEarlyQueenPenalty: -6000,     // Penalty for early queen moves
+1105:    v40OpeningBlockPawnPenalty: -3000,      // Penalty for blocking central pawns
+1168:    // From Nimzowitsch Defense: Ne5 hung d4, then Qxd4, Qxb2 queen raid
+1173:    v40HangingCenterPawnPenalty: -35000,    // MASSIVE penalty for hanging d4/d5/e4/e5
+1211:    // From Alekhine Defense loss: d4 captured, Nc3 allowed dxc3 winning knight!
+1248:    // From King's Pawn Game loss: d3 instead of d4, Qc1 passive, poor exchanges
+1252:    // v40.8: OPENING AGGRESSION — Prefer d4/e4 over d3/e3
+1253:    v40OpeningAggressionEnabled: true,
+1254:    v40PassivePawnPenalty: -25000,          // d3/e3 when d4/e4 possible = BAD
+1255:    v40CenterPawnAdvanceBonus: 15000,       // d4/e4 moves get bonus
+1280:    v40CenterPawnAbsenceEarlyPenalty: -25000, // No d4/e4 by move 5 = very bad
+1867:            // Central moves bonus (d4, d5, e4, e5)
+1869:            if (['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'].includes(to)) {
+2484:    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+2485:    const extendedCenter = ['c3', 'c4', 'c5', 'c6', 'd3', 'd6', 'e3', 'e6', 'f3', 'f4', 'f5', 'f6'];
+2541:            if (['d5', 'e5', 'd4', 'e4'].includes(toSquare)) {
+4030:    if (pieceType === 'n' && ['d5', 'e5', 'd4', 'e4'].includes(toSquare)) {
+4151:// - Qd1-Qd3-Qe4-Qd3 disaster → Queen movement penalty
+4541: * Prevents initiative collapse like Qd1-Qd3-Qe4-Qd3 sequence
+4621: * Prevents disasters like Qd1-Qd3-Qe4-Qd3 sequence (4 queen moves in first 10 moves)
+4896:        const centralSquares = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+5176: * and rewards active, improving moves. Addresses the Qd1-Qd3-Qe4-Qd3 issue.
+6312:    const centralSquares = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+6561:// 1. Passive opening (d3 instead of d4) - Opening Principles
+6570: * Penalizes passive openings like 2.d3 and rewards principled play
+6573:function v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) {
+6574:    if (!CONFIG.v40OpeningPrinciplesEnabled || moveNumber > 12) return 0;
+6588:        // PRINCIPLE 1: Control the center with pawns (e4, d4 for white; e5, d5 for black)
+6590:            const idealSquares = isWhite ? ['e4', 'd4'] : ['e5', 'd5'];
+6591:            const passiveSquares = isWhite ? ['e3', 'd3'] : ['e6', 'd6'];
+6594:                score += CONFIG.v40OpeningCentralPawnBonus || 6000;
+6597:                score += CONFIG.v40OpeningPassivePenalty || -8000;
+6598:                debugLog("[V40_OPENING]", `🚨 PASSIVE OPENING: d3/e3 instead of d4/e4!`);
+6606:                score += CONFIG.v40OpeningKnightDevBonus || 4000;
+6614:                score += CONFIG.v40OpeningCastlingBonus || 8000;
+6625:                score += CONFIG.v40OpeningDoubleMovepenalty || -4000;
+6632:            score += CONFIG.v40OpeningEarlyQueenPenalty || -6000;
+6642:                    score += CONFIG.v40OpeningBlockPawnPenalty || -3000;
+7776:// From analysis of Nimzowitsch Defense: Ne5 hung d4, then Qxd4, Qxb2 queen raid
+7782: * CRITICAL: Prevents hanging center pawns (d4/d5/e4/e5 must be protected!)
+7783: * In the Nimzowitsch Defense, Ne5 hung the d4 pawn - this must NEVER happen again
+7803:        // CHECK ALL CENTER PAWNS (d4, d5, e4, e5 are critical)
+7804:        const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+7805:        const extendedCenter = ['c3', 'c4', 'c5', 'c6', 'd3', 'd6', 'e3', 'e6', 'f3', 'f4', 'f5', 'f6'];
+7861: * After dxe4, the bot should have recaptured or defended d4!
+7900:                    const criticalPawns = ['d4', 'd5', 'e4', 'e5'];
+7933:            const criticalPawns = ['d4', 'd5', 'e4', 'e5', 'c3', 'c4', 'c5', 'c6'];
+7965: * After Qxd4, the bot allowed Qxb2 - this queen raid must be prevented!
+7999:        // KEY RAID TARGETS: b2, b7, d4, d5, f2, f7, g2, g7 (undefended pawns queen can raid)
+8001:            ? ['b2', 'd4', 'f2', 'g2', 'a2', 'c2', 'h2']  // Targets for white
+8180:        const criticalPawns = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5'];
+8215: * After dxe4, the threat to d4 was immediate and ignored!
+8404:    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+8405:    const extendedCenter = ['c3', 'c4', 'c5', 'c6', 'd3', 'd6', 'e3', 'e6', 'f3', 'f4', 'f5', 'f6'];
+8631: * Prevents: d4 captured → Nc3 instead of recapture → dxc3 wins knight
+8742:        // This caught the Nc3 blunder where c3 was attacked by d4 pawn
+9094:// From King's Pawn Game loss: d3 passive, Qc1 passive, Nxd5 bad exchange
+9100: * CRITICAL: Prefer d4/e4 over passive d3/e3 moves
+9101: * Prevents: d3 when d4 is possible, passive openings that cede center
+9103:function v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) {
+9104:    if (!CONFIG.v40OpeningAggressionEnabled) return 0;
+9121:            // Check for passive pawn moves (d3, e3 when d4, e4 possible)
+9123:                { 'd3': 'd4', 'e3': 'e4', 'c3': 'c4' } : 
+9144:            const aggressiveCenterSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+9413:    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+9489:        const goodSquares = ['c3', 'c6', 'f3', 'f6', 'd4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+9690:    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+9691:    const extendedCenter = ['c3', 'c4', 'c5', 'c6', 'd3', 'd6', 'e3', 'e6', 'f3', 'f4', 'f5', 'f6'];
+11484:        if (goal.type === 'CENTER_CONTROL' && ['d4', 'd5', 'e4', 'e5'].some(sq => move.includes(sq))) {
+11607:        const outpostSquares = ['d5', 'e5', 'd4', 'e4', 'c5', 'f5', 'c4', 'f4'];
+11688:    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+11689:    const extendedCenter = ['c3', 'c4', 'c5', 'c6', 'd3', 'd6', 'e3', 'e6', 'f3', 'f4', 'f5', 'f6'];
+11887:    const keySquares = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+Exit code: 0

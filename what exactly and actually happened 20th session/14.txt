@@ -1,0 +1,8 @@
+Now I need to integrate the v40.10 functions into the weighted evaluation. Let me find the integration point:
+Action: $ grep -n "v40.9 OMNISCIENT additions\|forcedMoveScore\|v40Bonus = v40DeepScore" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -15
+Observation: 26089:                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+26111:                               // v40.9 OMNISCIENT additions:
+26112:                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore;
+26113:                v40Bonus = v40DeepScore * 0.99;  // 99% influence — OMNISCIENT PARADIGM SHIFT
+26158:                debugLog("[V40_INTEGRATE]", `   🆕 ForcedMove: ${forcedMoveScore.toFixed(1)}`);
+Exit code: 0

@@ -1,0 +1,22 @@
+
+Action: $ grep -n "v40AttackedPiece\|v40PreMove\|v40PieceSafety\|v40Forced" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -50
+Observation: 1293:    v40AttackedPiecePriorityEnabled: true,
+1300:    v40PreMoveThreatScanEnabled: true,
+1306:    v40PieceSafetyAbsoluteEnabled: true,
+1312:    v40ForcedMoveDetectionEnabled: true,
+1313:    v40ForcedMoveBonus: 400000,             // Bonus for making the forced move
+9761:function v40AttackedPiecePriorityEval(fen, move, board, activeColor, moveNumber) {
+9762:    if (!CONFIG.v40AttackedPiecePriorityEnabled) return 0;
+9853:function v40PreMoveThreatScanEval(fen, move, board, activeColor) {
+9854:    if (!CONFIG.v40PreMoveThreatScanEnabled) return 0;
+9903:function v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) {
+9904:    if (!CONFIG.v40PieceSafetyAbsoluteEnabled) return 0;
+9980:function v40ForcedMoveDetectionEval(fen, move, board, activeColor) {
+9981:    if (!CONFIG.v40ForcedMoveDetectionEnabled) return 0;
+10013:                score += CONFIG.v40ForcedMoveBonus || 400000;
+10038:                    score += CONFIG.v40ForcedMoveBonus || 400000;
+25303:                const attackedPiecePriorityScore = v40AttackedPiecePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+25306:                const preMoveThreatScore = v40PreMoveThreatScanEval(fen, move, board, activeColor) * 2.0;
+25309:                const pieceSafetyAbsoluteScore = v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) * 2.0;
+25312:                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+Exit code: 0

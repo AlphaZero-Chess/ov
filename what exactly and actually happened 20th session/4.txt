@@ -1,0 +1,80 @@
+Now let me look at the v40OpeningAggressionEval function and understand why d3 is still being played:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+9094|// From King's Pawn Game loss: d3 passive, Qc1 passive, Nxd5 bad exchange
+9095|// The bot must play ACTIVELY and make QUALITY exchanges only
+9096|// ═══════════════════════════════════════════════════════════════════════════════
+9097|
+9098|/**
+9099| * v40.8 TRANSCENDENT: OPENING AGGRESSION EVALUATION
+9100| * CRITICAL: Prefer d4/e4 over passive d3/e3 moves
+9101| * Prevents: d3 when d4 is possible, passive openings that cede center
+9102| */
+9103|function v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) {
+9104|    if (!CONFIG.v40OpeningAggressionEnabled) return 0;
+9105|    if (moveNumber > 12) return 0;  // Only in opening
+9106|    
+9107|    let score = 0;
+9108|    const isWhite = activeColor === 'w';
+9109|    
+9110|    try {
+9111|        const fromSquare = move.substring(0, 2);
+9112|        const toSquare = move.substring(2, 4);
+9113|        const movingPiece = board.get(fromSquare);
+9114|        
+9115|        if (!movingPiece) return 0;
+9116|        
+9117|        const pieceType = movingPiece.toLowerCase();
+9118|        
+9119|        // CHECK 1: Pawn moves - prefer aggressive center pushes
+9120|        if (pieceType === 'p') {
+9121|            // Check for passive pawn moves (d3, e3 when d4, e4 possible)
+9122|            const passivePawnMoves = isWhite ? 
+9123|                { 'd3': 'd4', 'e3': 'e4', 'c3': 'c4' } : 
+9124|                { 'd6': 'd5', 'e6': 'e5', 'c6': 'c5' };
+9125|            
+9126|            if (passivePawnMoves[toSquare]) {
+9127|                // Check if the aggressive move is possible
+9128|                const aggressiveSquare = passivePawnMoves[toSquare];
+9129|                const aggressiveFromSquare = isWhite ? 
+9130|                    aggressiveSquare[0] + '2' : 
+9131|                    aggressiveSquare[0] + '7';
+9132|                
+9133|                const pawnOnStart = board.get(aggressiveFromSquare);
+9134|                const aggressiveSquareBlocked = board.has(aggressiveSquare);
+9135|                
+9136|                // If aggressive move was possible but we chose passive
+9137|                if (pawnOnStart && !aggressiveSquareBlocked && fromSquare === aggressiveFromSquare) {
+9138|                    score += CONFIG.v40PassivePawnPenalty || -25000;
+9139|                    debugLog("[V40.8_AGGRO]", `🚨🚨 PASSIVE PAWN MOVE ${toSquare} when ${aggressiveSquare} possible!`);
+9140|                }
+9141|            }
+9142|            
+9143|            // BONUS for aggressive center pawn advances
+9144|            const aggressiveCenterSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+9145|            if (aggressiveCenterSquares.includes(toSquare)) {
+9146|                score += CONFIG.v40CenterPawnAdvanceBonus || 15000;
+9147|                debugLog("[V40.8_AGGRO]", `✅ AGGRESSIVE CENTER PAWN TO ${toSquare}!`);
+9148|            }
+9149|        }
+9150|        
+9151|        // CHECK 2: By move 5, we should have center presence
+9152|        if (moveNumber >= 5) {
+9153|            const hasCenterPawn = hasCenterPawnPresence(board, activeColor);
+9154|            if (!hasCenterPawn) {
+9155|                score += CONFIG.v40CenterPawnAbsenceEarlyPenalty || -25000;
+9156|                debugLog("[V40.8_AGGRO]", `🚨 NO CENTER PAWN PRESENCE BY MOVE ${moveNumber}!`);
+9157|            }
+9158|        }
+9159|        
+9160|    } catch (e) {
+9161|        debugLog("[V40.8_AGGRO]", `Error: ${e.message}`);
+9162|    }
+9163|    
+9164|    return score;
+9165|}
+9166|
+9167|/**
+9168| * v40.8 TRANSCENDENT: EXCHANGE QUALITY EVALUATION
+9169| * CRITICAL: Don't trade pieces that help opponent (like Nxd5 bringing queen to center)
+9170| * Prevents: Bad exchanges that centralize enemy pieces

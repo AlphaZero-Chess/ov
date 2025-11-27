@@ -1,0 +1,69 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+10095|}
+10096|
+10097|/**
+10098| * v40.9 OMNISCIENT: INSTANT RECAPTURE DETECTION
+10099| * If enemy just captured our piece, we MUST evaluate recapture immediately
+10100| */
+10101|function v40InstantRecaptureEval(fen, move, board, activeColor, lastMove) {
+10102|    let score = 0;
+10103|    
+10104|    try {
+10105|        if (!lastMove) return 0;
+10106|        
+10107|        // Check if last move was a capture by examining if our piece disappeared
+10108|        const lastMoveFrom = lastMove.substring(0, 2);
+10109|        const lastMoveTo = lastMove.substring(2, 4);
+10110|        
+10111|        // If we can recapture on the square enemy just moved to
+10112|        const fromSquare = move.substring(0, 2);
+10113|        const toSquare = move.substring(2, 4);
+10114|        
+10115|        if (toSquare === lastMoveTo) {
+10116|            // This is a potential recapture
+10117|            const capturingPiece = board.get(fromSquare);
+10118|            const capturedPiece = board.get(toSquare);
+10119|            
+10120|            if (capturingPiece && capturedPiece) {
+10121|                const ourValue = getPieceValueSimple(capturingPiece.toLowerCase());
+10122|                const theirValue = getPieceValueSimple(capturedPiece.toLowerCase());
+10123|                
+10124|                // Check if recapture is safe or favorable
+10125|                const isWhite = activeColor === 'w';
+10126|                const enemyColor = isWhite ? 'b' : 'w';
+10127|                
+10128|                // Simulate the recapture
+10129|                const simBoard = new Map(board);
+10130|                simBoard.delete(fromSquare);
+10131|                simBoard.set(toSquare, capturingPiece);
+10132|                
+10133|                const canTheyRetake = isSquareAttackedByColor(simBoard, toSquare, enemyColor);
+10134|                
+10135|                if (!canTheyRetake) {
+10136|                    // Safe recapture
+10137|                    score += 100000 + theirValue * 10;
+10138|                    debugLog("[V40.9_RECAP]", `✅ Safe recapture ${move} (gain ${theirValue})`);
+10139|                } else if (theirValue >= ourValue) {
+10140|                    // Worth it even if they retake
+10141|                    score += 50000 + (theirValue - ourValue) * 10;
+10142|                    debugLog("[V40.9_RECAP]", `✅ Favorable recapture ${move}`);
+10143|                }
+10144|            }
+10145|        }
+10146|        
+10147|    } catch (e) {
+10148|        debugLog("[V40.9_RECAP]", `Error: ${e.message}`);
+10149|    }
+10150|    
+10151|    return score;
+10152|}
+10153|
+10154|// ═══════════════════════════════════════════════════════════════════════════════
+10155|// v40.9 OMNISCIENT: HELPER FUNCTIONS
+10156|// ═══════════════════════════════════════════════════════════════════════════════
+10157|
+10158|/**
+10159| * v40.9 Helper: Find all attacked pieces for a color
+10160| */

@@ -1,0 +1,5 @@
+Now let me update the weighted merge comment to reflect v40.10:
+Action: $ grep -n "v40.9: TRUE ALPHAZERO OMNISCIENT weighted merge\|TRUE_ALPHAZERO.qWeight \* engine_Q \* 0.01" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 26195:        // v40.9: TRUE ALPHAZERO OMNISCIENT weighted merge — v40 OMNISCIENT DOMINANT (99%)
+26198:            TRUE_ALPHAZERO.qWeight * engine_Q * 0.01 +  // Engine reduced to 1%
+Exit code: 0

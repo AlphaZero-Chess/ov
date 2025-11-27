@@ -1,0 +1,114 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+25270|                // v40.7: MATERIAL HEMORRHAGE — Detect moves leading to material loss chain
+25271|                const hemorrhageScore = v40MaterialHemorrhageDetection(fen, move, board, activeColor) * 1.3;
+25272|                
+25273|                // v40.7: ABSOLUTE BLUNDER CHECK — Final safety verification
+25274|                const blunderCheckScore = v40AbsoluteBlunderCheck(fen, move, board, activeColor) * 2.0;
+25275|                
+25276|                // ═══════════════════════════════════════════════════════════════════
+25277|                // v40.8 TRANSCENDENT: ANTI-PASSIVITY & EXCHANGE QUALITY SUPREME
+25278|                // Addresses: d3 passive moves, Qc1 passive queen, bad Nxd5 exchanges
+25279|                // ═══════════════════════════════════════════════════════════════════
+25280|                
+25281|                // v40.8: OPENING AGGRESSION — Prefer d4/e4 over passive d3/e3
+25282|                const openingAggressionScore = v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) * 1.5;
+25283|                
+25284|                // v40.8: EXCHANGE QUALITY — Don't trade pieces that help opponent
+25285|                const exchangeQualityScore = v40ExchangeQualityEval(fen, move, board, activeColor) * 1.4;
+25286|                
+25287|                // v40.8: ACTIVE PIECE REQUIREMENT — All pieces must be active
+25288|                const activePieceRequirementScore = v40ActivePieceRequirementEval(fen, move, board, activeColor, moveNumber) * 1.2;
+25289|                
+25290|                // v40.8: COUNTERPLAY GENERATION — Must create counterplay when attacked
+25291|                const counterplayGenScore = v40CounterplayGenerationEval(fen, move, board, activeColor, moveNumber) * 1.3;
+25292|                
+25293|                // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
+25294|                const centralControlSupremeScore = v40CentralControlSupremeEval(fen, move, board, activeColor, moveNumber) * 1.3;
+25295|                
+25296|                // ═══════════════════════════════════════════════════════════════════
+25297|                // v40.9 OMNISCIENT: ATTACKED PIECE DETECTION & FORCED RESPONSE
+25298|                // From Scandinavian loss: Bot played Ng3 while Queen on b5 was attacked!
+25299|                // This is THE MOST CRITICAL FIX - bot MUST address attacked pieces
+25300|                // ═══════════════════════════════════════════════════════════════════
+25301|                
+25302|                // v40.9: ATTACKED PIECE PRIORITY — CRITICAL: Must address attacked pieces
+25303|                const attackedPiecePriorityScore = v40AttackedPiecePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+25304|                
+25305|                // v40.9: PRE-MOVE THREAT SCAN — Scan for threats before moving
+25306|                const preMoveThreatScore = v40PreMoveThreatScanEval(fen, move, board, activeColor) * 2.0;
+25307|                
+25308|                // v40.9: PIECE SAFETY ABSOLUTE — Never leave valuable pieces hanging
+25309|                const pieceSafetyAbsoluteScore = v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) * 2.0;
+25310|                
+25311|                // v40.9: FORCED MOVE DETECTION — Must make forced moves when required
+25312|                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+25313|                
+25314|                // v40.9: COMBINED v40 SCORE — 99% OMNISCIENT DOMINANT INFLUENCE
+25315|                // This makes v40 the ABSOLUTE OMNISCIENT factor in move selection
+25316|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+25317|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+25318|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+25319|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+25320|                               counterattackBonus + initiativePreservationBonus +
+25321|                               // v40.4 additions:
+25322|                               openingPrinciplesScore + discoveredAttackPenalty + 
+25323|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+25324|                               // v40.5 additions:
+25325|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+25326|                               // v40.6 ULTIMATE additions:
+25327|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+25328|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+25329|                               // v40.7 DIVINE additions:
+25330|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+25331|                               // v40.8 TRANSCENDENT additions:
+25332|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+25333|                               counterplayGenScore + centralControlSupremeScore +
+25334|                               // v40.9 OMNISCIENT additions:
+25335|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore;
+25336|                v40Bonus = v40DeepScore * 0.99;  // 99% influence — OMNISCIENT PARADIGM SHIFT
+25337|                
+25338|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+25339|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.9 OMNISCIENT EVALUATION`);
+25340|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+25341|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+25342|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+25343|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+25344|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+25345|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+25346|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+25347|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+25348|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+25349|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+25350|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+25351|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+25352|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+25353|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+25354|                debugLog("[V40_INTEGRATE]", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+25355|                debugLog("[V40_INTEGRATE]", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+25356|                debugLog("[V40_INTEGRATE]", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+25357|                debugLog("[V40_INTEGRATE]", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+25358|                debugLog("[V40_INTEGRATE]", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+25359|                debugLog("[V40_INTEGRATE]", `   QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+25360|                debugLog("[V40_INTEGRATE]", `   HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+25361|                debugLog("[V40_INTEGRATE]", `   KingCorner: ${kingCornerScore.toFixed(1)}`);
+25362|                debugLog("[V40_INTEGRATE]", `   CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+25363|                debugLog("[V40_INTEGRATE]", `   CenterPawn: ${centerPawnScore.toFixed(1)}`);
+25364|                debugLog("[V40_INTEGRATE]", `   PawnTension: ${pawnTensionScore.toFixed(1)}`);
+25365|                debugLog("[V40_INTEGRATE]", `   QueenRaid: ${queenRaidScore.toFixed(1)}`);
+25366|                debugLog("[V40_INTEGRATE]", `   TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
+25367|                debugLog("[V40_INTEGRATE]", `   DevSafety: ${devSafetyScore.toFixed(1)}`);
+25368|                debugLog("[V40_INTEGRATE]", `   ThreatResponse: ${threatResponseScore.toFixed(1)}`);
+25369|                debugLog("[V40_INTEGRATE]", `   RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
+25370|                debugLog("[V40_INTEGRATE]", `   PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
+25371|                debugLog("[V40_INTEGRATE]", `   Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
+25372|                debugLog("[V40_INTEGRATE]", `   BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+25373|                debugLog("[V40_INTEGRATE]", `   OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
+25374|                debugLog("[V40_INTEGRATE]", `   ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
+25375|                debugLog("[V40_INTEGRATE]", `   ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
+25376|                debugLog("[V40_INTEGRATE]", `   CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
+25377|                debugLog("[V40_INTEGRATE]", `   CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
+25378|                debugLog("[V40_INTEGRATE]", `   🆕 AttackedPiecePriority: ${attackedPiecePriorityScore.toFixed(1)}`);
+25379|                debugLog("[V40_INTEGRATE]", `   🆕 PreMoveThreat: ${preMoveThreatScore.toFixed(1)}`);
+25380|                debugLog("[V40_INTEGRATE]", `   🆕 PieceSafetyAbsolute: ${pieceSafetyAbsoluteScore.toFixed(1)}`);

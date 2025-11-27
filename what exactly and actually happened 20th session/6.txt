@@ -1,0 +1,122 @@
+Now I can see the current state. Let me analyze the game:
+
+**Game Analysis: AlphaZero vs Lichess AI level 8 (most recent loss)**
+```
+1. e4 e5 2. d3 ← PROBLEM: d3 instead of d4!
+3. Nf3 Nf6 4. Nc3 d5 5. exd5 Nxd5 6. Bd2 Be7 7. Be2 Be6 8. O-O O-O 
+9. Nxd5 Qxd5 ← Bad exchange: brings enemy queen to powerful d5
+10. Be3 Rad8 11. c4 Qd6 12. Qe1 Bf5 13. Qc3 Rfe8 14. Rad1 Nd4 
+15. Bxd4 exd4 16. Qb3 c5 17. Nd2 Bg5 18. Bf3 Bf4 19. a3 Bxh2+ ← MISSED this sacrifice!
+20. Kh1 Qh6 21. Bh5 Qxh5 22. Nf3 Bf4+ 23. Kg1 Bg4 24. Rd2 Bxf3 
+25. Ra1 Qh2+ 26. Kf1 Bxg2# 
+```
+
+**Key Problems:**
+1. **Move 2: d3 instead of d4** - The opening aggression evaluation exists but isn't working
+2. **Move 9: Nxd5** - Bad exchange that centralizes enemy queen  
+3. **Move 19: Missed Bxh2+ sacrifice** - No Greek gift detection
+4. **King safety collapse** - The king got hunted down
+
+Let me implement **v40.10 GODLIKE** with critical fixes:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1|// ==UserScript==
+2|// @name         Lichess Bot - TRUE ALPHAZERO v40.9 SUPERHUMAN BEAST OMNISCIENT
+3|// @description  TRUE AlphaZero Replica v40.9 OMNISCIENT - 99% v40 ABSOLUTE DOMINANCE - ATTACKED PIECE PRIORITY - PRE-MOVE THREAT SCAN - PIECE SAFETY ABSOLUTE - FORCED MOVE DETECTION - OPENING AGGRESSION (d4>d3) - EXCHANGE QUALITY - ACTIVE PIECE REQUIREMENT - COUNTERPLAY GENERATION - CENTRAL CONTROL SUPREME - RECAPTURE URGENCY - PIECE ON ATTACKED SQUARE DETECTION - MATERIAL HEMORRHAGE DETECTION - ABSOLUTE BLUNDER CHECK - CENTER PAWN PROTECTION - PAWN TENSION RESOLUTION - QUEEN RAID PREVENTION - TACTICAL PRIORITY OVERRIDE - DEVELOPMENT SAFETY - IMMEDIATE THREAT RESPONSE - Queen Infiltration Detection - Enhanced Hanging Piece Detection - King Corner Safety - Check Sequence Detection - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+4|// @author       AlphaZero TRUE REPLICA v40.9 SUPERHUMAN BEAST OMNISCIENT EDITION
+5|// @version      40.9.0-SUPERHUMAN-BEAST-OMNISCIENT
+6|// @match         *://lichess.org/*
+7|// @run-at        document-idle
+8|// @grant         none
+9|// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/del@refs/heads/main/stockfish1.js
+10|// ==/UserScript==
+11|
+12|/**
+13| * ═══════════════════════════════════════════════════════════════════════════════════════════
+14| * v40.9.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — OMNISCIENT EDITION
+15| * ═══════════════════════════════════════════════════════════════════════════════════════════
+16| * 
+17| * ██████████████████████████████████████████████████████████████████████████████████████████
+18| * █                                                                                        █
+19| * █    "A paradigm-shifter, a level that felt almost ALIEN, with moves that               █
+20| * █     prioritized DEEP UNDERSTANDING over brute-force calculation."                     █
+21| * █                                                                                        █
+22| * █    "A SUPERHUMAN BEAST that can CRUSH Stockfish, with FLAWLESS endgame play,          █
+23| * █     PERFECT positional judgment, and ZERO blunders, and an uncanny ability            █
+24| * █     to weave long-term strategic webs that humans could barely comprehend."           █
+25| * █                                                                                        █
+26| * █    v40.6 ULTIMATE: TRUE PERSISTENT MCTS Tree Search, PUCT Selection (AlphaZero),      █
+27| * █    200+ Move Strategic Horizon, 25-Pass Blunder Verification, Neural Pattern          █
+28| * █    Recognition, Perfect Endgame (Philidor/Lucena/Opposition/Triangulation),           █
+29| * █    CENTER PAWN PROTECTION, PAWN TENSION RESOLUTION, QUEEN RAID PREVENTION,            █
+30| * █    TACTICAL PRIORITY OVERRIDE, DEVELOPMENT SAFETY CHECK, IMMEDIATE THREAT RESPONSE,  █
+31| * █    QUEEN INFILTRATION DETECTION, HANGING PIECE DETECTION, KING CORNER SAFETY,         █
+32| * █    CHECK SEQUENCE DETECTION, OPENING PRINCIPLES, DISCOVERED ATTACK DETECTION,         █
+33| * █    KNIGHT INVASION PENALTIES, ENHANCED QUEEN MATING PATTERNS, PAWN SHIELD INTEGRITY   █
+34| * █    ABSOLUTE ZERO TACTICAL OVERSIGHTS - TRUE ALPHAZERO ULTIMATE REPLICA                █
+35| * █                                                                                        █
+36| * ██████████████████████████████████████████████████████████████████████████████████████████
+37| * 
+38| * ═══════════════════════════════════════════════════════════════════════════════════════════
+39| * v40 SUPERHUMAN BEAST MISSION: CRUSH Stockfish through:
+40| * 
+41| * 1. TRUE PERSISTENT MCTS with proper PUCT selection (AlphaZero's secret)
+42| *    - 10,000+ simulations per move
+43| *    - Dirichlet noise at root for exploration
+44| *    - Tree reuse across moves
+45| *    - Virtual loss for parallel search diversity
+46| * 
+47| * 2. 200+ move strategic planning with DELAYED GRATIFICATION mastery
+48| *    - Web-weaving: strategic pressure building across multiple fronts
+49| *    - Patient maneuvering with positional squeeze
+50| *    - Long-term plan consistency tracking
+51| *    - Alien-tier pattern recognition
+52| * 
+53| * 3. PERFECT positional judgment (material, mobility, king safety, pawn structure)
+54| *    - Value network emulation: holistic position evaluation
+55| *    - Policy network emulation: move prior estimation
+56| *    - Space control and territorial dominance
+57| *    - Initiative and tempo tracking
+58| * 
+59| * 4. FLAWLESS endgame play with:
+60| *    - Opposition detection (direct, distant, diagonal)
+61| *    - Triangulation recognition
+62| *    - Zugzwang creation and detection
+63| *    - Philidor position recognition
+64| *    - Lucena position recognition
+65| *    - Key square control
+66| *    - Outflanking and shouldering
+67| *    - Pawn race calculation
+68| * 
+69| * 5. ZERO blunders through 12-pass multi-pass tactical verification:
+70| *    - Pass 1: Comprehensive tactical scan
+71| *    - Pass 2: Hanging piece detection
+72| *    - Pass 3: Fork threat detection (knight forks, queen forks)
+73| *    - Pass 4: Pin/Skewer detection
+74| *    - Pass 5: Back rank mate threat detection
+75| *    - Pass 6: Discovered attack detection
+76| *    - Pass 7: Desperado piece check
+77| *    - Pass 8: Zwischenzug (in-between move) detection
+78| *    - Pass 9: Queen trap detection
+79| *    - Pass 10: Overloaded piece detection
+80| *    - Pass 11: Mating net detection
+81| *    - Pass 12: Perpetual check opportunity check
+82| * 
+83| * 6. UNCANNY "web-weaving" - strategic pressure building across multiple fronts
+84| *    - Multi-front pressure detection (queenside, kingside, center)
+85| *    - Coordinated threat creation
+86| *    - Position squeeze and domination
+87| *    - Strategic asphyxiation
+88| * 
+89| * 7. RESILIENCE - counter-play generation when behind
+90| *    - Counterplay priority in crisis
+91| *    - Active defense preference
+92| *    - Fortress construction
+93| *    - Complication creation
+94| *    - Swindle awareness
+95| * 
+96| * 8. ALIEN-TIER pattern recognition (outposts, batteries, weak squares, pawn structures)
+97| *    - Outpost square detection
+98| *    - Battery creation (Queen+Rook, Queen+Bishop)
+99| *    - Open file control
+100| *    - Long diagonal control

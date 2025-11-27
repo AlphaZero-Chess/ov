@@ -1,0 +1,175 @@
+Now let me update the integration to add v40.10 functions:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.9: FORCED MOVE DETECTION — Must make forced moves when required
+                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+                
+                // v40.9: COMBINED v40 SCORE — 99% OMNISCIENT DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE OMNISCIENT factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+                               // v40.6 ULTIMATE additions:
+                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+                               // v40.7 DIVINE additions:
+                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+                               // v40.8 TRANSCENDENT additions:
+                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+                               counterplayGenScore + centralControlSupremeScore +
+                               // v40.9 OMNISCIENT additions:
+                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore;
+                v40Bonus = v40DeepScore * 0.99;  // 99% influence — OMNISCIENT PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `🦁 SUPERHUMAN BEAST v40.9 OMNISCIENT EVALUATION`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KingCorner: ${kingCornerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CenterPawn: ${centerPawnScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PawnTension: ${pawnTensionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenRaid: ${queenRaidScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DevSafety: ${devSafetyScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ThreatResponse: ${threatResponseScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 AttackedPiecePriority: ${attackedPiecePriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 PreMoveThreat: ${preMoveThreatScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 PieceSafetyAbsolute: ${pieceSafetyAbsoluteScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 ForcedMove: ${forcedMoveScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 99% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);" --new-str "                // v40.9: FORCED MOVE DETECTION — Must make forced moves when required
+                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.10 GODLIKE: ABSOLUTE OPENING ENFORCEMENT & SACRIFICE DEFENSE
+                // From latest loss: Bot STILL played d3 instead of d4, missed Bxh2+ sacrifice
+                // These are THE FINAL CRITICAL FIXES for TRUE AlphaZero performance
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.10: ABSOLUTE D4>D3 ENFORCEMENT — DEATH PENALTY for passive opening
+                const absoluteOpeningScore = v40AbsoluteOpeningEnforcementEval(fen, move, board, activeColor, moveNumber) * 3.0;
+                
+                // v40.10: GREEK GIFT DEFENSE — Detect Bxh2+/Bxh7+ sacrifices
+                const greekGiftScore = v40GreekGiftDefenseEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.10: KING HUNT DETECTION — Detect when king is being hunted
+                const kingHuntScore = v40KingHuntDetectionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.10: CRITICAL EXCHANGE — Don't centralize enemy pieces
+                const criticalExchangeScore = v40CriticalExchangeEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.10: MATING ATTACK AWARENESS — Detect impending mating attacks
+                const matingAttackScore = v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.10: COMBINED v40 SCORE — 100% GODLIKE DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE GODLIKE factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+                               // v40.6 ULTIMATE additions:
+                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+                               // v40.7 DIVINE additions:
+                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+                               // v40.8 TRANSCENDENT additions:
+                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+                               counterplayGenScore + centralControlSupremeScore +
+                               // v40.9 OMNISCIENT additions:
+                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+                               // v40.10 GODLIKE additions:
+                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — GODLIKE PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `👑 SUPERHUMAN BEAST v40.10 GODLIKE EVALUATION`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KingCorner: ${kingCornerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CenterPawn: ${centerPawnScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PawnTension: ${pawnTensionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenRaid: ${queenRaidScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DevSafety: ${devSafetyScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ThreatResponse: ${threatResponseScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   AttackedPiecePriority: ${attackedPiecePriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PreMoveThreat: ${preMoveThreatScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PieceSafetyAbsolute: ${pieceSafetyAbsoluteScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ForcedMove: ${forcedMoveScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑 ABSOLUTE OPENING: ${absoluteOpeningScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑 GREEK GIFT DEFENSE: ${greekGiftScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑 KING HUNT: ${kingHuntScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑 CRITICAL EXCHANGE: ${criticalExchangeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑 MATING ATTACK: ${matingAttackScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);"
+Observation: Edit was successful.

@@ -1,0 +1,94 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+26080|                const attackedPiecePriorityScore = v40AttackedPiecePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+26081|                
+26082|                // v40.9: PRE-MOVE THREAT SCAN — Scan for threats before moving
+26083|                const preMoveThreatScore = v40PreMoveThreatScanEval(fen, move, board, activeColor) * 2.0;
+26084|                
+26085|                // v40.9: PIECE SAFETY ABSOLUTE — Never leave valuable pieces hanging
+26086|                const pieceSafetyAbsoluteScore = v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) * 2.0;
+26087|                
+26088|                // v40.9: FORCED MOVE DETECTION — Must make forced moves when required
+26089|                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+26090|                
+26091|                // v40.9: COMBINED v40 SCORE — 99% OMNISCIENT DOMINANT INFLUENCE
+26092|                // This makes v40 the ABSOLUTE OMNISCIENT factor in move selection
+26093|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+26094|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+26095|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+26096|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+26097|                               counterattackBonus + initiativePreservationBonus +
+26098|                               // v40.4 additions:
+26099|                               openingPrinciplesScore + discoveredAttackPenalty + 
+26100|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+26101|                               // v40.5 additions:
+26102|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+26103|                               // v40.6 ULTIMATE additions:
+26104|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+26105|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+26106|                               // v40.7 DIVINE additions:
+26107|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+26108|                               // v40.8 TRANSCENDENT additions:
+26109|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+26110|                               counterplayGenScore + centralControlSupremeScore +
+26111|                               // v40.9 OMNISCIENT additions:
+26112|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore;
+26113|                v40Bonus = v40DeepScore * 0.99;  // 99% influence — OMNISCIENT PARADIGM SHIFT
+26114|                
+26115|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+26116|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.9 OMNISCIENT EVALUATION`);
+26117|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+26118|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+26119|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+26120|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+26121|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+26122|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+26123|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+26124|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+26125|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+26126|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+26127|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+26128|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+26129|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+26130|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+26131|                debugLog("[V40_INTEGRATE]", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+26132|                debugLog("[V40_INTEGRATE]", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+26133|                debugLog("[V40_INTEGRATE]", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+26134|                debugLog("[V40_INTEGRATE]", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+26135|                debugLog("[V40_INTEGRATE]", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+26136|                debugLog("[V40_INTEGRATE]", `   QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+26137|                debugLog("[V40_INTEGRATE]", `   HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+26138|                debugLog("[V40_INTEGRATE]", `   KingCorner: ${kingCornerScore.toFixed(1)}`);
+26139|                debugLog("[V40_INTEGRATE]", `   CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+26140|                debugLog("[V40_INTEGRATE]", `   CenterPawn: ${centerPawnScore.toFixed(1)}`);
+26141|                debugLog("[V40_INTEGRATE]", `   PawnTension: ${pawnTensionScore.toFixed(1)}`);
+26142|                debugLog("[V40_INTEGRATE]", `   QueenRaid: ${queenRaidScore.toFixed(1)}`);
+26143|                debugLog("[V40_INTEGRATE]", `   TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
+26144|                debugLog("[V40_INTEGRATE]", `   DevSafety: ${devSafetyScore.toFixed(1)}`);
+26145|                debugLog("[V40_INTEGRATE]", `   ThreatResponse: ${threatResponseScore.toFixed(1)}`);
+26146|                debugLog("[V40_INTEGRATE]", `   RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
+26147|                debugLog("[V40_INTEGRATE]", `   PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
+26148|                debugLog("[V40_INTEGRATE]", `   Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
+26149|                debugLog("[V40_INTEGRATE]", `   BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+26150|                debugLog("[V40_INTEGRATE]", `   OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
+26151|                debugLog("[V40_INTEGRATE]", `   ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
+26152|                debugLog("[V40_INTEGRATE]", `   ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
+26153|                debugLog("[V40_INTEGRATE]", `   CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
+26154|                debugLog("[V40_INTEGRATE]", `   CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
+26155|                debugLog("[V40_INTEGRATE]", `   🆕 AttackedPiecePriority: ${attackedPiecePriorityScore.toFixed(1)}`);
+26156|                debugLog("[V40_INTEGRATE]", `   🆕 PreMoveThreat: ${preMoveThreatScore.toFixed(1)}`);
+26157|                debugLog("[V40_INTEGRATE]", `   🆕 PieceSafetyAbsolute: ${pieceSafetyAbsoluteScore.toFixed(1)}`);
+26158|                debugLog("[V40_INTEGRATE]", `   🆕 ForcedMove: ${forcedMoveScore.toFixed(1)}`);
+26159|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 99% bonus=${v40Bonus.toFixed(1)}cp`);
+26160|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+26161|            } catch (e) {
+26162|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+26163|                v40Bonus = 0;
+26164|            }
+26165|        }
+26166|        
+26167|        // v40.9: TRUE ALPHAZERO OMNISCIENT weighted merge — v40 OMNISCIENT DOMINANT (99%)
+26168|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY OMNISCIENT
+26169|        const combinedScore = (
+26170|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.01 +  // Engine reduced to 1%

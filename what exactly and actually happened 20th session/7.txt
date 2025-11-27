@@ -1,0 +1,74 @@
+Now let me implement v40.10 GODLIKE with critical fixes. The main issues are:
+
+1. **d3 vs d4 problem** - The OpeningAggressionEval penalty (-25000) isn't strong enough or isn't being applied properly
+2. **Greek Gift Sacrifice detection** - Bxh2+ pattern needs detection
+3. **Bad Exchange detection** - Nxd5 bringing queen to center 
+4. **Mating Attack detection** - King safety during ongoing attacks
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1315|    
+1316|    // v40.9: 99% OMNISCIENT DOMINANCE — v40 is now ABSOLUTELY OMNISCIENT
+1317|    v40OmniscientDominance: 0.99,           // 99% v40 dominance (up from 97%)
+1318|};
+1319|
+1320|// ═══════════════════════════════════════════════════════════════════════
+1321|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1322|// ═══════════════════════════════════════════════════════════════════════
+1323|
+1324|/**
+1325| * v37: TRUE MCTS Node structure for proper tree search
+1326| */
+1327|class MCTSNode {
+1328|    constructor(move, parent = null, prior = 1.0) {
+1329|        this.move = move;
+1330|        this.parent = parent;
+1331|        this.children = new Map();
+1332|        this.visits = 0;
+1333|        this.totalValue = 0;
+1334|        this.prior = prior;           // Policy prior (P)
+1335|        this.virtualLoss = 0;
+1336|        this.isExpanded = false;
+1337|        this.isTerminal = false;
+1338|        this.depth = parent ? parent.depth + 1 : 0;
+1339|    }
+1340|    
+1341|    get value() {
+1342|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1343|    }
+1344|    
+1345|    get ucb1Score() {
+1346|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1347|        
+1348|        const exploitation = this.value;
+1349|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+1350|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+1351|        
+1352|        return exploitation + exploration;
+1353|    }
+1354|    
+1355|    get puctScore() {
+1356|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1357|        
+1358|        const Q = this.value;
+1359|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+1360|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+1361|        
+1362|        // Apply virtual loss for diversity
+1363|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);
+1364|        
+1365|        return Q + U - virtualLossAdjustment;
+1366|    }
+1367|    
+1368|    selectChild() {
+1369|        if (this.children.size === 0) return null;
+1370|        
+1371|        let bestChild = null;
+1372|        let bestScore = -Infinity;
+1373|        
+1374|        for (const [move, child] of this.children) {
+1375|            const score = child.puctScore;
+1376|            if (score > bestScore) {
+1377|                bestScore = score;
+1378|                bestChild = child;
+1379|            }
+1380|        }
