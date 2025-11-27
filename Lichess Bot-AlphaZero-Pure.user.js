@@ -2333,7 +2333,7 @@ function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
         const moveNumber = parseInt(fen.split(' ')[5]) || 1;
         
         debugLog("[V40_EVAL]", `═══════════════════════════════════════════════════════`);
-        debugLog("[V40_EVAL]", `🦁 SUPERHUMAN BEAST EVALUATION for ${candidateMove}`);
+        debugLog("[V40_EVAL]", `🦁 SUPERHUMAN BEAST v40.1 EVALUATION for ${candidateMove}`);
         debugLog("[V40_EVAL]", `═══════════════════════════════════════════════════════`);
         
         // ═══════════════════════════════════════════════════════════════════
@@ -2406,19 +2406,36 @@ function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
         const initiativeScore = v40InitiativeEvaluation(fen, candidateMove, board, activeColor, moveNumber);
         
         // ═══════════════════════════════════════════════════════════════════
-        // COMBINED SUPERHUMAN BEAST SCORE
+        // v40.1: ADDITIONAL PHASES FOR TRUE ALPHAZERO DOMINANCE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // PHASE 11: King Safety Deep Analysis
+        const kingSafetyScore = v40DeepKingSafetyAnalysis(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // PHASE 12: File and Diagonal Control
+        const fileControlScore = v40FileAndDiagonalControl(fen, candidateMove, board, activeColor);
+        
+        // PHASE 13: Piece Coordination (web-weaving precursor)
+        const coordinationScore = v40PieceCoordinationEval(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // v40.1: COMBINED SUPERHUMAN BEAST SCORE — REBALANCED WEIGHTS
+        // Increased emphasis on safety, file control, and initiative
         // ═══════════════════════════════════════════════════════════════════
         
         const totalScore = 
-            blunderResult.score * 0.10 +          // 10% tactical safety
-            valueScore * 0.25 +                   // 25% value network (holistic)
-            strategicScore * 0.20 +               // 20% long-term strategy
-            endgameScore * 0.10 +                 // 10% endgame technique
-            webWeavingScore * 0.10 +              // 10% web-weaving
-            patternScore * 0.08 +                 // 8% pattern recognition
-            delayedScore * 0.07 +                 // 7% delayed gratification
-            resilienceScore * 0.05 +              // 5% resilience
-            initiativeScore * 0.05;               // 5% initiative
+            blunderResult.score * 0.08 +          // 8% tactical safety base
+            valueScore * 0.20 +                   // 20% value network (holistic)
+            strategicScore * 0.15 +               // 15% long-term strategy
+            endgameScore * 0.08 +                 // 8% endgame technique
+            webWeavingScore * 0.08 +              // 8% web-weaving
+            patternScore * 0.06 +                 // 6% pattern recognition
+            delayedScore * 0.05 +                 // 5% delayed gratification
+            resilienceScore * 0.04 +              // 4% resilience
+            initiativeScore * 0.10 +              // 10% initiative (INCREASED)
+            kingSafetyScore * 0.08 +              // 8% king safety (NEW)
+            fileControlScore * 0.04 +             // 4% file control (NEW)
+            coordinationScore * 0.04;             // 4% coordination (NEW)
         
         debugLog("[V40_EVAL]", `📊 Score breakdown for ${candidateMove}:`);
         debugLog("[V40_EVAL]", `   Tactical: ${blunderResult.score.toFixed(0)}`);
@@ -2430,6 +2447,9 @@ function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
         debugLog("[V40_EVAL]", `   Delayed: ${delayedScore.toFixed(0)}`);
         debugLog("[V40_EVAL]", `   Resilience: ${resilienceScore.toFixed(0)}`);
         debugLog("[V40_EVAL]", `   Initiative: ${initiativeScore.toFixed(0)}`);
+        debugLog("[V40_EVAL]", `   KingSafety: ${kingSafetyScore.toFixed(0)}`);
+        debugLog("[V40_EVAL]", `   FileControl: ${fileControlScore.toFixed(0)}`);
+        debugLog("[V40_EVAL]", `   Coordination: ${coordinationScore.toFixed(0)}`);
         debugLog("[V40_EVAL]", `   🦁 SUPERHUMAN TOTAL: ${totalScore.toFixed(1)}`);
         
         return totalScore;
@@ -2438,6 +2458,125 @@ function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
         debugLog("[V40_EVAL]", `⚠️ Error: ${e.message}`);
         return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
     }
+}
+
+/**
+ * v40.1: Deep King Safety Analysis
+ * Prevents disasters from weak king positions
+ */
+function v40DeepKingSafetyAnalysis(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    
+    try {
+        const ourKing = findKing(board, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]) - 1;
+        
+        // After castling, king should be safe
+        const hasCastled = (activeColor === 'w' && (kingFile === 6 || kingFile === 2)) ||
+                          (activeColor === 'b' && (kingFile === 6 || kingFile === 2));
+        
+        if (!hasCastled && moveNumber > 10) {
+            score -= 300;  // Penalty for not castling
+        }
+        
+        // Evaluate pawn shield
+        if (hasCastled) {
+            const shieldScore = evaluatePawnShield(board, activeColor, ourKing);
+            score += shieldScore;
+        }
+        
+        // King in center after move 10 is dangerous
+        if (moveNumber > 10 && kingFile >= 3 && kingFile <= 4) {
+            score -= 400;
+        }
+        
+    } catch (e) {
+        debugLog("[V40_KING]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.1: File and Diagonal Control
+ */
+function v40FileAndDiagonalControl(fen, move, board, activeColor) {
+    let score = 0;
+    
+    try {
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(move.substring(0, 2));
+        
+        if (!movingPiece) return 0;
+        
+        const pieceType = movingPiece.toLowerCase();
+        
+        // Rook file control
+        if (pieceType === 'r') {
+            const file = toSquare[0];
+            if (isOpenFile(file, board)) {
+                score += 400;
+            }
+        }
+        
+        // Bishop diagonal control
+        if (pieceType === 'b') {
+            if (isLongDiagonal(toSquare)) {
+                score += 300;
+            }
+        }
+        
+        // Queen file/diagonal control
+        if (pieceType === 'q') {
+            const file = toSquare[0];
+            if (isOpenFile(file, board)) {
+                score += 200;
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_FILE_DIAG]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.1: Piece Coordination Evaluation
+ */
+function v40PieceCoordinationEval(fen, move, board, activeColor) {
+    let score = 0;
+    
+    try {
+        const toSquare = move.substring(2, 4);
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toRank = parseInt(toSquare[1]) - 1;
+        
+        // Count friendly pieces near the target square
+        let friendlyNearby = 0;
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+            if (!isOurs) continue;
+            
+            const sqFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const sqRank = parseInt(square[1]) - 1;
+            
+            if (Math.abs(sqFile - toFile) <= 2 && Math.abs(sqRank - toRank) <= 2) {
+                friendlyNearby++;
+            }
+        }
+        
+        score += friendlyNearby * 50;  // Bonus for piece coordination
+        
+    } catch (e) {
+        debugLog("[V40_COORD]", `Error: ${e.message}`);
+    }
+    
+    return score;
 }
 
 /**
@@ -3689,6 +3828,539 @@ function countTotalMaterial(board) {
         if (piece) total += values[piece.toLowerCase()] || 0;
     }
     return total;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// v40.1.0: ENHANCED SUPERHUMAN EVALUATION FUNCTIONS
+// Critical fixes for the game loss analysis:
+// - Ra1# mating net blindness → Deep mating net detection
+// - c-file invasion blindness → File control evaluation  
+// - Qd1-Qd3-Qe4-Qd3 disaster → Queen movement penalty
+// - Initiative collapse → Deep initiative tracking
+// ═══════════════════════════════════════════════════════════════════════
+
+// Track queen moves for penalty calculation
+let v40QueenMoveHistory = [];
+let v40LastQueenMoveNumber = 0;
+
+/**
+ * v40.1: DEEP MATING NET DETECTION
+ * Prevents disasters like the Ra1# finish in the lost game
+ * Scans for king cornering patterns and back rank vulnerabilities
+ */
+function v40DeepMatingNetDetection(fen, move, board, activeColor) {
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find our king position after move
+        const ourKing = findKing(simBoard, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]) - 1;
+        
+        // CHECK 1: King cornered (a1, h1, a8, h8 areas)
+        const isCornerArea = (kingFile <= 1 || kingFile >= 6) && (kingRank <= 1 || kingRank >= 6);
+        if (isCornerArea) {
+            penalty -= 500;  // King in corner area is dangerous
+            debugLog("[V40_MATING_NET]", `⚠️ King in corner area ${ourKing}`);
+        }
+        
+        // CHECK 2: Back rank vulnerability (king on 1st/8th with blocked escape)
+        const backRank = activeColor === 'w' ? 0 : 7;
+        if (kingRank === backRank) {
+            // Count escape squares
+            let escapeSquares = 0;
+            for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+                const escapeRank = activeColor === 'w' ? 1 : 6;
+                const escapeSquare = String.fromCharCode(f + 97) + (escapeRank + 1);
+                const pieceOnEscape = simBoard.get(escapeSquare);
+                
+                // Check if escape square is blocked by our own pieces
+                if (!pieceOnEscape) {
+                    escapeSquares++;
+                } else {
+                    const isOurPiece = (pieceOnEscape === pieceOnEscape.toUpperCase()) === (activeColor === 'w');
+                    if (!isOurPiece) escapeSquares++; // Enemy piece can be captured
+                }
+            }
+            
+            if (escapeSquares === 0) {
+                penalty -= 2000;  // SEVERE: No escape, back rank mate possible
+                debugLog("[V40_MATING_NET]", `🚨 BACK RANK VULNERABLE - no escape squares!`);
+            } else if (escapeSquares === 1) {
+                penalty -= 800;  // Limited escape
+                debugLog("[V40_MATING_NET]", `⚠️ Only 1 escape square from back rank`);
+            }
+        }
+        
+        // CHECK 3: Enemy rooks/queen on critical files near our king
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (!isEnemy) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'r' || pieceType === 'q') {
+                const pieceFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+                const pieceRank = parseInt(square[1]) - 1;
+                
+                // Enemy rook/queen on same file as our king
+                if (pieceFile === kingFile) {
+                    penalty -= 400;
+                    debugLog("[V40_MATING_NET]", `⚠️ Enemy ${pieceType} on king's file`);
+                }
+                
+                // Enemy rook/queen on 2nd/7th rank (infiltration)
+                const infiltrationRank = activeColor === 'w' ? 1 : 6;
+                if (pieceRank === infiltrationRank) {
+                    penalty -= 600;
+                    debugLog("[V40_MATING_NET]", `🚨 Enemy ${pieceType} infiltrated to ${infiltrationRank + 1} rank!`);
+                }
+                
+                // Double rooks on a file = SEVERE danger
+                if (pieceType === 'r') {
+                    for (const [sq2, p2] of simBoard) {
+                        if (sq2 === square) continue;
+                        if (p2 && p2.toLowerCase() === 'r') {
+                            const isEnemy2 = (p2 === p2.toUpperCase()) === (enemyColor === 'w');
+                            if (isEnemy2) {
+                                const file2 = sq2.charCodeAt(0) - 'a'.charCodeAt(0);
+                                if (file2 === pieceFile) {
+                                    penalty -= 1000;
+                                    debugLog("[V40_MATING_NET]", `🚨🚨 Enemy doubled rooks on file ${String.fromCharCode(pieceFile + 97)}!`);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // CHECK 4: SPECIFIC MATING PATTERN: Rook + King coordination
+        // Looking for patterns like Ra2+, Ra1# that happened in the game
+        const enemyRooks = [];
+        const enemyQueen = [];
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (isEnemy && piece.toLowerCase() === 'r') {
+                enemyRooks.push(square);
+            }
+            if (isEnemy && piece.toLowerCase() === 'q') {
+                enemyQueen.push(square);
+            }
+        }
+        
+        // If enemy has rook(s) on files adjacent to our cornered king, SEVERE penalty
+        if (isCornerArea && enemyRooks.length > 0) {
+            for (const rookSq of enemyRooks) {
+                const rookFile = rookSq.charCodeAt(0) - 'a'.charCodeAt(0);
+                if (Math.abs(rookFile - kingFile) <= 1) {
+                    penalty -= 1500;
+                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 MATING NET FORMING: Rook ${rookSq} near cornered king!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_MATING_NET]", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.1: FILE CONTROL EVALUATION
+ * Prevents blindness to dangerous file invasions like the c-file in the lost game
+ * Evaluates open file control and file invasion threats
+ */
+function v40FileControlEvaluation(fen, move, board, activeColor) {
+    let score = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Analyze each file (a-h)
+        for (let fileIdx = 0; fileIdx < 8; fileIdx++) {
+            const fileLetter = String.fromCharCode(97 + fileIdx);
+            
+            // Count pieces on this file
+            let ourRooks = 0;
+            let enemyRooks = 0;
+            let ourPawns = 0;
+            let enemyPawns = 0;
+            let ourQueen = 0;
+            let enemyQueen = 0;
+            
+            for (let rank = 1; rank <= 8; rank++) {
+                const square = fileLetter + rank;
+                const piece = simBoard.get(square);
+                if (!piece) continue;
+                
+                const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+                const pieceType = piece.toLowerCase();
+                
+                if (isOurs) {
+                    if (pieceType === 'r') ourRooks++;
+                    if (pieceType === 'p') ourPawns++;
+                    if (pieceType === 'q') ourQueen++;
+                } else {
+                    if (pieceType === 'r') enemyRooks++;
+                    if (pieceType === 'p') enemyPawns++;
+                    if (pieceType === 'q') enemyQueen++;
+                }
+            }
+            
+            // Open file (no pawns)
+            const isOpenFile = ourPawns === 0 && enemyPawns === 0;
+            // Semi-open for us (no enemy pawns, we have pawns)
+            const isSemiOpenForUs = enemyPawns === 0 && ourPawns > 0;
+            // Semi-open for enemy
+            const isSemiOpenForEnemy = ourPawns === 0 && enemyPawns > 0;
+            
+            if (isOpenFile || isSemiOpenForEnemy) {
+                // Enemy controls open file = DANGER
+                if (enemyRooks >= 2) {
+                    score -= 800;  // Doubled rooks on open file
+                    debugLog("[V40_FILE]", `🚨 Enemy doubled rooks on open ${fileLetter}-file!`);
+                } else if (enemyRooks === 1 && ourRooks === 0) {
+                    score -= 400;  // Enemy rook controls file we don't contest
+                    debugLog("[V40_FILE]", `⚠️ Enemy rook controls ${fileLetter}-file uncontested`);
+                }
+                
+                // Enemy queen on open file
+                if (enemyQueen > 0 && isOpenFile) {
+                    score -= 300;
+                }
+                
+                // We should contest open files
+                if (ourRooks > 0 && enemyRooks > 0) {
+                    score += 100;  // At least we're contesting
+                }
+                if (ourRooks >= 2 && enemyRooks === 0) {
+                    score += 500;  // We control the file
+                }
+            }
+            
+            // Check if move puts our rook on open file
+            if (movingPiece && movingPiece.toLowerCase() === 'r') {
+                const targetFile = toSquare[0];
+                if (targetFile === fileLetter && isOpenFile) {
+                    score += 400;  // Good move - rook to open file
+                    debugLog("[V40_FILE]", `✅ Rook to open ${fileLetter}-file`);
+                }
+            }
+        }
+        
+        // Find our king and check for dangerous files nearby
+        const ourKing = findKing(simBoard, activeColor);
+        if (ourKing) {
+            const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+            
+            // Check files adjacent to king
+            for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+                const fileLetter = String.fromCharCode(97 + f);
+                
+                let enemyRooksOnFile = 0;
+                for (let rank = 1; rank <= 8; rank++) {
+                    const square = fileLetter + rank;
+                    const piece = simBoard.get(square);
+                    if (piece) {
+                        const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+                        if (isEnemy && (piece.toLowerCase() === 'r' || piece.toLowerCase() === 'q')) {
+                            enemyRooksOnFile++;
+                        }
+                    }
+                }
+                
+                if (enemyRooksOnFile > 0) {
+                    score -= 300 * enemyRooksOnFile;  // Danger near king
+                    debugLog("[V40_FILE]", `⚠️ Enemy heavy piece on ${fileLetter}-file near king`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_FILE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.1: DEEP INITIATIVE TRACKING
+ * Prevents initiative collapse like Qd1-Qd3-Qe4-Qd3 sequence
+ * Tracks tempo, development lead, and forcing move availability
+ */
+function v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // CHECK 1: Is this a forcing move? (captures, checks, threats)
+        const isCapture = board.has(toSquare) && board.get(toSquare);
+        const isCheck = move.includes('+') || move.includes('#');
+        const createsThreat = detectsThreatsAfterMove(move, board, activeColor);
+        
+        if (isCapture || isCheck) {
+            score += 300;  // Forcing moves maintain initiative
+        } else if (createsThreat) {
+            score += 200;  // Threat creation maintains initiative
+        }
+        
+        // CHECK 2: Retreat penalty (piece moving backward without good reason)
+        const fromRank = parseInt(fromSquare[1]);
+        const toRank = parseInt(toSquare[1]);
+        
+        const isWhite = activeColor === 'w';
+        const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+        
+        if (isRetreat && !isCapture && !createsThreat) {
+            score -= 400;  // Retreating without purpose loses tempo
+            debugLog("[V40_INIT]", `⚠️ Retreating ${movingPiece} from ${fromSquare} to ${toSquare}`);
+        }
+        
+        // CHECK 3: Development lead evaluation
+        if (moveNumber <= 15) {
+            const devScore = evaluateDevelopmentLead(board, activeColor);
+            score += devScore * 2;
+        }
+        
+        // CHECK 4: Same piece moving multiple times early (tempo loss)
+        if (moveNumber <= 12) {
+            const pieceType = movingPiece.toLowerCase();
+            
+            // Track piece origin squares for repeated moves
+            if (!v40StrategicState.pieceMoveCounts) {
+                v40StrategicState.pieceMoveCounts = new Map();
+            }
+            
+            const count = v40StrategicState.pieceMoveCounts.get(fromSquare) || 0;
+            if (count > 0) {
+                score -= 200 * count;  // Penalty for moving same piece again
+                debugLog("[V40_INIT]", `⚠️ Same piece moved ${count + 1} times in opening`);
+            }
+        }
+        
+        // CHECK 5: Passive vs Active - moves that don't improve position
+        if (!isCapture && !isCheck && !createsThreat) {
+            // Is this a passive defensive move?
+            if (isDefensiveMove(move, board, activeColor)) {
+                score -= 200;
+            }
+            
+            // Does this improve piece activity?
+            if (improvesPieceActivity(move, board, activeColor)) {
+                score += 200;
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_INIT]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.1: QUEEN MOVEMENT PENALTY
+ * Prevents disasters like Qd1-Qd3-Qe4-Qd3 sequence (4 queen moves in first 10 moves)
+ * Heavy penalty for excessive queen movement in opening/early middlegame
+ */
+function v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) {
+    let penalty = 0;
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const isQueen = movingPiece.toLowerCase() === 'q';
+        
+        if (isQueen && moveNumber <= 20) {
+            // Track queen moves
+            if (moveNumber > v40LastQueenMoveNumber) {
+                v40QueenMoveHistory.push(moveNumber);
+                v40LastQueenMoveNumber = moveNumber;
+            }
+            
+            // Count queen moves in the game so far
+            const queenMoves = v40QueenMoveHistory.length;
+            
+            if (moveNumber <= 10) {
+                // Opening: Heavy penalty for queen moves
+                if (queenMoves >= 1) {
+                    penalty -= 300;  // First queen move
+                    debugLog("[V40_QUEEN]", `⚠️ Queen move #${queenMoves} in opening`);
+                }
+                if (queenMoves >= 2) {
+                    penalty -= 600;  // Second queen move
+                    debugLog("[V40_QUEEN]", `🚨 Second queen move in opening!`);
+                }
+                if (queenMoves >= 3) {
+                    penalty -= 1500;  // Three queen moves = disaster
+                    debugLog("[V40_QUEEN]", `🚨🚨 THREE queen moves in opening - losing tempo!`);
+                }
+                if (queenMoves >= 4) {
+                    penalty -= 3000;  // Four+ queen moves = catastrophic
+                    debugLog("[V40_QUEEN]", `🚨🚨🚨 FOUR+ queen moves - initiative destroyed!`);
+                }
+            } else if (moveNumber <= 20) {
+                // Early middlegame: moderate penalty
+                if (queenMoves >= 4) {
+                    penalty -= 500;
+                }
+                if (queenMoves >= 6) {
+                    penalty -= 1000;
+                }
+            }
+            
+            // Check if queen is being pushed around (retreating)
+            const toSquare = move.substring(2, 4);
+            const fromRank = parseInt(fromSquare[1]);
+            const toRank = parseInt(toSquare[1]);
+            const isWhite = activeColor === 'w';
+            const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+            
+            if (isRetreat) {
+                penalty -= 400;  // Queen retreat is especially bad
+                debugLog("[V40_QUEEN]", `⚠️ Queen retreating from ${fromSquare} to ${toSquare}`);
+            }
+            
+            // Queen early development penalty (before minor pieces)
+            if (moveNumber <= 8) {
+                const minorsDeveloped = countDevelopedMinorPieces(board, activeColor);
+                if (minorsDeveloped < 3) {
+                    penalty -= 500;
+                    debugLog("[V40_QUEEN]", `⚠️ Queen out before minor pieces developed`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_QUEEN]", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.1: Helper - Count developed minor pieces
+ */
+function countDevelopedMinorPieces(board, color) {
+    let count = 0;
+    const knightChar = color === 'w' ? 'N' : 'n';
+    const bishopChar = color === 'w' ? 'B' : 'b';
+    const startRank = color === 'w' ? '1' : '8';
+    
+    for (const [square, piece] of board) {
+        if (piece === knightChar || piece === bishopChar) {
+            // Check if NOT on starting rank
+            if (square[1] !== startRank) {
+                count++;
+            }
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * v40.1: Helper - Detect threats after move
+ */
+function detectsThreatsAfterMove(move, board, activeColor) {
+    // Simplified threat detection
+    const toSquare = move.substring(2, 4);
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    // Check if move attacks enemy pieces
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+        if (!isEnemy) continue;
+        
+        const sqFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const sqRank = parseInt(square[1]) - 1;
+        
+        // Simple proximity check (within 2 squares)
+        if (Math.abs(sqFile - toFile) <= 2 && Math.abs(sqRank - toRank) <= 2) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.1: Helper - Evaluate development lead
+ */
+function evaluateDevelopmentLead(board, color) {
+    let ourDev = countDevelopedMinorPieces(board, color);
+    let enemyDev = countDevelopedMinorPieces(board, color === 'w' ? 'b' : 'w');
+    return (ourDev - enemyDev) * 50;
+}
+
+/**
+ * v40.1: Helper - Check if move is defensive
+ */
+function isDefensiveMove(move, board, activeColor) {
+    const toSquare = move.substring(2, 4);
+    const toRank = parseInt(toSquare[1]);
+    const isWhite = activeColor === 'w';
+    
+    // Moves to 1st/2nd rank for white or 7th/8th rank for black are defensive
+    if (isWhite && toRank <= 2) return true;
+    if (!isWhite && toRank >= 7) return true;
+    
+    return false;
+}
+
+/**
+ * v40.1: Helper - Check if move improves piece activity
+ */
+function improvesPieceActivity(move, board, activeColor) {
+    const toSquare = move.substring(2, 4);
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    // Central squares are active
+    if (toFile >= 2 && toFile <= 5 && toRank >= 2 && toRank <= 5) {
+        return true;
+    }
+    
+    return false;
 }
 
 function evaluatePawnShield(board, color, kingSquare) {
@@ -18495,30 +19167,66 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
         const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
         
         // ═══════════════════════════════════════════════════════════════════
-        // v40.0.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION
+        // v40.1.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION — PARADIGM SHIFT
+        // CRITICAL: v40 now has 55% DOMINANT INFLUENCE — this IS the superhuman
         // Add v40's deep positional/strategic/tactical evaluation
         // ═══════════════════════════════════════════════════════════════════
         let v40Bonus = 0;
+        let v40DeepScore = 0;
+        let v40MatingNetPenalty = 0;
+        let v40FileControlBonus = 0;
+        let v40InitiativeBonus = 0;
+        
         if (CONFIG.v40Enabled && fen) {
             try {
                 // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
                 const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
-                // Scale v40 score contribution (weighted at 15% influence)
-                v40Bonus = v40Score * 0.15;
                 
-                debugLog("[V40_INTEGRATE]", `Move ${move}: v40Score=${v40Score.toFixed(1)} → bonus=${v40Bonus.toFixed(1)}cp`);
+                // v40.1: Enhanced deep evaluations
+                const board = parseFenToBoard(fen);
+                const activeColor = fen.split(' ')[1];
+                const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+                
+                // v40.1: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 0.5;
+                
+                // v40.1: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 0.3;
+                
+                // v40.1: INITIATIVE TRACKING (prevents initiative collapse)
+                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 0.4;
+                
+                // v40.1: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber);
+                
+                // v40.1: COMBINED v40 SCORE — 55% DOMINANT INFLUENCE (was 15%)
+                // This makes v40 the DOMINANT factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + v40InitiativeBonus + queenPenalty;
+                v40Bonus = v40DeepScore * 0.55;  // 55% influence — PARADIGM SHIFT
+                
+                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.1 DOMINANT EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 55% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
             } catch (e) {
                 debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
                 v40Bonus = 0;
             }
         }
         
-        // TRUE ALPHAZERO weighted merge WITH v40 superhuman bonus
+        // v40.1: TRUE ALPHAZERO weighted merge — v40 DOMINANT (55%)
+        // Engine provides baseline, but v40 superhuman evaluation is PRIMARY
         const combinedScore = (
-            TRUE_ALPHAZERO.qWeight * engine_Q +
-            TRUE_ALPHAZERO.rolloutWeight * rollout_Q +
-            normalizedPolicyPrior + // Policy as bonus, not multiplied by weight
-            v40Bonus                // v40 superhuman beast contribution
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.45 +  // Engine reduced to 45%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.45 +
+            normalizedPolicyPrior * 0.8 + // Policy bonus slightly reduced
+            v40Bonus                      // v40 DOMINANT at 55%
         );
         
         debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
