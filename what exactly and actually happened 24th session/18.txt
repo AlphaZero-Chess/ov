@@ -1,0 +1,44 @@
+Now let me add the v40.14 functions. First, let me find where to add them (after v40.13 functions):
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13040|                const pieceValue = getPieceValueSimple(pieceType);
+13041|                threatScore += pieceValue;
+13042|                debugLog("[V40.13_THREAT]", `⚠️ After ${move}, ${pieceType.toUpperCase()} on ${sq} is HANGING!`);
+13043|            }
+13044|        }
+13045|        
+13046|        if (threatScore > 0) {
+13047|            score += CONFIG.v40SimpleThreatMissPenalty * (threatScore / 900) || -1000000;
+13048|        }
+13049|        
+13050|        // Also check: Does our move CREATE a threat?
+13051|        // If we're moving to attack something valuable, that's good
+13052|        const movingType = movingPiece.toLowerCase();
+13053|        const attackedSquares = findPossibleCaptures(simBoard, toSquare, movingPiece);
+13054|        
+13055|        for (const attackSq of attackedSquares) {
+13056|            const targetPiece = simBoard.get(attackSq);
+13057|            if (targetPiece) {
+13058|                const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+13059|                if (targetIsWhite !== isWhite) {
+13060|                    // We're attacking enemy piece
+13061|                    const targetType = targetPiece.toLowerCase();
+13062|                    const targetValue = getPieceValueSimple(targetType);
+13063|                    const movingValue = getPieceValueSimple(movingType);
+13064|                    
+13065|                    // Is it a good attack? (we attack higher value or undefended)
+13066|                    const isTargetDefended = isSquareDefendedByColor(simBoard, attackSq, enemyColor);
+13067|                    
+13068|                    if (!isTargetDefended || targetValue > movingValue) {
+13069|                        score += targetValue * 50; // Small bonus for creating threats
+13070|                    }
+13071|                }
+13072|            }
+13073|        }
+13074|        
+13075|    } catch (e) {
+13076|        debugLog("[V40.13_THREAT]", `Error: ${e.message}`);
+13077|    }
+13078|    
+13079|    return score;
+13080|}

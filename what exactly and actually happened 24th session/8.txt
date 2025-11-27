@@ -1,0 +1,28 @@
+Looking at line 7591-7592, the pawn attack logic is:
+```javascript
+case 'p':
+    const direction = color === 'w' ? 1 : -1;
+    return fileDiff === 1 && (toRank - fromRank) === direction;
+```
+
+For BLACK pawns (`color === 'b'`), `direction` is -1.
+So for a black pawn on e4 (file 4, rank 3 in 0-indexed), attacking d3 (file 3, rank 2):
+- `fileDiff = |3 - 4| = 1` ✓
+- `toRank - fromRank = 2 - 3 = -1` which equals `direction` ✓
+
+This should work! Let me check if the issue is elsewhere. Let me trace the flow of the game analysis more carefully. The problem might be in how the bot doesn't prioritize the tactical evaluation enough.
+
+Let me check what happens when the bot evaluates the position after 3... dxe4. The bot should NOT play 4. Bd3 because:
+Action: $ cd /app && grep -n "v40Bonus\|computeCombinedScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 28059:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+28079:        let v40Bonus = 0;
+28379:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ULTIMATE TACTICAL SUPREME PARADIGM SHIFT
+28403:                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+28420:                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+28424:                v40Bonus = 0;
+28434:            v40Bonus                      // v40 GODLIKE DOMINANT at 100%
+28437:        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp (100% v40 GODLIKE)`);
+28450:    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+28451:    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+28744:                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+Exit code: 0

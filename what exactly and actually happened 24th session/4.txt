@@ -1,0 +1,103 @@
+There are two definitions! Let me view both:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+9151|function isSquareAttackedByColor(board, square, attackingColor) {
+9152|    const targetFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+9153|    const targetRank = parseInt(square[1]) - 1;
+9154|    const isWhite = attackingColor === 'w';
+9155|    
+9156|    for (const [sq, piece] of board) {
+9157|        if (!piece) continue;
+9158|        const pieceIsWhite = piece === piece.toUpperCase();
+9159|        if (pieceIsWhite !== isWhite) continue;
+9160|        
+9161|        const pieceType = piece.toLowerCase();
+9162|        const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+9163|        const pRank = parseInt(sq[1]) - 1;
+9164|        
+9165|        if (canPieceAttackSquareV40(pieceType, pFile, pRank, targetFile, targetRank, board, attackingColor)) {
+9166|            return true;
+9167|        }
+9168|    }
+9169|    
+9170|    return false;
+9171|}
+9172|
+9173|/**
+9174| * v40.7 Helper: Check if square is defended by color
+9175| */
+9176|function isSquareDefendedByColor(board, square, defendingColor) {
+9177|    return isSquareAttackedByColor(board, square, defendingColor);
+9178|}
+9179|
+9180|/**
+9181| * v40.7 Helper: Get squares attacked by enemy pawns
+9182| */
+9183|function getEnemyPawnAttackSquares(board, enemyColor) {
+9184|    const attackSquares = [];
+9185|    const isWhite = enemyColor === 'w';
+9186|    const direction = isWhite ? 1 : -1;
+9187|    
+9188|    for (const [sq, piece] of board) {
+9189|        if (!piece) continue;
+9190|        const pieceIsWhite = piece === piece.toUpperCase();
+9191|        if (pieceIsWhite !== isWhite) continue;
+9192|        if (piece.toLowerCase() !== 'p') continue;
+9193|        
+9194|        const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+9195|        const pRank = parseInt(sq[1]) - 1;
+9196|        
+9197|        // Pawn attacks diagonally
+9198|        const attackRank = pRank + direction;
+9199|        if (attackRank >= 0 && attackRank <= 7) {
+9200|            if (pFile > 0) {
+9201|                attackSquares.push(String.fromCharCode(pFile - 1 + 97) + (attackRank + 1));
+9202|            }
+9203|            if (pFile < 7) {
+9204|                attackSquares.push(String.fromCharCode(pFile + 1 + 97) + (attackRank + 1));
+9205|            }
+9206|        }
+9207|    }
+9208|    
+9209|    return attackSquares;
+9210|}
+9211|
+9212|/**
+9213| * v40.7 Helper: Find all hanging pieces
+9214| */
+9215|function findAllHangingPieces(board, ourColor) {
+9216|    const hanging = [];
+9217|    const isWhite = ourColor === 'w';
+9218|    const enemyColor = ourColor === 'w' ? 'b' : 'w';
+9219|    
+9220|    for (const [square, piece] of board) {
+9221|        if (!piece) continue;
+9222|        const pieceIsWhite = piece === piece.toUpperCase();
+9223|        if (pieceIsWhite !== isWhite) continue;
+9224|        
+9225|        const pieceType = piece.toLowerCase();
+9226|        if (pieceType === 'k') continue; // King can't be "hanging"
+9227|        
+9228|        const isAttacked = isSquareAttackedByColor(board, square, enemyColor);
+9229|        const isDefended = isSquareDefendedByColor(board, square, ourColor);
+9230|        
+9231|        if (isAttacked && !isDefended) {
+9232|            hanging.push({ square, piece });
+9233|        }
+9234|    }
+9235|    
+9236|    return hanging;
+9237|}
+9238|
+9239|/**
+9240| * v40.7 Helper: Calculate material balance for a color
+9241| */
+9242|function calculateMaterialBalance(board, color) {
+9243|    let ourMaterial = 0;
+9244|    let theirMaterial = 0;
+9245|    const isWhite = color === 'w';
+9246|    
+9247|    for (const [square, piece] of board) {
+9248|        if (!piece) continue;
+9249|        const pieceIsWhite = piece === piece.toUpperCase();
+9250|        const value = getPieceValueSimple(piece.toLowerCase());

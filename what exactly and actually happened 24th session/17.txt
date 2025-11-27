@@ -1,0 +1,56 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.13: ABSOLUTE ZERO TACTICAL OVERSIGHT
+    v40TacticalOversightZeroEnabled: true,
+    v40SimpleThreatMissPenalty: -2000000,          // Missing simple threats = death
+    v40OneMoveThreatDetectionDepth: 2,             // Detect 2-move threats
+    v40TwoMoveThreatDetectionDepth: 4,             // Detect 4-move threats
+    
+    // v40.13: 100% ULTIMATE TACTICAL SUPREME DOMINANCE
+    v40UltimateTacticalSupremeDominance: 1.0,      // 100% v40.13 dominance
+};" --new-str "    // v40.13: ABSOLUTE ZERO TACTICAL OVERSIGHT
+    v40TacticalOversightZeroEnabled: true,
+    v40SimpleThreatMissPenalty: -2000000,          // Missing simple threats = death
+    v40OneMoveThreatDetectionDepth: 2,             // Detect 2-move threats
+    v40TwoMoveThreatDetectionDepth: 4,             // Detect 4-move threats
+    
+    // v40.13: 100% ULTIMATE TACTICAL SUPREME DOMINANCE
+    v40UltimateTacticalSupremeDominance: 1.0,      // 100% v40.13 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.14 ABSOLUTE ZERO BLUNDER SUPREME: LOOK-AHEAD SIMULATION
+    // From game analysis: Bot played Bd3 where exd3 captures bishop
+    // The problem: Bot doesn't see that AFTER its move, opponent captures
+    // Solution: ALWAYS simulate opponent's best response BEFORE making a move!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.14: LOOK-AHEAD BLUNDER CHECK — Simulate opponent response
+    v40LookAheadBlunderCheckEnabled: true,
+    v40LookAheadDepth: 2,                           // Look 2 ply ahead (our move + opponent response)
+    v40OpponentCapturesPenalty: -5000000,           // CATASTROPHIC if opponent can capture our piece
+    v40OpponentCapturesQueenPenalty: -10000000,     // ABSOLUTE DEATH if queen can be captured
+    v40OpponentCapturesRookPenalty: -4000000,       // Major penalty for rook loss
+    v40OpponentCapturesMinorPenalty: -2500000,      // Significant penalty for bishop/knight loss
+    v40OpponentCapturesPawnPenalty: -1000000,       // Penalty even for free pawn loss
+    
+    // v40.14: BISHOP/KNIGHT ON PAWN-ATTACKED SQUARE DETECTION
+    // Specifically for cases like Bd3 where pawn can take
+    v40PieceOnPawnAttackedSquarePenalty: -8000000,  // INSTANT DEATH for piece on pawn-attacked square
+    v40BishopKnightPawnCaptureAwareness: true,      // Must be aware of pawn captures
+    
+    // v40.14: VERIFY EVERY SINGLE CAPTURE POSSIBLE
+    v40VerifyAllCapturesEnabled: true,
+    v40AnyFreeCaptureAvailablePenalty: -6000000,    // If opponent can capture ANYTHING for free
+    
+    // v40.14: TRIPLE-CHECK BEFORE EVERY MOVE
+    v40TripleCheckEnabled: true,
+    v40TripleCheckPasses: 3,                        // Run blunder check 3 times
+    v40TripleCheckConsensusRequired: true,          // All passes must agree move is safe
+    
+    // v40.14: FAIL-SAFE REJECTION OF BLUNDERS
+    v40FailSafeBlunderRejectionEnabled: true,
+    v40BlunderScoreThreshold: -1000000,             // Any move with score below this is REJECTED
+    
+    // v40.14: 100% ABSOLUTE ZERO BLUNDER SUPREME DOMINANCE
+    v40AbsoluteZeroBlunderDominance: 1.0,           // 100% v40.14 dominance
+};"
+Observation: Edit was successful.

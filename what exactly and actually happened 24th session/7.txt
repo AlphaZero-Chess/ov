@@ -1,0 +1,119 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+7585|function canPieceAttackSquareV40(pieceType, fromFile, fromRank, toFile, toRank, board, color) {
+7586|    const fileDiff = Math.abs(toFile - fromFile);
+7587|    const rankDiff = Math.abs(toRank - fromRank);
+7588|    
+7589|    switch (pieceType) {
+7590|        case 'p':
+7591|            const direction = color === 'w' ? 1 : -1;
+7592|            return fileDiff === 1 && (toRank - fromRank) === direction;
+7593|            
+7594|        case 'n':
+7595|            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+7596|            
+7597|        case 'b':
+7598|            if (fileDiff !== rankDiff || fileDiff === 0) return false;
+7599|            return isPathClearV40(fromFile, fromRank, toFile, toRank, board);
+7600|            
+7601|        case 'r':
+7602|            if (fileDiff !== 0 && rankDiff !== 0) return false;
+7603|            return isPathClearV40(fromFile, fromRank, toFile, toRank, board);
+7604|            
+7605|        case 'q':
+7606|            if (fileDiff !== rankDiff && fileDiff !== 0 && rankDiff !== 0) return false;
+7607|            return isPathClearV40(fromFile, fromRank, toFile, toRank, board);
+7608|            
+7609|        case 'k':
+7610|            return fileDiff <= 1 && rankDiff <= 1 && (fileDiff > 0 || rankDiff > 0);
+7611|            
+7612|        default:
+7613|            return false;
+7614|    }
+7615|}
+7616|
+7617|/**
+7618| * v40.5: Helper - Check path is clear for sliding pieces
+7619| */
+7620|function isPathClearV40(fromFile, fromRank, toFile, toRank, board) {
+7621|    const dx = toFile === fromFile ? 0 : (toFile > fromFile ? 1 : -1);
+7622|    const dy = toRank === fromRank ? 0 : (toRank > fromRank ? 1 : -1);
+7623|    
+7624|    let x = fromFile + dx;
+7625|    let y = fromRank + dy;
+7626|    
+7627|    while (x !== toFile || y !== toRank) {
+7628|        const sq = String.fromCharCode(x + 97) + (y + 1);
+7629|        if (board.get(sq)) return false;
+7630|        x += dx;
+7631|        y += dy;
+7632|    }
+7633|    
+7634|    return true;
+7635|}
+7636|
+7637|/**
+7638| * v40.5: Helper - Get lowest attacker value
+7639| */
+7640|function getLowestAttackerValue(board, targetSquare, attackingColor) {
+7641|    let lowestValue = Infinity;
+7642|    const tFile = targetSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+7643|    const tRank = parseInt(targetSquare[1]) - 1;
+7644|    
+7645|    for (const [square, piece] of board) {
+7646|        if (!piece) continue;
+7647|        const isAttacker = (piece === piece.toUpperCase()) === (attackingColor === 'w');
+7648|        if (!isAttacker) continue;
+7649|        
+7650|        const pieceType = piece.toLowerCase();
+7651|        const pFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+7652|        const pRank = parseInt(square[1]) - 1;
+7653|        
+7654|        if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, attackingColor)) {
+7655|            const value = getPieceValueSimple(pieceType);
+7656|            if (value < lowestValue) lowestValue = value;
+7657|        }
+7658|    }
+7659|    
+7660|    return lowestValue === Infinity ? 0 : lowestValue;
+7661|}
+7662|
+7663|/**
+7664| * v40.5: Helper - Get simple piece value
+7665| */
+7666|function getPieceValueSimple(pieceType) {
+7667|    switch (pieceType) {
+7668|        case 'p': return 1;
+7669|        case 'n': return 3;
+7670|        case 'b': return 3;
+7671|        case 'r': return 5;
+7672|        case 'q': return 9;
+7673|        case 'k': return 100;
+7674|        default: return 0;
+7675|    }
+7676|}
+7677|
+7678|/**
+7679| * v40.5: Helper - Get squares defended by a piece
+7680| */
+7681|function getDefendedSquares(board, pieceSquare, piece, activeColor) {
+7682|    const defended = [];
+7683|    const pieceType = piece.toLowerCase();
+7684|    const pFile = pieceSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+7685|    const pRank = parseInt(pieceSquare[1]) - 1;
+7686|    
+7687|    for (let file = 0; file < 8; file++) {
+7688|        for (let rank = 0; rank < 8; rank++) {
+7689|            if (file === pFile && rank === pRank) continue;
+7690|            if (canPieceAttackSquareV40(pieceType, pFile, pRank, file, rank, board, activeColor)) {
+7691|                defended.push(String.fromCharCode(file + 97) + (rank + 1));
+7692|            }
+7693|        }
+7694|    }
+7695|    
+7696|    return defended;
+7697|}
+7698|
+7699|/**
+7700| * v40.5: KING CORNER SAFETY — Prevent h1/h2 vulnerabilities

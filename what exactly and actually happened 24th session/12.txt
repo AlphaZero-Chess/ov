@@ -1,0 +1,52 @@
+The penalty for a bishop is -800,000. When multiplied by 5.0 (the multiplier in line 28329), it becomes -4,000,000. This should be significant!
+
+BUT WAIT - I notice a fundamental issue. The move Bd3 doesn't place the BISHOP on an attacked square - it puts the bishop on d3. After Black plays exd3, the BLACK PAWN captures the bishop. 
+
+Let me trace through:
+- Move: f1d3 (Bishop from f1 to d3)
+- After move, Black pawn is on e4
+- Can black pawn on e4 attack d3? YES!
+
+So the v40ImmediateMaterialLossEval function should detect that:
+1. After simulating the move, the bishop is on d3
+2. Check if d3 is attacked by enemy color (black)
+3. Black pawn on e4 can attack d3 (fileDiff=1, rankDiff=-1 for black)
+
+This should work! Let me create a simple test to verify the pawn attack logic is correct:
+Action: $ cd /app && cat << 'EOF' > /tmp/test_attack.js
+// Test the pawn attack logic
+function canPieceAttackSquareV40(pieceType, fromFile, fromRank, toFile, toRank, board, color) {
+    const fileDiff = Math.abs(toFile - fromFile);
+    const rankDiff = Math.abs(toRank - fromRank);
+    
+    switch (pieceType) {
+        case 'p':
+            const direction = color === 'w' ? 1 : -1;
+            return fileDiff === 1 && (toRank - fromRank) === direction;
+        default:
+            return false;
+    }
+}
+
+// Test: Black pawn on e4 attacking d3
+// e4 = file 4 (e), rank 3 (4-1 for 0-indexed)
+// d3 = file 3 (d), rank 2 (3-1 for 0-indexed)
+const fromFile = 4; // e
+const fromRank = 3; // 4 (0-indexed)
+const toFile = 3;   // d
+const toRank = 2;   // 3 (0-indexed)
+
+const result = canPieceAttackSquareV40('p', fromFile, fromRank, toFile, toRank, null, 'b');
+console.log(`Black pawn on e4 can attack d3: ${result}`);
+console.log(`  fileDiff = |${toFile} - ${fromFile}| = ${Math.abs(toFile - fromFile)}`);
+console.log(`  toRank - fromRank = ${toRank} - ${fromRank} = ${toRank - fromRank}`);
+console.log(`  direction for black = -1`);
+console.log(`  Expected: fileDiff === 1 (true) AND (toRank - fromRank) === direction (-1 === -1: true)`);
+EOF
+node /tmp/test_attack.js
+Observation: Black pawn on e4 can attack d3: true
+  fileDiff = |3 - 4| = 1
+  toRank - fromRank = 2 - 3 = -1
+  direction for black = -1
+  Expected: fileDiff === 1 (true) AND (toRank - fromRank) === direction (-1 === -1: true)
+Exit code: 0

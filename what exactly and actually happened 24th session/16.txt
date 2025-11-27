@@ -1,0 +1,39 @@
+Now let me add the v40.14 CONFIG and critical LOOK-AHEAD functions. First, let me find where to add the CONFIG:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1525|    v40OpeningBlunderPreventionEnabled: true,
+1526|    v40DevelopPieceToUnsafeSquarePenalty: -1000000, // Don't develop to attacked square
+1527|    v40ExposeQueenEarlyPenalty: -600000,           // Don't expose queen early
+1528|    v40MoveSamePieceTwicePenalty: -300000,         // Don't move same piece twice in opening
+1529|    
+1530|    // v40.13: ABSOLUTE ZERO TACTICAL OVERSIGHT
+1531|    v40TacticalOversightZeroEnabled: true,
+1532|    v40SimpleThreatMissPenalty: -2000000,          // Missing simple threats = death
+1533|    v40OneMoveThreatDetectionDepth: 2,             // Detect 2-move threats
+1534|    v40TwoMoveThreatDetectionDepth: 4,             // Detect 4-move threats
+1535|    
+1536|    // v40.13: 100% ULTIMATE TACTICAL SUPREME DOMINANCE
+1537|    v40UltimateTacticalSupremeDominance: 1.0,      // 100% v40.13 dominance
+1538|};
+1539|
+1540|// ═══════════════════════════════════════════════════════════════════════
+1541|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1542|// ═══════════════════════════════════════════════════════════════════════
+1543|
+1544|/**
+1545| * v37: TRUE MCTS Node structure for proper tree search
+1546| */
+1547|class MCTSNode {
+1548|    constructor(move, parent = null, prior = 1.0) {
+1549|        this.move = move;
+1550|        this.parent = parent;
+1551|        this.children = new Map();
+1552|        this.visits = 0;
+1553|        this.totalValue = 0;
+1554|        this.prior = prior;           // Policy prior (P)
+1555|        this.virtualLoss = 0;
+1556|        this.isExpanded = false;
+1557|        this.isTerminal = false;
+1558|        this.depth = parent ? parent.depth + 1 : 0;
+1559|    }
+1560|    

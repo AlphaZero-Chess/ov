@@ -1,0 +1,141 @@
+Let me view the v40ImmediateMaterialLossEval function to check for bugs:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+12363|function v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber) {
+12364|    if (!CONFIG.v40ImmediateCaptureDetectionEnabled) return 0;
+12365|    
+12366|    let score = 0;
+12367|    const isWhite = activeColor === 'w';
+12368|    const enemyColor = isWhite ? 'b' : 'w';
+12369|    
+12370|    try {
+12371|        const fromSquare = move.substring(0, 2);
+12372|        const toSquare = move.substring(2, 4);
+12373|        const movingPiece = board.get(fromSquare);
+12374|        
+12375|        if (!movingPiece) return 0;
+12376|        
+12377|        const movingPieceType = movingPiece.toLowerCase();
+12378|        const movingPieceValue = getPieceValueSimple(movingPieceType);
+12379|        
+12380|        // Simulate the move
+12381|        const simBoard = new Map(board);
+12382|        simBoard.delete(fromSquare);
+12383|        simBoard.set(toSquare, movingPiece);
+12384|        
+12385|        // CRITICAL CHECK 1: Is the destination square attacked by enemy?
+12386|        const isToSquareAttacked = isSquareAttackedByColor(simBoard, toSquare, enemyColor);
+12387|        
+12388|        if (isToSquareAttacked) {
+12389|            // Check if destination square is defended
+12390|            const isDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+12391|            
+12392|            if (!isDefended) {
+12393|                // ABSOLUTE DISASTER: Moving piece to undefended attacked square
+12394|                const penalty = movingPieceType === 'q' ? CONFIG.v40AllowQueenCapturePenalty :
+12395|                               movingPieceType === 'r' ? CONFIG.v40AllowRookCapturePenalty :
+12396|                               ['n', 'b'].includes(movingPieceType) ? CONFIG.v40AllowMinorPieceCapturePenalty :
+12397|                               CONFIG.v40AllowPawnCapturePenalty;
+12398|                
+12399|                score += penalty || -1500000;
+12400|                debugLog("[V40.13_TACTICAL]", `☠️☠️☠️ BLUNDER: ${move} places ${movingPieceType.toUpperCase()} on UNDEFENDED ATTACKED square!`);
+12401|            } else {
+12402|                // Check if attackers are of lower value (bad trade)
+12403|                const attackers = findAttackersOfSquare(simBoard, toSquare, enemyColor);
+12404|                if (attackers.length > 0) {
+12405|                    const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+12406|                    
+12407|                    if (lowestAttackerValue < movingPieceValue) {
+12408|                        // Bad trade: we're putting higher value piece where lower value can capture
+12409|                        const materialLoss = movingPieceValue - lowestAttackerValue;
+12410|                        score += -materialLoss * 50000;
+12411|                        debugLog("[V40.13_TACTICAL]", `⚠️ BAD TRADE: ${movingPieceType.toUpperCase()} can be captured by lower value piece (-${materialLoss * 50000})`);
+12412|                    }
+12413|                }
+12414|            }
+12415|        }
+12416|        
+12417|        // CRITICAL CHECK 2: Does this move leave a piece hanging?
+12418|        // After we move, check if any of our pieces are now undefended and attacked
+12419|        for (const [sq, piece] of simBoard) {
+12420|            if (!piece) continue;
+12421|            const pieceIsWhite = piece === piece.toUpperCase();
+12422|            if (pieceIsWhite !== isWhite) continue;
+12423|            if (sq === toSquare) continue; // Already checked
+12424|            
+12425|            const pieceType = piece.toLowerCase();
+12426|            if (pieceType === 'k') continue;
+12427|            
+12428|            const wasDefended = isSquareDefendedByColor(board, sq, activeColor);
+12429|            const isNowDefended = isSquareDefendedByColor(simBoard, sq, activeColor);
+12430|            const isAttacked = isSquareAttackedByColor(simBoard, sq, enemyColor);
+12431|            
+12432|            // If piece was defended by the moving piece and is now hanging
+12433|            if (wasDefended && !isNowDefended && isAttacked) {
+12434|                const pieceValue = getPieceValueSimple(pieceType);
+12435|                score += CONFIG.v40HangPieceMovePenalty * (pieceValue / 1000) || -1500000;
+12436|                debugLog("[V40.13_TACTICAL]", `☠️ DISASTER: Move ${move} leaves ${pieceType.toUpperCase()} on ${sq} HANGING!`);
+12437|            }
+12438|        }
+12439|        
+12440|        // CRITICAL CHECK 3: Does moving from this square allow enemy to capture something?
+12441|        // The piece we moved might have been blocking an attack
+12442|        const wasBlockingAttacks = checkIfPieceWasBlockingAttack(board, simBoard, fromSquare, activeColor, enemyColor);
+12443|        if (wasBlockingAttacks.loss > 0) {
+12444|            score += -wasBlockingAttacks.loss * 100000;
+12445|            debugLog("[V40.13_TACTICAL]", `⚠️ DISCOVERED ATTACK: Moving from ${fromSquare} exposes ${wasBlockingAttacks.piece} to capture!`);
+12446|        }
+12447|        
+12448|    } catch (e) {
+12449|        debugLog("[V40.13_TACTICAL]", `Error in ImmediateMaterialLoss: ${e.message}`);
+12450|    }
+12451|    
+12452|    return score;
+12453|}
+12454|
+12455|/**
+12456| * v40.13 ULTIMATE TACTICAL: CHECK IF PIECE WAS BLOCKING ATTACK
+12457| * Helper to detect discovered attacks when we move a piece
+12458| */
+12459|function checkIfPieceWasBlockingAttack(originalBoard, newBoard, movedFromSquare, ourColor, enemyColor) {
+12460|    const isWhite = ourColor === 'w';
+12461|    let maxLoss = { loss: 0, piece: null };
+12462|    
+12463|    try {
+12464|        // Check all our pieces to see if any are now exposed
+12465|        for (const [sq, piece] of newBoard) {
+12466|            if (!piece) continue;
+12467|            const pieceIsWhite = piece === piece.toUpperCase();
+12468|            if (pieceIsWhite !== isWhite) continue;
+12469|            
+12470|            const pieceType = piece.toLowerCase();
+12471|            if (pieceType === 'k') continue;
+12472|            
+12473|            // Was this piece safe before and now attacked?
+12474|            const wasAttackedBefore = isSquareAttackedByColor(originalBoard, sq, enemyColor);
+12475|            const isAttackedNow = isSquareAttackedByColor(newBoard, sq, enemyColor);
+12476|            
+12477|            if (!wasAttackedBefore && isAttackedNow) {
+12478|                const isDefended = isSquareDefendedByColor(newBoard, sq, ourColor);
+12479|                if (!isDefended) {
+12480|                    const value = getPieceValueSimple(pieceType);
+12481|                    if (value > maxLoss.loss) {
+12482|                        maxLoss = { loss: value, piece: pieceType.toUpperCase() };
+12483|                    }
+12484|                }
+12485|            }
+12486|        }
+12487|    } catch (e) {
+12488|        // Silent fail
+12489|    }
+12490|    
+12491|    return maxLoss;
+12492|}
+12493|
+12494|/**
+12495| * v40.13 ULTIMATE TACTICAL: CAPTURE CHAIN ANALYSIS
+12496| * Calculate the result of a sequence of captures (A takes B, C takes A, D takes C, etc.)
+12497| */
+12498|function v40CaptureChainAnalysisEval(fen, move, board, activeColor, moveNumber) {
+12499|    if (!CONFIG.v40RecaptureChainEnabled) return 0;
+12500|    

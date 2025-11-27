@@ -1,0 +1,61 @@
+I see! The engine score is completely ignored (0.00 weight) and only v40Bonus is used. This means if the v40 evaluation doesn't properly penalize the blunder, it won't be avoided.
+
+Let me verify the immediateMaterialLossScore integration and check if the multiplier is high enough. Let me look at line 28329:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28325|                // This is THE MOST CRITICAL FIX - ABSOLUTE ZERO simple tactical blunders!
+28326|                // ═══════════════════════════════════════════════════════════════════
+28327|                
+28328|                // v40.13: IMMEDIATE MATERIAL LOSS — Check if move loses material IMMEDIATELY
+28329|                const immediateMaterialLossScore = v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber) * 5.0;
+28330|                
+28331|                // v40.13: CAPTURE CHAIN ANALYSIS — Calculate result of capture sequences
+28332|                const captureChainScore = v40CaptureChainAnalysisEval(fen, move, board, activeColor, moveNumber) * 3.0;
+28333|                
+28334|                // v40.13: QUEEN INFILTRATION ABSOLUTE — Don't let queen eat pieces freely
+28335|                const queenInfiltrationAbsoluteScore = v40QueenInfiltrationAbsoluteEval(fen, move, board, activeColor, moveNumber) * 4.0;
+28336|                
+28337|                // v40.13: PRE-MOVE SAFETY CHECK — Comprehensive safety verification
+28338|                const preMoveSafetyScore = v40PreMoveSafetyCheckEval(fen, move, board, activeColor, moveNumber) * 4.0;
+28339|                
+28340|                // v40.13: OPENING BLUNDER PREVENTION — No blunders in opening
+28341|                const openingBlunderScore = v40OpeningBlunderPreventionEval(fen, move, board, activeColor, moveNumber) * 3.5;
+28342|                
+28343|                // v40.13: SIMPLE THREAT DETECTION — Don't miss simple threats
+28344|                const simpleThreatScore = v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) * 3.0;
+28345|                
+28346|                // v40.13: COMBINED v40 SCORE — 100% ULTIMATE TACTICAL SUPREME INFLUENCE
+28347|                // This makes v40 the ABSOLUTE ULTIMATE TACTICAL SUPREME factor
+28348|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+28349|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+28350|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+28351|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+28352|                               counterattackBonus + initiativePreservationBonus +
+28353|                               // v40.4 additions:
+28354|                               openingPrinciplesScore + discoveredAttackPenalty + 
+28355|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+28356|                               // v40.5 additions:
+28357|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+28358|                               // v40.6 ULTIMATE additions:
+28359|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+28360|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+28361|                               // v40.7 DIVINE additions:
+28362|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+28363|                               // v40.8 TRANSCENDENT additions:
+28364|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+28365|                               counterplayGenScore + centralControlSupremeScore +
+28366|                               // v40.9 OMNISCIENT additions:
+28367|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+28368|                               // v40.10 GODLIKE additions:
+28369|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+28370|                               // v40.11 TRANSCENDENT SUPREME additions:
+28371|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+28372|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+28373|                               // v40.12 PROACTIVE SUPREME additions:
+28374|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+28375|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+28376|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+28377|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+28378|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore;
+28379|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ULTIMATE TACTICAL SUPREME PARADIGM SHIFT
+28380|                

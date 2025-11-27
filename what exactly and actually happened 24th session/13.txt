@@ -1,0 +1,43 @@
+The pawn attack detection IS correct. So the issue must be elsewhere. Let me check if there's a problem with how the board is created or if the simulated board correctly has the black pawn.
+
+The real question is: **Does the position after `1. e4 e6 2. d4 d5 3. Nc3 dxe4` actually have a black pawn on e4?**
+
+Yes, because `dxe4` means the black d-pawn captured on e4. So after move 3, there IS a black pawn on e4.
+
+Let me think about what could be wrong:
+
+1. **The board representation might not be correct** - if the function receives the board BEFORE the opponent's move, it won't see the pawn on e4
+2. **The function might be called with wrong parameters**
+3. **There could be an exception being silently caught**
+
+Let me add even stronger verification. The problem might be that multiple evaluation functions are fighting each other. Let me check if there are any BONUSES that might be overriding the penalties:
+Action: $ cd /app && grep -n "100000\|200000\|300000\|400000\|500000" "Lichess Bot-AlphaZero-Pure.user.js" | grep -i "bonus\|reward\|good\|positive" | head -30
+Observation: 1297:    v40MustMoveAttackedPieceBonus: 300000,  // HUGE bonus for addressing attacked piece
+1313:    v40ForcedMoveBonus: 400000,             // Bonus for making the forced move
+1329:    v40D4BonusMultiplier: 100000,           // MASSIVE bonus for playing d4
+1330:    v40E4BonusMultiplier: 100000,           // Same for e4
+1335:    v40GreekGiftPreventionBonus: 200000,    // Bonus for moves preventing Greek Gift
+1341:    v40KingEscapeBonus: 300000,             // Bonus for moves helping king escape
+1359:    v40MatingDefenseBonus: 400000,          // Bonus for moves that defend against mate
+1387:    v40ActiveDefenseBonus: 200000,          // Bonus for moves actively defending kingside
+1417:    v40ExchangeAttackerBonus: 200000,       // Bonus for exchanging attacking pieces
+1454:    v40BlockStormBonus: 300000,             // Bonus for blocking pawn storm
+10015:                    score += CONFIG.v40MustMoveAttackedPieceBonus || 300000;
+10019:                    score += (CONFIG.v40MustMoveAttackedPieceBonus || 300000) * 0.5;
+10033:                        score += (CONFIG.v40MustMoveAttackedPieceBonus || 300000) * 0.8;
+10043:                score += (CONFIG.v40MustMoveAttackedPieceBonus || 300000) * 0.6;
+10233:                score += CONFIG.v40ForcedMoveBonus || 400000;
+10258:                    score += CONFIG.v40ForcedMoveBonus || 400000;
+10384:                    score += CONFIG.v40D4BonusMultiplier || 100000;
+10389:                    score += CONFIG.v40E4BonusMultiplier || 100000;
+10415:                    score += CONFIG.v40D4BonusMultiplier || 100000;
+10420:                    score += CONFIG.v40E4BonusMultiplier || 100000;
+10506:                            score += CONFIG.v40GreekGiftPreventionBonus || 200000;
+10626:                score += CONFIG.v40KingEscapeBonus || 300000;
+10814:                    score += CONFIG.v40MatingDefenseBonus || 400000;
+10822:                score += (CONFIG.v40MatingDefenseBonus || 400000) / 2;
+11158:                score += CONFIG.v40ActiveDefenseBonus || 200000;
+11574:                score += CONFIG.v40ExchangeAttackerBonus || 200000;
+11915:                    score += CONFIG.v40CounterplayBonus || 200000;
+12283:                score += CONFIG.v40DriveAwayQueenBonus || 400000;
+Exit code: 0

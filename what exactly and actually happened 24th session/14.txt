@@ -1,0 +1,99 @@
+The penalties for placing a piece where it can be captured (-800,000 to -3,000,000) are much larger than any bonus. So the issue is likely that:
+
+1. The evaluation function isn't being called at all
+2. OR the board state isn't being passed correctly
+
+Let me add more aggressive ANTI-BLUNDER verification with an even higher penalty. Let me create v40.14 with ABSOLUTE ZERO BLUNDER TOLERANCE:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+12960|/**
+12961| * v40.13 ULTIMATE TACTICAL: SIMPLE THREAT DETECTION
+12962| * Detect simple 1-2 move threats that could win material
+12963| */
+12964|function v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) {
+12965|    if (!CONFIG.v40TacticalOversightZeroEnabled) return 0;
+12966|    
+12967|    let score = 0;
+12968|    const isWhite = activeColor === 'w';
+12969|    const enemyColor = isWhite ? 'b' : 'w';
+12970|    
+12971|    try {
+12972|        const fromSquare = move.substring(0, 2);
+12973|        const toSquare = move.substring(2, 4);
+12974|        const movingPiece = board.get(fromSquare);
+12975|        
+12976|        if (!movingPiece) return 0;
+12977|        
+12978|        // Simulate our move
+12979|        const simBoard = new Map(board);
+12980|        simBoard.delete(fromSquare);
+12981|        const capturedPiece = simBoard.get(toSquare);
+12982|        simBoard.set(toSquare, movingPiece);
+12983|        
+12984|        // After our move, what threats does enemy have?
+12985|        // Check for undefended pieces that enemy can now capture
+12986|        let threatScore = 0;
+12987|        
+12988|        for (const [sq, piece] of simBoard) {
+12989|            if (!piece) continue;
+12990|            const pieceIsWhite = piece === piece.toUpperCase();
+12991|            if (pieceIsWhite !== isWhite) continue; // Not our piece
+12992|            if (sq === toSquare) continue; // We just moved here
+12993|            
+12994|            const pieceType = piece.toLowerCase();
+12995|            if (pieceType === 'k') continue;
+12996|            
+12997|            // Is this piece under attack?
+12998|            const isAttacked = isSquareAttackedByColor(simBoard, sq, enemyColor);
+12999|            const isDefended = isSquareDefendedByColor(simBoard, sq, activeColor);
+13000|            
+13001|            if (isAttacked && !isDefended) {
+13002|                // HANGING PIECE after our move!
+13003|                const pieceValue = getPieceValueSimple(pieceType);
+13004|                threatScore += pieceValue;
+13005|                debugLog("[V40.13_THREAT]", `⚠️ After ${move}, ${pieceType.toUpperCase()} on ${sq} is HANGING!`);
+13006|            }
+13007|        }
+13008|        
+13009|        if (threatScore > 0) {
+13010|            score += CONFIG.v40SimpleThreatMissPenalty * (threatScore / 900) || -1000000;
+13011|        }
+13012|        
+13013|        // Also check: Does our move CREATE a threat?
+13014|        // If we're moving to attack something valuable, that's good
+13015|        const movingType = movingPiece.toLowerCase();
+13016|        const attackedSquares = findPossibleCaptures(simBoard, toSquare, movingPiece);
+13017|        
+13018|        for (const attackSq of attackedSquares) {
+13019|            const targetPiece = simBoard.get(attackSq);
+13020|            if (targetPiece) {
+13021|                const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+13022|                if (targetIsWhite !== isWhite) {
+13023|                    // We're attacking enemy piece
+13024|                    const targetType = targetPiece.toLowerCase();
+13025|                    const targetValue = getPieceValueSimple(targetType);
+13026|                    const movingValue = getPieceValueSimple(movingType);
+13027|                    
+13028|                    // Is it a good attack? (we attack higher value or undefended)
+13029|                    const isTargetDefended = isSquareDefendedByColor(simBoard, attackSq, enemyColor);
+13030|                    
+13031|                    if (!isTargetDefended || targetValue > movingValue) {
+13032|                        score += targetValue * 50; // Small bonus for creating threats
+13033|                    }
+13034|                }
+13035|            }
+13036|        }
+13037|        
+13038|    } catch (e) {
+13039|        debugLog("[V40.13_THREAT]", `Error: ${e.message}`);
+13040|    }
+13041|    
+13042|    return score;
+13043|}
+13044|
+13045|// ═══════════════════════════════════════════════════════════════════════════════
+13046|
+13047|/**
+13048| * v40.9 Helper: Find all attacked pieces for a color
+13049| */
+13050|function findAttackedPiecesV40_9(board, color) {

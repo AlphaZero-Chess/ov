@@ -1,0 +1,5 @@
+The function looks correct. The issue is that it depends on `isSquareAttackedByColor` function correctly detecting pawn attacks. Let me check if that function handles pawn attacks properly:
+Action: $ cd /app && grep -n "function isSquareAttackedByColor" "Lichess Bot-AlphaZero-Pure.user.js" | head -3
+Observation: 9151:function isSquareAttackedByColor(board, square, attackingColor) {
+17361:function isSquareAttackedByColor(board, square, attackingColor) {
+Exit code: 0

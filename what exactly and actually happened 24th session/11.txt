@@ -1,0 +1,14 @@
+Good, all v40.13 scores are integrated! The problem might be:
+
+1. The CONFIG values aren't high enough
+2. The penalties need to be much stronger
+
+Let me check the CONFIG values for v40.13:
+Action: $ cd /app && grep -n "v40PlacePieceOnAttackedSquarePenalty\|v40AllowQueenCapturePenalty\|v40AllowMinorPieceCapturePenalty" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 1494:    v40PlacePieceOnAttackedSquarePenalty: -2000000, // MASSIVE penalty for placing piece where it will be captured
+1496:    v40AllowQueenCapturePenalty: -3000000,         // ABSOLUTE DEATH if queen can be captured
+1498:    v40AllowMinorPieceCapturePenalty: -800000,     // Penalty for bishop/knight loss
+12394:                const penalty = movingPieceType === 'q' ? CONFIG.v40AllowQueenCapturePenalty :
+12396:                               ['n', 'b'].includes(movingPieceType) ? CONFIG.v40AllowMinorPieceCapturePenalty :
+12645:                            const penalty = targetType === 'q' ? CONFIG.v40AllowQueenCapturePenalty :
+Exit code: 0

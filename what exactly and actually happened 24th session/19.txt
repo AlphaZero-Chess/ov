@@ -1,0 +1,46 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13078|    
+13079|    return score;
+13080|}
+13081|
+13082|// ═══════════════════════════════════════════════════════════════════════════════
+13083|
+13084|/**
+13085| * v40.9 Helper: Find all attacked pieces for a color
+13086| */
+13087|function findAttackedPiecesV40_9(board, color) {
+13088|    const attacked = [];
+13089|    const isWhite = color === 'w';
+13090|    const enemyColor = isWhite ? 'b' : 'w';
+13091|    
+13092|    for (const [square, piece] of board) {
+13093|        if (!piece) continue;
+13094|        const pieceIsWhite = piece === piece.toUpperCase();
+13095|        if (pieceIsWhite !== isWhite) continue;
+13096|        
+13097|        const pieceType = piece.toLowerCase();
+13098|        if (pieceType === 'k') continue;  // King attacks handled separately
+13099|        
+13100|        // Check if this square is attacked by enemy
+13101|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+13102|            // Check if it's adequately defended
+13103|            const isDefended = isSquareDefendedByColor(board, square, color);
+13104|            
+13105|            // If attacked by something of lower value, still need to consider
+13106|            const attackers = findAttackersOfSquare(board, square, enemyColor);
+13107|            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+13108|            const ourPieceValue = getPieceValueSimple(pieceType);
+13109|            
+13110|            // Consider it under attack if:
+13111|            // 1. Not defended at all, or
+13112|            // 2. Attacker is of lower value than our piece
+13113|            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+13114|                attacked.push({
+13115|                    square,
+13116|                    piece,
+13117|                    value: ourPieceValue,
+13118|                    lowestAttackerValue
+13119|                });
+13120|            }
