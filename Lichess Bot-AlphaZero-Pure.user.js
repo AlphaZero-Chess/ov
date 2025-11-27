@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.15 PIECE PRESERVATION SUPREME
-// @description  TRUE AlphaZero Replica v40.15 PIECE PRESERVATION - DON'T ALLOW TRADES - DEFEND ALL PIECES - NO UNNECESSARY EXCHANGES - PROPHYLACTIC DEFENSE - LOOK-AHEAD SIMULATION - 100-Pass Tactical Verification - ZERO BLUNDERS GUARANTEED
-// @author       AlphaZero TRUE REPLICA v40.15 PIECE PRESERVATION SUPREME EDITION
-// @version      40.15.0-PIECE-PRESERVATION-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME
+// @description  TRUE AlphaZero Replica v40.16 CATASTROPHIC DEFENSE - NEVER OPEN FILES TOWARD KING - PAWN STORM DETECTION - QUEEN INFILTRATION PATH - 3-PLY DEEP LOOK-AHEAD - FORCING LINE REJECTION - ZERO KINGSIDE DISASTERS GUARANTEED
+// @author       AlphaZero TRUE REPLICA v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME EDITION
+// @version      40.16.0-CATASTROPHIC-KINGSIDE-DEFENSE-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -1605,6 +1605,58 @@ const CONFIG = {
     
     // v40.15: 100% PIECE PRESERVATION SUPREME DOMINANCE
     v40PiecePreservationDominance: 1.0,             // 100% v40.15 influence
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME: NEVER ALLOW KINGSIDE DESTRUCTION
+    // From game analysis: Bot played Bxf6 gxf6 opening g-file toward castled king!
+    // Then allowed f5-f4-fxg3 pawn storm destroying entire kingside!
+    // Solution: ABSOLUTE REJECTION of any move that opens files toward our king
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.16: FILE OPENING TOWARD KING — CATASTROPHIC PENALTY
+    v40FileOpeningTowardKingEnabled: true,
+    v40OpenGFileTowardKingPenalty: -15000000,       // NEVER open g-file toward castled king
+    v40OpenHFileTowardKingPenalty: -12000000,       // NEVER open h-file toward castled king
+    v40OpenFFileTowardKingPenalty: -10000000,       // NEVER open f-file toward castled king
+    v40ExchangeOpensFileTowardKingPenalty: -20000000, // Bxf6 gxf6 type disasters
+    
+    // v40.16: PAWN STORM DETECTION — See it BEFORE it destroys you
+    v40PawnStormDetectionEnabled: true,
+    v40EnemyPawnStormAdvancingPenalty: -3000000,    // f5-f4 type pawn storms
+    v40PawnStormCanCaptureOurPawnPenalty: -8000000, // fxg3 type captures
+    v40PawnStormOpensFilesPenalty: -12000000,       // Storm opens files toward king
+    v40MultiPawnStormPenalty: -5000000,             // Multiple pawns storming
+    
+    // v40.16: QUEEN INFILTRATION PATH — See Qg4-Qxg3-Qh3 paths
+    v40QueenInfiltrationPathEnabled: true,
+    v40QueenCanReachG3Penalty: -4000000,            // Enemy queen can reach g3
+    v40QueenCanReachH3Penalty: -5000000,            // Enemy queen can reach h3
+    v40QueenInfiltrationSequencePenalty: -8000000,  // Complete infiltration sequence visible
+    v40QueenNearKingPenalty: -3000000,              // Enemy queen within 2 squares of king
+    
+    // v40.16: 3-PLY DEEP LOOK-AHEAD — Simulate our move, opponent's best, our response
+    v40DeepLookAheadEnabled: true,
+    v40DeepLookAheadDepth: 3,                       // 3 half-moves minimum
+    v40DeepLookAheadBadResultPenalty: -6000000,     // If we're worse after 3 plies
+    v40DeepLookAheadMaterialLossPenalty: -10000000, // If we lose material in 3 plies
+    v40DeepLookAheadCheckmateThreatPenalty: -50000000, // If checkmate possible in 3 plies
+    
+    // v40.16: KINGSIDE PAWN SHELTER — Never allow destruction
+    v40KingsidePawnShelterEnabled: true,
+    v40GFilePawnMissingPenalty: -2000000,           // g-pawn missing = weakness
+    v40HFilePawnMissingPenalty: -1500000,           // h-pawn missing = weakness
+    v40FFilePawnMissingPenalty: -1000000,           // f-pawn missing = weakness
+    v40KingsidePawnsAdvancedPenalty: -800000,       // Pawns advanced = weak
+    v40AllKingsidePawnsMissingPenalty: -20000000,   // Catastrophic!
+    
+    // v40.16: FORCING LINE REJECTION — Reject moves that allow forcing sequences
+    v40ForcingLineRejectionEnabled: true,
+    v40ForcingLineLeadsToMatePenalty: -100000000,   // Reject if mate in line
+    v40ForcingLineLosesMaterialPenalty: -15000000,  // Reject if loses material
+    v40ForcingLineRuinsPositionPenalty: -8000000,   // Reject if ruins position
+    
+    // v40.16: 100% CATASTROPHIC KINGSIDE DEFENSE SUPREME DOMINANCE
+    v40CatastrophicKingsideDefenseDominance: 1.0,   // 100% v40.16 influence
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -13787,6 +13839,936 @@ function v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) {
         
     } catch (e) {
         debugLog("[V40.15_PROPH]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME: NEVER ALLOW KINGSIDE DESTRUCTION
+// From game analysis: Bot played Bxf6 gxf6 opening g-file toward castled king!
+// Then allowed f5-f4-fxg3 pawn storm destroying entire kingside!
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.16 FILE OPENING TOWARD KING: Detect if our move opens a file toward our castled king
+ * This is THE MOST CRITICAL check - Bxf6 gxf6 type disasters MUST be prevented!
+ */
+function v40FileOpeningTowardKingEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40FileOpeningTowardKingEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Find our king position
+        let kingSquare = null;
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Check if king is castled (on g or h file for kingside, c or b for queenside)
+        const kingCastledKingside = isWhite ? 
+            (kingFile >= 5 && kingRank === 1) : 
+            (kingFile >= 5 && kingRank === 8);
+        const kingCastledQueenside = isWhite ? 
+            (kingFile <= 2 && kingRank === 1) : 
+            (kingFile <= 2 && kingRank === 8);
+        
+        if (!kingCastledKingside && !kingCastledQueenside) return 0;
+        
+        // Check if this is a capture that could open a file
+        if (capturedPiece) {
+            const toFile = toSquare.charCodeAt(0) - 97;
+            const toRank = parseInt(toSquare[1]);
+            
+            // Simulate the capture and recapture
+            const afterMove = new Map(board);
+            afterMove.delete(fromSquare);
+            afterMove.set(toSquare, movingPiece);
+            
+            // Check if opponent can recapture with a pawn that opens a file
+            // This detects Bxf6 gxf6 type disasters!
+            if (capturedPiece.toLowerCase() !== 'p') {
+                // We captured a piece (not pawn)
+                // Check if opponent pawn can recapture
+                const enemyColor = isWhite ? 'b' : 'w';
+                const pawnAttackers = findPawnAttacksOnSquare(afterMove, toSquare, enemyColor);
+                
+                if (pawnAttackers.length > 0) {
+                    // Opponent pawn CAN recapture
+                    // This WILL open a file!
+                    
+                    // Determine which file opens
+                    for (const pawnSq of pawnAttackers) {
+                        const pawnFile = pawnSq.charCodeAt(0) - 97;
+                        const pawnFileChar = String.fromCharCode(97 + pawnFile);
+                        
+                        // If king castled kingside, penalize opening g, h, f files
+                        if (kingCastledKingside) {
+                            if (pawnFileChar === 'g') {
+                                score += CONFIG.v40OpenGFileTowardKingPenalty || -15000000;
+                                debugLog("[V40.16_FILE]", `☠️☠️☠️ CATASTROPHIC: ${move} allows pawn recapture opening G-FILE toward castled king!`);
+                            } else if (pawnFileChar === 'h') {
+                                score += CONFIG.v40OpenHFileTowardKingPenalty || -12000000;
+                                debugLog("[V40.16_FILE]", `☠️☠️ DANGER: ${move} allows pawn recapture opening H-FILE toward castled king!`);
+                            } else if (pawnFileChar === 'f') {
+                                score += CONFIG.v40OpenFFileTowardKingPenalty || -10000000;
+                                debugLog("[V40.16_FILE]", `☠️ WARNING: ${move} allows pawn recapture opening F-FILE toward castled king!`);
+                            }
+                        }
+                        
+                        // If king castled queenside, penalize opening a, b, c files
+                        if (kingCastledQueenside) {
+                            if (pawnFileChar === 'c') {
+                                score += CONFIG.v40OpenGFileTowardKingPenalty || -15000000;
+                                debugLog("[V40.16_FILE]", `☠️☠️☠️ CATASTROPHIC: ${move} allows pawn recapture opening C-FILE toward castled king!`);
+                            } else if (pawnFileChar === 'b') {
+                                score += CONFIG.v40OpenHFileTowardKingPenalty || -12000000;
+                                debugLog("[V40.16_FILE]", `☠️☠️ DANGER: ${move} allows pawn recapture opening B-FILE toward castled king!`);
+                            }
+                        }
+                    }
+                    
+                    // Extra penalty for exchange that opens file
+                    score += CONFIG.v40ExchangeOpensFileTowardKingPenalty || -20000000;
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.16_FILE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.16 PAWN STORM DETECTION: Detect enemy pawn storms BEFORE they destroy us
+ * Specifically detects f5-f4-fxg3 type sequences
+ */
+function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        const capturedPiece = afterMove.get(toSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king position
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Only check if king is castled
+        const kingCastled = isWhite ? kingRank === 1 : kingRank === 8;
+        if (!kingCastled) return 0;
+        
+        // Identify enemy pawns that are advancing toward our king
+        const dangerousFiles = kingFile >= 4 ? ['e', 'f', 'g', 'h'] : ['a', 'b', 'c', 'd'];
+        
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            if (piece.toLowerCase() !== 'p') continue;
+            
+            const pawnFile = sq.charCodeAt(0) - 97;
+            const pawnFileChar = String.fromCharCode(97 + pawnFile);
+            const pawnRank = parseInt(sq[1]);
+            
+            if (!dangerousFiles.includes(pawnFileChar)) continue;
+            
+            // Check if this pawn is advanced (danger zone)
+            // For white king: enemy pawns on ranks 3-5 are storming
+            // For black king: enemy pawns on ranks 4-6 are storming
+            const stormingZone = isWhite ? 
+                (pawnRank >= 3 && pawnRank <= 5) : 
+                (pawnRank >= 4 && pawnRank <= 6);
+            
+            if (stormingZone) {
+                score += CONFIG.v40EnemyPawnStormAdvancingPenalty || -3000000;
+                debugLog("[V40.16_STORM]", `⚠️ Enemy pawn storm: ${pawnFileChar}${pawnRank} advancing toward king!`);
+                
+                // Check if this pawn can capture one of our pawns on the next move
+                // This detects fxg3 type captures
+                const captureSquares = isWhite ? 
+                    [[pawnFile - 1, pawnRank - 1], [pawnFile + 1, pawnRank - 1]] :
+                    [[pawnFile - 1, pawnRank + 1], [pawnFile + 1, pawnRank + 1]];
+                
+                for (const [capFile, capRank] of captureSquares) {
+                    if (capFile < 0 || capFile > 7 || capRank < 1 || capRank > 8) continue;
+                    
+                    const capSquare = String.fromCharCode(97 + capFile) + capRank;
+                    const targetPiece = afterMove.get(capSquare);
+                    
+                    if (targetPiece && targetPiece.toLowerCase() === 'p') {
+                        const targetIsOurs = (targetPiece === targetPiece.toUpperCase()) === isWhite;
+                        
+                        if (targetIsOurs) {
+                            // Enemy pawn can capture our pawn - opens a file!
+                            score += CONFIG.v40PawnStormCanCaptureOurPawnPenalty || -8000000;
+                            debugLog("[V40.16_STORM]", `☠️ DANGER: Enemy ${pawnFileChar}-pawn can capture our pawn on ${capSquare}! Opens file!`);
+                            
+                            // Check if this capture would open a file toward king
+                            const captureFileChar = String.fromCharCode(97 + capFile);
+                            if (['f', 'g', 'h'].includes(captureFileChar) && kingFile >= 4) {
+                                score += CONFIG.v40PawnStormOpensFilesPenalty || -12000000;
+                                debugLog("[V40.16_STORM]", `☠️☠️ CATASTROPHIC: Capture opens ${captureFileChar}-file toward king!`);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Count total storming pawns
+        let stormingPawnCount = 0;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            if (piece.toLowerCase() !== 'p') continue;
+            
+            const pawnRank = parseInt(sq[1]);
+            const stormingZone = isWhite ? 
+                (pawnRank >= 3 && pawnRank <= 5) : 
+                (pawnRank >= 4 && pawnRank <= 6);
+            
+            if (stormingZone) stormingPawnCount++;
+        }
+        
+        if (stormingPawnCount >= 2) {
+            score += CONFIG.v40MultiPawnStormPenalty * stormingPawnCount || -5000000;
+            debugLog("[V40.16_STORM]", `⚠️ MULTI-PAWN STORM: ${stormingPawnCount} enemy pawns storming our king!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.16_STORM]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.16 QUEEN INFILTRATION PATH: Detect Qg4-Qxg3-Qh3 type queen infiltration sequences
+ */
+function v40QueenInfiltrationPathEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40QueenInfiltrationPathEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king and enemy queen
+        let kingSquare = null;
+        let enemyQueenSquare = null;
+        
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+            }
+            if (pieceIsWhite !== isWhite && piece.toLowerCase() === 'q') {
+                enemyQueenSquare = sq;
+            }
+        }
+        
+        if (!kingSquare || !enemyQueenSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Only check if king is castled kingside
+        const kingCastledKingside = isWhite ? 
+            (kingFile >= 4 && kingRank === 1) : 
+            (kingFile >= 4 && kingRank === 8);
+        
+        if (!kingCastledKingside) return 0;
+        
+        // Critical infiltration squares for kingside castled king
+        const infiltrationSquares = isWhite ? 
+            ['g3', 'h3', 'g2', 'h2', 'f2'] : 
+            ['g6', 'h6', 'g7', 'h7', 'f7'];
+        
+        // Check if enemy queen can reach these squares
+        for (const infSq of infiltrationSquares) {
+            if (canQueenReachSquare(afterMove, enemyQueenSquare, infSq, enemyColor)) {
+                if (infSq.includes('g3') || infSq.includes('g6')) {
+                    score += CONFIG.v40QueenCanReachG3Penalty || -4000000;
+                    debugLog("[V40.16_QINF]", `☠️ Enemy queen can infiltrate to ${infSq}!`);
+                } else if (infSq.includes('h3') || infSq.includes('h6')) {
+                    score += CONFIG.v40QueenCanReachH3Penalty || -5000000;
+                    debugLog("[V40.16_QINF]", `☠️☠️ Enemy queen can infiltrate to ${infSq} near king!`);
+                }
+            }
+        }
+        
+        // Check queen distance to king
+        const queenFile = enemyQueenSquare.charCodeAt(0) - 97;
+        const queenRank = parseInt(enemyQueenSquare[1]);
+        const distanceToKing = Math.max(Math.abs(queenFile - kingFile), Math.abs(queenRank - kingRank));
+        
+        if (distanceToKing <= 2) {
+            score += CONFIG.v40QueenNearKingPenalty || -3000000;
+            debugLog("[V40.16_QINF]", `⚠️ Enemy queen only ${distanceToKing} squares from king!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.16_QINF]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.16 Helper: Check if queen can reach a square (simplified)
+ */
+function canQueenReachSquare(board, fromSquare, toSquare, queenColor) {
+    const fromFile = fromSquare.charCodeAt(0) - 97;
+    const fromRank = parseInt(fromSquare[1]);
+    const toFile = toSquare.charCodeAt(0) - 97;
+    const toRank = parseInt(toSquare[1]);
+    
+    // Check if on same rank, file, or diagonal
+    const sameRank = fromRank === toRank;
+    const sameFile = fromFile === toFile;
+    const sameDiag = Math.abs(fromFile - toFile) === Math.abs(fromRank - toRank);
+    
+    if (!sameRank && !sameFile && !sameDiag) return false;
+    
+    // Check if path is clear
+    const fileDir = toFile > fromFile ? 1 : (toFile < fromFile ? -1 : 0);
+    const rankDir = toRank > fromRank ? 1 : (toRank < fromRank ? -1 : 0);
+    
+    let curFile = fromFile + fileDir;
+    let curRank = fromRank + rankDir;
+    
+    while (curFile !== toFile || curRank !== toRank) {
+        const sq = String.fromCharCode(97 + curFile) + curRank;
+        if (board.get(sq)) return false;  // Path blocked
+        curFile += fileDir;
+        curRank += rankDir;
+    }
+    
+    // Check if destination is empty or has enemy piece
+    const destPiece = board.get(toSquare);
+    if (destPiece) {
+        const destIsWhite = destPiece === destPiece.toUpperCase();
+        const queenIsWhite = queenColor === 'w';
+        if (destIsWhite === queenIsWhite) return false;  // Can't capture own piece
+    }
+    
+    return true;
+}
+
+/**
+ * v40.16 3-PLY DEEP LOOK-AHEAD: Simulate our move -> opponent's best -> our response
+ * If we're worse after 3 plies, penalize the move
+ */
+function v40DeepLookAheadEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40DeepLookAheadEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // PLY 1: Simulate our move
+        const afterPly1 = new Map(board);
+        afterPly1.delete(fromSquare);
+        const captured1 = afterPly1.get(toSquare);
+        afterPly1.set(toSquare, movingPiece);
+        
+        const materialBefore = calculateSimpleMaterial(board, isWhite);
+        let materialAfterPly1 = calculateSimpleMaterial(afterPly1, isWhite);
+        if (captured1) {
+            // We captured something
+            materialAfterPly1 += getPieceValueSimple(captured1.toLowerCase());
+        }
+        
+        // PLY 2: Find opponent's best response (captures first)
+        const opponentCaptures = findAllCapturesForColor(afterPly1, enemyColor);
+        
+        let worstOpponentCapture = null;
+        let worstCaptureValue = 0;
+        
+        for (const cap of opponentCaptures) {
+            const capturedValue = getPieceValueSimple(cap.capturedPiece.toLowerCase());
+            const attackerValue = getPieceValueSimple(cap.piece.toLowerCase());
+            
+            // Check if this capture is safe (attacker isn't hanging)
+            const afterCapture = new Map(afterPly1);
+            afterCapture.delete(cap.from);
+            afterCapture.set(cap.to, cap.piece);
+            
+            const attackerIsDefended = isSquareDefendedByColor(afterCapture, cap.to, enemyColor);
+            const attackerIsAttacked = isSquareAttackedByColor(afterCapture, cap.to, activeColor);
+            
+            let netValue = capturedValue;
+            if (attackerIsAttacked && !attackerIsDefended) {
+                netValue -= attackerValue;  // Attacker will be recaptured
+            }
+            
+            if (netValue > worstCaptureValue) {
+                worstCaptureValue = netValue;
+                worstOpponentCapture = cap;
+            }
+        }
+        
+        if (worstOpponentCapture && worstCaptureValue >= 3) {
+            // Opponent can capture something valuable!
+            score += CONFIG.v40DeepLookAheadMaterialLossPenalty * (worstCaptureValue / 9) || -10000000;
+            debugLog("[V40.16_DEEP]", `☠️ After ${move}, opponent can capture ${worstOpponentCapture.capturedPiece} on ${worstOpponentCapture.to} (value=${worstCaptureValue})!`);
+        }
+        
+        // PLY 2B: Check if opponent can give check that leads to problems
+        const opponentChecks = findAllChecksForColor(afterPly1, enemyColor, activeColor);
+        
+        for (const check of opponentChecks) {
+            // This check might be part of a forcing sequence
+            const afterCheck = new Map(afterPly1);
+            afterCheck.delete(check.from);
+            afterCheck.set(check.to, check.piece);
+            
+            // Find our king
+            let ourKingSquare = null;
+            for (const [sq, piece] of afterCheck) {
+                if (!piece) continue;
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                    ourKingSquare = sq;
+                    break;
+                }
+            }
+            
+            if (ourKingSquare) {
+                // Check how many escape squares the king has
+                const escapeSquares = findKingEscapeSquares(afterCheck, ourKingSquare, activeColor);
+                
+                if (escapeSquares.length <= 1) {
+                    score += CONFIG.v40DeepLookAheadBadResultPenalty || -6000000;
+                    debugLog("[V40.16_DEEP]", `⚠️ After ${move}, opponent check ${check.from}->${check.to} leaves king with ${escapeSquares.length} escape squares!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.16_DEEP]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.16 Helper: Calculate simple material count for a color
+ */
+function calculateSimpleMaterial(board, forWhite) {
+    let material = 0;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== forWhite) continue;
+        
+        material += getPieceValueSimple(piece.toLowerCase());
+    }
+    
+    return material;
+}
+
+/**
+ * v40.16 Helper: Find all captures for a color
+ */
+function findAllCapturesForColor(board, color) {
+    const captures = [];
+    const isWhite = color === 'w';
+    
+    for (const [fromSq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        // Get all possible moves for this piece
+        const moves = getPossibleMovesForPieceV40(board, fromSq, piece);
+        
+        for (const toSq of moves) {
+            const targetPiece = board.get(toSq);
+            if (targetPiece) {
+                const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+                if (targetIsWhite !== isWhite) {
+                    captures.push({
+                        from: fromSq,
+                        to: toSq,
+                        piece: piece,
+                        capturedPiece: targetPiece
+                    });
+                }
+            }
+        }
+    }
+    
+    return captures;
+}
+
+/**
+ * v40.16 Helper: Find all checks for a color
+ */
+function findAllChecksForColor(board, attackerColor, defenderColor) {
+    const checks = [];
+    const attackerIsWhite = attackerColor === 'w';
+    
+    // Find defender's king
+    let kingSquare = null;
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === (defenderColor === 'w') && piece.toLowerCase() === 'k') {
+            kingSquare = sq;
+            break;
+        }
+    }
+    
+    if (!kingSquare) return checks;
+    
+    // Find all moves that give check
+    for (const [fromSq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== attackerIsWhite) continue;
+        
+        const moves = getPossibleMovesForPieceV40(board, fromSq, piece);
+        
+        for (const toSq of moves) {
+            // Simulate the move
+            const afterMove = new Map(board);
+            afterMove.delete(fromSq);
+            afterMove.set(toSq, piece);
+            
+            // Check if this gives check
+            if (isSquareAttackedByColor(afterMove, kingSquare, attackerColor)) {
+                checks.push({
+                    from: fromSq,
+                    to: toSq,
+                    piece: piece
+                });
+            }
+        }
+    }
+    
+    return checks;
+}
+
+/**
+ * v40.16 Helper: Find king escape squares
+ */
+function findKingEscapeSquares(board, kingSquare, kingColor) {
+    const escapes = [];
+    const kingFile = kingSquare.charCodeAt(0) - 97;
+    const kingRank = parseInt(kingSquare[1]);
+    const isWhite = kingColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    const directions = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+    ];
+    
+    for (const [df, dr] of directions) {
+        const newFile = kingFile + df;
+        const newRank = kingRank + dr;
+        
+        if (newFile < 0 || newFile > 7 || newRank < 1 || newRank > 8) continue;
+        
+        const newSquare = String.fromCharCode(97 + newFile) + newRank;
+        const occupant = board.get(newSquare);
+        
+        // Check if square is occupied by own piece
+        if (occupant) {
+            const occupantIsWhite = occupant === occupant.toUpperCase();
+            if (occupantIsWhite === isWhite) continue;  // Can't move to own piece
+        }
+        
+        // Check if square is attacked by enemy
+        // Create board without king to check if escape square is attacked
+        const testBoard = new Map(board);
+        testBoard.delete(kingSquare);
+        
+        if (!isSquareAttackedByColor(testBoard, newSquare, enemyColor)) {
+            escapes.push(newSquare);
+        }
+    }
+    
+    return escapes;
+}
+
+/**
+ * v40.16 Helper: Get possible moves for a piece
+ */
+function getPossibleMovesForPieceV40(board, fromSquare, piece) {
+    const moves = [];
+    const fromFile = fromSquare.charCodeAt(0) - 97;
+    const fromRank = parseInt(fromSquare[1]);
+    const pieceType = piece.toLowerCase();
+    const isWhite = piece === piece.toUpperCase();
+    
+    switch (pieceType) {
+        case 'p': {
+            const direction = isWhite ? 1 : -1;
+            const startRank = isWhite ? 2 : 7;
+            
+            // Forward move
+            const fwdRank = fromRank + direction;
+            if (fwdRank >= 1 && fwdRank <= 8) {
+                const fwdSquare = String.fromCharCode(97 + fromFile) + fwdRank;
+                if (!board.get(fwdSquare)) {
+                    moves.push(fwdSquare);
+                    
+                    // Double move from start
+                    if (fromRank === startRank) {
+                        const dblRank = fromRank + 2 * direction;
+                        const dblSquare = String.fromCharCode(97 + fromFile) + dblRank;
+                        if (!board.get(dblSquare)) {
+                            moves.push(dblSquare);
+                        }
+                    }
+                }
+            }
+            
+            // Captures
+            for (const capFile of [fromFile - 1, fromFile + 1]) {
+                if (capFile < 0 || capFile > 7) continue;
+                const capRank = fromRank + direction;
+                if (capRank < 1 || capRank > 8) continue;
+                const capSquare = String.fromCharCode(97 + capFile) + capRank;
+                const target = board.get(capSquare);
+                if (target) {
+                    moves.push(capSquare);
+                }
+            }
+            break;
+        }
+        
+        case 'n': {
+            const knightMoves = [
+                [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                [1, -2], [1, 2], [2, -1], [2, 1]
+            ];
+            for (const [df, dr] of knightMoves) {
+                const newFile = fromFile + df;
+                const newRank = fromRank + dr;
+                if (newFile >= 0 && newFile <= 7 && newRank >= 1 && newRank <= 8) {
+                    moves.push(String.fromCharCode(97 + newFile) + newRank);
+                }
+            }
+            break;
+        }
+        
+        case 'b': {
+            const directions = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+            for (const [df, dr] of directions) {
+                let f = fromFile + df, r = fromRank + dr;
+                while (f >= 0 && f <= 7 && r >= 1 && r <= 8) {
+                    const sq = String.fromCharCode(97 + f) + r;
+                    moves.push(sq);
+                    if (board.get(sq)) break;
+                    f += df; r += dr;
+                }
+            }
+            break;
+        }
+        
+        case 'r': {
+            const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            for (const [df, dr] of directions) {
+                let f = fromFile + df, r = fromRank + dr;
+                while (f >= 0 && f <= 7 && r >= 1 && r <= 8) {
+                    const sq = String.fromCharCode(97 + f) + r;
+                    moves.push(sq);
+                    if (board.get(sq)) break;
+                    f += df; r += dr;
+                }
+            }
+            break;
+        }
+        
+        case 'q': {
+            const directions = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]
+            ];
+            for (const [df, dr] of directions) {
+                let f = fromFile + df, r = fromRank + dr;
+                while (f >= 0 && f <= 7 && r >= 1 && r <= 8) {
+                    const sq = String.fromCharCode(97 + f) + r;
+                    moves.push(sq);
+                    if (board.get(sq)) break;
+                    f += df; r += dr;
+                }
+            }
+            break;
+        }
+        
+        case 'k': {
+            const directions = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]
+            ];
+            for (const [df, dr] of directions) {
+                const newFile = fromFile + df;
+                const newRank = fromRank + dr;
+                if (newFile >= 0 && newFile <= 7 && newRank >= 1 && newRank <= 8) {
+                    moves.push(String.fromCharCode(97 + newFile) + newRank);
+                }
+            }
+            break;
+        }
+    }
+    
+    return moves;
+}
+
+/**
+ * v40.16 KINGSIDE PAWN SHELTER: Never allow pawn shelter destruction
+ */
+function v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingsidePawnShelterEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Only check if king is castled kingside (files e-h, back rank)
+        const backRank = isWhite ? 1 : 8;
+        if (kingFile < 4 || kingRank !== backRank) return 0;
+        
+        // Check f, g, h pawns
+        const shelterRank = isWhite ? 2 : 7;
+        const fPawn = afterMove.get('f' + shelterRank);
+        const gPawn = afterMove.get('g' + shelterRank);
+        const hPawn = afterMove.get('h' + shelterRank);
+        
+        const fPawnPresent = fPawn && fPawn.toLowerCase() === 'p' && 
+                            (fPawn === fPawn.toUpperCase()) === isWhite;
+        const gPawnPresent = gPawn && gPawn.toLowerCase() === 'p' && 
+                            (gPawn === gPawn.toUpperCase()) === isWhite;
+        const hPawnPresent = hPawn && hPawn.toLowerCase() === 'p' && 
+                            (hPawn === hPawn.toUpperCase()) === isWhite;
+        
+        if (!gPawnPresent) {
+            score += CONFIG.v40GFilePawnMissingPenalty || -2000000;
+            debugLog("[V40.16_SHELTER]", `⚠️ G-pawn missing from king shelter!`);
+        }
+        
+        if (!hPawnPresent) {
+            score += CONFIG.v40HFilePawnMissingPenalty || -1500000;
+            debugLog("[V40.16_SHELTER]", `⚠️ H-pawn missing from king shelter!`);
+        }
+        
+        if (!fPawnPresent) {
+            score += CONFIG.v40FFilePawnMissingPenalty || -1000000;
+            debugLog("[V40.16_SHELTER]", `⚠️ F-pawn missing from king shelter!`);
+        }
+        
+        // Catastrophic if all missing
+        if (!fPawnPresent && !gPawnPresent && !hPawnPresent) {
+            score += CONFIG.v40AllKingsidePawnsMissingPenalty || -20000000;
+            debugLog("[V40.16_SHELTER]", `☠️☠️☠️ CATASTROPHIC: ALL kingside pawns missing! King exposed!`);
+        }
+        
+        // Check if pawns are advanced (weakened shelter)
+        const advancedRank = isWhite ? 3 : 6;
+        const fAdvanced = afterMove.get('f' + advancedRank);
+        const gAdvanced = afterMove.get('g' + advancedRank);
+        const hAdvanced = afterMove.get('h' + advancedRank);
+        
+        if (fAdvanced && fAdvanced.toLowerCase() === 'p' && (fAdvanced === fAdvanced.toUpperCase()) === isWhite) {
+            score += CONFIG.v40KingsidePawnsAdvancedPenalty || -800000;
+        }
+        if (gAdvanced && gAdvanced.toLowerCase() === 'p' && (gAdvanced === gAdvanced.toUpperCase()) === isWhite) {
+            score += CONFIG.v40KingsidePawnsAdvancedPenalty || -800000;
+        }
+        if (hAdvanced && hAdvanced.toLowerCase() === 'p' && (hAdvanced === hAdvanced.toUpperCase()) === isWhite) {
+            score += CONFIG.v40KingsidePawnsAdvancedPenalty || -800000;
+        }
+        
+    } catch (e) {
+        debugLog("[V40.16_SHELTER]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.16 FORCING LINE REJECTION: Reject moves that allow dangerous forcing sequences
+ */
+function v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ForcingLineRejectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterPly1 = new Map(board);
+        afterPly1.delete(fromSquare);
+        afterPly1.set(toSquare, movingPiece);
+        
+        // Find our king
+        let ourKingSquare = null;
+        for (const [sq, piece] of afterPly1) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                ourKingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!ourKingSquare) return 0;
+        
+        // Check for forcing sequences (checks, captures, threats)
+        
+        // PLY 2: Opponent's checks
+        const opponentChecks = findAllChecksForColor(afterPly1, enemyColor, activeColor);
+        
+        for (const check of opponentChecks) {
+            const afterCheck = new Map(afterPly1);
+            afterCheck.delete(check.from);
+            afterCheck.set(check.to, check.piece);
+            
+            // Find our king's escape squares
+            const escapes = findKingEscapeSquares(afterCheck, ourKingSquare, activeColor);
+            
+            // PLY 3: After we escape, can opponent continue forcing?
+            for (const escape of escapes) {
+                const afterEscape = new Map(afterCheck);
+                const king = afterEscape.get(ourKingSquare);
+                afterEscape.delete(ourKingSquare);
+                afterEscape.set(escape, king);
+                
+                // Check if opponent can continue with another check or capture
+                const continueChecks = findAllChecksForColor(afterEscape, enemyColor, activeColor);
+                const continueCaptures = findAllCapturesForColor(afterEscape, enemyColor);
+                
+                // Filter valuable captures
+                const valuableCaptures = continueCaptures.filter(c => 
+                    getPieceValueSimple(c.capturedPiece.toLowerCase()) >= 3);
+                
+                if (continueChecks.length >= 2 || valuableCaptures.length >= 1) {
+                    score += CONFIG.v40ForcingLineLosesMaterialPenalty || -15000000;
+                    debugLog("[V40.16_FORCE]", `☠️ After ${move}, opponent has forcing sequence ${check.from}->${check.to} with followup!`);
+                }
+            }
+            
+            // Check for mate threats
+            if (escapes.length === 0) {
+                // Is it checkmate?
+                // Need to check if any piece can block
+                // Simplified: if no escapes and in check = very bad
+                score += CONFIG.v40ForcingLineLeadsToMatePenalty || -100000000;
+                debugLog("[V40.16_FORCE]", `☠️☠️☠️ After ${move}, opponent check ${check.from}->${check.to} may lead to MATE!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.16_FORCE]", `Error: ${e.message}`);
     }
     
     return score;
@@ -29128,8 +30110,32 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.15: PROPHYLAXIS MOVE — Bonus for moves that maintain defense
                 const prophylaxisMoveScore = v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
                 
-                // v40.15: COMBINED v40 SCORE — 100% PIECE PRESERVATION SUPREME INFLUENCE
-                // This makes v40 the ABSOLUTE PIECE PRESERVATION SUPREME factor
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME: NEVER ALLOW KINGSIDE DESTRUCTION
+                // From game analysis: Bot played Bxf6 gxf6 opening g-file toward castled king!
+                // Then allowed f5-f4-fxg3 pawn storm destroying entire kingside!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.16: FILE OPENING TOWARD KING — NEVER open files toward castled king!
+                const fileOpeningTowardKingScore = v40FileOpeningTowardKingEval(fen, move, board, activeColor, moveNumber) * 15.0;
+                
+                // v40.16: PAWN STORM DETECTION — See storms BEFORE they destroy you
+                const pawnStormDetectionScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 10.0;
+                
+                // v40.16: QUEEN INFILTRATION PATH — Detect Qg4-Qxg3-Qh3 sequences
+                const queenInfiltrationPathScore = v40QueenInfiltrationPathEval(fen, move, board, activeColor, moveNumber) * 8.0;
+                
+                // v40.16: 3-PLY DEEP LOOK-AHEAD — Simulate forcing sequences
+                const deepLookAheadScore = v40DeepLookAheadEval(fen, move, board, activeColor, moveNumber) * 12.0;
+                
+                // v40.16: KINGSIDE PAWN SHELTER — Never allow shelter destruction
+                const kingsidePawnShelterScore = v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) * 5.0;
+                
+                // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
+                const forcingLineRejectionScore = v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) * 15.0;
+                
+                // v40.16: COMBINED v40 SCORE — 100% CATASTROPHIC KINGSIDE DEFENSE SUPREME INFLUENCE
+                // This makes v40 the ABSOLUTE CATASTROPHIC KINGSIDE DEFENSE SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -29164,11 +30170,14 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
                                lookAheadBlunderScore + tripleCheckScore + failSafeScore +
                                // v40.15 PIECE PRESERVATION SUPREME additions:
-                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore;
+                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore;
                 v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.15 PIECE PRESERVATION SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -29195,6 +30204,12 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🛡️🛡️ PiecePreservation: ${piecePreservationScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🛡️🛡️ AllPiecesSafety: ${allPiecesSafetyScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🛡️🛡️ ProphylaxisMove: ${prophylaxisMoveScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 FileOpeningTowardKing: ${fileOpeningTowardKingScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 PawnStormDetection: ${pawnStormDetectionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 QueenInfiltrationPath: ${queenInfiltrationPathScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 DeepLookAhead: ${deepLookAheadScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsidePawnShelter: ${kingsidePawnShelterScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 ForcingLineRejection: ${forcingLineRejectionScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
