@@ -1,0 +1,83 @@
+Excellent! No syntax errors. Now let me update the header to reflect v40.4 fully and check the current header version:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1|// ==UserScript==
+2|// @name         Lichess Bot - TRUE ALPHAZERO v40.4 SUPERHUMAN BEAST GODLIKE
+3|// @description  TRUE AlphaZero Replica v40.4 GODLIKE - 80% v40 ABSOLUTE DOMINANCE - 100K MCTS Simulations - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 20-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+4|// @author       AlphaZero TRUE REPLICA v40.4 SUPERHUMAN BEAST GODLIKE EDITION
+5|// @version      40.4.0-SUPERHUMAN-BEAST-GODLIKE
+6|// @match         *://lichess.org/*
+7|// @run-at        document-idle
+8|// @grant         none
+9|// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/del@refs/heads/main/stockfish1.js
+10|// ==/UserScript==
+11|
+12|/**
+13| * ═══════════════════════════════════════════════════════════════════════════════════════════
+14| * v40.3.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — ULTIMATE EDITION
+15| * ═══════════════════════════════════════════════════════════════════════════════════════════
+16| * 
+17| * ██████████████████████████████████████████████████████████████████████████████████████████
+18| * █                                                                                        █
+19| * █    "A paradigm-shifter, a level that felt almost ALIEN, with moves that               █
+20| * █     prioritized DEEP UNDERSTANDING over brute-force calculation."                     █
+21| * █                                                                                        █
+22| * █    "A SUPERHUMAN BEAST that can CRUSH Stockfish, with FLAWLESS endgame play,          █
+23| * █     PERFECT positional judgment, and ZERO blunders, and an uncanny ability            █
+24| * █     to weave long-term strategic webs that humans could barely comprehend."           █
+25| * █                                                                                        █
+26| * █    v40 PARADIGM: TRUE PERSISTENT MCTS Tree Search, PUCT Selection (like AlphaZero),   █
+27| * █    200+ Move Strategic Horizon, 12-Pass Blunder Verification, Neural Pattern          █
+28| * █    Recognition, Perfect Endgame Technique (Philidor/Lucena/Opposition/Triangulation), █
+29| * █    Delayed Gratification Mastery, Uncanny Web-Weaving, Initiative Tracking,           █
+30| * █    ABSOLUTE ZERO TACTICAL OVERSIGHTS - TRUE ALPHAZERO REPLICA                         █
+31| * █                                                                                        █
+32| * ██████████████████████████████████████████████████████████████████████████████████████████
+33| * 
+34| * ═══════════════════════════════════════════════════════════════════════════════════════════
+35| * v40 SUPERHUMAN BEAST MISSION: CRUSH Stockfish through:
+36| * 
+37| * 1. TRUE PERSISTENT MCTS with proper PUCT selection (AlphaZero's secret)
+38| *    - 10,000+ simulations per move
+39| *    - Dirichlet noise at root for exploration
+40| *    - Tree reuse across moves
+41| *    - Virtual loss for parallel search diversity
+42| * 
+43| * 2. 200+ move strategic planning with DELAYED GRATIFICATION mastery
+44| *    - Web-weaving: strategic pressure building across multiple fronts
+45| *    - Patient maneuvering with positional squeeze
+46| *    - Long-term plan consistency tracking
+47| *    - Alien-tier pattern recognition
+48| * 
+49| * 3. PERFECT positional judgment (material, mobility, king safety, pawn structure)
+50| *    - Value network emulation: holistic position evaluation
+51| *    - Policy network emulation: move prior estimation
+52| *    - Space control and territorial dominance
+53| *    - Initiative and tempo tracking
+54| * 
+55| * 4. FLAWLESS endgame play with:
+56| *    - Opposition detection (direct, distant, diagonal)
+57| *    - Triangulation recognition
+58| *    - Zugzwang creation and detection
+59| *    - Philidor position recognition
+60| *    - Lucena position recognition
+61| *    - Key square control
+62| *    - Outflanking and shouldering
+63| *    - Pawn race calculation
+64| * 
+65| * 5. ZERO blunders through 12-pass multi-pass tactical verification:
+66| *    - Pass 1: Comprehensive tactical scan
+67| *    - Pass 2: Hanging piece detection
+68| *    - Pass 3: Fork threat detection (knight forks, queen forks)
+69| *    - Pass 4: Pin/Skewer detection
+70| *    - Pass 5: Back rank mate threat detection
+71| *    - Pass 6: Discovered attack detection
+72| *    - Pass 7: Desperado piece check
+73| *    - Pass 8: Zwischenzug (in-between move) detection
+74| *    - Pass 9: Queen trap detection
+75| *    - Pass 10: Overloaded piece detection
+76| *    - Pass 11: Mating net detection
+77| *    - Pass 12: Perpetual check opportunity check
+78| * 
+79| * 6. UNCANNY "web-weaving" - strategic pressure building across multiple fronts
+80| *    - Multi-front pressure detection (queenside, kingside, center)

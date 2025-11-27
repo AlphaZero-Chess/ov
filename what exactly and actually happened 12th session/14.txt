@@ -1,0 +1,69 @@
+Excellent! Now let me verify all the key integrations are in place by examining the computeCombinedScore function:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+21760|                // v40.3 NEW: INITIATIVE PRESERVATION — Never lose the initiative
+21761|                const initiativePreservationBonus = v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+21762|                
+21763|                // ═══════════════════════════════════════════════════════════════════
+21764|                // v40.4 GODLIKE: NEW TACTICAL & POSITIONAL BLINDSPOT PREVENTION
+21765|                // ═══════════════════════════════════════════════════════════════════
+21766|                
+21767|                // v40.4: OPENING PRINCIPLES — Enforce principled play (prevents d3 disasters)
+21768|                const openingPrinciplesScore = v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) * 0.9;
+21769|                
+21770|                // v40.4: ENHANCED DISCOVERED ATTACK DETECTION — Prevents Nxg3+ type blindspots
+21771|                const discoveredAttackPenalty = v40EnhancedDiscoveredAttackDetection(fen, move, board, activeColor) * 1.0;
+21772|                
+21773|                // v40.4: KNIGHT INVASION PENALTY — Prevent enemy knight infiltration
+21774|                const knightInvasionPenalty = v40KnightInvasionPenalty(fen, move, board, activeColor) * 0.8;
+21775|                
+21776|                // v40.4: ENHANCED QUEEN MATING PATTERNS — Detect Qxg2# type mates
+21777|                const queenMatingPenalty = v40EnhancedQueenMatingPatterns(fen, move, board, activeColor) * 0.9;
+21778|                
+21779|                // v40.4: PAWN SHIELD INTEGRITY — Critical for king safety
+21780|                const pawnShieldScore = v40PawnShieldIntegrityEval(fen, move, board, activeColor) * 0.7;
+21781|                
+21782|                // v40.4: COMBINED v40 SCORE — 80% GODLIKE DOMINANT INFLUENCE
+21783|                // This makes v40 the ABSOLUTE DOMINANT factor in move selection
+21784|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+21785|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+21786|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+21787|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+21788|                               counterattackBonus + initiativePreservationBonus +
+21789|                               // v40.4 NEW additions:
+21790|                               openingPrinciplesScore + discoveredAttackPenalty + 
+21791|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore;
+21792|                v40Bonus = v40DeepScore * 0.80;  // 80% influence — GODLIKE PARADIGM SHIFT
+21793|                
+21794|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+21795|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.4 GODLIKE EVALUATION`);
+21796|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+21797|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+21798|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+21799|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+21800|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+21801|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+21802|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+21803|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+21804|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+21805|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+21806|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+21807|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+21808|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+21809|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+21810|                debugLog("[V40_INTEGRATE]", `   🆕 OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+21811|                debugLog("[V40_INTEGRATE]", `   🆕 DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+21812|                debugLog("[V40_INTEGRATE]", `   🆕 KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+21813|                debugLog("[V40_INTEGRATE]", `   🆕 QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+21814|                debugLog("[V40_INTEGRATE]", `   🆕 PawnShield: ${pawnShieldScore.toFixed(1)}`);
+21815|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 80% bonus=${v40Bonus.toFixed(1)}cp`);
+21816|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+21817|            } catch (e) {
+21818|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+21819|                v40Bonus = 0;
+21820|            }
+21821|        }
+21822|        
+21823|        // v40.4: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (80%)
+21824|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTE DOMINANT
+21825|        const combinedScore = (

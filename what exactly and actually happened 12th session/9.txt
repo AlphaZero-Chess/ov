@@ -1,0 +1,11 @@
+Now let me check the CONFIG section to ensure v40.4 parameters include the CONFIG values that the functions expect:
+Action: $ grep -n "v40OpeningCentralPawnBonus\|v40OpeningPassivePenalty\|v40OpeningKnightDevBonus\|v40OpeningCastlingBonus\|v40OpeningDoubleMovepenalty\|v40OpeningEarlyQueenPenalty\|v40OpeningBlockPawnPenalty\|v40PawnShieldBonus" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 6397:                score += CONFIG.v40OpeningCentralPawnBonus || 6000;
+6400:                score += CONFIG.v40OpeningPassivePenalty || -8000;
+6409:                score += CONFIG.v40OpeningKnightDevBonus || 4000;
+6417:                score += CONFIG.v40OpeningCastlingBonus || 8000;
+6428:                score += CONFIG.v40OpeningDoubleMovepenalty || -4000;
+6435:            score += CONFIG.v40OpeningEarlyQueenPenalty || -6000;
+6445:                    score += CONFIG.v40OpeningBlockPawnPenalty || -3000;
+6879:            score += CONFIG.v40PawnShieldBonus || 3000;
+Exit code: 0

@@ -1,0 +1,17 @@
+Now let me update the weighted merge to reflect 80% v40 dominance (as per the v40.4 integration):
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        // v40.3: TRUE ALPHAZERO weighted merge — v40 ULTIMATE DOMINANT (75%)
+        // Engine provides baseline, but v40 superhuman evaluation is ABSOLUTE PRIMARY
+        const combinedScore = (
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.25 +  // Engine reduced to 25%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.25 +
+            normalizedPolicyPrior * 0.5 + // Policy bonus reduced
+            v40Bonus                      // v40 ULTIMATE DOMINANT at 75%
+        );" --new-str "        // v40.4: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (80%)
+        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTE DOMINANT
+        const combinedScore = (
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.20 +  // Engine reduced to 20%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.20 +
+            normalizedPolicyPrior * 0.4 + // Policy bonus reduced further
+            v40Bonus                      // v40 GODLIKE DOMINANT at 80%
+        );"
+Observation: Edit was successful.

@@ -1,0 +1,21 @@
+Let me add the missing CONFIG values that the v40.4 functions use, which were referenced with `||` fallbacks:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.4: OPENING PRINCIPLES — Enforce proper opening play
+    v40OpeningPrinciplesEnabled: true,
+    v40PassiveOpeningPenalty: -15000,       // Penalty for passive opening moves (d3, h3, a3 too early)
+    v40DevelopmentBonus: 5000,              // Bonus per developed piece
+    v40CastlingUrgency: 10000,              // Bonus for castling before move 12
+    v40EarlyCenterControlBonus: 8000,       // Bonus for central pawn presence
+    v40PieceActivityEarlyBonus: 4000,       // Bonus for active pieces in opening" --new-str "    // v40.4: OPENING PRINCIPLES — Enforce proper opening play
+    v40OpeningPrinciplesEnabled: true,
+    v40PassiveOpeningPenalty: -15000,       // Penalty for passive opening moves (d3, h3, a3 too early)
+    v40DevelopmentBonus: 5000,              // Bonus per developed piece
+    v40CastlingUrgency: 10000,              // Bonus for castling before move 12
+    v40EarlyCenterControlBonus: 8000,       // Bonus for central pawn presence
+    v40PieceActivityEarlyBonus: 4000,       // Bonus for active pieces in opening
+    v40OpeningCentralPawnBonus: 6000,       // Bonus for e4/d4/e5/d5
+    v40OpeningKnightDevBonus: 4000,         // Bonus for knight development
+    v40OpeningCastlingBonus: 8000,          // Bonus for early castling
+    v40OpeningDoubleMovepenalty: -4000,     // Penalty for moving same piece twice
+    v40OpeningEarlyQueenPenalty: -6000,     // Penalty for early queen moves
+    v40OpeningBlockPawnPenalty: -3000,      // Penalty for blocking central pawns"
+Observation: Edit was successful.

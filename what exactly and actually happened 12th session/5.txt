@@ -1,0 +1,10 @@
+Now let me verify the v40.4 functions exist and are properly implemented. Let me check if there are any missing helper functions:
+Action: $ grep -n "function v40OpeningPrinciplesEvaluation\|function v40EnhancedDiscoveredAttackDetection\|function v40KnightInvasionPenalty\|function v40EnhancedQueenMatingPatterns\|function v40PawnShieldIntegrityEval\|function findKing" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 3930:function findKing(board, color) {
+6374:function v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) {
+6476:function v40EnhancedDiscoveredAttackDetection(fen, move, board, activeColor) {
+6609:function v40KnightInvasionPenalty(fen, move, board, activeColor) {
+6692:function v40EnhancedQueenMatingPatterns(fen, move, board, activeColor) {
+6819:function v40PawnShieldIntegrityEval(fen, move, board, activeColor) {
+16331:function findKingPosition(board, color) {
+Exit code: 0

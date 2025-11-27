@@ -1,0 +1,34 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+21810|                v40Bonus = 0;
+21811|            }
+21812|        }
+21813|        
+21814|        // v40.3: TRUE ALPHAZERO weighted merge — v40 ULTIMATE DOMINANT (75%)
+21815|        // Engine provides baseline, but v40 superhuman evaluation is ABSOLUTE PRIMARY
+21816|        const combinedScore = (
+21817|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.25 +  // Engine reduced to 25%
+21818|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.25 +
+21819|            normalizedPolicyPrior * 0.5 + // Policy bonus reduced
+21820|            v40Bonus                      // v40 ULTIMATE DOMINANT at 75%
+21821|        );
+21822|        
+21823|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
+21824|        
+21825|        return combinedScore;
+21826|    } catch (e) {
+21827|        debugLog("[Q+POLICY]", "⚠️ Error computing combined score:", e.message);
+21828|        return engineScore;
+21829|    }
+21830|}
+21831|
+21832|/**
+21833| * NEW v18.0.0: Legacy stub for v17 compatibility
+21834| */
+21835|function computeLongHorizonScore(fen, move, alternatives, engineScore) {
+21836|    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+21837|    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+21838|}
+21839|
+21840|/**

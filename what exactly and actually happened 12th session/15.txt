@@ -1,0 +1,100 @@
+The v40.4 integration is complete. Now let me view the v40.4 functions to ensure they have all necessary helper functions and are well-implemented:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+6374|// 4. Queen mate on g2 - Enhanced Queen Mating Patterns
+6375|// 5. Pawn shield weakness - Pawn Shield Integrity
+6376|// ═══════════════════════════════════════════════════════════════════════════════
+6377|
+6378|/**
+6379| * v40.4: OPENING PRINCIPLES EVALUATION
+6380| * Penalizes passive openings like 2.d3 and rewards principled play
+6381| * AlphaZero always plays active, principled openings
+6382| */
+6383|function v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) {
+6384|    if (!CONFIG.v40OpeningPrinciplesEnabled || moveNumber > 12) return 0;
+6385|    
+6386|    let score = 0;
+6387|    
+6388|    try {
+6389|        const fromSquare = move.substring(0, 2);
+6390|        const toSquare = move.substring(2, 4);
+6391|        const movingPiece = board.get(fromSquare);
+6392|        
+6393|        if (!movingPiece) return 0;
+6394|        
+6395|        const pieceType = movingPiece.toLowerCase();
+6396|        const isWhite = activeColor === 'w';
+6397|        
+6398|        // PRINCIPLE 1: Control the center with pawns (e4, d4 for white; e5, d5 for black)
+6399|        if (pieceType === 'p') {
+6400|            const idealSquares = isWhite ? ['e4', 'd4'] : ['e5', 'd5'];
+6401|            const passiveSquares = isWhite ? ['e3', 'd3'] : ['e6', 'd6'];
+6402|            
+6403|            if (idealSquares.includes(toSquare)) {
+6404|                score += CONFIG.v40OpeningCentralPawnBonus || 6000;
+6405|                debugLog("[V40_OPENING]", `✅ PRINCIPLED: Central pawn to ${toSquare}`);
+6406|            } else if (passiveSquares.includes(toSquare) && moveNumber <= 4) {
+6407|                score += CONFIG.v40OpeningPassivePenalty || -8000;
+6408|                debugLog("[V40_OPENING]", `🚨 PASSIVE OPENING: d3/e3 instead of d4/e4!`);
+6409|            }
+6410|        }
+6411|        
+6412|        // PRINCIPLE 2: Develop knights before bishops (usually)
+6413|        if (pieceType === 'n' && moveNumber <= 6) {
+6414|            const goodKnightSquares = isWhite ? ['f3', 'c3', 'd2', 'e2'] : ['f6', 'c6', 'd7', 'e7'];
+6415|            if (goodKnightSquares.includes(toSquare)) {
+6416|                score += CONFIG.v40OpeningKnightDevBonus || 4000;
+6417|                debugLog("[V40_OPENING]", `✅ KNIGHT DEVELOPMENT: ${toSquare}`);
+6418|            }
+6419|        }
+6420|        
+6421|        // PRINCIPLE 3: Castle early for king safety
+6422|        if (move === 'e1g1' || move === 'e1c1' || move === 'e8g8' || move === 'e8c8') {
+6423|            if (moveNumber <= 10) {
+6424|                score += CONFIG.v40OpeningCastlingBonus || 8000;
+6425|                debugLog("[V40_OPENING]", `✅ EARLY CASTLING - Excellent!`);
+6426|            }
+6427|        }
+6428|        
+6429|        // PRINCIPLE 4: Don't move the same piece twice in opening
+6430|        if (moveNumber <= 8 && pieceType !== 'p') {
+6431|            // Check if this piece has moved before (simplified check)
+6432|            const startSquares = getStartingSquare(pieceType, isWhite);
+6433|            if (!startSquares.includes(fromSquare)) {
+6434|                // Piece has moved before, now moving again
+6435|                score += CONFIG.v40OpeningDoubleMovepenalty || -4000;
+6436|                debugLog("[V40_OPENING]", `⚠️ Moving same piece twice: ${pieceType} from ${fromSquare}`);
+6437|            }
+6438|        }
+6439|        
+6440|        // PRINCIPLE 5: Queen should not come out too early
+6441|        if (pieceType === 'q' && moveNumber <= 8) {
+6442|            score += CONFIG.v40OpeningEarlyQueenPenalty || -6000;
+6443|            debugLog("[V40_OPENING]", `⚠️ EARLY QUEEN MOVE in opening!`);
+6444|        }
+6445|        
+6446|        // PRINCIPLE 6: Don't block central pawns with pieces
+6447|        if (pieceType !== 'p' && moveNumber <= 6) {
+6448|            const blockedSquares = isWhite ? ['d2', 'e2'] : ['d7', 'e7'];
+6449|            if (blockedSquares.includes(toSquare)) {
+6450|                const pawnBehind = isWhite ? board.get(toSquare[0] + '2') : board.get(toSquare[0] + '7');
+6451|                if (pawnBehind && pawnBehind.toLowerCase() === 'p') {
+6452|                    score += CONFIG.v40OpeningBlockPawnPenalty || -3000;
+6453|                    debugLog("[V40_OPENING]", `⚠️ Blocking central pawn with ${pieceType}`);
+6454|                }
+6455|            }
+6456|        }
+6457|        
+6458|    } catch (e) {
+6459|        debugLog("[V40_OPENING]", `Error: ${e.message}`);
+6460|    }
+6461|    
+6462|    return score;
+6463|}
+6464|
+6465|/**
+6466| * v40.4: Helper - Get starting squares for piece type
+6467| */
+6468|function getStartingSquare(pieceType, isWhite) {
+6469|    const backRank = isWhite ? '1' : '8';
+6470|    switch (pieceType) {
