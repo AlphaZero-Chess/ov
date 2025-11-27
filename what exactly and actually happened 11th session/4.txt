@@ -1,0 +1,104 @@
+Let me view the area where we need to add v40.4 functions:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+6000|        // v40.3: RANK-BASED TERRITORY CONTROL
+6001|        const ourTerritoryRanks = v40CalculateTerritoryDepth(simBoard, activeColor);
+6002|        const enemyTerritoryRanks = v40CalculateTerritoryDepth(simBoard, enemyColor);
+6003|        const territoryAdvantage = ourTerritoryRanks - enemyTerritoryRanks;
+6004|        
+6005|        if (territoryAdvantage > 2) {
+6006|            score += CONFIG.v40SpaceRestrictionValue || 6000;
+6007|            debugLog("[V40_SPACE]", `🏰 TERRITORIAL EXPANSION: +${territoryAdvantage} ranks`);
+6008|        }
+6009|        
+6010|        if (spaceAdvantage > 10) {
+6011|            score += CONFIG.v40SpaceAdvantageBonus || 10000;
+6012|            debugLog("[V40_SPACE]", `✅ SPACE DOMINATION: +${spaceAdvantage} squares`);
+6013|        } else if (spaceAdvantage > 5) {
+6014|            score += (CONFIG.v40SpaceAdvantageBonus || 10000) * 0.5;
+6015|        }
+6016|        
+6017|        // v40.3: CENTRAL FILE CONTROL (d and e files especially)
+6018|        const centralControl = v40CalculateCentralControl(simBoard, activeColor);
+6019|        const enemyCentralControl = v40CalculateCentralControl(simBoard, enemyColor);
+6020|        
+6021|        if (centralControl > enemyCentralControl) {
+6022|            score += CONFIG.v40CentralDominationBonus || 8000;
+6023|        }
+6024|        
+6025|        // v40.3: OPEN FILE DOMINATION - Critical for the c-file invasion problem
+6026|        const openFileControl = v40CalculateOpenFileControl(simBoard, activeColor);
+6027|        const enemyOpenFileControl = v40CalculateOpenFileControl(simBoard, enemyColor);
+6028|        
+6029|        if (openFileControl > enemyOpenFileControl) {
+6030|            score += (CONFIG.v40CentralDominationBonus || 8000) * 0.8;
+6031|            debugLog("[V40_SPACE]", `✅ OPEN FILE CONTROL: +${openFileControl - enemyOpenFileControl}`);
+6032|        } else if (enemyOpenFileControl > openFileControl + 1) {
+6033|            // v40.3: WARNING - Enemy controls open files!
+6034|            score -= CONFIG.v40SpaceRestrictionValue || 6000;
+6035|            debugLog("[V40_SPACE]", `⚠️ ENEMY FILE CONTROL: -${enemyOpenFileControl - openFileControl}`);
+6036|        }
+6037|        
+6038|        // v40.3: OUTPOST CONTROL - Squares we control in enemy territory
+6039|        const ourOutposts = v40CountOutpostSquares(simBoard, activeColor);
+6040|        const enemyOutposts = v40CountOutpostSquares(simBoard, enemyColor);
+6041|        
+6042|        if (ourOutposts > enemyOutposts) {
+6043|            score += (CONFIG.v40ExpansionBonus || 4000) * (ourOutposts - enemyOutposts);
+6044|        }
+6045|        
+6046|        // v40.3: PAWN CHAIN SPACE - Pawns determine territory
+6047|        const pawnChainAdvantage = v40EvaluatePawnChainSpace(simBoard, activeColor);
+6048|        score += pawnChainAdvantage * 500;
+6049|        
+6050|        // v40.3: Positional squeeze
+6051|        if (spaceAdvantage > 15 && territoryAdvantage > 2) {
+6052|            score += CONFIG.v40SqueezeBonus || 12000;
+6053|            debugLog("[V40_SPACE]", `✅ POSITIONAL SQUEEZE ACTIVE - ASPHYXIATION IMMINENT`);
+6054|        } else if (spaceAdvantage > 12) {
+6055|            score += (CONFIG.v40SqueezeBonus || 12000) * 0.6;
+6056|        }
+6057|        
+6058|        // v40.3: EXPANSION POTENTIAL - Can we expand further?
+6059|        const toRank = parseInt(toSquare[1]);
+6060|        const isExpanding = isWhite ? (toRank >= 5) : (toRank <= 4);
+6061|        if (isExpanding && movingPiece && movingPiece.toLowerCase() !== 'k') {
+6062|            score += CONFIG.v40ExpansionBonus || 4000;
+6063|        }
+6064|        
+6065|    } catch (e) {
+6066|        debugLog("[V40_SPACE]", `Error: ${e.message}`);
+6067|    }
+6068|    
+6069|    return score;
+6070|}
+6071|
+6072|/**
+6073| * v40.3: Calculate space advantage
+6074| */
+6075|function v40CalculateSpaceAdvantage(board, activeColor) {
+6076|    let space = 0;
+6077|    const isWhite = activeColor === 'w';
+6078|    
+6079|    // Count pawns in advanced positions
+6080|    const pawnChar = isWhite ? 'P' : 'p';
+6081|    const advancedRanks = isWhite ? [5, 6, 7] : [2, 3, 4];
+6082|    
+6083|    for (const [square, piece] of board) {
+6084|        if (piece === pawnChar) {
+6085|            const rank = parseInt(square[1]);
+6086|            if (advancedRanks.includes(rank)) {
+6087|                space += 3;  // Advanced pawn controls space
+6088|            }
+6089|        }
+6090|    }
+6091|    
+6092|    // Count pieces in opponent's half
+6093|    const opponentHalf = isWhite ? [5, 6, 7, 8] : [1, 2, 3, 4];
+6094|    for (const [square, piece] of board) {
+6095|        if (!piece) continue;
+6096|        const isOurs = (piece === piece.toUpperCase()) === isWhite;
+6097|        if (!isOurs) continue;
+6098|        
+6099|        const rank = parseInt(square[1]);
+6100|        if (opponentHalf.includes(rank)) {

@@ -1,0 +1,76 @@
+The CONFIG is already in place. Now let me integrate the new v40.4 functions into the computeCombinedScore function:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+21488|                eleganceScore += 0.08; // Safe king = elegant
+21489|            }
+21490|        }
+21491|        
+21492|        // 6. Outpost creation bonus
+21493|        const outposts = evaluateOutposts(fen);
+21494|        if (outposts > 0.6) {
+21495|            eleganceScore += 0.1; // Outposts = elegant
+21496|        }
+21497|        
+21498|        // 7. Quiet move in complex position (non-obvious beauty)
+21499|        const isQuiet = (move.length === 4 && !move.includes('x'));
+21500|        if (isQuiet && positionComplexity > 0.7) {
+21501|            eleganceScore += 0.12; // Quiet depth = elegant
+21502|        }
+21503|        
+21504|        // 8. Not the most forcing move (elegance often subtle)
+21505|        if (alternatives && alternatives.length >= 2) {
+21506|            const moveIndex = alternatives.findIndex(m => m.move === move);
+21507|            if (moveIndex >= 1 && moveIndex <= 2) {
+21508|                const topScore = alternatives[0].score;
+21509|                const moveScore = alternatives[moveIndex].score;
+21510|                const scoreDiff = Math.abs(topScore - moveScore);
+21511|                // Elegant if close to best but not forcing
+21512|                if (scoreDiff >= 10 && scoreDiff <= 40) {
+21513|                    eleganceScore += 0.15;
+21514|                }
+21515|            }
+21516|        }
+21517|        
+21518|        // SAFETY GATE: Penalize if immediate eval drop > threshold
+21519|        if (engineEval !== undefined && alternatives && alternatives.length > 0) {
+21520|            const bestEval = alternatives[0].score;
+21521|            const moveEval = alternatives.find(m => m.move === move)?.score || engineEval;
+21522|            const evalDrop = bestEval - moveEval;
+21523|            
+21524|            if (evalDrop > ALPHAZERO_ESSENCE.safetyGateEvalDrop) {
+21525|                // Severe penalty for unsafe moves
+21526|                eleganceScore = Math.max(0, eleganceScore - 0.5);
+21527|                debugLog("[ELEGANCE]", `⚠️ Move ${move} penalized for eval drop ${evalDrop}cp`);
+21528|            }
+21529|        }
+21530|        
+21531|        // Normalize to 0..1
+21532|        eleganceScore = Math.min(Math.max(eleganceScore, 0), 1);
+21533|        
+21534|        if (eleganceScore > 0.7) {
+21535|            debugLog("[ELEGANCE]", `✨ Move ${move} highly elegant: ${eleganceScore.toFixed(2)}`);
+21536|        }
+21537|        
+21538|        return eleganceScore;
+21539|    } catch (e) {
+21540|        debugLog("[ELEGANCE]", "⚠️ Error computing elegance:", e.message);
+21541|        return 0.5;
+21542|    }
+21543|}
+21544|
+21545|/**
+21546| * NEW v17.0.0: Helper to await engine score for a position
+21547| * Wraps UCI commands in Promise for async/await pattern
+21548| */
+21549|function awaitEngineScoreForPosition(fen, depth) {
+21550|    return new Promise((resolve, reject) => {
+21551|        if (!chessEngine) {
+21552|            resolve(0);
+21553|            return;
+21554|        }
+21555|        
+21556|        let output = "";
+21557|        const originalHandler = chessEngine.onmessage;
+21558|        const timeout = setTimeout(() => {
+21559|            chessEngine.onmessage = originalHandler;
+21560|            chessEngine.postMessage("stop");

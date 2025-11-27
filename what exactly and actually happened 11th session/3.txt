@@ -1,0 +1,10 @@
+These v40.4 functions don't exist yet. Let me check what the header claims and verify the current CONFIG settings:
+Action: $ grep -n "v40MCTSSimulations\|v40Enabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 837:    v40Enabled: true,
+842:    v40MCTSSimulations: 50000,              // MASSIVE simulation count (10000→50000) v40.3
+1118:    v40MCTSSimulations: 100000,             // Increased from 50K to 100K
+1814:    if (!CONFIG.v40Enabled) {
+1831:        const numSimulations = CONFIG.v40MCTSSimulations || 10000;
+2440:    if (!CONFIG.v40Enabled) {
+21155:        if (CONFIG.v40Enabled && fen) {
+Exit code: 0

@@ -1,0 +1,106 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+21678|function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+21679|    try {
+21680|        // Get engine Q-value (normalized)
+21681|        const engine_Q = engineScore;
+21682|        
+21683|        // Get rollout Q-value (normalized, default to engine if not provided)
+21684|        const rollout_Q = rolloutScore !== undefined ? rolloutScore : engineScore;
+21685|        
+21686|        // Get policy prior (softmax of MultiPV)
+21687|        const policyPrior = computePolicyPrior(move, alternatives);
+21688|        
+21689|        // Normalize policy prior to centipawn bonus scale (-50..+50)
+21690|        // Higher probability = positive bonus, lower = negative
+21691|        const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
+21692|        
+21693|        // ═══════════════════════════════════════════════════════════════════
+21694|        // v40.1.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION — PARADIGM SHIFT
+21695|        // CRITICAL: v40 now has 55% DOMINANT INFLUENCE — this IS the superhuman
+21696|        // Add v40's deep positional/strategic/tactical evaluation
+21697|        // ═══════════════════════════════════════════════════════════════════
+21698|        let v40Bonus = 0;
+21699|        let v40DeepScore = 0;
+21700|        let v40MatingNetPenalty = 0;
+21701|        let v40FileControlBonus = 0;
+21702|        let v40InitiativeBonus = 0;
+21703|        
+21704|        if (CONFIG.v40Enabled && fen) {
+21705|            try {
+21706|                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+21707|                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+21708|                
+21709|                // v40.3: ULTIMATE Enhanced deep evaluations — MAXIMUM WEIGHTS
+21710|                const board = parseFenToBoard(fen);
+21711|                const activeColor = fen.split(' ')[1];
+21712|                const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+21713|                
+21714|                // v40.3: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+21715|                // CRITICAL: Increased to 1.5 — mating nets MUST be absolutely respected
+21716|                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 1.5;
+21717|                
+21718|                // v40.3: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+21719|                // CRITICAL: Increased to 1.0 — file control is CRUCIAL
+21720|                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 1.0;
+21721|                
+21722|                // v40.3: INITIATIVE TRACKING (prevents initiative collapse)
+21723|                // CRITICAL: Increased to 1.2 — initiative loss = position loss
+21724|                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 1.2;
+21725|                
+21726|                // v40.3: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+21727|                // CRITICAL: Multiplied by 2.0 — queen movement must be HEAVILY penalized
+21728|                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) * 2.0;
+21729|                
+21730|                // v40.3: PROPHYLACTIC BONUS (preventing opponent's plans)
+21731|                const prophylacticBonus = v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+21732|                
+21733|                // v40.3: ROOK INFILTRATION DETECTION
+21734|                const rookInfiltrationPenalty = v40RookInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+21735|                
+21736|                // v40.3: KING SAFETY CORRIDOR
+21737|                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.9;
+21738|                
+21739|                // v40.3 NEW: ANTI-PASSIVITY SYSTEM — Forces active play
+21740|                const antiPassivityBonus = v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+21741|                
+21742|                // v40.3 NEW: DEEP HORIZON EVALUATION — True 30+ move planning
+21743|                const deepHorizonBonus = v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+21744|                
+21745|                // v40.3 NEW: SPACE DOMINATION — Territory control
+21746|                const spaceDominationBonus = v40SpaceDominationEvaluation(fen, move, board, activeColor) * 0.5;
+21747|                
+21748|                // v40.3 NEW: COUNTERATTACK PRIORITY — Active defense is best defense
+21749|                const counterattackBonus = v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) * 0.7;
+21750|                
+21751|                // v40.3 NEW: INITIATIVE PRESERVATION — Never lose the initiative
+21752|                const initiativePreservationBonus = v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+21753|                
+21754|                // v40.3: COMBINED v40 SCORE — 75% ABSOLUTE DOMINANT INFLUENCE
+21755|                // This makes v40 the ULTIMATE factor in move selection
+21756|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+21757|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+21758|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+21759|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+21760|                               counterattackBonus + initiativePreservationBonus;
+21761|                v40Bonus = v40DeepScore * 0.75;  // 75% influence — ULTIMATE PARADIGM SHIFT
+21762|                
+21763|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+21764|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.3 ULTIMATE EVALUATION`);
+21765|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+21766|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+21767|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+21768|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+21769|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+21770|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+21771|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+21772|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+21773|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+21774|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+21775|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+21776|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+21777|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+21778|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+21779|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 75% bonus=${v40Bonus.toFixed(1)}cp`);
+21780|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);

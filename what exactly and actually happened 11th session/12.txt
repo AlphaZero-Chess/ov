@@ -1,0 +1,4 @@
+Let me find the exact location of computeCombinedScore and update it to include the new v40.4 functions:
+Action: $ grep -n "function computeCombinedScore" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 21678:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+Exit code: 0

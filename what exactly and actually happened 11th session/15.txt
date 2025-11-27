@@ -1,0 +1,4 @@
+Now update the weighted merge comment:
+Action: $ grep -n "TRUE ALPHAZERO weighted merge.*75%" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 21814:        // v40.3: TRUE ALPHAZERO weighted merge — v40 ULTIMATE DOMINANT (75%)
+Exit code: 0

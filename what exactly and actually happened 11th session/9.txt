@@ -1,0 +1,7 @@
+
+Action: $ grep -n "v40InitiativePreservationEnabled\|v40CounterattackEnabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 1040:    v40CounterattackEnabled: true,
+1064:    v40InitiativePreservationEnabled: true,
+5842:    if (!CONFIG.v40CounterattackEnabled) return 0;
+6266:    if (!CONFIG.v40InitiativePreservationEnabled) return 0;
+Exit code: 0

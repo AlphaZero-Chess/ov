@@ -1,0 +1,5 @@
+Let me find a good location to add the new v40.4 functions - after the v40.3 functions:
+Action: $ grep -n "function v40InitiativePreservation\|function v40Counterattack" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 5841:function v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) {
+6265:function v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) {
+Exit code: 0
