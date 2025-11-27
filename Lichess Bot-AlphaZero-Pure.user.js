@@ -11536,11 +11536,12 @@ function v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber
 }
 
 /**
- * v40.11 TRANSCENDENT SUPREME: PAWN STORM DETECTION
+ * v40.11 TRANSCENDENT SUPREME: PAWN STORM DETECTION (Legacy v40.11 version)
  * Detect f5/f4 pawn storms and respond appropriately
  * From French Defense loss: f5, f4, fxg3 pawn storm destroyed kingside
+ * NOTE: This is the older v40.11 version - v40.16 version below is more comprehensive
  */
-function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+function v40PawnStormDetectionEvalV11(fen, move, board, activeColor, moveNumber) {
     if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
     
     let score = 0;
@@ -30018,8 +30019,8 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
                 const badExchangeFileScore = v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) * 2.5;
                 
-                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms
-                const pawnStormScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms (v40.11 version)
+                const pawnStormScore = v40PawnStormDetectionEvalV11(fen, move, board, activeColor, moveNumber) * 2.0;
                 
                 // v40.11: DEFEND KINGSIDE PRIORITY — Prioritize kingside defense when attacked
                 const defendKingsideScore = v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
