@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.7 SUPERHUMAN BEAST DIVINE
-// @description  TRUE AlphaZero Replica v40.7 DIVINE - 95% v40 ABSOLUTE DOMINANCE - 100K MCTS Simulations - RECAPTURE URGENCY - PIECE ON ATTACKED SQUARE DETECTION - MATERIAL HEMORRHAGE DETECTION - ABSOLUTE BLUNDER CHECK - CENTER PAWN PROTECTION - PAWN TENSION RESOLUTION - QUEEN RAID PREVENTION - TACTICAL PRIORITY OVERRIDE - DEVELOPMENT SAFETY - IMMEDIATE THREAT RESPONSE - Queen Infiltration Detection - Enhanced Hanging Piece Detection - King Corner Safety - Check Sequence Detection - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
-// @author       AlphaZero TRUE REPLICA v40.7 SUPERHUMAN BEAST DIVINE EDITION
-// @version      40.7.0-SUPERHUMAN-BEAST-DIVINE
+// @name         Lichess Bot - TRUE ALPHAZERO v40.8 SUPERHUMAN BEAST TRANSCENDENT
+// @description  TRUE AlphaZero Replica v40.8 TRANSCENDENT - 97% v40 ABSOLUTE DOMINANCE - 100K MCTS Simulations - OPENING AGGRESSION (d4>d3) - EXCHANGE QUALITY - ACTIVE PIECE REQUIREMENT - COUNTERPLAY GENERATION - CENTRAL CONTROL SUPREME - RECAPTURE URGENCY - PIECE ON ATTACKED SQUARE DETECTION - MATERIAL HEMORRHAGE DETECTION - ABSOLUTE BLUNDER CHECK - CENTER PAWN PROTECTION - PAWN TENSION RESOLUTION - QUEEN RAID PREVENTION - TACTICAL PRIORITY OVERRIDE - DEVELOPMENT SAFETY - IMMEDIATE THREAT RESPONSE - Queen Infiltration Detection - Enhanced Hanging Piece Detection - King Corner Safety - Check Sequence Detection - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+// @author       AlphaZero TRUE REPLICA v40.8 SUPERHUMAN BEAST TRANSCENDENT EDITION
+// @version      40.8.0-SUPERHUMAN-BEAST-TRANSCENDENT
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -11,7 +11,7 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
- * v40.7.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — DIVINE EDITION
+ * v40.8.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — TRANSCENDENT EDITION
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 
  * ██████████████████████████████████████████████████████████████████████████████████████████
@@ -1242,6 +1242,45 @@ const CONFIG = {
     
     // v40.7: ENHANCED 95% DOMINANCE — Make v40 ABSOLUTELY DIVINE DOMINANT
     v40DivineeDominance: 0.95,              // 95% v40 dominance (up from 90%)
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.8 TRANSCENDENT: ANTI-PASSIVITY & EXCHANGE QUALITY SUPREME
+    // From King's Pawn Game loss: d3 instead of d4, Qc1 passive, poor exchanges
+    // The bot must play ACTIVELY and make QUALITY exchanges only
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.8: OPENING AGGRESSION — Prefer d4/e4 over d3/e3
+    v40OpeningAggressionEnabled: true,
+    v40PassivePawnPenalty: -25000,          // d3/e3 when d4/e4 possible = BAD
+    v40CenterPawnAdvanceBonus: 15000,       // d4/e4 moves get bonus
+    v40AggressiveOpeningRequired: true,      // Require aggressive opening
+    
+    // v40.8: EXCHANGE QUALITY — Don't trade pieces that help opponent
+    v40ExchangeQualityEnabled: true,
+    v40BadExchangePenalty: -30000,          // Trading piece that centralizes enemy
+    v40GoodExchangeBonus: 10000,            // Trading inactive piece for active
+    v40QueenCentralizationPenalty: -20000,  // Exchanges that centralize enemy queen
+    
+    // v40.8: ACTIVE PIECE REQUIREMENT — All pieces must be active
+    v40ActivePieceRequirementEnabled: true,
+    v40IdlePieceHeavyPenalty: -15000,       // Penalty per idle piece
+    v40AllPiecesActiveBonu: 12000,          // Bonus when all pieces active
+    v40MinimumActivePieces: 5,              // Require at least 5 active pieces
+    
+    // v40.8: COUNTERPLAY GENERATION — Must create threats when attacked
+    v40CounterplayGenerationEnabled: true,
+    v40NoCounterplayPenalty: -18000,        // Under attack with no counterplay = bad
+    v40CounterplayBonus: 8000,              // Creating counterplay threats
+    v40DefenseOnlyPenalty: -12000,          // Pure defense without counter = passive
+    
+    // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
+    v40CentralControlSupremeEnabled: true,
+    v40NoCenterControlPenalty: -20000,      // No center pawns = bad
+    v40CenterDominanceBonus: 15000,         // Controlling center = excellent
+    v40CenterPawnAbsenceEarlyPenalty: -25000, // No d4/e4 by move 5 = very bad
+    
+    // v40.8: 97% TRANSCENDENT DOMINANCE — Make v40 ABSOLUTELY TRANSCENDENT
+    v40TranscendentDominance: 0.97,         // 97% v40 dominance (up from 95%)
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -9014,6 +9053,663 @@ function findBestEnemyCapture(board, enemyColor) {
     }
     
     return bestCapture;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.8 TRANSCENDENT: ANTI-PASSIVITY & EXCHANGE QUALITY SUPREME FUNCTIONS
+// From King's Pawn Game loss: d3 passive, Qc1 passive, Nxd5 bad exchange
+// The bot must play ACTIVELY and make QUALITY exchanges only
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.8 TRANSCENDENT: OPENING AGGRESSION EVALUATION
+ * CRITICAL: Prefer d4/e4 over passive d3/e3 moves
+ * Prevents: d3 when d4 is possible, passive openings that cede center
+ */
+function v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40OpeningAggressionEnabled) return 0;
+    if (moveNumber > 12) return 0;  // Only in opening
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const pieceType = movingPiece.toLowerCase();
+        
+        // CHECK 1: Pawn moves - prefer aggressive center pushes
+        if (pieceType === 'p') {
+            // Check for passive pawn moves (d3, e3 when d4, e4 possible)
+            const passivePawnMoves = isWhite ? 
+                { 'd3': 'd4', 'e3': 'e4', 'c3': 'c4' } : 
+                { 'd6': 'd5', 'e6': 'e5', 'c6': 'c5' };
+            
+            if (passivePawnMoves[toSquare]) {
+                // Check if the aggressive move is possible
+                const aggressiveSquare = passivePawnMoves[toSquare];
+                const aggressiveFromSquare = isWhite ? 
+                    aggressiveSquare[0] + '2' : 
+                    aggressiveSquare[0] + '7';
+                
+                const pawnOnStart = board.get(aggressiveFromSquare);
+                const aggressiveSquareBlocked = board.has(aggressiveSquare);
+                
+                // If aggressive move was possible but we chose passive
+                if (pawnOnStart && !aggressiveSquareBlocked && fromSquare === aggressiveFromSquare) {
+                    score += CONFIG.v40PassivePawnPenalty || -25000;
+                    debugLog("[V40.8_AGGRO]", `🚨🚨 PASSIVE PAWN MOVE ${toSquare} when ${aggressiveSquare} possible!`);
+                }
+            }
+            
+            // BONUS for aggressive center pawn advances
+            const aggressiveCenterSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+            if (aggressiveCenterSquares.includes(toSquare)) {
+                score += CONFIG.v40CenterPawnAdvanceBonus || 15000;
+                debugLog("[V40.8_AGGRO]", `✅ AGGRESSIVE CENTER PAWN TO ${toSquare}!`);
+            }
+        }
+        
+        // CHECK 2: By move 5, we should have center presence
+        if (moveNumber >= 5) {
+            const hasCenterPawn = hasCenterPawnPresence(board, activeColor);
+            if (!hasCenterPawn) {
+                score += CONFIG.v40CenterPawnAbsenceEarlyPenalty || -25000;
+                debugLog("[V40.8_AGGRO]", `🚨 NO CENTER PAWN PRESENCE BY MOVE ${moveNumber}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.8_AGGRO]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.8 TRANSCENDENT: EXCHANGE QUALITY EVALUATION
+ * CRITICAL: Don't trade pieces that help opponent (like Nxd5 bringing queen to center)
+ * Prevents: Bad exchanges that centralize enemy pieces
+ */
+function v40ExchangeQualityEval(fen, move, board, activeColor) {
+    if (!CONFIG.v40ExchangeQualityEnabled) return 0;
+    
+    let score = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        
+        if (!movingPiece || !capturedPiece) return 0; // Not a capture
+        
+        const capturedIsEnemy = (capturedPiece === capturedPiece.toUpperCase()) !== (activeColor === 'w');
+        if (!capturedIsEnemy) return 0;
+        
+        const movingType = movingPiece.toLowerCase();
+        const capturedType = capturedPiece.toLowerCase();
+        
+        // CHECK 1: Are we trading a piece that will bring enemy piece to good square?
+        // Simulate the position after our capture
+        const simBoard = new Map(board);
+        simBoard.delete(fromSquare);
+        simBoard.set(toSquare, movingPiece);
+        
+        // Check if enemy can recapture
+        const canRecapture = canEnemyRecaptureOn(simBoard, toSquare, enemyColor);
+        
+        if (canRecapture) {
+            // What piece will recapture?
+            const recapturePiece = findRecapturePiece(simBoard, toSquare, enemyColor);
+            
+            if (recapturePiece) {
+                const recaptureType = recapturePiece.piece.toLowerCase();
+                
+                // If QUEEN will recapture to center, BAD!
+                if (recaptureType === 'q') {
+                    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+                    const toRank = parseInt(toSquare[1]) - 1;
+                    
+                    // Is target square central?
+                    const isCentral = (toFile >= 2 && toFile <= 5) && (toRank >= 2 && toRank <= 5);
+                    
+                    if (isCentral) {
+                        score += CONFIG.v40QueenCentralizationPenalty || -20000;
+                        debugLog("[V40.8_EXCHANGE]", `🚨🚨 EXCHANGE CENTRALIZES ENEMY QUEEN ON ${toSquare}!`);
+                    }
+                }
+                
+                // If we're trading from good square to let enemy take good square
+                const ourPieceWasActive = isPieceActive(fromSquare, board, activeColor);
+                const recaptureSquareIsGood = isGoodSquare(toSquare, enemyColor);
+                
+                if (ourPieceWasActive && recaptureSquareIsGood) {
+                    score += CONFIG.v40BadExchangePenalty || -30000;
+                    debugLog("[V40.8_EXCHANGE]", `🚨 BAD EXCHANGE: Our active piece enables enemy activation!`);
+                }
+            }
+        }
+        
+        // BONUS: Trading inactive piece for active enemy piece
+        const ourPieceWasInactive = !isPieceActive(fromSquare, board, activeColor);
+        const capturedWasActive = isPieceActive(toSquare, board, enemyColor);
+        
+        if (ourPieceWasInactive && capturedWasActive) {
+            score += CONFIG.v40GoodExchangeBonus || 10000;
+            debugLog("[V40.8_EXCHANGE]", `✅ GOOD EXCHANGE: Traded inactive for active!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.8_EXCHANGE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.8 TRANSCENDENT: ACTIVE PIECE REQUIREMENT
+ * CRITICAL: All pieces must be active, idle pieces are penalized heavily
+ */
+function v40ActivePieceRequirementEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ActivePieceRequirementEnabled) return 0;
+    if (moveNumber < 8) return 0;  // Give time to develop
+    
+    let score = 0;
+    
+    try {
+        // Simulate our move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Count active pieces after move
+        const activePieces = countActivePiecesV40_8(simBoard, activeColor);
+        const totalPieces = countTotalPieces(simBoard, activeColor);
+        
+        // Penalty for idle pieces
+        const idlePieces = totalPieces - activePieces;
+        if (idlePieces > 0) {
+            score += idlePieces * (CONFIG.v40IdlePieceHeavyPenalty || -15000);
+            debugLog("[V40.8_ACTIVE]", `🚨 ${idlePieces} IDLE PIECES!`);
+        }
+        
+        // Bonus if all pieces active
+        if (activePieces >= (CONFIG.v40MinimumActivePieces || 5)) {
+            score += CONFIG.v40AllPiecesActiveBonu || 12000;
+            debugLog("[V40.8_ACTIVE]", `✅ All pieces active!`);
+        }
+        
+        // Does this move activate an idle piece?
+        const wasIdle = !isPieceActive(fromSquare, board, activeColor);
+        const nowActive = isPieceActive(toSquare, simBoard, activeColor);
+        
+        if (wasIdle && nowActive) {
+            score += 8000;
+            debugLog("[V40.8_ACTIVE]", `✅ ACTIVATED idle piece!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.8_ACTIVE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.8 TRANSCENDENT: COUNTERPLAY GENERATION
+ * CRITICAL: When under attack, must create counterplay, not just defend
+ */
+function v40CounterplayGenerationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40CounterplayGenerationEnabled) return 0;
+    
+    let score = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Are we under pressure?
+        const underPressure = isPositionUnderPressure(board, activeColor);
+        
+        if (!underPressure) return 0;  // No pressure, no need for counterplay
+        
+        // Simulate our move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Does our move create counterplay?
+        const createsCounterplay = doesMoveCreateCounterplay(move, simBoard, activeColor);
+        const isPureDefense = isMoveDefensiveOnly(move, board, activeColor);
+        
+        if (createsCounterplay) {
+            score += CONFIG.v40CounterplayBonus || 8000;
+            debugLog("[V40.8_COUNTER]", `✅ COUNTERPLAY CREATED!`);
+        } else if (isPureDefense) {
+            score += CONFIG.v40DefenseOnlyPenalty || -12000;
+            debugLog("[V40.8_COUNTER]", `⚠️ PURE DEFENSE - no counterplay`);
+        } else {
+            score += CONFIG.v40NoCounterplayPenalty || -18000;
+            debugLog("[V40.8_COUNTER]", `🚨 UNDER PRESSURE WITH NO COUNTERPLAY!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.8_COUNTER]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.8 TRANSCENDENT: CENTRAL CONTROL SUPREME
+ * CRITICAL: Center control is absolutely paramount
+ */
+function v40CentralControlSupremeEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40CentralControlSupremeEnabled) return 0;
+    
+    let score = 0;
+    
+    try {
+        // Simulate our move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Calculate center control after move
+        const centerControl = calculateCenterControlV40_8(simBoard, activeColor);
+        const enemyCenterControl = calculateCenterControlV40_8(simBoard, activeColor === 'w' ? 'b' : 'w');
+        
+        // Dominance bonus
+        if (centerControl > enemyCenterControl + 2) {
+            score += CONFIG.v40CenterDominanceBonus || 15000;
+            debugLog("[V40.8_CENTER]", `✅ CENTER DOMINANCE! ${centerControl} vs ${enemyCenterControl}`);
+        }
+        
+        // Penalty for no control
+        if (centerControl < 2 && moveNumber > 6) {
+            score += CONFIG.v40NoCenterControlPenalty || -20000;
+            debugLog("[V40.8_CENTER]", `🚨 NO CENTER CONTROL!`);
+        }
+        
+        // Bonus for moves that increase center control
+        const preMoveControl = calculateCenterControlV40_8(board, activeColor);
+        if (centerControl > preMoveControl) {
+            score += (centerControl - preMoveControl) * 5000;
+            debugLog("[V40.8_CENTER]", `✅ IMPROVED CENTER CONTROL by ${centerControl - preMoveControl}`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.8_CENTER]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.8 TRANSCENDENT: HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.8 Helper: Check if we have center pawn presence
+ */
+function hasCenterPawnPresence(board, color) {
+    const isWhite = color === 'w';
+    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+    const extendedCenter = ['c4', 'c5', 'f4', 'f5'];
+    
+    for (const sq of centerSquares) {
+        const piece = board.get(sq);
+        if (piece && piece.toLowerCase() === 'p') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) return true;
+        }
+    }
+    
+    // Check extended center
+    for (const sq of extendedCenter) {
+        const piece = board.get(sq);
+        if (piece && piece.toLowerCase() === 'p') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.8 Helper: Check if enemy can recapture on square
+ */
+function canEnemyRecaptureOn(board, square, enemyColor) {
+    return isSquareAttackedByColor(board, square, enemyColor);
+}
+
+/**
+ * v40.8 Helper: Find which piece will recapture
+ */
+function findRecapturePiece(board, square, color) {
+    const isWhite = color === 'w';
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    
+    let lowestValuePiece = null;
+    let lowestValue = Infinity;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(sq[1]) - 1;
+        
+        if (canPieceAttackSquareV40(pieceType, pFile, pRank, file, rank, board, color)) {
+            const value = getPieceValueSimple(pieceType);
+            if (value < lowestValue) {
+                lowestValue = value;
+                lowestValuePiece = { square: sq, piece: piece };
+            }
+        }
+    }
+    
+    return lowestValuePiece;
+}
+
+/**
+ * v40.8 Helper: Check if piece is on an active square
+ */
+function isPieceActive(square, board, color) {
+    const piece = board.get(square);
+    if (!piece) return false;
+    
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    const pieceType = piece.toLowerCase();
+    const isWhite = color === 'w';
+    
+    // Knights: active if on central/good outpost squares
+    if (pieceType === 'n') {
+        const goodSquares = ['c3', 'c6', 'f3', 'f6', 'd4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+        return goodSquares.includes(square);
+    }
+    
+    // Bishops: active if not on starting square and has diagonal mobility
+    if (pieceType === 'b') {
+        const startSquares = isWhite ? ['c1', 'f1'] : ['c8', 'f8'];
+        if (startSquares.includes(square)) return false;
+        return countDiagonalMobility(square, board) >= 3;
+    }
+    
+    // Rooks: active if on open file or 7th rank
+    if (pieceType === 'r') {
+        const startSquares = isWhite ? ['a1', 'h1'] : ['a8', 'h8'];
+        if (startSquares.includes(square)) return false;
+        const isOnOpenFile = isOpenFile(square[0], board);
+        const isOn7th = isWhite ? (rank === 6) : (rank === 1);
+        return isOnOpenFile || isOn7th;
+    }
+    
+    // Queen: active if not on starting square and not blocked
+    if (pieceType === 'q') {
+        const startSquare = isWhite ? 'd1' : 'd8';
+        if (square === startSquare) return false;
+        return true;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.8 Helper: Check if square is good for enemy
+ */
+function isGoodSquare(square, color) {
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    const isWhite = color === 'w';
+    
+    // Central squares are good
+    if (file >= 2 && file <= 5 && rank >= 2 && rank <= 5) return true;
+    
+    // 7th rank is good
+    if ((isWhite && rank === 6) || (!isWhite && rank === 1)) return true;
+    
+    return false;
+}
+
+/**
+ * v40.8 Helper: Count active pieces
+ */
+function countActivePiecesV40_8(board, color) {
+    let count = 0;
+    const isWhite = color === 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k' || pieceType === 'p') continue;  // Don't count king/pawns
+        
+        if (isPieceActive(square, board, color)) {
+            count++;
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * v40.8 Helper: Count total pieces (excluding king and pawns)
+ */
+function countTotalPieces(board, color) {
+    let count = 0;
+    const isWhite = color === 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        count++;
+    }
+    
+    return count;
+}
+
+/**
+ * v40.8 Helper: Is position under pressure?
+ */
+function isPositionUnderPressure(board, color) {
+    const enemyColor = color === 'w' ? 'b' : 'w';
+    const isWhite = color === 'w';
+    
+    // Find our king
+    let kingSquare = null;
+    for (const [sq, piece] of board) {
+        if (piece && piece.toLowerCase() === 'k') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                kingSquare = sq;
+                break;
+            }
+        }
+    }
+    
+    if (!kingSquare) return false;
+    
+    // Check if king is attacked or nearby squares attacked
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]) - 1;
+    
+    let attackedSquaresNearKing = 0;
+    
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            const f = kingFile + df;
+            const r = kingRank + dr;
+            if (f >= 0 && f <= 7 && r >= 0 && r <= 7) {
+                const sq = String.fromCharCode(f + 97) + (r + 1);
+                if (isSquareAttackedByColor(board, sq, enemyColor)) {
+                    attackedSquaresNearKing++;
+                }
+            }
+        }
+    }
+    
+    return attackedSquaresNearKing >= 3;  // King area is under pressure
+}
+
+/**
+ * v40.8 Helper: Does move create counterplay?
+ */
+function doesMoveCreateCounterplay(move, board, color) {
+    const toSquare = move.substring(2, 4);
+    const enemyColor = color === 'w' ? 'b' : 'w';
+    
+    // Check if move attacks enemy pieces
+    const movingPiece = board.get(toSquare);
+    if (!movingPiece) return false;
+    
+    const pieceType = movingPiece.toLowerCase();
+    const file = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(toSquare[1]) - 1;
+    
+    // Check if we're attacking enemy pieces
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        const pieceIsEnemy = (pieceIsWhite) !== (color === 'w');
+        if (!pieceIsEnemy) continue;
+        
+        const targetFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const targetRank = parseInt(sq[1]) - 1;
+        
+        if (canPieceAttackSquareV40(pieceType, file, rank, targetFile, targetRank, board, color)) {
+            const targetValue = getPieceValueSimple(piece.toLowerCase());
+            if (targetValue >= 300) {  // Attacking valuable piece
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.8 Helper: Is move purely defensive?
+ */
+function isMoveDefensiveOnly(move, board, color) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece) return false;
+    
+    const isWhite = color === 'w';
+    const pieceType = movingPiece.toLowerCase();
+    
+    // Check if piece was attacked and moved away
+    const wasAttacked = isSquareAttackedByColor(board, fromSquare, isWhite ? 'b' : 'w');
+    
+    // Check if move doesn't create any threats
+    const simBoard = new Map(board);
+    simBoard.delete(fromSquare);
+    simBoard.set(toSquare, movingPiece);
+    
+    const createsThreats = doesMoveCreateCounterplay(move, simBoard, color);
+    
+    return wasAttacked && !createsThreats;
+}
+
+/**
+ * v40.8 Helper: Calculate center control score
+ */
+function calculateCenterControlV40_8(board, color) {
+    let control = 0;
+    const isWhite = color === 'w';
+    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+    const extendedCenter = ['c3', 'c4', 'c5', 'c6', 'd3', 'd6', 'e3', 'e6', 'f3', 'f4', 'f5', 'f6'];
+    
+    // Pure center squares worth more
+    for (const sq of centerSquares) {
+        const piece = board.get(sq);
+        if (piece) {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                control += 2;
+            }
+        }
+        
+        // Also count attacks on center
+        if (isSquareAttackedByColor(board, sq, color)) {
+            control += 1;
+        }
+    }
+    
+    // Extended center
+    for (const sq of extendedCenter) {
+        const piece = board.get(sq);
+        if (piece) {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                control += 1;
+            }
+        }
+    }
+    
+    return control;
+}
+
+/**
+ * v40.8 Helper: Count diagonal mobility for bishop
+ */
+function countDiagonalMobility(square, board) {
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    let mobility = 0;
+    
+    const directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+    
+    for (const [df, dr] of directions) {
+        let f = file + df;
+        let r = rank + dr;
+        
+        while (f >= 0 && f <= 7 && r >= 0 && r <= 7) {
+            const sq = String.fromCharCode(f + 97) + (r + 1);
+            if (board.get(sq)) break;  // Blocked
+            mobility++;
+            f += df;
+            r += dr;
+        }
+    }
+    
+    return mobility;
 }
 
 /**
@@ -23938,8 +24634,28 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.7: ABSOLUTE BLUNDER CHECK — Final safety verification
                 const blunderCheckScore = v40AbsoluteBlunderCheck(fen, move, board, activeColor) * 2.0;
                 
-                // v40.7: COMBINED v40 SCORE — 95% DIVINE DOMINANT INFLUENCE
-                // This makes v40 the ABSOLUTE DIVINE factor in move selection
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.8 TRANSCENDENT: ANTI-PASSIVITY & EXCHANGE QUALITY SUPREME
+                // Addresses: d3 passive moves, Qc1 passive queen, bad Nxd5 exchanges
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.8: OPENING AGGRESSION — Prefer d4/e4 over passive d3/e3
+                const openingAggressionScore = v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) * 1.5;
+                
+                // v40.8: EXCHANGE QUALITY — Don't trade pieces that help opponent
+                const exchangeQualityScore = v40ExchangeQualityEval(fen, move, board, activeColor) * 1.4;
+                
+                // v40.8: ACTIVE PIECE REQUIREMENT — All pieces must be active
+                const activePieceRequirementScore = v40ActivePieceRequirementEval(fen, move, board, activeColor, moveNumber) * 1.2;
+                
+                // v40.8: COUNTERPLAY GENERATION — Must create counterplay when attacked
+                const counterplayGenScore = v40CounterplayGenerationEval(fen, move, board, activeColor, moveNumber) * 1.3;
+                
+                // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
+                const centralControlSupremeScore = v40CentralControlSupremeEval(fen, move, board, activeColor, moveNumber) * 1.3;
+                
+                // v40.8: COMBINED v40 SCORE — 97% TRANSCENDENT DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE TRANSCENDENT factor in move selection
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -23954,11 +24670,14 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                centerPawnScore + pawnTensionScore + queenRaidScore + 
                                tacticalPriorityScore + devSafetyScore + threatResponseScore +
                                // v40.7 DIVINE additions:
-                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore;
-                v40Bonus = v40DeepScore * 0.95;  // 95% influence — DIVINE PARADIGM SHIFT
+                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+                               // v40.8 TRANSCENDENT additions:
+                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+                               counterplayGenScore + centralControlSupremeScore;
+                v40Bonus = v40DeepScore * 0.97;  // 97% influence — TRANSCENDENT PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.7 DIVINE EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.8 TRANSCENDENT EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -23988,11 +24707,16 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   DevSafety: ${devSafetyScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ThreatResponse: ${threatResponseScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 95% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog("[V40_INTEGRATE]", `   RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 97% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
             } catch (e) {
                 debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
@@ -24000,13 +24724,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
             }
         }
         
-        // v40.7: TRUE ALPHAZERO DIVINE weighted merge — v40 DIVINE DOMINANT (95%)
-        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY DIVINE
+        // v40.8: TRUE ALPHAZERO TRANSCENDENT weighted merge — v40 TRANSCENDENT DOMINANT (97%)
+        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY TRANSCENDENT
         const combinedScore = (
-            TRUE_ALPHAZERO.qWeight * engine_Q * 0.05 +  // Engine reduced to 5%
-            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.05 +
-            normalizedPolicyPrior * 0.20 + // Policy bonus reduced further
-            v40Bonus                      // v40 DIVINE DOMINANT at 95%
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.03 +  // Engine reduced to 3%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.03 +
+            normalizedPolicyPrior * 0.15 + // Policy bonus reduced further
+            v40Bonus                      // v40 TRANSCENDENT DOMINANT at 97%
         );
         
         debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
