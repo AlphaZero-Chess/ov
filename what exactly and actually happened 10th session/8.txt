@@ -1,0 +1,4 @@
+Now let me add the new v40.4 functions. First, let me find a good location to add them:
+Action: $ grep -n "function v40InitiativePreservationEvaluation" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 6265:function v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

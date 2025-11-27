@@ -1,0 +1,84 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+6340|    const createsNewThreat = v40MoveCreaetesThreat(move, board, activeColor);
+6341|    
+6342|    return baseInitiative || createsNewThreat;
+6343|}
+6344|
+6345|/**
+6346| * v40.3: Check if move is forcing
+6347| */
+6348|function v40IsForcingMove(move, board, activeColor) {
+6349|    // Check if move is a check, capture, or creates immediate threat
+6350|    const toSquare = move.substring(2, 4);
+6351|    const capturedPiece = board.get(toSquare);
+6352|    
+6353|    if (capturedPiece) return true;  // Capture
+6354|    if (v40MoveCreaetesThreat(move, board, activeColor)) return true;
+6355|    
+6356|    return false;
+6357|}
+6358|
+6359|/**
+6360| * v40: Evaluate goal alignment with strategic plan
+6361| * True AlphaZero evaluates moves based on how well they fit the plan
+6362| */
+6363|function evaluateGoalAlignment(move, plan) {
+6364|    if (!plan || !plan.type) return 0.5;
+6365|    
+6366|    let alignment = 0.5;
+6367|    const toSquare = move.substring(2, 4);
+6368|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+6369|    
+6370|    // Check alignment with plan type
+6371|    switch (plan.type) {
+6372|        case 'kingside_attack':
+6373|            if (toFile >= 5) alignment += 0.2;  // Moves toward kingside
+6374|            break;
+6375|        case 'queenside_attack':
+6376|            if (toFile <= 2) alignment += 0.2;  // Moves toward queenside
+6377|            break;
+6378|        case 'central_control':
+6379|            if (toFile >= 2 && toFile <= 5) alignment += 0.15;
+6380|            break;
+6381|        case 'pawn_storm':
+6382|            if (move[0] === toSquare[0]) alignment += 0.1; // Same piece moving
+6383|            break;
+6384|        case 'piece_coordination':
+6385|            alignment += 0.1;  // Any piece activity is good
+6386|            break;
+6387|    }
+6388|    
+6389|    return Math.min(1.0, Math.max(0, alignment));
+6390|}
+6391|
+6392|/**
+6393| * v40: Evaluate positional squeeze - how much space we control vs opponent
+6394| * AlphaZero excels at slowly squeezing positions
+6395| */
+6396|function evaluatePositionalSqueeze(board, color) {
+6397|    let ourSquares = 0;
+6398|    let enemySquares = 0;
+6399|    
+6400|    // Count pieces in advanced positions
+6401|    for (const [square, piece] of board) {
+6402|        if (!piece) continue;
+6403|        
+6404|        const isOurs = (piece === piece.toUpperCase()) === (color === 'w');
+6405|        const rank = parseInt(square[1]);
+6406|        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+6407|        
+6408|        // Advanced territory bonus
+6409|        const advancedBonus = color === 'w' ? 
+6410|            (rank >= 5 ? rank - 4 : 0) : 
+6411|            (rank <= 4 ? 5 - rank : 0);
+6412|        
+6413|        // Central bonus
+6414|        const centralBonus = (file >= 2 && file <= 5) ? 1 : 0;
+6415|        
+6416|        if (isOurs) ourSquares += advancedBonus + centralBonus;
+6417|        else enemySquares += advancedBonus + centralBonus;
+6418|    }
+6419|    
+6420|    return (ourSquares - enemySquares) * 5;  // Scale to ~centipawns

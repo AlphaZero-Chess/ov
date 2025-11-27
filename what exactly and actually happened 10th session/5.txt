@@ -1,0 +1,4 @@
+Now let me find the CONFIG section and add the new v40.4 parameters:
+Action: $ grep -n "v40InitiativePreservationEnabled:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 1064:    v40InitiativePreservationEnabled: true,
+Exit code: 0
