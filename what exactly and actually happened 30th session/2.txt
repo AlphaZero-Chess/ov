@@ -1,0 +1,39 @@
+Let me add v40.20 with enhanced promotion threat detection and forcing sequence calculation:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1725|    v40KingCorridorEnabled: true,
+1726|    v40F2G2H2WeakPenalty: -200000000,              // f2/g2/h2 squares weak (white)
+1727|    v40F7G7H7WeakPenalty: -200000000,              // f7/g7/h7 squares weak (black)
+1728|    v40MultipleAttackersOnCorridorPenalty: -400000000, // Multiple enemy pieces attack king corridor
+1729|    
+1730|    // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+1731|    v40WinningPositionEnabled: true,
+1732|    v40MaterialAdvantageSimplifyBonus: 50000000,   // Simplify when ahead
+1733|    v40MaterialAdvantageAvoidComplexPenalty: -100000000, // Avoid complications when winning
+1734|    v40DontBlunderWinPenalty: -800000000,          // About to win but made a blunder
+1735|};
+1736|
+1737|// ═══════════════════════════════════════════════════════════════════════
+1738|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1739|// ═══════════════════════════════════════════════════════════════════════
+1740|
+1741|/**
+1742| * v37: TRUE MCTS Node structure for proper tree search
+1743| */
+1744|class MCTSNode {
+1745|    constructor(move, parent = null, prior = 1.0) {
+1746|        this.move = move;
+1747|        this.parent = parent;
+1748|        this.children = new Map();
+1749|        this.visits = 0;
+1750|        this.totalValue = 0;
+1751|        this.prior = prior;           // Policy prior (P)
+1752|        this.virtualLoss = 0;
+1753|        this.isExpanded = false;
+1754|        this.isTerminal = false;
+1755|        this.depth = parent ? parent.depth + 1 : 0;
+1756|    }
+1757|    
+1758|    get value() {
+1759|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1760|    }

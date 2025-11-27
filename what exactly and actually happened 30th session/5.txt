@@ -1,0 +1,105 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+15949|function v40WinningPositionManagementEval(fen, move, board, activeColor, moveNumber) {
+15950|    if (!CONFIG.v40WinningPositionEnabled) return 0;
+15951|    
+15952|    let score = 0;
+15953|    const isWhite = activeColor === 'w';
+15954|    
+15955|    try {
+15956|        // Calculate material balance
+15957|        let ourMaterial = 0;
+15958|        let enemyMaterial = 0;
+15959|        
+15960|        for (const [sq, piece] of board) {
+15961|            if (!piece) continue;
+15962|            const pieceIsWhite = piece === piece.toUpperCase();
+15963|            const value = getPieceValueSimple(piece.toLowerCase());
+15964|            
+15965|            if (pieceIsWhite === isWhite) {
+15966|                ourMaterial += value;
+15967|            } else {
+15968|                enemyMaterial += value;
+15969|            }
+15970|        }
+15971|        
+15972|        const materialAdvantage = ourMaterial - enemyMaterial;
+15973|        
+15974|        // If we're significantly ahead (3+ points), prefer simplifying
+15975|        if (materialAdvantage >= 3) {
+15976|            const fromSquare = move.substring(0, 2);
+15977|            const toSquare = move.substring(2, 4);
+15978|            const capturedPiece = board.get(toSquare);
+15979|            
+15980|            if (capturedPiece) {
+15981|                // We're capturing something - good when ahead!
+15982|                const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+15983|                score += CONFIG.v40MaterialAdvantageSimplifyBonus * (capturedValue / 9);
+15984|                debugLog("[V40.19_WIN]", `✅ ${move} simplifies when ahead by ${materialAdvantage}pts!`);
+15985|            }
+15986|            
+15987|            // But don't make moves that allow complications
+15988|            const movingPiece = board.get(fromSquare);
+15989|            if (movingPiece) {
+15990|                // Simulate the move
+15991|                const afterMove = new Map(board);
+15992|                afterMove.delete(fromSquare);
+15993|                afterMove.set(toSquare, movingPiece);
+15994|                
+15995|                // Check if our valuable pieces become targets
+15996|                const movingValue = getPieceValueSimple(movingPiece.toLowerCase());
+15997|                if (movingValue >= 3) {
+15998|                    // Moving a valuable piece - is it going to be safe?
+15999|                    if (isSquareAttackedByColor(afterMove, toSquare, isWhite ? 'b' : 'w')) {
+16000|                        if (!isSquareDefendedByColor(afterMove, toSquare, activeColor)) {
+16001|                            score += CONFIG.v40DontBlunderWinPenalty;
+16002|                            debugLog("[V40.19_WIN]", `☠️☠️ ${move} BLUNDERS while ahead by ${materialAdvantage}pts! ${movingPiece} becomes hanging!`);
+16003|                        }
+16004|                    }
+16005|                }
+16006|            }
+16007|        }
+16008|        
+16009|        // If we're behind, we need to create complications
+16010|        if (materialAdvantage <= -3) {
+16011|            // Being behind - need active play
+16012|            // Penalize passive moves
+16013|            const fromSquare = move.substring(0, 2);
+16014|            const toSquare = move.substring(2, 4);
+16015|            const movingPiece = board.get(fromSquare);
+16016|            
+16017|            if (movingPiece && movingPiece.toLowerCase() !== 'k') {
+16018|                const fromRank = parseInt(fromSquare[1]);
+16019|                const toRank = parseInt(toSquare[1]);
+16020|                
+16021|                // For white, retreating is bad when behind
+16022|                // For black, going to higher ranks is retreating
+16023|                const isRetreating = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+16024|                
+16025|                if (isRetreating) {
+16026|                    score -= CONFIG.v40MaterialAdvantageSimplifyBonus / 3;
+16027|                    debugLog("[V40.19_WIN]", `⚠️ ${move} is passive while behind by ${Math.abs(materialAdvantage)}pts!`);
+16028|                }
+16029|            }
+16030|        }
+16031|        
+16032|    } catch (e) {
+16033|        debugLog("[V40.19_WIN]", `Error: ${e.message}`);
+16034|    }
+16035|    
+16036|    return score;
+16037|}
+16038|
+16039|// ═══════════════════════════════════════════════════════════════════════════════
+16040|
+16041|/**
+16042| * v40.9 Helper: Find all attacked pieces for a color
+16043| */
+16044|function findAttackedPiecesV40_9(board, color) {
+16045|    const attacked = [];
+16046|    const isWhite = color === 'w';
+16047|    const enemyColor = isWhite ? 'b' : 'w';
+16048|    
+16049|    for (const [square, piece] of board) {
+16050|        if (!piece) continue;

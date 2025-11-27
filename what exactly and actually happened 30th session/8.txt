@@ -1,0 +1,12 @@
+Now let me find where to integrate the v40.20 functions:
+Action: $ cd /app && grep -n "v40.19:" "Lichess Bot-AlphaZero-Pure.user.js" | grep -v "CONFIG\|function" | head -10
+Observation: 1709:    // v40.19: MATING PATTERN RECOGNITION & PIECE COORDINATION DEFENSE SUPREME
+1718:    // v40.19: LUFT CREATION — Force king escape squares
+1724:    // v40.19: KING CORRIDOR DEFENSE
+1730:    // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+31989:                // v40.19: MATING PATTERN RECOGNITION — Detect Rook+Queen mating patterns
+31992:                // v40.19: KING CORRIDOR DEFENSE — Protect king corridor squares
+31995:                // v40.19: LUFT CREATION — Ensure king has escape squares
+31998:                // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+32001:                // v40.19: COMBINED v40 SCORE — 100% ABSOLUTE KING SAFETY SUPREME INFLUENCE
+Exit code: 0

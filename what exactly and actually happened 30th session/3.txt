@@ -1,0 +1,45 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+    v40WinningPositionEnabled: true,
+    v40MaterialAdvantageSimplifyBonus: 50000000,   // Simplify when ahead
+    v40MaterialAdvantageAvoidComplexPenalty: -100000000, // Avoid complications when winning
+    v40DontBlunderWinPenalty: -800000000,          // About to win but made a blunder
+};" --new-str "    // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+    v40WinningPositionEnabled: true,
+    v40MaterialAdvantageSimplifyBonus: 50000000,   // Simplify when ahead
+    v40MaterialAdvantageAvoidComplexPenalty: -100000000, // Avoid complications when winning
+    v40DontBlunderWinPenalty: -800000000,          // About to win but made a blunder
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.20: PAWN PROMOTION & FORCING SEQUENCE SUPREME — From game analysis
+    // Bot missed: c4-cxd3-dxc2-cxb1=R promotion sequence completely!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40PromotionThreatEnabled: true,
+    v40PromotionThreatHorizon: 8,                   // Look 8 moves ahead for promotions
+    v40EnemyPassedPawnPenalty: -200000000,          // Enemy passed pawn existence
+    v40EnemyPassedPawnAdvancingPenalty: -400000000, // Enemy passed pawn advancing
+    v40EnemyPromotionIn4Penalty: -600000000,        // Enemy can promote in 4 moves
+    v40EnemyPromotionIn2Penalty: -1000000000,       // Enemy can promote in 2 moves CRITICAL
+    v40OurPassedPawnBonus: 150000000,               // Our passed pawn
+    v40OurPromotionIn4Bonus: 500000000,             // We can promote in 4 moves
+    
+    // v40.20: FORCING SEQUENCE CALCULATOR — Must calculate ALL forcing sequences
+    v40ForcingSequenceEnabled: true,
+    v40ForcingSequenceDepth: 10,                    // Calculate 10 moves deep
+    v40CheckSequenceBonus: 200000000,               // Forcing checks
+    v40ForcingPawnMoveBonus: 100000000,             // Forcing pawn advances
+    v40MustBlockPromotionBonus: 800000000,          // Moves that block promotion
+    
+    // v40.20: KING WEAKENING ABSOLUTE PENALTY — NEVER weaken king under attack
+    v40KingWeakeningEnabled: true,
+    v40F3G3WeakeningPenalty: -500000000,            // Playing f3/g3 when under pressure
+    v40KingPawnMoveUnderAttackPenalty: -600000000,  // Any king pawn move when attacked
+    v40KingsidePawnAdvanceUnderPressurePenalty: -400000000, // Advancing kingside pawns when pressured
+    
+    // v40.20: PIECE SAFETY ABSOLUTE — Never allow free takes
+    v40PieceSafetyAbsoluteEnabled: true,
+    v40BishopHangingAfterMovePenalty: -300000000,   // Bishop becomes hanging after our move
+    v40PawnTakesBishopPenalty: -500000000,          // Opponent pawn can take our bishop
+    v40TacticalSequenceMissedPenalty: -800000000,   // We missed a tactical sequence
+};"
+Observation: Edit was successful.
