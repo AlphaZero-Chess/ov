@@ -20859,45 +20859,55 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
                 const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
                 
-                // v40.2: Enhanced deep evaluations — STRONGER WEIGHTS
+                // v40.3: ULTIMATE Enhanced deep evaluations — MAXIMUM WEIGHTS
                 const board = parseFenToBoard(fen);
                 const activeColor = fen.split(' ')[1];
                 const moveNumber = parseInt(fen.split(' ')[5]) || 1;
                 
-                // v40.2: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
-                // CRITICAL: Increased from 0.5 to 1.2 — mating nets MUST be respected
-                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 1.2;
+                // v40.3: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+                // CRITICAL: Increased to 1.5 — mating nets MUST be absolutely respected
+                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 1.5;
                 
-                // v40.2: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
-                // CRITICAL: Increased from 0.3 to 0.8 — file control is crucial
-                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 0.8;
+                // v40.3: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+                // CRITICAL: Increased to 1.0 — file control is CRUCIAL
+                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 1.0;
                 
-                // v40.2: INITIATIVE TRACKING (prevents initiative collapse)
-                // CRITICAL: Increased from 0.4 to 1.0 — initiative loss = position loss
-                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 1.0;
+                // v40.3: INITIATIVE TRACKING (prevents initiative collapse)
+                // CRITICAL: Increased to 1.2 — initiative loss = position loss
+                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 1.2;
                 
-                // v40.2: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
-                // CRITICAL: Multiplied by 1.5 — queen movement must be heavily penalized
-                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) * 1.5;
+                // v40.3: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+                // CRITICAL: Multiplied by 2.0 — queen movement must be HEAVILY penalized
+                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) * 2.0;
                 
-                // v40.2: NEW — PROPHYLACTIC BONUS (preventing opponent's plans)
-                const prophylacticBonus = v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+                // v40.3: PROPHYLACTIC BONUS (preventing opponent's plans)
+                const prophylacticBonus = v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
                 
-                // v40.2: NEW — ROOK INFILTRATION DETECTION
-                const rookInfiltrationPenalty = v40RookInfiltrationDetection(fen, move, board, activeColor) * 0.9;
+                // v40.3: ROOK INFILTRATION DETECTION
+                const rookInfiltrationPenalty = v40RookInfiltrationDetection(fen, move, board, activeColor) * 1.0;
                 
-                // v40.2: NEW — KING SAFETY CORRIDOR
-                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.7;
+                // v40.3: KING SAFETY CORRIDOR
+                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.9;
                 
-                // v40.2: COMBINED v40 SCORE — 65% DOMINANT INFLUENCE (was 55%)
-                // This makes v40 the ABSOLUTE DOMINANT factor in move selection
+                // v40.3 NEW: ANTI-PASSIVITY SYSTEM — Forces active play
+                const antiPassivityBonus = v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+                
+                // v40.3 NEW: DEEP HORIZON EVALUATION — True 30+ move planning
+                const deepHorizonBonus = v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+                
+                // v40.3 NEW: SPACE DOMINATION — Territory control
+                const spaceDominationBonus = v40SpaceDominationEvaluation(fen, move, board, activeColor) * 0.5;
+                
+                // v40.3: COMBINED v40 SCORE — 75% ABSOLUTE DOMINANT INFLUENCE
+                // This makes v40 the ULTIMATE factor in move selection
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
-                               rookInfiltrationPenalty + kingSafetyCorridorPenalty;
-                v40Bonus = v40DeepScore * 0.65;  // 65% influence — TRUE PARADIGM SHIFT
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus;
+                v40Bonus = v40DeepScore * 0.75;  // 75% influence — ULTIMATE PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.2 DOMINANT EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.3 ULTIMATE EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -20907,7 +20917,10 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 65% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 75% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
             } catch (e) {
                 debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
@@ -20915,13 +20928,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
             }
         }
         
-        // v40.2: TRUE ALPHAZERO weighted merge — v40 ABSOLUTE DOMINANT (65%)
+        // v40.3: TRUE ALPHAZERO weighted merge — v40 ULTIMATE DOMINANT (75%)
         // Engine provides baseline, but v40 superhuman evaluation is ABSOLUTE PRIMARY
         const combinedScore = (
-            TRUE_ALPHAZERO.qWeight * engine_Q * 0.35 +  // Engine reduced to 35%
-            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.35 +
-            normalizedPolicyPrior * 0.6 + // Policy bonus reduced
-            v40Bonus                      // v40 ABSOLUTE DOMINANT at 65%
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.25 +  // Engine reduced to 25%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.25 +
+            normalizedPolicyPrior * 0.5 + // Policy bonus reduced
+            v40Bonus                      // v40 ULTIMATE DOMINANT at 75%
         );
         
         debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
