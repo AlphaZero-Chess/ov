@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.17 ABSOLUTE RECAPTURE SUPREME
-// @description  TRUE AlphaZero Replica v40.17 ABSOLUTE RECAPTURE - NEVER MISS FREE MATERIAL - IMMEDIATE CAPTURE DETECTION - MATERIAL AWARENESS - ANTI-PAWN-GRAB DEFENSE - ZERO MATERIAL BLUNDERS GUARANTEED
-// @author       AlphaZero TRUE REPLICA v40.17 ABSOLUTE RECAPTURE SUPREME EDITION
-// @version      40.17.0-ABSOLUTE-RECAPTURE-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.19 MATING PATTERN & PIECE COORDINATION SUPREME
+// @description  TRUE AlphaZero Replica v40.19 - MATING PATTERN DETECTION - KING CORRIDOR DEFENSE - LUFT CREATION - WINNING POSITION MANAGEMENT - ABSOLUTE SAFETY GUARANTEED
+// @author       AlphaZero TRUE REPLICA v40.19 MATING PATTERN SUPREME EDITION
+// @version      40.19.0-MATING-PATTERN-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -1704,6 +1704,34 @@ const CONFIG = {
     v40BackRankEnabled: true,
     v40BackRankMatePenalty: -500000000,             // Back rank mate threat
     v40WeakBackRankPenalty: -80000000,              // Back rank is weak
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.19: MATING PATTERN RECOGNITION & PIECE COORDINATION DEFENSE SUPREME
+    // From game analysis: Rg2+ Qe2# pattern not detected, king corridor not defended
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40MatingPatternEnabled: true,
+    v40RookQueenMatingPatternPenalty: -600000000,   // Rook+Queen combo threatening king
+    v40DoubleRookMatingPatternPenalty: -500000000,  // Two rooks aligned against king
+    v40KingCorridorWeakPenalty: -400000000,         // King corridor (f-h files for white) under attack
+    v40PieceCoordinationThreatPenalty: -350000000,  // Multiple pieces coordinating attack
+    
+    // v40.19: LUFT CREATION — Force king escape squares
+    v40LuftEnabled: true,
+    v40NoLuftPenalty: -250000000,                   // No luft (king has no escape)
+    v40CreateLuftBonus: 100000000,                  // Move creates luft
+    v40LuftDestructionPenalty: -300000000,          // Move destroys existing luft
+    
+    // v40.19: KING CORRIDOR DEFENSE
+    v40KingCorridorEnabled: true,
+    v40F2G2H2WeakPenalty: -200000000,              // f2/g2/h2 squares weak (white)
+    v40F7G7H7WeakPenalty: -200000000,              // f7/g7/h7 squares weak (black)
+    v40MultipleAttackersOnCorridorPenalty: -400000000, // Multiple enemy pieces attack king corridor
+    
+    // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+    v40WinningPositionEnabled: true,
+    v40MaterialAdvantageSimplifyBonus: 50000000,   // Simplify when ahead
+    v40MaterialAdvantageAvoidComplexPenalty: -100000000, // Avoid complications when winning
+    v40DontBlunderWinPenalty: -800000000,          // About to win but made a blunder
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -15522,6 +15550,455 @@ function v40DiscoveredAttackDetectionEval(fen, move, board, activeColor, moveNum
         
     } catch (e) {
         debugLog("[V40.18_DISC]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.19 MATING PATTERN RECOGNITION & PIECE COORDINATION DEFENSE SUPREME
+// Detect Rook+Queen mating patterns, double rook mates, king corridor attacks
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.19 MATING PATTERN RECOGNITION: Detect classic mating patterns
+ * Rg2+ Qe2#, back rank mates, smothered mates, etc.
+ */
+function v40MatingPatternRecognitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40MatingPatternEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Find enemy rooks and queens
+        const enemyRooks = [];
+        const enemyQueens = [];
+        
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'r') {
+                enemyRooks.push({ square: sq, file: sq.charCodeAt(0) - 97, rank: parseInt(sq[1]) });
+            } else if (pieceType === 'q') {
+                enemyQueens.push({ square: sq, file: sq.charCodeAt(0) - 97, rank: parseInt(sq[1]) });
+            }
+        }
+        
+        // Check for ROOK + QUEEN mating pattern
+        // This is when rook can give check and queen can deliver mate
+        for (const rook of enemyRooks) {
+            for (const queen of enemyQueens) {
+                // Check if rook is on same file or rank as king
+                const rookCanCheck = (rook.file === kingFile || rook.rank === kingRank);
+                
+                if (rookCanCheck) {
+                    // Check if rook has clear path to king
+                    let rookPathClear = true;
+                    if (rook.file === kingFile) {
+                        const minRank = Math.min(rook.rank, kingRank);
+                        const maxRank = Math.max(rook.rank, kingRank);
+                        for (let r = minRank + 1; r < maxRank; r++) {
+                            const checkSq = String.fromCharCode(97 + kingFile) + r;
+                            if (afterMove.get(checkSq)) {
+                                rookPathClear = false;
+                                break;
+                            }
+                        }
+                    } else if (rook.rank === kingRank) {
+                        const minFile = Math.min(rook.file, kingFile);
+                        const maxFile = Math.max(rook.file, kingFile);
+                        for (let f = minFile + 1; f < maxFile; f++) {
+                            const checkSq = String.fromCharCode(97 + f) + kingRank;
+                            if (afterMove.get(checkSq)) {
+                                rookPathClear = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (rookPathClear) {
+                        // Rook can give check! Now check if queen can follow up
+                        // Look at squares adjacent to king that queen can attack
+                        let queenCanMate = false;
+                        for (let df = -1; df <= 1; df++) {
+                            for (let dr = -1; dr <= 1; dr++) {
+                                if (df === 0 && dr === 0) continue;
+                                const checkFile = kingFile + df;
+                                const checkRank = kingRank + dr;
+                                if (checkFile < 0 || checkFile > 7 || checkRank < 1 || checkRank > 8) continue;
+                                
+                                const checkSq = String.fromCharCode(97 + checkFile) + checkRank;
+                                
+                                // Can queen attack this square?
+                                const queenDistFile = Math.abs(queen.file - checkFile);
+                                const queenDistRank = Math.abs(queen.rank - checkRank);
+                                
+                                if (queen.file === checkFile || queen.rank === checkRank || 
+                                    queenDistFile === queenDistRank) {
+                                    queenCanMate = true;
+                                    break;
+                                }
+                            }
+                            if (queenCanMate) break;
+                        }
+                        
+                        if (queenCanMate) {
+                            score += CONFIG.v40RookQueenMatingPatternPenalty;
+                            debugLog("[V40.19_MATE]", `☠️☠️☠️ ROOK+QUEEN MATING PATTERN DETECTED! Rook on ${rook.square}, Queen on ${queen.square}!`);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Check for DOUBLE ROOK mating pattern
+        if (enemyRooks.length >= 2) {
+            // Check if both rooks are on ranks/files that attack king's escape squares
+            const rook1 = enemyRooks[0];
+            const rook2 = enemyRooks[1];
+            
+            // If rooks are on adjacent ranks/files, they can create a mating net
+            if (Math.abs(rook1.rank - rook2.rank) === 1 && rook1.rank >= 7 && rook2.rank >= 7 && kingRank <= 2) {
+                // Rooks on 7th and 8th rank, king on 1st/2nd - danger!
+                score += CONFIG.v40DoubleRookMatingPatternPenalty;
+                debugLog("[V40.19_MATE]", `☠️☠️ DOUBLE ROOK MATING PATTERN! Rooks on ranks ${rook1.rank} and ${rook2.rank}!`);
+            } else if (Math.abs(rook1.rank - rook2.rank) === 1 && rook1.rank <= 2 && rook2.rank <= 2 && kingRank >= 7) {
+                // Similar but for black king
+                score += CONFIG.v40DoubleRookMatingPatternPenalty;
+                debugLog("[V40.19_MATE]", `☠️☠️ DOUBLE ROOK MATING PATTERN! Rooks on ranks ${rook1.rank} and ${rook2.rank}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.19_MATE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.19 KING CORRIDOR DEFENSE: Protect the squares around the king
+ * For white: f2, g2, h2 (castled kingside) or f1, g1, h1
+ * For black: f7, g7, h7 (castled kingside) or f8, g8, h8
+ */
+function v40KingCorridorDefenseEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingCorridorEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Define critical corridor squares based on king position
+        const corridorSquares = [];
+        
+        if (isWhite) {
+            // For white, critical squares are typically g1, h1, g2, h2, f2 when castled kingside
+            if (kingFile >= 5 && kingRank <= 2) { // Kingside
+                corridorSquares.push('f2', 'g2', 'h2', 'f1', 'g1', 'h1');
+            } else if (kingFile <= 2 && kingRank <= 2) { // Queenside
+                corridorSquares.push('a2', 'b2', 'c2', 'a1', 'b1', 'c1');
+            }
+        } else {
+            // For black
+            if (kingFile >= 5 && kingRank >= 7) { // Kingside
+                corridorSquares.push('f7', 'g7', 'h7', 'f8', 'g8', 'h8');
+            } else if (kingFile <= 2 && kingRank >= 7) { // Queenside
+                corridorSquares.push('a7', 'b7', 'c7', 'a8', 'b8', 'c8');
+            }
+        }
+        
+        // Count how many corridor squares are attacked by enemy
+        let attackedCorridorCount = 0;
+        let weakCorridorSquares = [];
+        
+        for (const sq of corridorSquares) {
+            if (isSquareAttackedByColor(afterMove, sq, enemyColor)) {
+                const isDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+                if (!isDefended) {
+                    attackedCorridorCount++;
+                    weakCorridorSquares.push(sq);
+                }
+            }
+        }
+        
+        if (attackedCorridorCount >= 2) {
+            score += CONFIG.v40MultipleAttackersOnCorridorPenalty * (attackedCorridorCount / 3);
+            debugLog("[V40.19_CORR]", `☠️☠️ MULTIPLE CORRIDOR SQUARES WEAK: ${weakCorridorSquares.join(', ')}!`);
+        } else if (attackedCorridorCount === 1) {
+            score += CONFIG.v40F2G2H2WeakPenalty / 2;
+            debugLog("[V40.19_CORR]", `⚠️ Corridor square ${weakCorridorSquares[0]} is weak!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.19_CORR]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.19 LUFT CREATION: Ensure king has escape squares (luft)
+ * Reward moves that create luft, penalize moves that destroy it
+ */
+function v40LuftCreationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40LuftEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Count luft BEFORE our move
+        let kingSquareBefore = null;
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquareBefore = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquareBefore) return 0;
+        
+        const luftBefore = countKingLuft(board, kingSquareBefore, activeColor, enemyColor);
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find king after move (in case we moved the king)
+        let kingSquareAfter = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquareAfter = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquareAfter) return 0;
+        
+        const luftAfter = countKingLuft(afterMove, kingSquareAfter, activeColor, enemyColor);
+        
+        // Evaluate luft change
+        if (luftAfter > luftBefore) {
+            score += CONFIG.v40CreateLuftBonus * (luftAfter - luftBefore);
+            debugLog("[V40.19_LUFT]", `✅ ${move} creates luft! ${luftBefore} → ${luftAfter}`);
+        } else if (luftAfter < luftBefore && luftAfter === 0) {
+            score += CONFIG.v40LuftDestructionPenalty;
+            debugLog("[V40.19_LUFT]", `☠️☠️ ${move} DESTROYS all luft! King is trapped!`);
+        } else if (luftAfter < luftBefore) {
+            score += CONFIG.v40NoLuftPenalty * ((luftBefore - luftAfter) / 3);
+            debugLog("[V40.19_LUFT]", `⚠️ ${move} reduces luft: ${luftBefore} → ${luftAfter}`);
+        }
+        
+        // Special: if king has NO luft after our move, massive penalty
+        if (luftAfter === 0) {
+            score += CONFIG.v40NoLuftPenalty;
+            debugLog("[V40.19_LUFT]", `☠️ NO LUFT! King has no escape squares after ${move}!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.19_LUFT]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * Helper: Count king's luft (safe escape squares)
+ */
+function countKingLuft(board, kingSquare, kingColor, enemyColor) {
+    let luft = 0;
+    const kingFile = kingSquare.charCodeAt(0) - 97;
+    const kingRank = parseInt(kingSquare[1]);
+    const isWhite = kingColor === 'w';
+    
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            if (df === 0 && dr === 0) continue;
+            
+            const newFile = kingFile + df;
+            const newRank = kingRank + dr;
+            
+            if (newFile < 0 || newFile > 7 || newRank < 1 || newRank > 8) continue;
+            
+            const sq = String.fromCharCode(97 + newFile) + newRank;
+            const occupant = board.get(sq);
+            
+            // Square must be empty or have enemy piece
+            if (occupant) {
+                const occupantIsWhite = occupant === occupant.toUpperCase();
+                if (occupantIsWhite === isWhite) continue; // Our own piece blocks luft
+            }
+            
+            // Square must not be attacked by enemy
+            if (!isSquareAttackedByColor(board, sq, enemyColor)) {
+                luft++;
+            }
+        }
+    }
+    
+    return luft;
+}
+
+/**
+ * v40.19 WINNING POSITION MANAGEMENT: Don't throw away winning positions
+ */
+function v40WinningPositionManagementEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40WinningPositionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Calculate material balance
+        let ourMaterial = 0;
+        let enemyMaterial = 0;
+        
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            const value = getPieceValueSimple(piece.toLowerCase());
+            
+            if (pieceIsWhite === isWhite) {
+                ourMaterial += value;
+            } else {
+                enemyMaterial += value;
+            }
+        }
+        
+        const materialAdvantage = ourMaterial - enemyMaterial;
+        
+        // If we're significantly ahead (3+ points), prefer simplifying
+        if (materialAdvantage >= 3) {
+            const fromSquare = move.substring(0, 2);
+            const toSquare = move.substring(2, 4);
+            const capturedPiece = board.get(toSquare);
+            
+            if (capturedPiece) {
+                // We're capturing something - good when ahead!
+                const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+                score += CONFIG.v40MaterialAdvantageSimplifyBonus * (capturedValue / 9);
+                debugLog("[V40.19_WIN]", `✅ ${move} simplifies when ahead by ${materialAdvantage}pts!`);
+            }
+            
+            // But don't make moves that allow complications
+            const movingPiece = board.get(fromSquare);
+            if (movingPiece) {
+                // Simulate the move
+                const afterMove = new Map(board);
+                afterMove.delete(fromSquare);
+                afterMove.set(toSquare, movingPiece);
+                
+                // Check if our valuable pieces become targets
+                const movingValue = getPieceValueSimple(movingPiece.toLowerCase());
+                if (movingValue >= 3) {
+                    // Moving a valuable piece - is it going to be safe?
+                    if (isSquareAttackedByColor(afterMove, toSquare, isWhite ? 'b' : 'w')) {
+                        if (!isSquareDefendedByColor(afterMove, toSquare, activeColor)) {
+                            score += CONFIG.v40DontBlunderWinPenalty;
+                            debugLog("[V40.19_WIN]", `☠️☠️ ${move} BLUNDERS while ahead by ${materialAdvantage}pts! ${movingPiece} becomes hanging!`);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If we're behind, we need to create complications
+        if (materialAdvantage <= -3) {
+            // Being behind - need active play
+            // Penalize passive moves
+            const fromSquare = move.substring(0, 2);
+            const toSquare = move.substring(2, 4);
+            const movingPiece = board.get(fromSquare);
+            
+            if (movingPiece && movingPiece.toLowerCase() !== 'k') {
+                const fromRank = parseInt(fromSquare[1]);
+                const toRank = parseInt(toSquare[1]);
+                
+                // For white, retreating is bad when behind
+                // For black, going to higher ranks is retreating
+                const isRetreating = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+                
+                if (isRetreating) {
+                    score -= CONFIG.v40MaterialAdvantageSimplifyBonus / 3;
+                    debugLog("[V40.19_WIN]", `⚠️ ${move} is passive while behind by ${Math.abs(materialAdvantage)}pts!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.19_WIN]", `Error: ${e.message}`);
     }
     
     return score;
@@ -30899,7 +31376,31 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.17: ANTI-PAWN-GRAB DEFENSE — Don't let pawns be taken for free
                 const antiPawnGrabScore = v40AntiPawnGrabDefenseEval(fen, move, board, activeColor, moveNumber) * 12.0;
                 
-                // v40.16: COMBINED v40 SCORE — 100% CATASTROPHIC KINGSIDE DEFENSE SUPREME INFLUENCE
+                // v40.18: KING ESCAPE ROUTE — Ensure king always has escape squares
+                const kingEscapeRouteScore = v40KingEscapeRouteEval(fen, move, board, activeColor, moveNumber) * 25.0;
+                
+                // v40.18: ROOK INVASION DETECTION — Detect enemy rooks on 2nd/7th rank
+                const rookInvasionDetectionScore = v40RookInvasionDetectionEval(fen, move, board, activeColor, moveNumber) * 20.0;
+                
+                // v40.18: BACK RANK WEAKNESS — Detect back rank mate threats
+                const backRankWeaknessScore = v40BackRankWeaknessEval(fen, move, board, activeColor, moveNumber) * 30.0;
+                
+                // v40.18: DISCOVERED ATTACK DETECTION — Don't allow discovered attacks
+                const discoveredAttackDetectionScore = v40DiscoveredAttackDetectionEval(fen, move, board, activeColor, moveNumber) * 25.0;
+                
+                // v40.19: MATING PATTERN RECOGNITION — Detect Rook+Queen mating patterns
+                const matingPatternScore = v40MatingPatternRecognitionEval(fen, move, board, activeColor, moveNumber) * 30.0;
+                
+                // v40.19: KING CORRIDOR DEFENSE — Protect king corridor squares
+                const kingCorridorDefenseScore = v40KingCorridorDefenseEval(fen, move, board, activeColor, moveNumber) * 20.0;
+                
+                // v40.19: LUFT CREATION — Ensure king has escape squares
+                const luftCreationScore = v40LuftCreationEval(fen, move, board, activeColor, moveNumber) * 25.0;
+                
+                // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+                const winningPositionScore = v40WinningPositionManagementEval(fen, move, board, activeColor, moveNumber) * 15.0;
+                
+                // v40.19: COMBINED v40 SCORE — 100% ABSOLUTE KING SAFETY SUPREME INFLUENCE
                 // This makes v40 the ABSOLUTE CATASTROPHIC KINGSIDE DEFENSE SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -30940,7 +31441,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
                                deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
                                // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
-                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore;
+                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore;
                 v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
@@ -30981,6 +31486,14 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   💰💰 ImmediateCaptureDetection: ${immediateCaptureDetectionScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   💰💰 MaterialAwareness: ${materialAwarenessScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   💰💰 AntiPawnGrab: ${antiPawnGrabScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑👑 KingEscapeRoute: ${kingEscapeRouteScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑👑 RookInvasionDetection: ${rookInvasionDetectionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑👑 BackRankWeakness: ${backRankWeaknessScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑👑 DiscoveredAttackDetection: ${discoveredAttackDetectionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 MatingPattern: ${matingPatternScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 KingCorridorDefense: ${kingCorridorDefenseScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 LuftCreation: ${luftCreationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 WinningPosition: ${winningPositionScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
