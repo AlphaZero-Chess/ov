@@ -1,0 +1,53 @@
+Now let me check the engine message handler where the actual move decision happens:
+Action: $ grep -n "onmessage\|bestmove\|multiPVLines" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -50
+Observation: 12807:function deepStrategicSimulation(fen, candidateMove, multiPVLines) {
+12820:    const webScore = evaluateStrategicWeb(fen, candidateMove, multiPVLines);
+14531:function evaluateStrategicWeb(fen, move, multiPVLines) {
+14945:function ensurePerfectEndgameConversion(fen, multiPVLines, evaluation) {
+14959:    for (const line of multiPVLines) {
+14969:    if (bestEndgameMove && bestEndgameMove !== multiPVLines[0].move) {
+15501:let multiPVLines = [];
+16200:function detectTacticalPosition(fen, multiPVLines) {
+16211:        if (multiPVLines && multiPVLines.length >= 2) {
+16212:            const topScore = multiPVLines[0].score;
+16213:            const secondScore = multiPVLines[1].score;
+16220:            for (let line of multiPVLines) {
+16323:function analyzeOpponentThreats(opponentMove, fen, multiPVLines) {
+16335:        if (multiPVLines && multiPVLines.length > 0) {
+16336:            const currentEval = multiPVLines[0].score;
+16372:                const evalDrop = evaluationHistory[evaluationHistory.length - 2] - multiPVLines[0].score;
+17990:    if (multiPVLines.length > 0 && multiPVLines[0].score > CONFIG.winningThreshold) {
+18033:    if (multiPVLines.length > 0) {
+18034:        const currentEval = multiPVLines[0].score;
+18053:        const threatLevel = analyzeOpponentThreats(lastOpponentMove, currentFen, multiPVLines);
+18222:            const originalHandler = chessEngine.onmessage;
+18224:                chessEngine.onmessage = originalHandler;
+18232:                if (event.includes("bestmove")) {
+18234:                    chessEngine.onmessage = originalHandler;
+18245:            chessEngine.onmessage = threatHandler;
+18361:        const originalHandler = chessEngine.onmessage;
+18363:            chessEngine.onmessage = originalHandler;
+18371:            if (event.includes("bestmove")) {
+18373:                chessEngine.onmessage = originalHandler;
+18391:        chessEngine.onmessage = scoreHandler;
+18423:            const originalHandler = chessEngine.onmessage;
+18428:                if (event.includes("bestmove")) {
+18437:                    chessEngine.onmessage = originalHandler;
+18442:            chessEngine.onmessage = rolloutHandler;
+18448:                chessEngine.onmessage = originalHandler;
+19234:    if (multiPVLines.length > 1) {
+19848:                if (multiPVLines.length >= 2 && rejectionCount <= 3) {
+19850:                    for (let i = 1; i < Math.min(multiPVLines.length, 5); i++) {
+19851:                        const altMove = multiPVLines[i].move;
+19854:                            debugLog("[WS]", `✅ Using alternative move #${i}: ${altMove} (score: ${multiPVLines[i].score})`);
+20048:    multiPVLines = [];
+20082:            if (multiPVLines.length > 0) {
+20084:                const emergencyMove = multiPVLines[0].move;
+20209:        if (multiPVLines.length > 1) {
+20211:            const nextMove = multiPVLines[1].move;
+20354:                    debugLog("[SEND]", `   Available alternatives: ${multiPVLines.length}`);
+20389:                    if (multiPVLines.length >= 2 && rejectionCount <= 3) {
+20391:                        for (let i = 1; i < Math.min(multiPVLines.length, 3); i++) {
+20392:                            const altMove = multiPVLines[i].move;
+20395:                                debugLog("[SEND]", `✅ Using alternative move #${i}: ${altMove} (score: ${multiPVLines[i].score})`);
+Exit code: 0

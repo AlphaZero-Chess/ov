@@ -1,0 +1,64 @@
+Now let me add the new enhanced functions for mating net detection, file control evaluation, initiative tracking, and queen movement penalty:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+3690|    }
+3691|    return total;
+3692|}
+3693|
+3694|function evaluatePawnShield(board, color, kingSquare) {
+3695|    let score = 0;
+3696|    const kingFile = kingSquare.charCodeAt(0);
+3697|    const pawnRank = color === 'w' ? '2' : '7';
+3698|    const pawnChar = color === 'w' ? 'P' : 'p';
+3699|    
+3700|    for (let f = kingFile - 1; f <= kingFile + 1; f++) {
+3701|        if (f >= 97 && f <= 104) {
+3702|            const pawnSquare = String.fromCharCode(f) + pawnRank;
+3703|            if (board.get(pawnSquare) === pawnChar) {
+3704|                score += 30;
+3705|            }
+3706|        }
+3707|    }
+3708|    
+3709|    return score;
+3710|}
+3711|
+3712|/**
+3713| * v40: Evaluate goal alignment with strategic plan
+3714| * True AlphaZero evaluates moves based on how well they fit the plan
+3715| */
+3716|function evaluateGoalAlignment(move, plan) {
+3717|    if (!plan || !plan.type) return 0.5;
+3718|    
+3719|    let alignment = 0.5;
+3720|    const toSquare = move.substring(2, 4);
+3721|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+3722|    
+3723|    // Check alignment with plan type
+3724|    switch (plan.type) {
+3725|        case 'kingside_attack':
+3726|            if (toFile >= 5) alignment += 0.2;  // Moves toward kingside
+3727|            break;
+3728|        case 'queenside_attack':
+3729|            if (toFile <= 2) alignment += 0.2;  // Moves toward queenside
+3730|            break;
+3731|        case 'central_control':
+3732|            if (toFile >= 2 && toFile <= 5) alignment += 0.15;
+3733|            break;
+3734|        case 'pawn_storm':
+3735|            if (move[0] === toSquare[0]) alignment += 0.1; // Same piece moving
+3736|            break;
+3737|        case 'piece_coordination':
+3738|            alignment += 0.1;  // Any piece activity is good
+3739|            break;
+3740|    }
+3741|    
+3742|    return Math.min(1.0, Math.max(0, alignment));
+3743|}
+3744|
+3745|/**
+3746| * v40: Evaluate positional squeeze - how much space we control vs opponent
+3747| * AlphaZero excels at slowly squeezing positions
+3748| */
+3749|function evaluatePositionalSqueeze(board, color) {
+3750|    let ourSquares = 0;

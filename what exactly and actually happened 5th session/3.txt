@@ -1,0 +1,203 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+3451|function v40FlawlessEndgameEvaluation(fen, move, board, activeColor) {
+3452|    let score = 0;
+3453|    
+3454|    const totalMaterial = countTotalMaterial(board);
+3455|    if (totalMaterial > 40) return 0;  // Not endgame
+3456|    
+3457|    const fromSquare = move.substring(0, 2);
+3458|    const toSquare = move.substring(2, 4);
+3459|    const piece = board.get(fromSquare);
+3460|    
+3461|    if (!piece) return 0;
+3462|    
+3463|    const ourKingSquare = findKing(board, activeColor);
+3464|    const theirKingSquare = findKing(board, activeColor === 'w' ? 'b' : 'w');
+3465|    
+3466|    if (!ourKingSquare || !theirKingSquare) return 0;
+3467|    
+3468|    // v40: King moves in endgame
+3469|    if (piece.toLowerCase() === 'k') {
+3470|        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+3471|        const toRank = parseInt(toSquare[1]) - 1;
+3472|        
+3473|        // Centralization bonus
+3474|        const centrality = 4 - Math.abs(toFile - 3.5) - Math.abs(toRank - 3.5);
+3475|        score += centrality * (CONFIG.v40EndgameKingActivity || 7000) / 10;
+3476|        
+3477|        // Opposition detection
+3478|        const theirKingFile = theirKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+3479|        const theirKingRank = parseInt(theirKingSquare[1]) - 1;
+3480|        
+3481|        const fileDiff = Math.abs(toFile - theirKingFile);
+3482|        const rankDiff = Math.abs(toRank - theirKingRank);
+3483|        
+3484|        // Direct opposition
+3485|        if ((fileDiff === 0 && rankDiff === 2) || (rankDiff === 0 && fileDiff === 2)) {
+3486|            score += CONFIG.v40EndgameOppositionDepth || 120;
+3487|        }
+3488|        
+3489|        // Outflanking
+3490|        if (isOutflankingMove(ourKingSquare, toSquare, theirKingSquare)) {
+3491|            score += CONFIG.v40EndgameOutflanking || 5000;
+3492|        }
+3493|    }
+3494|    
+3495|    // v40: Rook endgame patterns (Philidor, Lucena)
+3496|    if (CONFIG.v40EndgamePhilidorRecog && isPhilidorPosition(board, activeColor)) {
+3497|        score += 3000;
+3498|    }
+3499|    
+3500|    if (CONFIG.v40EndgameLucenaRecog && isLucenaPosition(board, activeColor)) {
+3501|        score += 5000;  // Lucena is winning
+3502|    }
+3503|    
+3504|    // v40: Triangulation detection
+3505|    if (isTriangulationMove(move, board, activeColor)) {
+3506|        score += CONFIG.v40EndgameTriangulationDepth || 100;
+3507|    }
+3508|    
+3509|    // v40: Zugzwang creation
+3510|    if (createsZugzwang(move, board, activeColor)) {
+3511|        score += CONFIG.v40EndgameZugzwangDepth || 90;
+3512|    }
+3513|    
+3514|    return score;
+3515|}
+3516|
+3517|/**
+3518| * v40: Web-weaving evaluation (multi-front pressure)
+3519| */
+3520|function v40WebWeavingEvaluation(fen, move, board, activeColor) {
+3521|    let score = 0;
+3522|    
+3523|    // Multi-front pressure detection
+3524|    const multiFront = detectMultiFrontPressure(board, activeColor);
+3525|    if (multiFront.active) {
+3526|        score += multiFront.fronts * (CONFIG.v40MultiFrontPressure || 8000) / 3;
+3527|    }
+3528|    
+3529|    // Pressure buildup
+3530|    const pressureScore = evaluatePressureBuildup(move, board, activeColor);
+3531|    score += pressureScore * (CONFIG.v40PressureBuildupBonus || 4500) / 100;
+3532|    
+3533|    // Coordinated threats
+3534|    const coordThreats = detectCoordinatedThreats(board, activeColor);
+3535|    score += coordThreats * (CONFIG.v40CoordinatedThreatBonus || 6000) / 3;
+3536|    
+3537|    // Position domination
+3538|    const dominationScore = evaluateDomination(board, activeColor);
+3539|    score += dominationScore * (CONFIG.v40DominationBonus || 8000) / 100;
+3540|    
+3541|    return score;
+3542|}
+3543|
+3544|/**
+3545| * v40: Pattern recognition
+3546| */
+3547|function v40PatternRecognition(fen, move, board, activeColor) {
+3548|    let score = 0;
+3549|    
+3550|    const toSquare = move.substring(2, 4);
+3551|    const piece = board.get(move.substring(0, 2));
+3552|    
+3553|    if (!piece) return 0;
+3554|    
+3555|    const pieceType = piece.toLowerCase();
+3556|    
+3557|    // Outpost recognition
+3558|    if ((pieceType === 'n' || pieceType === 'b') && isOutpostSquare(toSquare, board, activeColor)) {
+3559|        score += CONFIG.v40OutpostValue || 3500;
+3560|    }
+3561|    
+3562|    // Battery recognition
+3563|    if (createsBattery(move, board, activeColor)) {
+3564|        score += CONFIG.v40BatteryValue || 4000;
+3565|    }
+3566|    
+3567|    // Open file for rooks
+3568|    if (pieceType === 'r' && isOpenFile(toSquare[0], board)) {
+3569|        score += CONFIG.v40OpenFileValue || 2400;
+3570|    }
+3571|    
+3572|    // Long diagonal for bishops
+3573|    if (pieceType === 'b' && isLongDiagonal(toSquare)) {
+3574|        score += CONFIG.v40LongDiagonalValue || 2200;
+3575|    }
+3576|    
+3577|    // Knight on d5/e5
+3578|    if (pieceType === 'n' && ['d5', 'e5', 'd4', 'e4'].includes(toSquare)) {
+3579|        score += CONFIG.v40KnightOutpostD5E5 || 4000;
+3580|    }
+3581|    
+3582|    return score;
+3583|}
+3584|
+3585|/**
+3586| * v40: Delayed gratification evaluation
+3587| */
+3588|function v40DelayedGratificationEval(fen, move, board, activeColor, moveNumber) {
+3589|    let score = 0;
+3590|    
+3591|    // Quiet strengthening moves
+3592|    if (isQuietStrengtheningMove(move, board, activeColor)) {
+3593|        score += CONFIG.v40QuietStrengtheningBonus || 4000;
+3594|    }
+3595|    
+3596|    // Long-term investment moves
+3597|    if (isLongTermInvestment(move, board, activeColor)) {
+3598|        score += CONFIG.v40DelayedGratificationWeight || 8000;
+3599|    }
+3600|    
+3601|    // Patient maneuvering
+3602|    if (moveNumber > 15 && isPatientManeuver(move, board, activeColor)) {
+3603|        score += CONFIG.v40StrategicPatience || 8000;
+3604|    }
+3605|    
+3606|    return score;
+3607|}
+3608|
+3609|/**
+3610| * v40: Resilience evaluation (counterplay, fortress, swindles)
+3611| */
+3612|function v40ResilienceEvaluation(fen, move, board, activeColor) {
+3613|    let score = 0;
+3614|    
+3615|    // Only apply when behind
+3616|    if (!crisisModeActive) return 0;
+3617|    
+3618|    // Counterplay generation
+3619|    if (generatesCounterplay(move, board, activeColor)) {
+3620|        score += CONFIG.v40CounterplayPriority || 12000;
+3621|    }
+3622|    
+3623|    // Active defense
+3624|    if (isActiveDefense(move, board, activeColor)) {
+3625|        score += CONFIG.v40ResilienceBonus || 6000;
+3626|    }
+3627|    
+3628|    // Fortress building
+3629|    if (buildsFortress(move, board, activeColor)) {
+3630|        score += CONFIG.v40FortressBonus || 7000;
+3631|    }
+3632|    
+3633|    // Complication creation
+3634|    if (createsComplications(move, board, activeColor)) {
+3635|        score += CONFIG.v40ComplicationCreation || 3500;
+3636|    }
+3637|    
+3638|    return score;
+3639|}
+3640|
+3641|/**
+3642| * v40: Initiative evaluation
+3643| */
+3644|function v40InitiativeEvaluation(fen, move, board, activeColor, moveNumber) {
+3645|    let score = 0;
+3646|    
+3647|    // Forcing moves
+3648|    if (isForcingMoveV40(move, board, activeColor)) {
+3649|        score += CONFIG.v40ForcingMovePreference || 2000;
+3650|    }

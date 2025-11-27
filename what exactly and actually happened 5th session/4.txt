@@ -1,0 +1,258 @@
+Now let me check the helper functions that are critical for the analysis. Let me also check the multi-pass blunder check function:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2446|function v40MultiPassBlunderCheck(fen, move, board, activeColor) {
+2447|    const result = { safe: true, score: 100, reason: '', penalty: 0 };
+2448|    const passes = CONFIG.v40VerificationPasses || 12;
+2449|    
+2450|    try {
+2451|        debugLog("[V40_BLUNDER]", `═══════════════════════════════════════════════════════`);
+2452|        debugLog("[V40_BLUNDER]", `🔍 ${passes}-PASS BLUNDER VERIFICATION for ${move}`);
+2453|        debugLog("[V40_BLUNDER]", `═══════════════════════════════════════════════════════`);
+2454|        
+2455|        // Pass 1: Standard tactical scan (uses existing comprehensive scan)
+2456|        const tacticalScan = comprehensiveTacticalScan(fen, move);
+2457|        if (tacticalScan && !tacticalScan.safe) {
+2458|            result.safe = false;
+2459|            result.reason = `Pass 1 - Tactical danger: ${tacticalScan.totalDanger}`;
+2460|            result.penalty = -tacticalScan.totalDanger * 5;
+2461|            debugLog("[V40_BLUNDER]", `🚨 Pass 1 FAILED: ${result.reason}`);
+2462|            return result;
+2463|        }
+2464|        debugLog("[V40_BLUNDER]", `✅ Pass 1 (Tactical Scan): CLEAR`);
+2465|        
+2466|        // Pass 2: Hanging piece check
+2467|        const hangingCheck = v40CheckHangingPieces(fen, move, board, activeColor);
+2468|        if (hangingCheck.isHanging) {
+2469|            result.safe = false;
+2470|            result.reason = `Pass 2 - Hanging piece: ${hangingCheck.piece} on ${hangingCheck.square}`;
+2471|            result.penalty = -hangingCheck.value * 3;
+2472|            debugLog("[V40_BLUNDER]", `🚨 Pass 2 FAILED: ${result.reason}`);
+2473|            return result;
+2474|        }
+2475|        debugLog("[V40_BLUNDER]", `✅ Pass 2 (Hanging Pieces): CLEAR`);
+2476|        
+2477|        // Pass 3: Fork detection
+2478|        const forkCheck = v40CheckForForks(fen, move, board, activeColor);
+2479|        if (forkCheck.forkThreat) {
+2480|            result.safe = false;
+2481|            result.reason = `Pass 3 - Fork threat: ${forkCheck.details}`;
+2482|            result.penalty = -forkCheck.value * 2;
+2483|            debugLog("[V40_BLUNDER]", `🚨 Pass 3 FAILED: ${result.reason}`);
+2484|            return result;
+2485|        }
+2486|        debugLog("[V40_BLUNDER]", `✅ Pass 3 (Fork Detection): CLEAR`);
+2487|        
+2488|        // Pass 4: Pin/Skewer detection
+2489|        const pinCheck = v40CheckPinsSkewers(fen, move, board, activeColor);
+2490|        if (pinCheck.dangerous) {
+2491|            result.safe = false;
+2492|            result.reason = `Pass 4 - Pin/Skewer: ${pinCheck.details}`;
+2493|            result.penalty = -pinCheck.value * 2;
+2494|            debugLog("[V40_BLUNDER]", `🚨 Pass 4 FAILED: ${result.reason}`);
+2495|            return result;
+2496|        }
+2497|        debugLog("[V40_BLUNDER]", `✅ Pass 4 (Pin/Skewer): CLEAR`);
+2498|        
+2499|        // Pass 5: Back rank mate check
+2500|        const backRankCheck = v40CheckBackRankMate(fen, move, board, activeColor);
+2501|        if (backRankCheck.threat) {
+2502|            result.safe = false;
+2503|            result.reason = `Pass 5 - ${backRankCheck.details}`;
+2504|            result.penalty = -10000;
+2505|            debugLog("[V40_BLUNDER]", `🚨 Pass 5 FAILED: ${result.reason}`);
+2506|            return result;
+2507|        }
+2508|        debugLog("[V40_BLUNDER]", `✅ Pass 5 (Back Rank Mate): CLEAR`);
+2509|        
+2510|        // Pass 6: Discovered attack check
+2511|        const discoveredCheck = v40CheckDiscoveredAttacks(fen, move, board, activeColor);
+2512|        if (discoveredCheck.threat) {
+2513|            result.safe = false;
+2514|            result.reason = `Pass 6 - Discovered attack: ${discoveredCheck.details}`;
+2515|            result.penalty = -discoveredCheck.value * 2;
+2516|            debugLog("[V40_BLUNDER]", `🚨 Pass 6 FAILED: ${result.reason}`);
+2517|            return result;
+2518|        }
+2519|        debugLog("[V40_BLUNDER]", `✅ Pass 6 (Discovered Attacks): CLEAR`);
+2520|        
+2521|        // Pass 7: Desperado piece check
+2522|        const desperadoCheck = v40CheckDesperado(fen, move, board, activeColor);
+2523|        if (desperadoCheck.missingDesperado) {
+2524|            result.safe = false;
+2525|            result.reason = `Pass 7 - Missing desperado: ${desperadoCheck.details}`;
+2526|            result.penalty = -desperadoCheck.value;
+2527|            debugLog("[V40_BLUNDER]", `🚨 Pass 7 FAILED: ${result.reason}`);
+2528|            return result;
+2529|        }
+2530|        debugLog("[V40_BLUNDER]", `✅ Pass 7 (Desperado Check): CLEAR`);
+2531|        
+2532|        // Pass 8: Zwischenzug (in-between move) check
+2533|        const zwischenzugCheck = v40CheckZwischenzug(fen, move, board, activeColor);
+2534|        if (zwischenzugCheck.threat) {
+2535|            result.safe = false;
+2536|            result.reason = `Pass 8 - Zwischenzug threat: ${zwischenzugCheck.details}`;
+2537|            result.penalty = -zwischenzugCheck.value;
+2538|            debugLog("[V40_BLUNDER]", `🚨 Pass 8 FAILED: ${result.reason}`);
+2539|            return result;
+2540|        }
+2541|        debugLog("[V40_BLUNDER]", `✅ Pass 8 (Zwischenzug): CLEAR`);
+2542|        
+2543|        // Pass 9: Queen trap check
+2544|        const queenTrapCheck = v40CheckQueenTrap(fen, move, board, activeColor);
+2545|        if (queenTrapCheck.trapped) {
+2546|            result.safe = false;
+2547|            result.reason = `Pass 9 - Queen trap: ${queenTrapCheck.details}`;
+2548|            result.penalty = -9000;  // Losing queen is catastrophic
+2549|            debugLog("[V40_BLUNDER]", `🚨 Pass 9 FAILED: ${result.reason}`);
+2550|            return result;
+2551|        }
+2552|        debugLog("[V40_BLUNDER]", `✅ Pass 9 (Queen Trap): CLEAR`);
+2553|        
+2554|        // Pass 10: Overloaded piece check
+2555|        const overloadCheck = v40CheckOverloadedPieces(fen, move, board, activeColor);
+2556|        if (overloadCheck.overloaded) {
+2557|            result.safe = false;
+2558|            result.reason = `Pass 10 - Overloaded piece: ${overloadCheck.details}`;
+2559|            result.penalty = -overloadCheck.value;
+2560|            debugLog("[V40_BLUNDER]", `🚨 Pass 10 FAILED: ${result.reason}`);
+2561|            return result;
+2562|        }
+2563|        debugLog("[V40_BLUNDER]", `✅ Pass 10 (Overloaded Pieces): CLEAR`);
+2564|        
+2565|        // Pass 11: Mating net check
+2566|        const matingNetCheck = v40CheckMatingNet(fen, move, board, activeColor);
+2567|        if (matingNetCheck.threat) {
+2568|            result.safe = false;
+2569|            result.reason = `Pass 11 - Mating net: ${matingNetCheck.details}`;
+2570|            result.penalty = -50000;
+2571|            debugLog("[V40_BLUNDER]", `🚨 Pass 11 FAILED: ${result.reason}`);
+2572|            return result;
+2573|        }
+2574|        debugLog("[V40_BLUNDER]", `✅ Pass 11 (Mating Net): CLEAR`);
+2575|        
+2576|        // Pass 12: Perpetual check miss
+2577|        const perpetualCheck = v40CheckPerpetualMiss(fen, move, board, activeColor);
+2578|        if (perpetualCheck.missingPerpetual) {
+2579|            // Only warning - not always bad
+2580|            result.score -= 200;
+2581|            debugLog("[V40_BLUNDER]", `⚠️ Pass 12 WARNING: Missing perpetual check opportunity`);
+2582|        } else {
+2583|            debugLog("[V40_BLUNDER]", `✅ Pass 12 (Perpetual Check): CLEAR`);
+2584|        }
+2585|        
+2586|        debugLog("[V40_BLUNDER]", `═══════════════════════════════════════════════════════`);
+2587|        debugLog("[V40_BLUNDER]", `✅ ALL ${passes} PASSES CLEAR for ${move}`);
+2588|        debugLog("[V40_BLUNDER]", `═══════════════════════════════════════════════════════`);
+2589|        
+2590|        result.score = 100;
+2591|        return result;
+2592|        
+2593|    } catch (e) {
+2594|        debugLog("[V40_BLUNDER]", `⚠️ Blunder check error: ${e.message}`);
+2595|        return result;  // Assume safe if error
+2596|    }
+2597|}
+2598|
+2599|/**
+2600| * v40: Check for discovered attack threats
+2601| */
+2602|function v40CheckDiscoveredAttacks(fen, move, board, activeColor) {
+2603|    const result = { threat: false, details: '', value: 0 };
+2604|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+2605|    const pieceValues = { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900 };
+2606|    
+2607|    try {
+2608|        const fromSquare = move.substring(0, 2);
+2609|        const toSquare = move.substring(2, 4);
+2610|        const movingPiece = board.get(fromSquare);
+2611|        
+2612|        const simBoard = new Map(board);
+2613|        simBoard.delete(fromSquare);
+2614|        simBoard.set(toSquare, movingPiece);
+2615|        
+2616|        // Find our valuable pieces
+2617|        const ourPieces = [];
+2618|        for (const [square, piece] of simBoard) {
+2619|            if (!piece) continue;
+2620|            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+2621|            if (isOurs && pieceValues[piece.toLowerCase()] >= 300) {
+2622|                ourPieces.push({ square, piece, value: pieceValues[piece.toLowerCase()] });
+2623|            }
+2624|        }
+2625|        
+2626|        // Check if moving the piece exposes another piece to attack
+2627|        const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+2628|        const fromRank = parseInt(fromSquare[1]) - 1;
+2629|        
+2630|        // Check for sliding pieces that could have been blocked
+2631|        for (const [square, piece] of simBoard) {
+2632|            if (!piece) continue;
+2633|            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+2634|            if (!isEnemy) continue;
+2635|            
+2636|            const pieceType = piece.toLowerCase();
+2637|            if (pieceType !== 'b' && pieceType !== 'r' && pieceType !== 'q') continue;
+2638|            
+2639|            const attackerFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+2640|            const attackerRank = parseInt(square[1]) - 1;
+2641|            
+2642|            // Check if our piece was blocking this attacker
+2643|            for (const target of ourPieces) {
+2644|                const targetFile = target.square.charCodeAt(0) - 'a'.charCodeAt(0);
+2645|                const targetRank = parseInt(target.square[1]) - 1;
+2646|                
+2647|                // Check if from square was on line between attacker and target
+2648|                const wasBlocking = v40IsOnLine(fromFile, fromRank, attackerFile, attackerRank, targetFile, targetRank);
+2649|                
+2650|                if (wasBlocking) {
+2651|                    // Now check if attacker can reach target
+2652|                    const canAttack = v40CanPieceAttack(pieceType, attackerFile, attackerRank, targetFile, targetRank, simBoard, enemyColor);
+2653|                    
+2654|                    if (canAttack && target.value > result.value) {
+2655|                        result.threat = true;
+2656|                        result.details = `Moving from ${fromSquare} exposes ${target.piece} on ${target.square}`;
+2657|                        result.value = target.value;
+2658|                    }
+2659|                }
+2660|            }
+2661|        }
+2662|        
+2663|    } catch (e) {
+2664|        debugLog("[V40_BLUNDER]", `Discovered attack check error: ${e.message}`);
+2665|    }
+2666|    
+2667|    return result;
+2668|}
+2669|
+2670|/**
+2671| * v40: Check if point is on line between two others
+2672| */
+2673|function v40IsOnLine(px, py, x1, y1, x2, y2) {
+2674|    // Check if point (px, py) is on the line segment from (x1, y1) to (x2, y2)
+2675|    const crossProduct = (py - y1) * (x2 - x1) - (px - x1) * (y2 - y1);
+2676|    if (Math.abs(crossProduct) > 0.001) return false;
+2677|    
+2678|    // Check if point is between the two endpoints
+2679|    if (px < Math.min(x1, x2) || px > Math.max(x1, x2)) return false;
+2680|    if (py < Math.min(y1, y2) || py > Math.max(y1, y2)) return false;
+2681|    
+2682|    // Don't count if it's one of the endpoints
+2683|    if (px === x1 && py === y1) return false;
+2684|    if (px === x2 && py === y2) return false;
+2685|    
+2686|    return true;
+2687|}
+2688|
+2689|/**
+2690| * v40: Check for desperado piece opportunities
+2691| */
+2692|function v40CheckDesperado(fen, move, board, activeColor) {
+2693|    const result = { missingDesperado: false, details: '', value: 0 };
+2694|    const pieceValues = { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900 };
+2695|    
+2696|    // Desperado: when a piece is attacked and doomed, capture something first
+2697|    // This is complex - simplified version
+2698|    return result;
+2699|}
+2700|

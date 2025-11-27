@@ -1,0 +1,387 @@
+Now let me view the main v40 classes and functions to understand the current implementation better:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1417|class V40MCTSNode {
+1418|    constructor(move = null, parent = null, prior = 1.0, fen = null) {
+1419|        this.move = move;                    // Move that led to this node
+1420|        this.parent = parent;                // Parent node
+1421|        this.children = new Map();           // Child nodes (move -> node)
+1422|        this.visits = 0;                     // Number of visits (N)
+1423|        this.totalValue = 0;                 // Total value (W)
+1424|        this.prior = prior;                  // Policy prior (P)
+1425|        this.virtualLoss = 0;                // Virtual loss for parallel search
+1426|        this.isExpanded = false;             // Has been expanded
+1427|        this.isTerminal = false;             // Terminal node (game over)
+1428|        this.depth = parent ? parent.depth + 1 : 0;
+1429|        this.fen = fen;                      // Position FEN
+1430|        
+1431|        // v40: Enhanced tracking for value network emulation
+1432|        this.materialScore = 0;
+1433|        this.positionalScore = 0;
+1434|        this.tacticalScore = 0;
+1435|        this.strategicScore = 0;
+1436|        this.endgameScore = 0;
+1437|        this.webWeavingScore = 0;
+1438|        this.winProbability = 0.5;
+1439|        this.drawProbability = 0.0;
+1440|        this.lossProbability = 0.5;
+1441|        
+1442|        // v40: Long-term planning tracking
+1443|        this.strategicAlignment = 0;         // How well move aligns with long-term plan
+1444|        this.delayedGratificationPotential = 0; // Future payoff potential
+1445|    }
+1446|    
+1447|    /**
+1448|     * v40: Get Q value (mean action value)
+1449|     */
+1450|    get Q() {
+1451|        if (this.visits === 0) {
+1452|            // First Play Urgency reduction
+1453|            return this.parent ? this.parent.Q - CONFIG.v40FPUReduction : 0;
+1454|        }
+1455|        return this.totalValue / this.visits;
+1456|    }
+1457|    
+1458|    /**
+1459|     * v40: PUCT Score - Exactly like AlphaZero paper
+1460|     * UCT = Q(s,a) + c_puct * P(s,a) * sqrt(N(s)) / (1 + N(s,a))
+1461|     */
+1462|    get puctScore() {
+1463|        if (!this.parent) return Infinity;
+1464|        
+1465|        const Q = this.Q;
+1466|        const P = this.prior;
+1467|        const N_parent = this.parent.visits;
+1468|        const N_self = this.visits;
+1469|        const c_puct = CONFIG.v40PUCTConstant || 2.5;
+1470|        
+1471|        // AlphaZero PUCT formula
+1472|        const U = c_puct * P * Math.sqrt(N_parent) / (1 + N_self);
+1473|        
+1474|        // Apply virtual loss for exploration diversity
+1475|        const virtualLossAdj = this.virtualLoss * (CONFIG.v40VirtualLoss || 3) / (N_self + 1);
+1476|        
+1477|        return Q + U - virtualLossAdj;
+1478|    }
+1479|    
+1480|    /**
+1481|     * v40: Select best child using PUCT
+1482|     */
+1483|    selectChild() {
+1484|        if (this.children.size === 0) return null;
+1485|        
+1486|        let bestChild = null;
+1487|        let bestScore = -Infinity;
+1488|        
+1489|        for (const [move, child] of this.children) {
+1490|            const score = child.puctScore;
+1491|            if (score > bestScore) {
+1492|                bestScore = score;
+1493|                bestChild = child;
+1494|            }
+1495|        }
+1496|        
+1497|        return bestChild;
+1498|    }
+1499|    
+1500|    /**
+1501|     * v40: Expand node with move priors (Policy Network Emulation)
+1502|     */
+1503|    expand(moves, priors = null, isRoot = false) {
+1504|        if (moves.length === 0) {
+1505|            this.isTerminal = true;
+1506|            return;
+1507|        }
+1508|        
+1509|        const numMoves = moves.length;
+1510|        let computedPriors = priors || this.computePolicyPriors(moves);
+1511|        
+1512|        // Add Dirichlet noise at root for exploration (AlphaZero paper)
+1513|        if (isRoot && CONFIG.v40DirichletAlpha && CONFIG.v40DirichletEpsilon) {
+1514|            const noise = sampleDirichlet(CONFIG.v40DirichletAlpha, numMoves);
+1515|            for (let i = 0; i < numMoves; i++) {
+1516|                computedPriors[i] = (1 - CONFIG.v40DirichletEpsilon) * computedPriors[i] + 
+1517|                                    CONFIG.v40DirichletEpsilon * noise[i];
+1518|            }
+1519|        }
+1520|        
+1521|        // Create child nodes
+1522|        for (let i = 0; i < numMoves; i++) {
+1523|            const move = moves[i];
+1524|            const prior = computedPriors[i];
+1525|            this.children.set(move, new V40MCTSNode(move, this, prior));
+1526|        }
+1527|        
+1528|        this.isExpanded = true;
+1529|        v40TreeStatistics.totalNodes += numMoves;
+1530|    }
+1531|    
+1532|    /**
+1533|     * v40: Policy Network Emulation - Compute move priors
+1534|     * This approximates what AlphaZero's policy network does
+1535|     */
+1536|    computePolicyPriors(moves) {
+1537|        const priors = [];
+1538|        const totalMoves = moves.length;
+1539|        let sumPriors = 0;
+1540|        
+1541|        for (const move of moves) {
+1542|            let prior = 1.0 / totalMoves;  // Base uniform prior
+1543|            
+1544|            // Capture bonus
+1545|            if (move.length > 4 || this.isCaptureMove(move)) {
+1546|                prior += CONFIG.v40PolicyCaptureBonus || 0.15;
+1547|            }
+1548|            
+1549|            // Check bonus (if we can detect)
+1550|            if (move.includes('+')) {
+1551|                prior += CONFIG.v40PolicyCheckBonus || 0.20;
+1552|            }
+1553|            
+1554|            // Central moves bonus (d4, d5, e4, e5)
+1555|            const to = move.substring(2, 4);
+1556|            if (['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'].includes(to)) {
+1557|                prior += CONFIG.v40PolicyCentralBonus || 0.10;
+1558|            }
+1559|            
+1560|            // Development bonus in opening
+1561|            const from = move.substring(0, 2);
+1562|            if (this.isDevelopmentMove(from, to)) {
+1563|                prior += CONFIG.v40PolicyDevelopmentBonus || 0.15;
+1564|            }
+1565|            
+1566|            // Castling bonus
+1567|            if (this.isCastlingMove(move)) {
+1568|                prior += CONFIG.v40PolicyCastlingBonus || 0.25;
+1569|            }
+1570|            
+1571|            // Promotion bonus
+1572|            if (move.length === 5) {
+1573|                prior += CONFIG.v40PolicyPromotionBonus || 0.30;
+1574|            }
+1575|            
+1576|            priors.push(prior);
+1577|            sumPriors += prior;
+1578|        }
+1579|        
+1580|        // Normalize priors to sum to 1
+1581|        return priors.map(p => p / sumPriors);
+1582|    }
+1583|    
+1584|    isCaptureMove(move) {
+1585|        return move.includes('x') || (this.parent && this.parent.fen);
+1586|    }
+1587|    
+1588|    isDevelopmentMove(from, to) {
+1589|        const backRanks = ['1', '8'];
+1590|        const fromRank = from[1];
+1591|        const toRank = to[1];
+1592|        return backRanks.includes(fromRank) && !backRanks.includes(toRank);
+1593|    }
+1594|    
+1595|    isCastlingMove(move) {
+1596|        return ['e1g1', 'e1c1', 'e8g8', 'e8c8'].includes(move);
+1597|    }
+1598|    
+1599|    /**
+1600|     * v40: Backpropagation with decay (like AlphaZero)
+1601|     */
+1602|    backpropagate(value) {
+1603|        let node = this;
+1604|        let depth = 0;
+1605|        const gamma = CONFIG.v40BackpropGamma || 0.998;
+1606|        
+1607|        while (node !== null) {
+1608|            node.visits++;
+1609|            
+1610|            // Apply discount factor
+1611|            const discountedValue = value * Math.pow(gamma, depth);
+1612|            node.totalValue += discountedValue;
+1613|            
+1614|            // Flip value for opponent's perspective
+1615|            value = -value;
+1616|            node = node.parent;
+1617|            depth++;
+1618|        }
+1619|    }
+1620|    
+1621|    addVirtualLoss() {
+1622|        this.virtualLoss += CONFIG.v40VirtualLoss || 3;
+1623|    }
+1624|    
+1625|    removeVirtualLoss() {
+1626|        this.virtualLoss = Math.max(0, this.virtualLoss - (CONFIG.v40VirtualLoss || 3));
+1627|    }
+1628|    
+1629|    /**
+1630|     * v40: Get best move by visit count (most robust selection)
+1631|     */
+1632|    getBestMove(temperature = 0) {
+1633|        if (this.children.size === 0) return null;
+1634|        
+1635|        if (temperature === 0) {
+1636|            // Deterministic: choose most visited
+1637|            let bestMove = null;
+1638|            let maxVisits = -1;
+1639|            
+1640|            for (const [move, child] of this.children) {
+1641|                if (child.visits > maxVisits) {
+1642|                    maxVisits = child.visits;
+1643|                    bestMove = move;
+1644|                }
+1645|            }
+1646|            return bestMove;
+1647|        } else {
+1648|            // Temperature-based selection (for exploration)
+1649|            const moves = [];
+1650|            const visits = [];
+1651|            let sumVisits = 0;
+1652|            
+1653|            for (const [move, child] of this.children) {
+1654|                moves.push(move);
+1655|                const adjustedVisits = Math.pow(child.visits, 1 / temperature);
+1656|                visits.push(adjustedVisits);
+1657|                sumVisits += adjustedVisits;
+1658|            }
+1659|            
+1660|            // Sample based on visit distribution
+1661|            const r = Math.random() * sumVisits;
+1662|            let cumSum = 0;
+1663|            for (let i = 0; i < moves.length; i++) {
+1664|                cumSum += visits[i];
+1665|                if (r <= cumSum) return moves[i];
+1666|            }
+1667|            return moves[moves.length - 1];
+1668|        }
+1669|    }
+1670|    
+1671|    /**
+1672|     * v40: Get move statistics for debugging
+1673|     */
+1674|    getMoveStats() {
+1675|        const stats = [];
+1676|        for (const [move, child] of this.children) {
+1677|            stats.push({
+1678|                move: move,
+1679|                visits: child.visits,
+1680|                Q: child.Q.toFixed(3),
+1681|                prior: child.prior.toFixed(4),
+1682|                puct: child.puctScore.toFixed(3)
+1683|            });
+1684|        }
+1685|        return stats.sort((a, b) => b.visits - a.visits);
+1686|    }
+1687|}
+1688|
+1689|/**
+1690| * v40.0.0: TRUE ALPHAZERO MCTS ENGINE
+1691| * This is the REAL implementation of AlphaZero-style search
+1692| * 
+1693| * The four phases of MCTS:
+1694| * 1. SELECTION: Traverse tree using PUCT until leaf node
+1695| * 2. EXPANSION: Expand leaf node with all legal moves
+1696| * 3. SIMULATION: Evaluate position (value network emulation)
+1697| * 4. BACKPROPAGATION: Propagate value back up the tree
+1698| */
+1699|function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+1700|    if (!CONFIG.v40Enabled) {
+1701|        return null;
+1702|    }
+1703|    
+1704|    debugLog("[V40_MCTS]", "═══════════════════════════════════════════════════════════════");
+1705|    debugLog("[V40_MCTS]", "🦁 TRUE ALPHAZERO MCTS — SUPERHUMAN BEAST MODE ACTIVATED");
+1706|    debugLog("[V40_MCTS]", "═══════════════════════════════════════════════════════════════");
+1707|    
+1708|    try {
+1709|        const board = parseFenToBoard(fen);
+1710|        const activeColor = fen.split(' ')[1];
+1711|        const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+1712|        
+1713|        // Step 1: Initialize or reuse tree
+1714|        v40InitializeOrReuseTree(fen, legalMoves);
+1715|        
+1716|        // Step 2: Run MCTS simulations
+1717|        const numSimulations = CONFIG.v40MCTSSimulations || 10000;
+1718|        
+1719|        debugLog("[V40_MCTS]", `🔄 Running ${numSimulations} MCTS simulations...`);
+1720|        
+1721|        for (let sim = 0; sim < numSimulations; sim++) {
+1722|            // Selection: Traverse tree using PUCT
+1723|            let node = v40MCTSRoot;
+1724|            const path = [node];
+1725|            
+1726|            while (node.isExpanded && !node.isTerminal) {
+1727|                node.addVirtualLoss();
+1728|                node = node.selectChild();
+1729|                if (!node) break;
+1730|                path.push(node);
+1731|            }
+1732|            
+1733|            // Expansion: Expand if not terminal
+1734|            if (node && !node.isTerminal && !node.isExpanded) {
+1735|                // Get legal moves for this position (simplified - use root moves for now)
+1736|                const moves = node === v40MCTSRoot ? legalMoves : getLegalMovesForNode(node, fen, board);
+1737|                if (moves && moves.length > 0) {
+1738|                    node.expand(moves, null, node === v40MCTSRoot);
+1739|                }
+1740|            }
+1741|            
+1742|            // Simulation: Evaluate position using value network emulation
+1743|            let value = 0;
+1744|            if (node) {
+1745|                value = v40ValueNetworkEmulation(fen, node.move, board, activeColor, moveNumber);
+1746|            }
+1747|            
+1748|            // Backpropagation: Propagate value up the tree
+1749|            for (let i = path.length - 1; i >= 0; i--) {
+1750|                path[i].removeVirtualLoss();
+1751|            }
+1752|            
+1753|            if (node) {
+1754|                node.backpropagate(value);
+1755|            }
+1756|            
+1757|            v40TreeStatistics.totalSimulations++;
+1758|        }
+1759|        
+1760|        // Step 3: Select best move based on visit count
+1761|        const temperature = moveNumber <= (CONFIG.v40TemperatureMoves || 30) ? 
+1762|                           (CONFIG.v40Temperature || 1.0) : 
+1763|                           (CONFIG.v40TemperatureDropoff || 0.7);
+1764|        
+1765|        const bestMove = v40MCTSRoot.getBestMove(temperature < 0.5 ? 0 : temperature);
+1766|        
+1767|        // Log statistics
+1768|        const stats = v40MCTSRoot.getMoveStats().slice(0, 5);
+1769|        debugLog("[V40_MCTS]", "📊 Top 5 moves by visit count:");
+1770|        for (const stat of stats) {
+1771|            debugLog("[V40_MCTS]", `   ${stat.move}: visits=${stat.visits}, Q=${stat.Q}, prior=${stat.prior}`);
+1772|        }
+1773|        
+1774|        debugLog("[V40_MCTS]", `🎯 Selected move: ${bestMove}`);
+1775|        debugLog("[V40_MCTS]", `📈 Tree stats: nodes=${v40TreeStatistics.totalNodes}, sims=${v40TreeStatistics.totalSimulations}`);
+1776|        
+1777|        return bestMove;
+1778|        
+1779|    } catch (e) {
+1780|        debugLog("[V40_MCTS]", `⚠️ Error in MCTS: ${e.message}`);
+1781|        return null;
+1782|    }
+1783|}
+1784|
+1785|/**
+1786| * v40: Initialize or reuse the MCTS tree
+1787| * This is key to the persistent tree approach
+1788| */
+1789|function v40InitializeOrReuseTree(fen, legalMoves) {
+1790|    const shouldReuse = CONFIG.v40PersistentTreeEnabled && 
+1791|                        v40MCTSRoot !== null && 
+1792|                        v40LastFEN !== null;
+1793|    
+1794|    if (shouldReuse) {
+1795|        // Try to find the current position in the tree
+1796|        // This would be a child of some previous position
+1797|        let foundNode = null;
+1798|        
+1799|        for (const [move, child] of v40MCTSRoot.children) {
+1800|            // Check if this child led to our current position

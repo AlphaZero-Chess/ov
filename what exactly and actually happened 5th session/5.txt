@@ -1,0 +1,4 @@
+Now let me check the critical calculateMove function to understand how moves are actually selected:
+Action: $ grep -n "function calculateMove\|async function calculateMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 19908:function calculateMove() {
+Exit code: 0

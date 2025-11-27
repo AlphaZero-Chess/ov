@@ -1,0 +1,382 @@
+Let me enhance the v40SuperhumanBeastEvaluate function with better weighting and additional phases:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+    if (!CONFIG.v40Enabled) {
+        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+    }
+    
+    try {
+        const board = parseFenToBoard(fen);
+        const activeColor = fen.split(' ')[1];
+        const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+        
+        debugLog(\"[V40_EVAL]\", `═══════════════════════════════════════════════════════`);
+        debugLog(\"[V40_EVAL]\", `🦁 SUPERHUMAN BEAST EVALUATION for ${candidateMove}`);
+        debugLog(\"[V40_EVAL]\", `═══════════════════════════════════════════════════════`);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 1: MULTI-PASS ZERO BLUNDER VERIFICATION (12 passes)
+        // \"Eliminate blunders by predicting outcomes 30+ moves deep\"
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const blunderResult = v40MultiPassBlunderCheck(fen, candidateMove, board, activeColor);
+        if (!blunderResult.safe) {
+            debugLog(\"[V40_EVAL]\", `🚨 BLUNDER DETECTED: ${blunderResult.reason}`);
+            return blunderResult.penalty;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 2: IMMEDIATE REJECTION OF TERRIBLE MOVES
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const rejectResult = v40ImmediateMoveRejection(candidateMove, board, activeColor, moveNumber);
+        if (rejectResult.reject) {
+            debugLog(\"[V40_EVAL]\", `🛑 IMMEDIATE REJECTION: ${rejectResult.reason}`);
+            return rejectResult.penalty;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 3: VALUE NETWORK EMULATION (Holistic Position Evaluation)
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const valueScore = v40ValueNetworkEmulation(fen, candidateMove, board, activeColor, moveNumber) * 1000;
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 4: 30+ MOVE STRATEGIC HORIZON
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const strategicScore = v40DeepStrategicEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 5: FLAWLESS ENDGAME TECHNIQUE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const endgameScore = v40FlawlessEndgameEvaluation(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 6: WEB-WEAVING (Multi-Front Pressure)
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const webWeavingScore = v40WebWeavingEvaluation(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 7: PATTERN RECOGNITION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const patternScore = v40PatternRecognition(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 8: DELAYED GRATIFICATION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const delayedScore = v40DelayedGratificationEval(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 9: RESILIENCE & COUNTERPLAY
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const resilienceScore = v40ResilienceEvaluation(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 10: INITIATIVE & TEMPO
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const initiativeScore = v40InitiativeEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // COMBINED SUPERHUMAN BEAST SCORE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const totalScore = 
+            blunderResult.score * 0.10 +          // 10% tactical safety
+            valueScore * 0.25 +                   // 25% value network (holistic)
+            strategicScore * 0.20 +               // 20% long-term strategy
+            endgameScore * 0.10 +                 // 10% endgame technique
+            webWeavingScore * 0.10 +              // 10% web-weaving
+            patternScore * 0.08 +                 // 8% pattern recognition
+            delayedScore * 0.07 +                 // 7% delayed gratification
+            resilienceScore * 0.05 +              // 5% resilience
+            initiativeScore * 0.05;               // 5% initiative
+        
+        debugLog(\"[V40_EVAL]\", `📊 Score breakdown for ${candidateMove}:`);
+        debugLog(\"[V40_EVAL]\", `   Tactical: ${blunderResult.score.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Value: ${valueScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Strategic: ${strategicScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Endgame: ${endgameScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   WebWeave: ${webWeavingScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Pattern: ${patternScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Delayed: ${delayedScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Resilience: ${resilienceScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Initiative: ${initiativeScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   🦁 SUPERHUMAN TOTAL: ${totalScore.toFixed(1)}`);
+        
+        return totalScore;
+        
+    } catch (e) {
+        debugLog(\"[V40_EVAL]\", `⚠️ Error: ${e.message}`);
+        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+    }
+}
+
+/**
+ * v40: Multi-Pass Blunder Check (12 verification passes)
+ */" --new-str "function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+    if (!CONFIG.v40Enabled) {
+        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+    }
+    
+    try {
+        const board = parseFenToBoard(fen);
+        const activeColor = fen.split(' ')[1];
+        const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+        
+        debugLog(\"[V40_EVAL]\", `═══════════════════════════════════════════════════════`);
+        debugLog(\"[V40_EVAL]\", `🦁 SUPERHUMAN BEAST v40.1 EVALUATION for ${candidateMove}`);
+        debugLog(\"[V40_EVAL]\", `═══════════════════════════════════════════════════════`);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 1: MULTI-PASS ZERO BLUNDER VERIFICATION (12 passes)
+        // \"Eliminate blunders by predicting outcomes 30+ moves deep\"
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const blunderResult = v40MultiPassBlunderCheck(fen, candidateMove, board, activeColor);
+        if (!blunderResult.safe) {
+            debugLog(\"[V40_EVAL]\", `🚨 BLUNDER DETECTED: ${blunderResult.reason}`);
+            return blunderResult.penalty;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 2: IMMEDIATE REJECTION OF TERRIBLE MOVES
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const rejectResult = v40ImmediateMoveRejection(candidateMove, board, activeColor, moveNumber);
+        if (rejectResult.reject) {
+            debugLog(\"[V40_EVAL]\", `🛑 IMMEDIATE REJECTION: ${rejectResult.reason}`);
+            return rejectResult.penalty;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 3: VALUE NETWORK EMULATION (Holistic Position Evaluation)
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const valueScore = v40ValueNetworkEmulation(fen, candidateMove, board, activeColor, moveNumber) * 1000;
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 4: 30+ MOVE STRATEGIC HORIZON
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const strategicScore = v40DeepStrategicEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 5: FLAWLESS ENDGAME TECHNIQUE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const endgameScore = v40FlawlessEndgameEvaluation(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 6: WEB-WEAVING (Multi-Front Pressure)
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const webWeavingScore = v40WebWeavingEvaluation(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 7: PATTERN RECOGNITION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const patternScore = v40PatternRecognition(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 8: DELAYED GRATIFICATION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const delayedScore = v40DelayedGratificationEval(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 9: RESILIENCE & COUNTERPLAY
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const resilienceScore = v40ResilienceEvaluation(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE 10: INITIATIVE & TEMPO
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const initiativeScore = v40InitiativeEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // v40.1: ADDITIONAL PHASES FOR TRUE ALPHAZERO DOMINANCE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // PHASE 11: King Safety Deep Analysis
+        const kingSafetyScore = v40DeepKingSafetyAnalysis(fen, candidateMove, board, activeColor, moveNumber);
+        
+        // PHASE 12: File and Diagonal Control
+        const fileControlScore = v40FileAndDiagonalControl(fen, candidateMove, board, activeColor);
+        
+        // PHASE 13: Piece Coordination (web-weaving precursor)
+        const coordinationScore = v40PieceCoordinationEval(fen, candidateMove, board, activeColor);
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // v40.1: COMBINED SUPERHUMAN BEAST SCORE — REBALANCED WEIGHTS
+        // Increased emphasis on safety, file control, and initiative
+        // ═══════════════════════════════════════════════════════════════════
+        
+        const totalScore = 
+            blunderResult.score * 0.08 +          // 8% tactical safety base
+            valueScore * 0.20 +                   // 20% value network (holistic)
+            strategicScore * 0.15 +               // 15% long-term strategy
+            endgameScore * 0.08 +                 // 8% endgame technique
+            webWeavingScore * 0.08 +              // 8% web-weaving
+            patternScore * 0.06 +                 // 6% pattern recognition
+            delayedScore * 0.05 +                 // 5% delayed gratification
+            resilienceScore * 0.04 +              // 4% resilience
+            initiativeScore * 0.10 +              // 10% initiative (INCREASED)
+            kingSafetyScore * 0.08 +              // 8% king safety (NEW)
+            fileControlScore * 0.04 +             // 4% file control (NEW)
+            coordinationScore * 0.04;             // 4% coordination (NEW)
+        
+        debugLog(\"[V40_EVAL]\", `📊 Score breakdown for ${candidateMove}:`);
+        debugLog(\"[V40_EVAL]\", `   Tactical: ${blunderResult.score.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Value: ${valueScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Strategic: ${strategicScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Endgame: ${endgameScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   WebWeave: ${webWeavingScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Pattern: ${patternScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Delayed: ${delayedScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Resilience: ${resilienceScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Initiative: ${initiativeScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   KingSafety: ${kingSafetyScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   FileControl: ${fileControlScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   Coordination: ${coordinationScore.toFixed(0)}`);
+        debugLog(\"[V40_EVAL]\", `   🦁 SUPERHUMAN TOTAL: ${totalScore.toFixed(1)}`);
+        
+        return totalScore;
+        
+    } catch (e) {
+        debugLog(\"[V40_EVAL]\", `⚠️ Error: ${e.message}`);
+        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+    }
+}
+
+/**
+ * v40.1: Deep King Safety Analysis
+ * Prevents disasters from weak king positions
+ */
+function v40DeepKingSafetyAnalysis(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    
+    try {
+        const ourKing = findKing(board, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]) - 1;
+        
+        // After castling, king should be safe
+        const hasCastled = (activeColor === 'w' && (kingFile === 6 || kingFile === 2)) ||
+                          (activeColor === 'b' && (kingFile === 6 || kingFile === 2));
+        
+        if (!hasCastled && moveNumber > 10) {
+            score -= 300;  // Penalty for not castling
+        }
+        
+        // Evaluate pawn shield
+        if (hasCastled) {
+            const shieldScore = evaluatePawnShield(board, activeColor, ourKing);
+            score += shieldScore;
+        }
+        
+        // King in center after move 10 is dangerous
+        if (moveNumber > 10 && kingFile >= 3 && kingFile <= 4) {
+            score -= 400;
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_KING]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.1: File and Diagonal Control
+ */
+function v40FileAndDiagonalControl(fen, move, board, activeColor) {
+    let score = 0;
+    
+    try {
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(move.substring(0, 2));
+        
+        if (!movingPiece) return 0;
+        
+        const pieceType = movingPiece.toLowerCase();
+        
+        // Rook file control
+        if (pieceType === 'r') {
+            const file = toSquare[0];
+            if (isOpenFile(file, board)) {
+                score += 400;
+            }
+        }
+        
+        // Bishop diagonal control
+        if (pieceType === 'b') {
+            if (isLongDiagonal(toSquare)) {
+                score += 300;
+            }
+        }
+        
+        // Queen file/diagonal control
+        if (pieceType === 'q') {
+            const file = toSquare[0];
+            if (isOpenFile(file, board)) {
+                score += 200;
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_FILE_DIAG]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.1: Piece Coordination Evaluation
+ */
+function v40PieceCoordinationEval(fen, move, board, activeColor) {
+    let score = 0;
+    
+    try {
+        const toSquare = move.substring(2, 4);
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toRank = parseInt(toSquare[1]) - 1;
+        
+        // Count friendly pieces near the target square
+        let friendlyNearby = 0;
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+            if (!isOurs) continue;
+            
+            const sqFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const sqRank = parseInt(square[1]) - 1;
+            
+            if (Math.abs(sqFile - toFile) <= 2 && Math.abs(sqRank - toRank) <= 2) {
+                friendlyNearby++;
+            }
+        }
+        
+        score += friendlyNearby * 50;  // Bonus for piece coordination
+        
+    } catch (e) {
+        debugLog(\"[V40_COORD]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40: Multi-Pass Blunder Check (12 verification passes)
+ */"
+Observation: Edit was successful.

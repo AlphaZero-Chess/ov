@@ -1,0 +1,124 @@
+Now let me also enhance the v40SuperhumanBeastEvaluate function to include deeper analysis and better weighting:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2325|function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+2326|    if (!CONFIG.v40Enabled) {
+2327|        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+2328|    }
+2329|    
+2330|    try {
+2331|        const board = parseFenToBoard(fen);
+2332|        const activeColor = fen.split(' ')[1];
+2333|        const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+2334|        
+2335|        debugLog("[V40_EVAL]", `═══════════════════════════════════════════════════════`);
+2336|        debugLog("[V40_EVAL]", `🦁 SUPERHUMAN BEAST EVALUATION for ${candidateMove}`);
+2337|        debugLog("[V40_EVAL]", `═══════════════════════════════════════════════════════`);
+2338|        
+2339|        // ═══════════════════════════════════════════════════════════════════
+2340|        // PHASE 1: MULTI-PASS ZERO BLUNDER VERIFICATION (12 passes)
+2341|        // "Eliminate blunders by predicting outcomes 30+ moves deep"
+2342|        // ═══════════════════════════════════════════════════════════════════
+2343|        
+2344|        const blunderResult = v40MultiPassBlunderCheck(fen, candidateMove, board, activeColor);
+2345|        if (!blunderResult.safe) {
+2346|            debugLog("[V40_EVAL]", `🚨 BLUNDER DETECTED: ${blunderResult.reason}`);
+2347|            return blunderResult.penalty;
+2348|        }
+2349|        
+2350|        // ═══════════════════════════════════════════════════════════════════
+2351|        // PHASE 2: IMMEDIATE REJECTION OF TERRIBLE MOVES
+2352|        // ═══════════════════════════════════════════════════════════════════
+2353|        
+2354|        const rejectResult = v40ImmediateMoveRejection(candidateMove, board, activeColor, moveNumber);
+2355|        if (rejectResult.reject) {
+2356|            debugLog("[V40_EVAL]", `🛑 IMMEDIATE REJECTION: ${rejectResult.reason}`);
+2357|            return rejectResult.penalty;
+2358|        }
+2359|        
+2360|        // ═══════════════════════════════════════════════════════════════════
+2361|        // PHASE 3: VALUE NETWORK EMULATION (Holistic Position Evaluation)
+2362|        // ═══════════════════════════════════════════════════════════════════
+2363|        
+2364|        const valueScore = v40ValueNetworkEmulation(fen, candidateMove, board, activeColor, moveNumber) * 1000;
+2365|        
+2366|        // ═══════════════════════════════════════════════════════════════════
+2367|        // PHASE 4: 30+ MOVE STRATEGIC HORIZON
+2368|        // ═══════════════════════════════════════════════════════════════════
+2369|        
+2370|        const strategicScore = v40DeepStrategicEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+2371|        
+2372|        // ═══════════════════════════════════════════════════════════════════
+2373|        // PHASE 5: FLAWLESS ENDGAME TECHNIQUE
+2374|        // ═══════════════════════════════════════════════════════════════════
+2375|        
+2376|        const endgameScore = v40FlawlessEndgameEvaluation(fen, candidateMove, board, activeColor);
+2377|        
+2378|        // ═══════════════════════════════════════════════════════════════════
+2379|        // PHASE 6: WEB-WEAVING (Multi-Front Pressure)
+2380|        // ═══════════════════════════════════════════════════════════════════
+2381|        
+2382|        const webWeavingScore = v40WebWeavingEvaluation(fen, candidateMove, board, activeColor);
+2383|        
+2384|        // ═══════════════════════════════════════════════════════════════════
+2385|        // PHASE 7: PATTERN RECOGNITION
+2386|        // ═══════════════════════════════════════════════════════════════════
+2387|        
+2388|        const patternScore = v40PatternRecognition(fen, candidateMove, board, activeColor);
+2389|        
+2390|        // ═══════════════════════════════════════════════════════════════════
+2391|        // PHASE 8: DELAYED GRATIFICATION
+2392|        // ═══════════════════════════════════════════════════════════════════
+2393|        
+2394|        const delayedScore = v40DelayedGratificationEval(fen, candidateMove, board, activeColor, moveNumber);
+2395|        
+2396|        // ═══════════════════════════════════════════════════════════════════
+2397|        // PHASE 9: RESILIENCE & COUNTERPLAY
+2398|        // ═══════════════════════════════════════════════════════════════════
+2399|        
+2400|        const resilienceScore = v40ResilienceEvaluation(fen, candidateMove, board, activeColor);
+2401|        
+2402|        // ═══════════════════════════════════════════════════════════════════
+2403|        // PHASE 10: INITIATIVE & TEMPO
+2404|        // ═══════════════════════════════════════════════════════════════════
+2405|        
+2406|        const initiativeScore = v40InitiativeEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+2407|        
+2408|        // ═══════════════════════════════════════════════════════════════════
+2409|        // COMBINED SUPERHUMAN BEAST SCORE
+2410|        // ═══════════════════════════════════════════════════════════════════
+2411|        
+2412|        const totalScore = 
+2413|            blunderResult.score * 0.10 +          // 10% tactical safety
+2414|            valueScore * 0.25 +                   // 25% value network (holistic)
+2415|            strategicScore * 0.20 +               // 20% long-term strategy
+2416|            endgameScore * 0.10 +                 // 10% endgame technique
+2417|            webWeavingScore * 0.10 +              // 10% web-weaving
+2418|            patternScore * 0.08 +                 // 8% pattern recognition
+2419|            delayedScore * 0.07 +                 // 7% delayed gratification
+2420|            resilienceScore * 0.05 +              // 5% resilience
+2421|            initiativeScore * 0.05;               // 5% initiative
+2422|        
+2423|        debugLog("[V40_EVAL]", `📊 Score breakdown for ${candidateMove}:`);
+2424|        debugLog("[V40_EVAL]", `   Tactical: ${blunderResult.score.toFixed(0)}`);
+2425|        debugLog("[V40_EVAL]", `   Value: ${valueScore.toFixed(0)}`);
+2426|        debugLog("[V40_EVAL]", `   Strategic: ${strategicScore.toFixed(0)}`);
+2427|        debugLog("[V40_EVAL]", `   Endgame: ${endgameScore.toFixed(0)}`);
+2428|        debugLog("[V40_EVAL]", `   WebWeave: ${webWeavingScore.toFixed(0)}`);
+2429|        debugLog("[V40_EVAL]", `   Pattern: ${patternScore.toFixed(0)}`);
+2430|        debugLog("[V40_EVAL]", `   Delayed: ${delayedScore.toFixed(0)}`);
+2431|        debugLog("[V40_EVAL]", `   Resilience: ${resilienceScore.toFixed(0)}`);
+2432|        debugLog("[V40_EVAL]", `   Initiative: ${initiativeScore.toFixed(0)}`);
+2433|        debugLog("[V40_EVAL]", `   🦁 SUPERHUMAN TOTAL: ${totalScore.toFixed(1)}`);
+2434|        
+2435|        return totalScore;
+2436|        
+2437|    } catch (e) {
+2438|        debugLog("[V40_EVAL]", `⚠️ Error: ${e.message}`);
+2439|        return v38SuperhumanMCTSEvaluate(fen, candidateMove, depth);
+2440|    }
+2441|}
+2442|
+2443|/**
+2444| * v40: Multi-Pass Blunder Check (12 verification passes)
+2445| */
