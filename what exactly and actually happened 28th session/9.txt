@@ -1,0 +1,16 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30018|                
+30019|                // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
+30020|                const badExchangeFileScore = v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) * 2.5;
+30021|                
+30022|                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms
+30023|                const pawnStormScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 2.0;
+30024|                
+30025|                // v40.11: DEFEND KINGSIDE PRIORITY — Prioritize kingside defense when attacked
+30026|                const defendKingsideScore = v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+30027|                
+30028|                // v40.11: KINGSIDE PAWN WEAKNESS — Detect h3/g3 pawn weaknesses
+30029|                const kingsidePawnWeaknessScore = v40KingsidePawnWeaknessEval(fen, move, board, activeColor, moveNumber) * 2.0;
+30030|                

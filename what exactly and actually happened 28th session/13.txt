@@ -1,0 +1,110 @@
+All the helper functions exist. Now let me analyze the recent game the user shared to understand what's still going wrong. Let me look at the functions that should be working:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+14694| */
+14695|function v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) {
+14696|    if (!CONFIG.v40ForcingLineRejectionEnabled) return 0;
+14697|    
+14698|    let score = 0;
+14699|    const isWhite = activeColor === 'w';
+14700|    const enemyColor = isWhite ? 'b' : 'w';
+14701|    
+14702|    try {
+14703|        const fromSquare = move.substring(0, 2);
+14704|        const toSquare = move.substring(2, 4);
+14705|        const movingPiece = board.get(fromSquare);
+14706|        
+14707|        if (!movingPiece) return 0;
+14708|        
+14709|        // Simulate our move
+14710|        const afterPly1 = new Map(board);
+14711|        afterPly1.delete(fromSquare);
+14712|        afterPly1.set(toSquare, movingPiece);
+14713|        
+14714|        // Find our king
+14715|        let ourKingSquare = null;
+14716|        for (const [sq, piece] of afterPly1) {
+14717|            if (!piece) continue;
+14718|            const pieceIsWhite = piece === piece.toUpperCase();
+14719|            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+14720|                ourKingSquare = sq;
+14721|                break;
+14722|            }
+14723|        }
+14724|        
+14725|        if (!ourKingSquare) return 0;
+14726|        
+14727|        // Check for forcing sequences (checks, captures, threats)
+14728|        
+14729|        // PLY 2: Opponent's checks
+14730|        const opponentChecks = findAllChecksForColor(afterPly1, enemyColor, activeColor);
+14731|        
+14732|        for (const check of opponentChecks) {
+14733|            const afterCheck = new Map(afterPly1);
+14734|            afterCheck.delete(check.from);
+14735|            afterCheck.set(check.to, check.piece);
+14736|            
+14737|            // Find our king's escape squares
+14738|            const escapes = findKingEscapeSquares(afterCheck, ourKingSquare, activeColor);
+14739|            
+14740|            // PLY 3: After we escape, can opponent continue forcing?
+14741|            for (const escape of escapes) {
+14742|                const afterEscape = new Map(afterCheck);
+14743|                const king = afterEscape.get(ourKingSquare);
+14744|                afterEscape.delete(ourKingSquare);
+14745|                afterEscape.set(escape, king);
+14746|                
+14747|                // Check if opponent can continue with another check or capture
+14748|                const continueChecks = findAllChecksForColor(afterEscape, enemyColor, activeColor);
+14749|                const continueCaptures = findAllCapturesForColor(afterEscape, enemyColor);
+14750|                
+14751|                // Filter valuable captures
+14752|                const valuableCaptures = continueCaptures.filter(c => 
+14753|                    getPieceValueSimple(c.capturedPiece.toLowerCase()) >= 3);
+14754|                
+14755|                if (continueChecks.length >= 2 || valuableCaptures.length >= 1) {
+14756|                    score += CONFIG.v40ForcingLineLosesMaterialPenalty || -15000000;
+14757|                    debugLog("[V40.16_FORCE]", `☠️ After ${move}, opponent has forcing sequence ${check.from}->${check.to} with followup!`);
+14758|                }
+14759|            }
+14760|            
+14761|            // Check for mate threats
+14762|            if (escapes.length === 0) {
+14763|                // Is it checkmate?
+14764|                // Need to check if any piece can block
+14765|                // Simplified: if no escapes and in check = very bad
+14766|                score += CONFIG.v40ForcingLineLeadsToMatePenalty || -100000000;
+14767|                debugLog("[V40.16_FORCE]", `☠️☠️☠️ After ${move}, opponent check ${check.from}->${check.to} may lead to MATE!`);
+14768|            }
+14769|        }
+14770|        
+14771|    } catch (e) {
+14772|        debugLog("[V40.16_FORCE]", `Error: ${e.message}`);
+14773|    }
+14774|    
+14775|    return score;
+14776|}
+14777|
+14778|// ═══════════════════════════════════════════════════════════════════════════════
+14779|
+14780|/**
+14781| * v40.9 Helper: Find all attacked pieces for a color
+14782| */
+14783|function findAttackedPiecesV40_9(board, color) {
+14784|    const attacked = [];
+14785|    const isWhite = color === 'w';
+14786|    const enemyColor = isWhite ? 'b' : 'w';
+14787|    
+14788|    for (const [square, piece] of board) {
+14789|        if (!piece) continue;
+14790|        const pieceIsWhite = piece === piece.toUpperCase();
+14791|        if (pieceIsWhite !== isWhite) continue;
+14792|        
+14793|        const pieceType = piece.toLowerCase();
+14794|        if (pieceType === 'k') continue;  // King attacks handled separately
+14795|        
+14796|        // Check if this square is attacked by enemy
+14797|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+14798|            // Check if it's adequately defended
+14799|            const isDefended = isSquareDefendedByColor(board, square, color);
+14800|            

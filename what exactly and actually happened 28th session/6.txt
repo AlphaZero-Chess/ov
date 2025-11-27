@@ -1,0 +1,9 @@
+I can see there's an older v40.11 version (simpler) of the function at 11543-11624, and the newer v40.16 version (more comprehensive) at 13967. The v40.16 version is the one that should be used since it's more thorough. 
+
+The duplicate needs to be renamed or removed. I'll rename the first one to indicate it's the v40.11 version, since both are being called from different places. Let me check where it's called:
+Action: $ cd /app && grep -n "v40PawnStormDetectionEval" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 11543:function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+13967:function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+30022:                const pawnStormScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 2.0;
+30123:                const pawnStormDetectionScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 10.0;
+Exit code: 0

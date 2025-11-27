@@ -1,0 +1,24 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13960|    return score;
+13961|}
+13962|
+13963|/**
+13964| * v40.16 PAWN STORM DETECTION: Detect enemy pawn storms BEFORE they destroy us
+13965| * Specifically detects f5-f4-fxg3 type sequences
+13966| */
+13967|function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+13968|    if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
+13969|    
+13970|    let score = 0;
+13971|    const isWhite = activeColor === 'w';
+13972|    const enemyColor = isWhite ? 'b' : 'w';
+13973|    
+13974|    try {
+13975|        const fromSquare = move.substring(0, 2);
+13976|        const toSquare = move.substring(2, 4);
+13977|        const movingPiece = board.get(fromSquare);
+13978|        
+13979|        if (!movingPiece) return 0;
+13980|        

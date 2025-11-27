@@ -1,0 +1,24 @@
+The functions exist. However I see there's a duplicate `v40PawnStormDetectionEval` function (lines 11543 and 13967). Let me check and view the current state of the file more carefully:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+11540| * Detect f5/f4 pawn storms and respond appropriately
+11541| * From French Defense loss: f5, f4, fxg3 pawn storm destroyed kingside
+11542| */
+11543|function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+11544|    if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
+11545|    
+11546|    let score = 0;
+11547|    const isWhite = activeColor === 'w';
+11548|    const enemyPawnChar = isWhite ? 'p' : 'P';
+11549|    
+11550|    try {
+11551|        // Find enemy pawns on f, g, h files
+11552|        let enemyFPawn = null;
+11553|        let enemyGPawn = null;
+11554|        let enemyHPawn = null;
+11555|        
+11556|        for (const [sq, piece] of board) {
+11557|            if (piece === enemyPawnChar) {
+11558|                const file = sq[0];
+11559|                const rank = parseInt(sq[1]);
+11560|                

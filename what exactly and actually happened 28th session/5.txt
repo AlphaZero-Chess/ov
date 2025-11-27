@@ -1,0 +1,174 @@
+There's a duplicate function. The second one at line 13967 is the more comprehensive v40.16 version. Let me remove the duplicate (older) one at 11543. First let me see what's before and after it to remove it properly:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+11530|        
+11531|    } catch (e) {
+11532|        debugLog("[V40.11_EXCHANGE]", `Error: ${e.message}`);
+11533|    }
+11534|    
+11535|    return score;
+11536|}
+11537|
+11538|/**
+11539| * v40.11 TRANSCENDENT SUPREME: PAWN STORM DETECTION
+11540| * Detect f5/f4 pawn storms and respond appropriately
+11541| * From French Defense loss: f5, f4, fxg3 pawn storm destroyed kingside
+11542| */
+11543|function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+11544|    if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
+11545|    
+11546|    let score = 0;
+11547|    const isWhite = activeColor === 'w';
+11548|    const enemyPawnChar = isWhite ? 'p' : 'P';
+11549|    
+11550|    try {
+11551|        // Find enemy pawns on f, g, h files
+11552|        let enemyFPawn = null;
+11553|        let enemyGPawn = null;
+11554|        let enemyHPawn = null;
+11555|        
+11556|        for (const [sq, piece] of board) {
+11557|            if (piece === enemyPawnChar) {
+11558|                const file = sq[0];
+11559|                const rank = parseInt(sq[1]);
+11560|                
+11561|                if (file === 'f') {
+11562|                    if (!enemyFPawn || (isWhite ? rank < parseInt(enemyFPawn[1]) : rank > parseInt(enemyFPawn[1]))) {
+11563|                        enemyFPawn = sq;
+11564|                    }
+11565|                }
+11566|                if (file === 'g') {
+11567|                    if (!enemyGPawn || (isWhite ? rank < parseInt(enemyGPawn[1]) : rank > parseInt(enemyGPawn[1]))) {
+11568|                        enemyGPawn = sq;
+11569|                    }
+11570|                }
+11571|                if (file === 'h') {
+11572|                    if (!enemyHPawn || (isWhite ? rank < parseInt(enemyHPawn[1]) : rank > parseInt(enemyHPawn[1]))) {
+11573|                        enemyHPawn = sq;
+11574|                    }
+11575|                }
+11576|            }
+11577|        }
+11578|        
+11579|        // PAWN STORM DETECTION
+11580|        // For white: enemy pawns on f4/f5, g4/g5 = storm
+11581|        // For black: enemy pawns on f3/f4, g3/g4 = storm
+11582|        
+11583|        const dangerousRanks = isWhite ? [3, 4, 5] : [4, 5, 6];
+11584|        
+11585|        if (enemyFPawn) {
+11586|            const fRank = parseInt(enemyFPawn[1]);
+11587|            if (isWhite && (fRank === 4 || fRank === 5)) {
+11588|                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+11589|                debugLog("[V40.11_STORM]", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+11590|            }
+11591|            if (!isWhite && (fRank === 3 || fRank === 4)) {
+11592|                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+11593|                debugLog("[V40.11_STORM]", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+11594|            }
+11595|        }
+11596|        
+11597|        if (enemyGPawn) {
+11598|            const gRank = parseInt(enemyGPawn[1]);
+11599|            if (isWhite && (gRank === 4 || gRank === 5)) {
+11600|                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+11601|                debugLog("[V40.11_STORM]", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+11602|            }
+11603|            if (!isWhite && (gRank === 3 || gRank === 4)) {
+11604|                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+11605|                debugLog("[V40.11_STORM]", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+11606|            }
+11607|        }
+11608|        
+11609|        // BONUS for moves that defend against pawn storm
+11610|        const toSquare = move.substring(2, 4);
+11611|        if (['f', 'g', 'h'].includes(toSquare[0])) {
+11612|            const movingPiece = board.get(move.substring(0, 2));
+11613|            if (movingPiece && ['n', 'b', 'r'].includes(movingPiece.toLowerCase())) {
+11614|                score += CONFIG.v40DefendAgainstPawnStormBonus || 180000;
+11615|                debugLog("[V40.11_STORM]", `✅ Piece to ${toSquare} defending against storm!`);
+11616|            }
+11617|        }
+11618|        
+11619|    } catch (e) {
+11620|        debugLog("[V40.11_STORM]", `Error: ${e.message}`);
+11621|    }
+11622|    
+11623|    return score;
+11624|}
+11625|
+11626|/**
+11627| * v40.11 TRANSCENDENT SUPREME: DEFEND KINGSIDE PRIORITY
+11628| * When under attack, prioritize moves that defend the king
+11629| */
+11630|function v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) {
+11631|    if (!CONFIG.v40DefendKingsidePriorityEnabled) return 0;
+11632|    
+11633|    let score = 0;
+11634|    const isWhite = activeColor === 'w';
+11635|    
+11636|    try {
+11637|        // Find our king
+11638|        let ourKing = null;
+11639|        for (const [sq, piece] of board) {
+11640|            if (piece && piece.toLowerCase() === 'k') {
+11641|                const pieceIsWhite = piece === piece.toUpperCase();
+11642|                if (pieceIsWhite === isWhite) {
+11643|                    ourKing = sq;
+11644|                    break;
+11645|                }
+11646|            }
+11647|        }
+11648|        
+11649|        if (!ourKing) return 0;
+11650|        
+11651|        const kingFile = ourKing.charCodeAt(0) - 97;
+11652|        const kingRank = parseInt(ourKing[1]);
+11653|        
+11654|        // Check if kingside is under attack
+11655|        const kingsideUnderAttack = isKingsideUnderAttack(board, activeColor);
+11656|        
+11657|        if (!kingsideUnderAttack) return 0;
+11658|        
+11659|        const fromSquare = move.substring(0, 2);
+11660|        const toSquare = move.substring(2, 4);
+11661|        const movingPiece = board.get(fromSquare);
+11662|        
+11663|        if (!movingPiece) return 0;
+11664|        
+11665|        const fromFile = fromSquare.charCodeAt(0) - 97;
+11666|        const toFile = toSquare.charCodeAt(0) - 97;
+11667|        const fromRank = parseInt(fromSquare[1]);
+11668|        const toRank = parseInt(toSquare[1]);
+11669|        
+11670|        const pieceType = movingPiece.toLowerCase();
+11671|        
+11672|        // Calculate distance to king before and after
+11673|        const distBefore = Math.abs(fromFile - kingFile) + Math.abs(fromRank - kingRank);
+11674|        const distAfter = Math.abs(toFile - kingFile) + Math.abs(toRank - kingRank);
+11675|        
+11676|        // BONUS: Moving piece toward king when under attack
+11677|        if (distAfter < distBefore && ['n', 'b', 'r', 'q'].includes(pieceType)) {
+11678|            score += CONFIG.v40MoveTowardKingBonus || 150000;
+11679|            debugLog("[V40.11_DEFEND]", `✅ ${pieceType.toUpperCase()} moving toward king for defense: ${move}`);
+11680|        }
+11681|        
+11682|        // PENALTY: Moving defensive piece away from king
+11683|        if (distAfter > distBefore && distBefore <= 3 && ['n', 'r'].includes(pieceType)) {
+11684|            score += CONFIG.v40MoveAwayFromKingPenalty || -200000;
+11685|            debugLog("[V40.11_DEFEND]", `🚨 ${pieceType.toUpperCase()} moving AWAY from king during attack!`);
+11686|        }
+11687|        
+11688|        // BONUS: Exchanging an attacking piece
+11689|        const targetPiece = board.get(toSquare);
+11690|        if (targetPiece) {
+11691|            const targetType = targetPiece.toLowerCase();
+11692|            const targetFile = toFile;
+11693|            
+11694|            // If capturing a piece on kingside that's attacking
+11695|            if (targetFile >= 4 && ['q', 'r', 'b', 'n'].includes(targetType)) {
+11696|                score += CONFIG.v40ExchangeAttackerBonus || 200000;
+11697|                debugLog("[V40.11_DEFEND]", `✅ Exchanging attacking ${targetType.toUpperCase()}!`);
+11698|            }
+11699|        }
+11700|        

@@ -1,0 +1,5 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms
+                const pawnStormScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 2.0;" --new-str "                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms (v40.11 version)
+                const pawnStormScore = v40PawnStormDetectionEvalV11(fen, move, board, activeColor, moveNumber) * 2.0;"
+Observation: Edit was successful.

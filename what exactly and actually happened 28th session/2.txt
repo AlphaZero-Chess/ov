@@ -1,0 +1,10 @@
+
+Action: $ cd /app && grep -n "function v40KingsidePawnShelterEval\|function v40ForcingLineRejectionEval\|function v40DeepLookAheadEval\|function v40QueenInfiltrationPathEval\|function v40PawnStormDetectionEval\|function v40FileOpeningTowardKingEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 11543:function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+13857:function v40FileOpeningTowardKingEval(fen, move, board, activeColor, moveNumber) {
+13967:function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+14096:function v40QueenInfiltrationPathEval(fen, move, board, activeColor, moveNumber) {
+14222:function v40DeepLookAheadEval(fen, move, board, activeColor, moveNumber) {
+14596:function v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) {
+14694:function v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

@@ -1,0 +1,180 @@
+I see! There are two calls - one at 30022 (pawnStormScore) and one at 30123 (pawnStormDetectionScore). The second one has a higher multiplier (10.0 vs 2.0). The duplicate function will cause JavaScript to use the last definition.
+
+Actually in JavaScript, the last function definition wins. So the v40.16 version at line 13967 will be the one that's actually used. However, having duplicates is bad practice.
+
+Let me rename the older v40.11 version to make it clear what it is:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "/**
+ * v40.11 TRANSCENDENT SUPREME: PAWN STORM DETECTION
+ * Detect f5/f4 pawn storms and respond appropriately
+ * From French Defense loss: f5, f4, fxg3 pawn storm destroyed kingside
+ */
+function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyPawnChar = isWhite ? 'p' : 'P';
+    
+    try {
+        // Find enemy pawns on f, g, h files
+        let enemyFPawn = null;
+        let enemyGPawn = null;
+        let enemyHPawn = null;
+        
+        for (const [sq, piece] of board) {
+            if (piece === enemyPawnChar) {
+                const file = sq[0];
+                const rank = parseInt(sq[1]);
+                
+                if (file === 'f') {
+                    if (!enemyFPawn || (isWhite ? rank < parseInt(enemyFPawn[1]) : rank > parseInt(enemyFPawn[1]))) {
+                        enemyFPawn = sq;
+                    }
+                }
+                if (file === 'g') {
+                    if (!enemyGPawn || (isWhite ? rank < parseInt(enemyGPawn[1]) : rank > parseInt(enemyGPawn[1]))) {
+                        enemyGPawn = sq;
+                    }
+                }
+                if (file === 'h') {
+                    if (!enemyHPawn || (isWhite ? rank < parseInt(enemyHPawn[1]) : rank > parseInt(enemyHPawn[1]))) {
+                        enemyHPawn = sq;
+                    }
+                }
+            }
+        }
+        
+        // PAWN STORM DETECTION
+        // For white: enemy pawns on f4/f5, g4/g5 = storm
+        // For black: enemy pawns on f3/f4, g3/g4 = storm
+        
+        const dangerousRanks = isWhite ? [3, 4, 5] : [4, 5, 6];
+        
+        if (enemyFPawn) {
+            const fRank = parseInt(enemyFPawn[1]);
+            if (isWhite && (fRank === 4 || fRank === 5)) {
+                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+            }
+            if (!isWhite && (fRank === 3 || fRank === 4)) {
+                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+            }
+        }
+        
+        if (enemyGPawn) {
+            const gRank = parseInt(enemyGPawn[1]);
+            if (isWhite && (gRank === 4 || gRank === 5)) {
+                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+            }
+            if (!isWhite && (gRank === 3 || gRank === 4)) {
+                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+            }
+        }
+        
+        // BONUS for moves that defend against pawn storm
+        const toSquare = move.substring(2, 4);
+        if (['f', 'g', 'h'].includes(toSquare[0])) {
+            const movingPiece = board.get(move.substring(0, 2));
+            if (movingPiece && ['n', 'b', 'r'].includes(movingPiece.toLowerCase())) {
+                score += CONFIG.v40DefendAgainstPawnStormBonus || 180000;
+                debugLog(\"[V40.11_STORM]\", `✅ Piece to ${toSquare} defending against storm!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.11_STORM]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}" --new-str "/**
+ * v40.11 TRANSCENDENT SUPREME: PAWN STORM DETECTION (Legacy v40.11 version)
+ * Detect f5/f4 pawn storms and respond appropriately
+ * From French Defense loss: f5, f4, fxg3 pawn storm destroyed kingside
+ * NOTE: This is the older v40.11 version - v40.16 version below is more comprehensive
+ */
+function v40PawnStormDetectionEvalV11(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyPawnChar = isWhite ? 'p' : 'P';
+    
+    try {
+        // Find enemy pawns on f, g, h files
+        let enemyFPawn = null;
+        let enemyGPawn = null;
+        let enemyHPawn = null;
+        
+        for (const [sq, piece] of board) {
+            if (piece === enemyPawnChar) {
+                const file = sq[0];
+                const rank = parseInt(sq[1]);
+                
+                if (file === 'f') {
+                    if (!enemyFPawn || (isWhite ? rank < parseInt(enemyFPawn[1]) : rank > parseInt(enemyFPawn[1]))) {
+                        enemyFPawn = sq;
+                    }
+                }
+                if (file === 'g') {
+                    if (!enemyGPawn || (isWhite ? rank < parseInt(enemyGPawn[1]) : rank > parseInt(enemyGPawn[1]))) {
+                        enemyGPawn = sq;
+                    }
+                }
+                if (file === 'h') {
+                    if (!enemyHPawn || (isWhite ? rank < parseInt(enemyHPawn[1]) : rank > parseInt(enemyHPawn[1]))) {
+                        enemyHPawn = sq;
+                    }
+                }
+            }
+        }
+        
+        // PAWN STORM DETECTION
+        // For white: enemy pawns on f4/f5, g4/g5 = storm
+        // For black: enemy pawns on f3/f4, g3/g4 = storm
+        
+        const dangerousRanks = isWhite ? [3, 4, 5] : [4, 5, 6];
+        
+        if (enemyFPawn) {
+            const fRank = parseInt(enemyFPawn[1]);
+            if (isWhite && (fRank === 4 || fRank === 5)) {
+                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+            }
+            if (!isWhite && (fRank === 3 || fRank === 4)) {
+                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+            }
+        }
+        
+        if (enemyGPawn) {
+            const gRank = parseInt(enemyGPawn[1]);
+            if (isWhite && (gRank === 4 || gRank === 5)) {
+                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+            }
+            if (!isWhite && (gRank === 3 || gRank === 4)) {
+                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+                debugLog(\"[V40.11_STORM]\", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+            }
+        }
+        
+        // BONUS for moves that defend against pawn storm
+        const toSquare = move.substring(2, 4);
+        if (['f', 'g', 'h'].includes(toSquare[0])) {
+            const movingPiece = board.get(move.substring(0, 2));
+            if (movingPiece && ['n', 'b', 'r'].includes(movingPiece.toLowerCase())) {
+                score += CONFIG.v40DefendAgainstPawnStormBonus || 180000;
+                debugLog(\"[V40.11_STORM]\", `✅ Piece to ${toSquare} defending against storm!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.11_STORM]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}"
+Observation: Edit was successful.

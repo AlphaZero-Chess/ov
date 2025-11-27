@@ -1,0 +1,4 @@
+Now update the call to use the v40.11 version at line 30022:
+Action: $ cd /app && grep -n "const pawnStormScore = v40PawnStormDetectionEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 30023:                const pawnStormScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 2.0;
+Exit code: 0

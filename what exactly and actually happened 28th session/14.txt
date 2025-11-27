@@ -1,0 +1,103 @@
+Now let me look at the v40KingsidePawnShelterEval function which was mentioned as being added:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+14596| */
+14597|function v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) {
+14598|    if (!CONFIG.v40KingsidePawnShelterEnabled) return 0;
+14599|    
+14600|    let score = 0;
+14601|    const isWhite = activeColor === 'w';
+14602|    
+14603|    try {
+14604|        const fromSquare = move.substring(0, 2);
+14605|        const toSquare = move.substring(2, 4);
+14606|        const movingPiece = board.get(fromSquare);
+14607|        
+14608|        if (!movingPiece) return 0;
+14609|        
+14610|        // Simulate our move
+14611|        const afterMove = new Map(board);
+14612|        afterMove.delete(fromSquare);
+14613|        afterMove.set(toSquare, movingPiece);
+14614|        
+14615|        // Find our king
+14616|        let kingSquare = null;
+14617|        for (const [sq, piece] of afterMove) {
+14618|            if (!piece) continue;
+14619|            const pieceIsWhite = piece === piece.toUpperCase();
+14620|            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+14621|                kingSquare = sq;
+14622|                break;
+14623|            }
+14624|        }
+14625|        
+14626|        if (!kingSquare) return 0;
+14627|        
+14628|        const kingFile = kingSquare.charCodeAt(0) - 97;
+14629|        const kingRank = parseInt(kingSquare[1]);
+14630|        
+14631|        // Only check if king is castled kingside (files e-h, back rank)
+14632|        const backRank = isWhite ? 1 : 8;
+14633|        if (kingFile < 4 || kingRank !== backRank) return 0;
+14634|        
+14635|        // Check f, g, h pawns
+14636|        const shelterRank = isWhite ? 2 : 7;
+14637|        const fPawn = afterMove.get('f' + shelterRank);
+14638|        const gPawn = afterMove.get('g' + shelterRank);
+14639|        const hPawn = afterMove.get('h' + shelterRank);
+14640|        
+14641|        const fPawnPresent = fPawn && fPawn.toLowerCase() === 'p' && 
+14642|                            (fPawn === fPawn.toUpperCase()) === isWhite;
+14643|        const gPawnPresent = gPawn && gPawn.toLowerCase() === 'p' && 
+14644|                            (gPawn === gPawn.toUpperCase()) === isWhite;
+14645|        const hPawnPresent = hPawn && hPawn.toLowerCase() === 'p' && 
+14646|                            (hPawn === hPawn.toUpperCase()) === isWhite;
+14647|        
+14648|        if (!gPawnPresent) {
+14649|            score += CONFIG.v40GFilePawnMissingPenalty || -2000000;
+14650|            debugLog("[V40.16_SHELTER]", `⚠️ G-pawn missing from king shelter!`);
+14651|        }
+14652|        
+14653|        if (!hPawnPresent) {
+14654|            score += CONFIG.v40HFilePawnMissingPenalty || -1500000;
+14655|            debugLog("[V40.16_SHELTER]", `⚠️ H-pawn missing from king shelter!`);
+14656|        }
+14657|        
+14658|        if (!fPawnPresent) {
+14659|            score += CONFIG.v40FFilePawnMissingPenalty || -1000000;
+14660|            debugLog("[V40.16_SHELTER]", `⚠️ F-pawn missing from king shelter!`);
+14661|        }
+14662|        
+14663|        // Catastrophic if all missing
+14664|        if (!fPawnPresent && !gPawnPresent && !hPawnPresent) {
+14665|            score += CONFIG.v40AllKingsidePawnsMissingPenalty || -20000000;
+14666|            debugLog("[V40.16_SHELTER]", `☠️☠️☠️ CATASTROPHIC: ALL kingside pawns missing! King exposed!`);
+14667|        }
+14668|        
+14669|        // Check if pawns are advanced (weakened shelter)
+14670|        const advancedRank = isWhite ? 3 : 6;
+14671|        const fAdvanced = afterMove.get('f' + advancedRank);
+14672|        const gAdvanced = afterMove.get('g' + advancedRank);
+14673|        const hAdvanced = afterMove.get('h' + advancedRank);
+14674|        
+14675|        if (fAdvanced && fAdvanced.toLowerCase() === 'p' && (fAdvanced === fAdvanced.toUpperCase()) === isWhite) {
+14676|            score += CONFIG.v40KingsidePawnsAdvancedPenalty || -800000;
+14677|        }
+14678|        if (gAdvanced && gAdvanced.toLowerCase() === 'p' && (gAdvanced === gAdvanced.toUpperCase()) === isWhite) {
+14679|            score += CONFIG.v40KingsidePawnsAdvancedPenalty || -800000;
+14680|        }
+14681|        if (hAdvanced && hAdvanced.toLowerCase() === 'p' && (hAdvanced === hAdvanced.toUpperCase()) === isWhite) {
+14682|            score += CONFIG.v40KingsidePawnsAdvancedPenalty || -800000;
+14683|        }
+14684|        
+14685|    } catch (e) {
+14686|        debugLog("[V40.16_SHELTER]", `Error: ${e.message}`);
+14687|    }
+14688|    
+14689|    return score;
+14690|}
+14691|
+14692|/**
+14693| * v40.16 FORCING LINE REJECTION: Reject moves that allow dangerous forcing sequences
+14694| */
+14695|function v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) {

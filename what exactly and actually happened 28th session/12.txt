@@ -1,0 +1,7 @@
+Now let me check for any missing helper functions that the v40.16 functions need:
+Action: $ cd /app && grep -n "function findAllCapturesForColor\|function findAllChecksForColor\|function findKingEscapeSquares\|function calculateSimpleMaterial" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 14326:function calculateSimpleMaterial(board, forWhite) {
+14343:function findAllCapturesForColor(board, color) {
+14377:function findAllChecksForColor(board, attackerColor, defenderColor) {
+14425:function findKingEscapeSquares(board, kingSquare, kingColor) {
+Exit code: 0
