@@ -1,0 +1,4 @@
+Let me search for where computeCombinedScore is and check if v40.5 functions are integrated:
+Action: $ grep -n "function computeCombinedScore" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 22392:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+Exit code: 0

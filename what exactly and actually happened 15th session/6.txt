@@ -1,0 +1,104 @@
+Let me check the computeCombinedScore integration area more carefully:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+21870|    // DETERMINISTIC: reduce randomness, compute stable thinkTime
+21871|    let additionalTime = (CONFIG.thinkingTimeMax - CONFIG.thinkingTimeMin) * speedMultiplier * 0.6;
+21872|    
+21873|    const thinkTime = baseTime + additionalTime;
+21874|    return Math.floor(Math.max(CONFIG.thinkingTimeMin, Math.min(thinkTime, CONFIG.thinkingTimeMax)));
+21875|}
+21876|
+21877|/**
+21878| * Strategic depth calculation - ENHANCED v6.0.0 with TACTICAL AWARENESS
+21879| */
+21880|function getStrategicDepth(phase, isStrategic, timeLeft) {
+21881|    let depth = CONFIG.baseDepth;
+21882|    
+21883|    if (phase === "opening") depth = CONFIG.openingDepth;
+21884|    else if (phase === "endgame") depth = CONFIG.endgameDepth;
+21885|    else if (isStrategic) depth = CONFIG.strategicDepth;
+21886|    
+21887|    // NEW v6.0.0: CRITICAL POSITION - emergency depth boost
+21888|    if (positionIsCritical && timeLeft > 5000) {
+21889|        depth = Math.min(depth + 6, CONFIG.criticalDepth);
+21890|        debugLog("[ENGINE]", `🚨 CRITICAL position - emergency depth boost (${depth})`);
+21891|    }
+21892|    
+21893|    // NEW v6.0.0: TACTICAL POSITION - boost depth for precision
+21894|    if (positionIsTactical && timeLeft > 10000) {
+21895|        depth = Math.min(depth + 4, CONFIG.tacticalDepth);
+21896|        debugLog("[ENGINE]", `🎯 TACTICAL position - precision depth boost (${depth})`);
+21897|    }
+21898|    
+21899|    // NEW: Boost depth when winning to find fastest conversion
+21900|    if (multiPVLines.length > 0 && multiPVLines[0].score > CONFIG.winningThreshold) {
+21901|        depth = Math.max(depth, CONFIG.winningDepth);
+21902|        debugLog("[ENGINE]", `🔥 Winning position - boosting depth for conversion (${depth})`);
+21903|    }
+21904|    
+21905|    // Detect classical/rapid time controls and boost depth significantly
+21906|    if (timeLeft > 180000) {
+21907|        // Classical (>3 minutes) - use maximum depth
+21908|        depth = CONFIG.classicalDepth;
+21909|        debugLog("[ENGINE]", "📚 Classical time control - using max depth");
+21910|    } else if (timeLeft > 120000) {
+21911|        // Rapid (>2 minutes) - boost depth
+21912|        depth = Math.min(depth + 4, CONFIG.classicalDepth);
+21913|        debugLog("[ENGINE]", "⚡ Rapid time control - boosting depth");
+21914|    } else if (timeLeft > 60000) {
+21915|        // Blitz (>1 minute) - moderate boost
+21916|        depth = Math.min(depth + 2, 28);
+21917|    } else if (timeLeft > 30000) {
+21918|        // Short blitz (>30s) - small boost
+21919|        depth = Math.min(depth + 1, 26);
+21920|    } else if (timeLeft < 10000) {
+21921|        // Time pressure - reduce depth slightly
+21922|        depth = Math.max(depth - 1, 18);
+21923|    }
+21924|    
+21925|    // Complex positions deserve deeper search
+21926|    if (positionComplexity > 0.75 && timeLeft > 20000) {
+21927|        depth = Math.min(depth + 1, CONFIG.classicalDepth);
+21928|    }
+21929|    
+21930|    // NEW v5.0.0: Endgame with advantage - maximize depth for perfect technique
+21931|    if (phase === "endgame" && timeLeft > 30000) {
+21932|        depth = Math.min(depth + 3, CONFIG.classicalDepth);
+21933|        debugLog("[ENGINE]", "🎯 Endgame - maximizing depth for perfect conversion");
+21934|    }
+21935|    
+21936|    // NEW v5.0.0: Pawn race detection - need maximum depth
+21937|    if (currentFen && typeof currentFen === 'string' && detectPawnRace(currentFen)) {
+21938|        depth = Math.min(depth + 3, CONFIG.classicalDepth);
+21939|        debugLog("[ENGINE]", "🏁 Pawn race detected - boosting depth for calculation");
+21940|    }
+21941|    
+21942|    // NEW v4.3.0: Defensive mode - boost depth when behind for accuracy
+21943|    if (multiPVLines.length > 0) {
+21944|        const currentEval = multiPVLines[0].score;
+21945|        
+21946|        if (currentEval < CONFIG.defensiveThresholdMild) {
+21947|            depth = Math.min(depth + CONFIG.defensiveDepthBonus, CONFIG.classicalDepth);
+21948|            debugLog("[ENGINE]", `🛡️ Defensive mode - boosting depth for accuracy (${depth})`);
+21949|        }
+21950|    }
+21951|    
+21952|    // NEW v4.3.0: Passed pawn danger - boost depth to find best defense
+21953|    if (currentFen && typeof currentFen === 'string') {
+21954|        const hasDanger = detectPassedPawnDanger(currentFen);
+21955|        if (hasDanger) {
+21956|            depth = Math.min(depth + CONFIG.passedPawnDepthBonus, CONFIG.classicalDepth);
+21957|            debugLog("[ENGINE]", `🚨 Passed pawn danger - boosting depth (${depth})`);
+21958|        }
+21959|    }
+21960|    
+21961|    // NEW v6.0.0: Opponent threat response - boost depth
+21962|    if (lastOpponentMove) {
+21963|        const threatLevel = analyzeOpponentThreats(lastOpponentMove, currentFen, multiPVLines);
+21964|        if (threatLevel >= 2 && timeLeft > 15000) {
+21965|            depth = Math.min(depth + CONFIG.threatResponseDepth, CONFIG.classicalDepth);
+21966|            debugLog("[ENGINE]", `⚠️ Responding to threats - boosting depth (${depth})`);
+21967|        }
+21968|    }
+21969|    
+21970|    return depth;

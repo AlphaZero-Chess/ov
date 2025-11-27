@@ -1,0 +1,7 @@
+Good - v40.5 functions are already implemented. Let me check the current integration in computeCombinedScore:
+Action: $ grep -n "v40QueenInfiltrationDetection\|v40EnhancedHangingPieceDetection\|v40KingCornerSafetyEval\|v40CheckSequenceDetection" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 6965:function v40QueenInfiltrationDetection(fen, move, board, activeColor) {
+7100:function v40EnhancedHangingPieceDetection(fen, move, board, activeColor) {
+7331:function v40KingCornerSafetyEval(fen, move, board, activeColor) {
+7511:function v40CheckSequenceDetection(fen, move, board, activeColor) {
+Exit code: 0

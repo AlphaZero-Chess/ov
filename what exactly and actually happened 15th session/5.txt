@@ -1,0 +1,6 @@
+The functions exist but let me verify they are integrated. Let me check the computeCombinedScore area:
+Action: $ grep -n "queenInfiltrationPenalty\|hangingPiecePenalty\|kingCornerPenalty\|checkSequencePenalty" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 231:    queenInfiltrationPenalty: 2500, // v36: Penalty for queen invasion (1800→2500)
+350:    hangingPiecePenalty: -4000,     // v36: Penalty for hanging pieces (-2000→-4000)
+15308:            result.penalty = CONFIG.queenInfiltrationPenalty;
+Exit code: 0

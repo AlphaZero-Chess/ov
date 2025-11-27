@@ -1,0 +1,29 @@
+Let me search for where these v40.5 functions should be integrated in computeCombinedScore:
+Action: $ grep -n "v40.5" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -40
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.5 SUPERHUMAN BEAST TRANSCENDENT
+3:// @description  TRUE AlphaZero Replica v40.5 TRANSCENDENT - 85% v40 ABSOLUTE DOMINANCE - 100K MCTS Simulations - Queen Infiltration Detection - Enhanced Hanging Piece Detection - King Corner Safety - Check Sequence Detection - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 25-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+4:// @author       AlphaZero TRUE REPLICA v40.5 SUPERHUMAN BEAST TRANSCENDENT EDITION
+1130:    // v40.5.0: CRITICAL TACTICAL BLINDSPOT FIXES — From Nimzowitsch Defense loss
+1133:    // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+1140:    // v40.5: HANGING PIECE DETECTION ENHANCEMENT — Prevent Bxb3 disasters
+1147:    // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+1154:    // v40.5: QUEEN TRADE ANALYSIS — Better understanding of queen exchanges
+1159:    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+1164:    // v40.5: ENHANCED 85% DOMINANCE — Make v40 even more dominant
+6956:// v40.5: CRITICAL TACTICAL BLINDSPOT FIXES
+6962: * v40.5: QUEEN INFILTRATION DETECTION
+7060: * v40.5: Helper - Check if queen can attack a square
+7097: * v40.5: ENHANCED HANGING PIECE DETECTION
+7186: * v40.5: Helper - Check if square is attacked by a color
+7211: * v40.5: Helper - Can piece attack square
+7246: * v40.5: Helper - Check path is clear for sliding pieces
+7266: * v40.5: Helper - Get lowest attacker value
+7292: * v40.5: Helper - Get simple piece value
+7307: * v40.5: Helper - Get squares defended by a piece
+7328: * v40.5: KING CORNER SAFETY — Prevent h1/h2 vulnerabilities
+7430: * v40.5: Helper - Get queen checking squares around king
+7453: * v40.5: Helper - Can queen reach square (v40 version)
+7475: * v40.5: Helper - Get king escape squares
+7508: * v40.5: CHECK SEQUENCE DETECTION
+7592: * v40.5: Helper - Get potential checking squares for a piece type
+Exit code: 0

@@ -1,0 +1,124 @@
+Now let me check if these v40.5 functions are integrated into computeCombinedScore. Let me view that area:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+22030| * Tracks last N evaluations and computes trend
+22031| * Disables creativity if trend declining below threshold
+22032| */
+22033|function updateTrendReconciliation(currentEval) {
+22034|    try {
+22035|        // Add to trend history
+22036|        trendHistory.push(currentEval);
+22037|        
+22038|        // Keep only last stabilizationMoves
+22039|        if (trendHistory.length > TRUE_ALPHAZERO.stabilizationMoves) {
+22040|            trendHistory.shift();
+22041|        }
+22042|        
+22043|        // Compute trend (linear regression slope approximation)
+22044|        if (trendHistory.length >= 4) {
+22045|            const n = trendHistory.length;
+22046|            const recentAvg = trendHistory.slice(-3).reduce((a, b) => a + b, 0) / 3;
+22047|            const olderAvg = trendHistory.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+22048|            const trend = recentAvg - olderAvg;
+22049|            
+22050|            evaluationTrend = trend;
+22051|            
+22052|            // Log trend status
+22053|            if (trend < TRUE_ALPHAZERO.tacticalFloorCp) {
+22054|                debugLog("[TREND]", `📉 Declining trend: ${trend.toFixed(1)}cp (below floor ${TRUE_ALPHAZERO.tacticalFloorCp}cp)`);
+22055|            }
+22056|            
+22057|            // Update debug object
+22058|            window.__AZ18_DEBUG.trendData.push({
+22059|                move: moveCount,
+22060|                eval: currentEval,
+22061|                trend: trend,
+22062|                history: [...trendHistory]
+22063|            });
+22064|        }
+22065|        
+22066|        // Update evaluation history for compatibility
+22067|        updateEvaluationHistory(currentEval);
+22068|    } catch (e) {
+22069|        debugLog("[TREND]", "⚠️ Error in trend reconciliation:", e.message);
+22070|    }
+22071|}
+22072|
+22073|/**
+22074| * NEW v18.0.0: Compute harmony score for position
+22075| * Evaluates balance of multiple positional factors
+22076| * Returns score (positive = improving, negative = declining)
+22077| */
+22078|function computeHarmonyScore(fen) {
+22079|    try {
+22080|        if (!fen) return 0;
+22081|        
+22082|        // Compute deltas for various factors
+22083|        const kingSafetyDelta = evaluateKingSafety(fen) - 0.5;
+22084|        const mobilityDelta = evaluateMobility(fen) - 0.5;
+22085|        const coordinationDelta = evaluatePieceCoordination(fen) - 0.5;
+22086|        const activityDelta = evaluatePieceActivity(fen) - 0.5;
+22087|        
+22088|        // Weighted sum (normalize to -1..+1 range)
+22089|        const harmonyScore = (
+22090|            kingSafetyDelta * 0.25 +
+22091|            mobilityDelta * 0.30 +
+22092|            coordinationDelta * 0.25 +
+22093|            activityDelta * 0.20
+22094|        );
+22095|        
+22096|        // Log harmony if significant
+22097|        if (Math.abs(harmonyScore) > 0.2) {
+22098|            debugLog("[HARMONY]", `${harmonyScore > 0 ? '✅' : '❌'} Harmony: ${harmonyScore.toFixed(3)}`);
+22099|        }
+22100|        
+22101|        // Update debug object
+22102|        window.__AZ18_DEBUG.harmonyScores.push({
+22103|            move: moveCount,
+22104|            harmony: harmonyScore,
+22105|            components: {
+22106|                kingSafety: kingSafetyDelta,
+22107|                mobility: mobilityDelta,
+22108|                coordination: coordinationDelta,
+22109|                activity: activityDelta
+22110|            }
+22111|        });
+22112|        
+22113|        return harmonyScore;
+22114|    } catch (e) {
+22115|        debugLog("[HARMONY]", "⚠️ Error computing harmony:", e.message);
+22116|        return 0;
+22117|    }
+22118|}
+22119|
+22120|/**
+22121| * NEW v18.0.0: Evaluate threat sequence for sacrifice validation
+22122| * Deep tactical check to ensure compensation exists
+22123| * Returns true if threats justify material investment
+22124| */
+22125|async function evaluateThreatSequence(fen, move) {
+22126|    try {
+22127|        if (!chessEngine || !fen) return false;
+22128|        
+22129|        // Use deep tactical check
+22130|        return new Promise((resolve) => {
+22131|            let output = "";
+22132|            const originalHandler = chessEngine.onmessage;
+22133|            const timeout = setTimeout(() => {
+22134|                chessEngine.onmessage = originalHandler;
+22135|                chessEngine.postMessage("stop");
+22136|                resolve(false);
+22137|            }, 2000);
+22138|            
+22139|            const threatHandler = function(event) {
+22140|                output += event + "\n";
+22141|                
+22142|                if (event.includes("bestmove")) {
+22143|                    clearTimeout(timeout);
+22144|                    chessEngine.onmessage = originalHandler;
+22145|                    
+22146|                    // Parse for tactical opportunities
+22147|                    const hasTacticalComp = output.includes("mate") || 
+22148|                                          output.match(/score\s+cp\s+\d{3,}/); // 3-digit advantage
+22149|                    
+22150|                    debugLog("[THREAT]", `Sequence evaluation: ${hasTacticalComp ? '✅ Compensation' : '❌ No compensation'}`);

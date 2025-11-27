@@ -1,0 +1,13 @@
+Let me find where the v40.5 functions are integrated:
+Action: $ grep -n "v40.5 NEW\|QueenInfiltration\|HangingPiece\|KingCorner\|CheckSequence" "/app/Lichess Bot-AlphaZero-Pure.user.js" | grep -v "function\|CONFIG\|const" | head -30
+Observation: 568:    v37HangingPiecePenalty: -1000,          // Penalty for hanging pieces
+645:    v38HangingPieceVerify: true,             // Verify no pieces left hanging
+1134:    v40QueenInfiltrationEnabled: true,
+1135:    v40QueenInfiltrationPenalty: -18000,    // Massive penalty for queen infiltration to our half
+1141:    v40HangingPieceEnabled: true,
+1148:    v40KingCornerEnabled: true,
+1149:    v40KingCornerPenalty: -15000,           // Penalty for cornered king
+1160:    v40CheckSequenceEnabled: true,
+1161:    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+20345:        debugLog("[SAFETY]", "⚠️ Error in detectHangingPieces:", e.message);
+Exit code: 0

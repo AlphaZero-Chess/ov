@@ -1,0 +1,48 @@
+I can see that the v40.5 functions exist but they are NOT integrated into the computeCombinedScore function! The code still shows v40.4 integration (80% dominance) without the v40.5 functions. Let me update the integration to include the v40.5 functions and increase to 85% dominance:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.4: PAWN SHIELD INTEGRITY — Critical for king safety
+                const pawnShieldScore = v40PawnShieldIntegrityEval(fen, move, board, activeColor) * 0.7;
+                
+                // v40.4: COMBINED v40 SCORE — 80% GODLIKE DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE DOMINANT factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 NEW additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore;
+                v40Bonus = v40DeepScore * 0.80;  // 80% influence — GODLIKE PARADIGM SHIFT" --new-str "                // v40.4: PAWN SHIELD INTEGRITY — Critical for king safety
+                const pawnShieldScore = v40PawnShieldIntegrityEval(fen, move, board, activeColor) * 0.7;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.5 TRANSCENDENT: CRITICAL TACTICAL BLINDSPOT FIXES
+                // Addresses: Qxb2 queen raids, hanging pieces, king corner traps, check sequences
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+                const queenInfiltrationScore = v40QueenInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+                
+                // v40.5: ENHANCED HANGING PIECE DETECTION — Prevent material losses
+                const hangingPieceScore = v40EnhancedHangingPieceDetection(fen, move, board, activeColor) * 1.2;
+                
+                // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+                const kingCornerScore = v40KingCornerSafetyEval(fen, move, board, activeColor) * 0.9;
+                
+                // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+                const checkSequenceScore = v40CheckSequenceDetection(fen, move, board, activeColor) * 1.0;
+                
+                // v40.5: COMBINED v40 SCORE — 85% TRANSCENDENT DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE TRANSCENDENT factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 NEW additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore;
+                v40Bonus = v40DeepScore * 0.85;  // 85% influence — TRANSCENDENT PARADIGM SHIFT"
+Observation: Edit was successful.
