@@ -1,0 +1,68 @@
+Based on my analysis of the game and codebase, I can see the critical issues. The v40 functions exist but their weights are too low. Let me implement comprehensive enhancements to make this a TRUE AlphaZero replica:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        if (CONFIG.v40Enabled && fen) {
+            try {
+                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+                
+                // v40.1: Enhanced deep evaluations
+                const board = parseFenToBoard(fen);
+                const activeColor = fen.split(' ')[1];
+                const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+                
+                // v40.1: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 0.5;
+                
+                // v40.1: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 0.3;
+                
+                // v40.1: INITIATIVE TRACKING (prevents initiative collapse)
+                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 0.4;
+                
+                // v40.1: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber);
+                
+                // v40.1: COMBINED v40 SCORE — 55% DOMINANT INFLUENCE (was 15%)
+                // This makes v40 the DOMINANT factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + v40InitiativeBonus + queenPenalty;
+                v40Bonus = v40DeepScore * 0.55;  // 55% influence — PARADIGM SHIFT" --new-str "        if (CONFIG.v40Enabled && fen) {
+            try {
+                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+                
+                // v40.2: Enhanced deep evaluations — STRONGER WEIGHTS
+                const board = parseFenToBoard(fen);
+                const activeColor = fen.split(' ')[1];
+                const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+                
+                // v40.2: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+                // CRITICAL: Increased from 0.5 to 1.2 — mating nets MUST be respected
+                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 1.2;
+                
+                // v40.2: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+                // CRITICAL: Increased from 0.3 to 0.8 — file control is crucial
+                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 0.8;
+                
+                // v40.2: INITIATIVE TRACKING (prevents initiative collapse)
+                // CRITICAL: Increased from 0.4 to 1.0 — initiative loss = position loss
+                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 1.0;
+                
+                // v40.2: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+                // CRITICAL: Multiplied by 1.5 — queen movement must be heavily penalized
+                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) * 1.5;
+                
+                // v40.2: NEW — PROPHYLACTIC BONUS (preventing opponent's plans)
+                const prophylacticBonus = v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+                
+                // v40.2: NEW — ROOK INFILTRATION DETECTION
+                const rookInfiltrationPenalty = v40RookInfiltrationDetection(fen, move, board, activeColor) * 0.9;
+                
+                // v40.2: NEW — KING SAFETY CORRIDOR
+                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.7;
+                
+                // v40.2: COMBINED v40 SCORE — 65% DOMINANT INFLUENCE (was 55%)
+                // This makes v40 the ABSOLUTE DOMINANT factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty;
+                v40Bonus = v40DeepScore * 0.65;  // 65% influence — TRUE PARADIGM SHIFT"
+Observation: Edit was successful.

@@ -1,0 +1,363 @@
+Now let me add the new v40.2 functions after the existing helper functions:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "function evaluatePawnShield(board, color, kingSquare) {
+    let score = 0;
+    const kingFile = kingSquare.charCodeAt(0);
+    const pawnRank = color === 'w' ? '2' : '7';
+    const pawnChar = color === 'w' ? 'P' : 'p';
+    
+    for (let f = kingFile - 1; f <= kingFile + 1; f++) {
+        if (f >= 97 && f <= 104) {
+            const pawnSquare = String.fromCharCode(f) + pawnRank;
+            if (board.get(pawnSquare) === pawnChar) {
+                score += 30;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**" --new-str "function evaluatePawnShield(board, color, kingSquare) {
+    let score = 0;
+    const kingFile = kingSquare.charCodeAt(0);
+    const pawnRank = color === 'w' ? '2' : '7';
+    const pawnChar = color === 'w' ? 'P' : 'p';
+    
+    for (let f = kingFile - 1; f <= kingFile + 1; f++) {
+        if (f >= 97 && f <= 104) {
+            const pawnSquare = String.fromCharCode(f) + pawnRank;
+            if (board.get(pawnSquare) === pawnChar) {
+                score += 30;
+            }
+        }
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.2: NEW FUNCTIONS FOR TRUE ALPHAZERO SUPERHUMAN BEAST
+// These functions address the specific failures in the lost game
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.2: PROPHYLACTIC EVALUATION
+ * AlphaZero excels at prophylaxis - preventing opponent's plans before they happen
+ * This evaluates how well a move prevents opponent's ideas
+ */
+function v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // CHECK 1: Does move block an open file toward our king?
+        const ourKing = findKing(simBoard, activeColor);
+        if (ourKing) {
+            const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+            const targetFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            
+            // Rook blocking enemy attack on king file
+            if (movingPiece && movingPiece.toLowerCase() === 'r') {
+                if (Math.abs(targetFile - kingFile) <= 1) {
+                    score += 300;
+                    debugLog(\"[V40_PROPHYLACTIC]\", `✅ Rook defending king's file area`);
+                }
+            }
+        }
+        
+        // CHECK 2: Does move prevent enemy piece infiltration?
+        const infiltrationRank = activeColor === 'w' ? 2 : 7;  // 2nd/7th rank
+        const toRank = parseInt(toSquare[1]);
+        
+        if (toRank === infiltrationRank) {
+            // Moving piece to our critical rank is prophylactic
+            score += 200;
+            debugLog(\"[V40_PROPHYLACTIC]\", `✅ Defending infiltration rank`);
+        }
+        
+        // CHECK 3: Does move control key central squares?
+        const centralSquares = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+        if (centralSquares.includes(toSquare)) {
+            score += 150;
+        }
+        
+        // CHECK 4: Does move prevent enemy passed pawn advance?
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (isEnemy && piece.toLowerCase() === 'p') {
+                // Check if enemy pawn is passed
+                const pawnFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+                const pawnRank = parseInt(square[1]);
+                
+                // If our move blocks the pawn's advance
+                const targetFileIdx = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+                if (targetFileIdx === pawnFile) {
+                    const targetRankNum = parseInt(toSquare[1]);
+                    const blockingRank = enemyColor === 'w' ? pawnRank + 1 : pawnRank - 1;
+                    if (targetRankNum === blockingRank) {
+                        score += 400;
+                        debugLog(\"[V40_PROPHYLACTIC]\", `✅ Blocking enemy passed pawn advance`);
+                    }
+                }
+            }
+        }
+        
+        // CHECK 5: King safety prophylaxis - does move prevent back rank weakness?
+        if (movingPiece && movingPiece.toLowerCase() === 'k') {
+            const fromRank = parseInt(fromSquare[1]);
+            const toRankNum = parseInt(toSquare[1]);
+            const backRank = activeColor === 'w' ? 1 : 8;
+            
+            // King moving away from back rank = prophylactic
+            if (fromRank === backRank && toRankNum !== backRank) {
+                score += 500;
+                debugLog(\"[V40_PROPHYLACTIC]\", `✅ King escaping back rank weakness`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_PROPHYLACTIC]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.2: ROOK INFILTRATION DETECTION
+ * Specifically addresses the c-file invasion that led to defeat
+ * Evaluates threats from enemy rooks penetrating to 7th/2nd rank
+ */
+function v40RookInfiltrationDetection(fen, move, board, activeColor) {
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Critical infiltration rank
+        const criticalRank = activeColor === 'w' ? 2 : 7;  // Our 2nd/7th rank
+        const criticalRankStr = String(criticalRank);
+        
+        // Count enemy rooks on critical rank
+        let enemyRooksOnCritical = 0;
+        let enemyRookPositions = [];
+        
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (!isEnemy) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if ((pieceType === 'r' || pieceType === 'q') && square[1] === criticalRankStr) {
+                enemyRooksOnCritical++;
+                enemyRookPositions.push(square);
+            }
+        }
+        
+        // SEVERE PENALTIES for rook infiltration
+        if (enemyRooksOnCritical >= 2) {
+            penalty -= 2500;  // Doubled rooks on 7th = catastrophic
+            debugLog(\"[V40_ROOK_INFIL]\", `🚨🚨🚨 DOUBLED HEAVY PIECES ON ${criticalRank}TH RANK!`);
+        } else if (enemyRooksOnCritical === 1) {
+            penalty -= 800;  // Single rook on 7th = dangerous
+            debugLog(\"[V40_ROOK_INFIL]\", `🚨 Enemy heavy piece infiltrated to ${criticalRank}th rank`);
+        }
+        
+        // Check for imminent infiltration (enemy rook on open file pointing at our rank)
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (!isEnemy) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'r') {
+                const rookFile = square[0];
+                const rookRank = parseInt(square[1]);
+                
+                // Is this rook on an open file?
+                let isPawnOnFile = false;
+                for (let r = 1; r <= 8; r++) {
+                    const checkSquare = rookFile + r;
+                    const p = simBoard.get(checkSquare);
+                    if (p && p.toLowerCase() === 'p') {
+                        isPawnOnFile = true;
+                        break;
+                    }
+                }
+                
+                if (!isPawnOnFile) {
+                    // Rook on open file - check if pointing at our ranks
+                    const distanceToCritical = Math.abs(rookRank - criticalRank);
+                    if (distanceToCritical <= 3) {
+                        penalty -= 300;  // Threatening infiltration
+                        debugLog(\"[V40_ROOK_INFIL]\", `⚠️ Enemy rook on open ${rookFile}-file threatening infiltration`);
+                    }
+                }
+            }
+        }
+        
+        // BONUS: If our move contests the infiltration
+        if (movingPiece) {
+            const movingType = movingPiece.toLowerCase();
+            if ((movingType === 'r' || movingType === 'q') && toSquare[1] === criticalRankStr) {
+                // We're also on the critical rank = contest
+                penalty += 600;  // Contest infiltration
+                debugLog(\"[V40_ROOK_INFIL]\", `✅ Contesting critical ${criticalRank}th rank`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_ROOK_INFIL]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.2: KING SAFETY CORRIDOR EVALUATION
+ * Specifically addresses the king being cornered (a2-a1 in the lost game)
+ * Ensures the king has escape routes
+ */
+function v40KingSafetyCorridorEval(fen, move, board, activeColor) {
+    let score = 0;
+    
+    try {
+        // Simulate move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        const ourKing = findKing(simBoard, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]) - 1;
+        
+        // Count escape squares
+        let escapeSquares = 0;
+        let totalSquaresChecked = 0;
+        
+        for (let df = -1; df <= 1; df++) {
+            for (let dr = -1; dr <= 1; dr++) {
+                if (df === 0 && dr === 0) continue;
+                
+                const newFile = kingFile + df;
+                const newRank = kingRank + dr;
+                
+                if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) continue;
+                
+                totalSquaresChecked++;
+                const escapeSquare = String.fromCharCode(newFile + 97) + (newRank + 1);
+                const pieceOnSquare = simBoard.get(escapeSquare);
+                
+                if (!pieceOnSquare) {
+                    escapeSquares++;
+                } else {
+                    const isOurs = (pieceOnSquare === pieceOnSquare.toUpperCase()) === (activeColor === 'w');
+                    if (!isOurs) escapeSquares++;  // Can capture
+                }
+            }
+        }
+        
+        // SEVERE PENALTIES for trapped king
+        if (escapeSquares === 0) {
+            score -= 3000;  // CRITICAL: King completely trapped
+            debugLog(\"[V40_KING_CORRIDOR]\", `🚨🚨🚨 KING COMPLETELY TRAPPED! NO ESCAPE!`);
+        } else if (escapeSquares === 1) {
+            score -= 1500;  // Very dangerous
+            debugLog(\"[V40_KING_CORRIDOR]\", `🚨🚨 King almost trapped - only 1 escape`);
+        } else if (escapeSquares === 2) {
+            score -= 600;  // Concerning
+            debugLog(\"[V40_KING_CORRIDOR]\", `⚠️ King mobility restricted - only 2 escapes`);
+        }
+        
+        // Corner positions are especially dangerous
+        const isCorner = (kingFile === 0 || kingFile === 7) && (kingRank === 0 || kingRank === 7);
+        const isEdge = kingFile === 0 || kingFile === 7 || kingRank === 0 || kingRank === 7;
+        
+        if (isCorner) {
+            score -= 800;  // Corner = mating patterns
+            debugLog(\"[V40_KING_CORRIDOR]\", `⚠️ King in corner position`);
+        } else if (isEdge) {
+            score -= 300;  // Edge = less mobility
+        }
+        
+        // BONUS: If move creates escape route
+        if (movingPiece && movingPiece.toLowerCase() === 'k') {
+            // Calculate new escape squares after king move
+            const newKingFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            const newKingRank = parseInt(toSquare[1]) - 1;
+            
+            const newIsCorner = (newKingFile === 0 || newKingFile === 7) && 
+                               (newKingRank === 0 || newKingRank === 7);
+            const newIsEdge = newKingFile === 0 || newKingFile === 7 || 
+                             newKingRank === 0 || newKingRank === 7;
+            
+            // Moving to center = good
+            if (!newIsEdge && isEdge) {
+                score += 400;  // Escaping edge
+                debugLog(\"[V40_KING_CORRIDOR]\", `✅ King moving toward center`);
+            }
+            
+            // Moving away from corner = good
+            if (!newIsCorner && isCorner) {
+                score += 600;  // Escaping corner
+                debugLog(\"[V40_KING_CORRIDOR]\", `✅ King escaping corner`);
+            }
+        }
+        
+        // Check for \"luft\" - escape square creation
+        if (movingPiece && movingPiece.toLowerCase() === 'p') {
+            // Pawn move that creates luft
+            for (let df = -1; df <= 1; df++) {
+                for (let dr = -1; dr <= 1; dr++) {
+                    if (df === 0 && dr === 0) continue;
+                    const adjFile = kingFile + df;
+                    const adjRank = kingRank + dr;
+                    if (adjFile < 0 || adjFile > 7 || adjRank < 0 || adjRank > 7) continue;
+                    
+                    const adjSquare = String.fromCharCode(adjFile + 97) + (adjRank + 1);
+                    if (fromSquare === adjSquare) {
+                        score += 300;  // Creating luft
+                        debugLog(\"[V40_KING_CORRIDOR]\", `✅ Creating escape square for king`);
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_KING_CORRIDOR]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**"
+Observation: Edit was successful.

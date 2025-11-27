@@ -1,0 +1,94 @@
+Now let me enhance the queen movement penalty function to be much stronger:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+4240| * Prevents disasters like Qd1-Qd3-Qe4-Qd3 sequence (4 queen moves in first 10 moves)
+4241| * Heavy penalty for excessive queen movement in opening/early middlegame
+4242| */
+4243|function v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) {
+4244|    let penalty = 0;
+4245|    
+4246|    try {
+4247|        const fromSquare = move.substring(0, 2);
+4248|        const movingPiece = board.get(fromSquare);
+4249|        
+4250|        if (!movingPiece) return 0;
+4251|        
+4252|        const isQueen = movingPiece.toLowerCase() === 'q';
+4253|        
+4254|        if (isQueen && moveNumber <= 20) {
+4255|            // Track queen moves
+4256|            if (moveNumber > v40LastQueenMoveNumber) {
+4257|                v40QueenMoveHistory.push(moveNumber);
+4258|                v40LastQueenMoveNumber = moveNumber;
+4259|            }
+4260|            
+4261|            // Count queen moves in the game so far
+4262|            const queenMoves = v40QueenMoveHistory.length;
+4263|            
+4264|            if (moveNumber <= 10) {
+4265|                // Opening: Heavy penalty for queen moves
+4266|                if (queenMoves >= 1) {
+4267|                    penalty -= 300;  // First queen move
+4268|                    debugLog("[V40_QUEEN]", `⚠️ Queen move #${queenMoves} in opening`);
+4269|                }
+4270|                if (queenMoves >= 2) {
+4271|                    penalty -= 600;  // Second queen move
+4272|                    debugLog("[V40_QUEEN]", `🚨 Second queen move in opening!`);
+4273|                }
+4274|                if (queenMoves >= 3) {
+4275|                    penalty -= 1500;  // Three queen moves = disaster
+4276|                    debugLog("[V40_QUEEN]", `🚨🚨 THREE queen moves in opening - losing tempo!`);
+4277|                }
+4278|                if (queenMoves >= 4) {
+4279|                    penalty -= 3000;  // Four+ queen moves = catastrophic
+4280|                    debugLog("[V40_QUEEN]", `🚨🚨🚨 FOUR+ queen moves - initiative destroyed!`);
+4281|                }
+4282|            } else if (moveNumber <= 20) {
+4283|                // Early middlegame: moderate penalty
+4284|                if (queenMoves >= 4) {
+4285|                    penalty -= 500;
+4286|                }
+4287|                if (queenMoves >= 6) {
+4288|                    penalty -= 1000;
+4289|                }
+4290|            }
+4291|            
+4292|            // Check if queen is being pushed around (retreating)
+4293|            const toSquare = move.substring(2, 4);
+4294|            const fromRank = parseInt(fromSquare[1]);
+4295|            const toRank = parseInt(toSquare[1]);
+4296|            const isWhite = activeColor === 'w';
+4297|            const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+4298|            
+4299|            if (isRetreat) {
+4300|                penalty -= 400;  // Queen retreat is especially bad
+4301|                debugLog("[V40_QUEEN]", `⚠️ Queen retreating from ${fromSquare} to ${toSquare}`);
+4302|            }
+4303|            
+4304|            // Queen early development penalty (before minor pieces)
+4305|            if (moveNumber <= 8) {
+4306|                const minorsDeveloped = countDevelopedMinorPieces(board, activeColor);
+4307|                if (minorsDeveloped < 3) {
+4308|                    penalty -= 500;
+4309|                    debugLog("[V40_QUEEN]", `⚠️ Queen out before minor pieces developed`);
+4310|                }
+4311|            }
+4312|        }
+4313|        
+4314|    } catch (e) {
+4315|        debugLog("[V40_QUEEN]", `Error: ${e.message}`);
+4316|    }
+4317|    
+4318|    return penalty;
+4319|}
+4320|
+4321|/**
+4322| * v40.1: Helper - Count developed minor pieces
+4323| */
+4324|function countDevelopedMinorPieces(board, color) {
+4325|    let count = 0;
+4326|    const knightChar = color === 'w' ? 'N' : 'n';
+4327|    const bishopChar = color === 'w' ? 'B' : 'b';
+4328|    const startRank = color === 'w' ? '1' : '8';
+4329|    
+4330|    for (const [square, piece] of board) {

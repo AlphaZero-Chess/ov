@@ -1,0 +1,453 @@
+The functions are already implemented. Let me view them to understand their current state:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+3851|function v40DeepMatingNetDetection(fen, move, board, activeColor) {
+3852|    let penalty = 0;
+3853|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+3854|    
+3855|    try {
+3856|        // Simulate the move
+3857|        const simBoard = new Map(board);
+3858|        const fromSquare = move.substring(0, 2);
+3859|        const toSquare = move.substring(2, 4);
+3860|        const movingPiece = board.get(fromSquare);
+3861|        
+3862|        if (movingPiece) {
+3863|            simBoard.delete(fromSquare);
+3864|            simBoard.set(toSquare, movingPiece);
+3865|        }
+3866|        
+3867|        // Find our king position after move
+3868|        const ourKing = findKing(simBoard, activeColor);
+3869|        if (!ourKing) return 0;
+3870|        
+3871|        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+3872|        const kingRank = parseInt(ourKing[1]) - 1;
+3873|        
+3874|        // CHECK 1: King cornered (a1, h1, a8, h8 areas)
+3875|        const isCornerArea = (kingFile <= 1 || kingFile >= 6) && (kingRank <= 1 || kingRank >= 6);
+3876|        if (isCornerArea) {
+3877|            penalty -= 500;  // King in corner area is dangerous
+3878|            debugLog("[V40_MATING_NET]", `⚠️ King in corner area ${ourKing}`);
+3879|        }
+3880|        
+3881|        // CHECK 2: Back rank vulnerability (king on 1st/8th with blocked escape)
+3882|        const backRank = activeColor === 'w' ? 0 : 7;
+3883|        if (kingRank === backRank) {
+3884|            // Count escape squares
+3885|            let escapeSquares = 0;
+3886|            for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+3887|                const escapeRank = activeColor === 'w' ? 1 : 6;
+3888|                const escapeSquare = String.fromCharCode(f + 97) + (escapeRank + 1);
+3889|                const pieceOnEscape = simBoard.get(escapeSquare);
+3890|                
+3891|                // Check if escape square is blocked by our own pieces
+3892|                if (!pieceOnEscape) {
+3893|                    escapeSquares++;
+3894|                } else {
+3895|                    const isOurPiece = (pieceOnEscape === pieceOnEscape.toUpperCase()) === (activeColor === 'w');
+3896|                    if (!isOurPiece) escapeSquares++; // Enemy piece can be captured
+3897|                }
+3898|            }
+3899|            
+3900|            if (escapeSquares === 0) {
+3901|                penalty -= 2000;  // SEVERE: No escape, back rank mate possible
+3902|                debugLog("[V40_MATING_NET]", `🚨 BACK RANK VULNERABLE - no escape squares!`);
+3903|            } else if (escapeSquares === 1) {
+3904|                penalty -= 800;  // Limited escape
+3905|                debugLog("[V40_MATING_NET]", `⚠️ Only 1 escape square from back rank`);
+3906|            }
+3907|        }
+3908|        
+3909|        // CHECK 3: Enemy rooks/queen on critical files near our king
+3910|        for (const [square, piece] of simBoard) {
+3911|            if (!piece) continue;
+3912|            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+3913|            if (!isEnemy) continue;
+3914|            
+3915|            const pieceType = piece.toLowerCase();
+3916|            if (pieceType === 'r' || pieceType === 'q') {
+3917|                const pieceFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+3918|                const pieceRank = parseInt(square[1]) - 1;
+3919|                
+3920|                // Enemy rook/queen on same file as our king
+3921|                if (pieceFile === kingFile) {
+3922|                    penalty -= 400;
+3923|                    debugLog("[V40_MATING_NET]", `⚠️ Enemy ${pieceType} on king's file`);
+3924|                }
+3925|                
+3926|                // Enemy rook/queen on 2nd/7th rank (infiltration)
+3927|                const infiltrationRank = activeColor === 'w' ? 1 : 6;
+3928|                if (pieceRank === infiltrationRank) {
+3929|                    penalty -= 600;
+3930|                    debugLog("[V40_MATING_NET]", `🚨 Enemy ${pieceType} infiltrated to ${infiltrationRank + 1} rank!`);
+3931|                }
+3932|                
+3933|                // Double rooks on a file = SEVERE danger
+3934|                if (pieceType === 'r') {
+3935|                    for (const [sq2, p2] of simBoard) {
+3936|                        if (sq2 === square) continue;
+3937|                        if (p2 && p2.toLowerCase() === 'r') {
+3938|                            const isEnemy2 = (p2 === p2.toUpperCase()) === (enemyColor === 'w');
+3939|                            if (isEnemy2) {
+3940|                                const file2 = sq2.charCodeAt(0) - 'a'.charCodeAt(0);
+3941|                                if (file2 === pieceFile) {
+3942|                                    penalty -= 1000;
+3943|                                    debugLog("[V40_MATING_NET]", `🚨🚨 Enemy doubled rooks on file ${String.fromCharCode(pieceFile + 97)}!`);
+3944|                                }
+3945|                            }
+3946|                        }
+3947|                    }
+3948|                }
+3949|            }
+3950|        }
+3951|        
+3952|        // CHECK 4: SPECIFIC MATING PATTERN: Rook + King coordination
+3953|        // Looking for patterns like Ra2+, Ra1# that happened in the game
+3954|        const enemyRooks = [];
+3955|        const enemyQueen = [];
+3956|        for (const [square, piece] of simBoard) {
+3957|            if (!piece) continue;
+3958|            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+3959|            if (isEnemy && piece.toLowerCase() === 'r') {
+3960|                enemyRooks.push(square);
+3961|            }
+3962|            if (isEnemy && piece.toLowerCase() === 'q') {
+3963|                enemyQueen.push(square);
+3964|            }
+3965|        }
+3966|        
+3967|        // If enemy has rook(s) on files adjacent to our cornered king, SEVERE penalty
+3968|        if (isCornerArea && enemyRooks.length > 0) {
+3969|            for (const rookSq of enemyRooks) {
+3970|                const rookFile = rookSq.charCodeAt(0) - 'a'.charCodeAt(0);
+3971|                if (Math.abs(rookFile - kingFile) <= 1) {
+3972|                    penalty -= 1500;
+3973|                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 MATING NET FORMING: Rook ${rookSq} near cornered king!`);
+3974|                }
+3975|            }
+3976|        }
+3977|        
+3978|    } catch (e) {
+3979|        debugLog("[V40_MATING_NET]", `Error: ${e.message}`);
+3980|    }
+3981|    
+3982|    return penalty;
+3983|}
+3984|
+3985|/**
+3986| * v40.1: FILE CONTROL EVALUATION
+3987| * Prevents blindness to dangerous file invasions like the c-file in the lost game
+3988| * Evaluates open file control and file invasion threats
+3989| */
+3990|function v40FileControlEvaluation(fen, move, board, activeColor) {
+3991|    let score = 0;
+3992|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+3993|    
+3994|    try {
+3995|        // Simulate the move
+3996|        const simBoard = new Map(board);
+3997|        const fromSquare = move.substring(0, 2);
+3998|        const toSquare = move.substring(2, 4);
+3999|        const movingPiece = board.get(fromSquare);
+4000|        
+4001|        if (movingPiece) {
+4002|            simBoard.delete(fromSquare);
+4003|            simBoard.set(toSquare, movingPiece);
+4004|        }
+4005|        
+4006|        // Analyze each file (a-h)
+4007|        for (let fileIdx = 0; fileIdx < 8; fileIdx++) {
+4008|            const fileLetter = String.fromCharCode(97 + fileIdx);
+4009|            
+4010|            // Count pieces on this file
+4011|            let ourRooks = 0;
+4012|            let enemyRooks = 0;
+4013|            let ourPawns = 0;
+4014|            let enemyPawns = 0;
+4015|            let ourQueen = 0;
+4016|            let enemyQueen = 0;
+4017|            
+4018|            for (let rank = 1; rank <= 8; rank++) {
+4019|                const square = fileLetter + rank;
+4020|                const piece = simBoard.get(square);
+4021|                if (!piece) continue;
+4022|                
+4023|                const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+4024|                const pieceType = piece.toLowerCase();
+4025|                
+4026|                if (isOurs) {
+4027|                    if (pieceType === 'r') ourRooks++;
+4028|                    if (pieceType === 'p') ourPawns++;
+4029|                    if (pieceType === 'q') ourQueen++;
+4030|                } else {
+4031|                    if (pieceType === 'r') enemyRooks++;
+4032|                    if (pieceType === 'p') enemyPawns++;
+4033|                    if (pieceType === 'q') enemyQueen++;
+4034|                }
+4035|            }
+4036|            
+4037|            // Open file (no pawns)
+4038|            const isOpenFile = ourPawns === 0 && enemyPawns === 0;
+4039|            // Semi-open for us (no enemy pawns, we have pawns)
+4040|            const isSemiOpenForUs = enemyPawns === 0 && ourPawns > 0;
+4041|            // Semi-open for enemy
+4042|            const isSemiOpenForEnemy = ourPawns === 0 && enemyPawns > 0;
+4043|            
+4044|            if (isOpenFile || isSemiOpenForEnemy) {
+4045|                // Enemy controls open file = DANGER
+4046|                if (enemyRooks >= 2) {
+4047|                    score -= 800;  // Doubled rooks on open file
+4048|                    debugLog("[V40_FILE]", `🚨 Enemy doubled rooks on open ${fileLetter}-file!`);
+4049|                } else if (enemyRooks === 1 && ourRooks === 0) {
+4050|                    score -= 400;  // Enemy rook controls file we don't contest
+4051|                    debugLog("[V40_FILE]", `⚠️ Enemy rook controls ${fileLetter}-file uncontested`);
+4052|                }
+4053|                
+4054|                // Enemy queen on open file
+4055|                if (enemyQueen > 0 && isOpenFile) {
+4056|                    score -= 300;
+4057|                }
+4058|                
+4059|                // We should contest open files
+4060|                if (ourRooks > 0 && enemyRooks > 0) {
+4061|                    score += 100;  // At least we're contesting
+4062|                }
+4063|                if (ourRooks >= 2 && enemyRooks === 0) {
+4064|                    score += 500;  // We control the file
+4065|                }
+4066|            }
+4067|            
+4068|            // Check if move puts our rook on open file
+4069|            if (movingPiece && movingPiece.toLowerCase() === 'r') {
+4070|                const targetFile = toSquare[0];
+4071|                if (targetFile === fileLetter && isOpenFile) {
+4072|                    score += 400;  // Good move - rook to open file
+4073|                    debugLog("[V40_FILE]", `✅ Rook to open ${fileLetter}-file`);
+4074|                }
+4075|            }
+4076|        }
+4077|        
+4078|        // Find our king and check for dangerous files nearby
+4079|        const ourKing = findKing(simBoard, activeColor);
+4080|        if (ourKing) {
+4081|            const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+4082|            
+4083|            // Check files adjacent to king
+4084|            for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+4085|                const fileLetter = String.fromCharCode(97 + f);
+4086|                
+4087|                let enemyRooksOnFile = 0;
+4088|                for (let rank = 1; rank <= 8; rank++) {
+4089|                    const square = fileLetter + rank;
+4090|                    const piece = simBoard.get(square);
+4091|                    if (piece) {
+4092|                        const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+4093|                        if (isEnemy && (piece.toLowerCase() === 'r' || piece.toLowerCase() === 'q')) {
+4094|                            enemyRooksOnFile++;
+4095|                        }
+4096|                    }
+4097|                }
+4098|                
+4099|                if (enemyRooksOnFile > 0) {
+4100|                    score -= 300 * enemyRooksOnFile;  // Danger near king
+4101|                    debugLog("[V40_FILE]", `⚠️ Enemy heavy piece on ${fileLetter}-file near king`);
+4102|                }
+4103|            }
+4104|        }
+4105|        
+4106|    } catch (e) {
+4107|        debugLog("[V40_FILE]", `Error: ${e.message}`);
+4108|    }
+4109|    
+4110|    return score;
+4111|}
+4112|
+4113|/**
+4114| * v40.1: DEEP INITIATIVE TRACKING
+4115| * Prevents initiative collapse like Qd1-Qd3-Qe4-Qd3 sequence
+4116| * Tracks tempo, development lead, and forcing move availability
+4117| */
+4118|function v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) {
+4119|    let score = 0;
+4120|    
+4121|    try {
+4122|        const fromSquare = move.substring(0, 2);
+4123|        const toSquare = move.substring(2, 4);
+4124|        const movingPiece = board.get(fromSquare);
+4125|        
+4126|        if (!movingPiece) return 0;
+4127|        
+4128|        // CHECK 1: Is this a forcing move? (captures, checks, threats)
+4129|        const isCapture = board.has(toSquare) && board.get(toSquare);
+4130|        const isCheck = move.includes('+') || move.includes('#');
+4131|        const createsThreat = detectsThreatsAfterMove(move, board, activeColor);
+4132|        
+4133|        if (isCapture || isCheck) {
+4134|            score += 300;  // Forcing moves maintain initiative
+4135|        } else if (createsThreat) {
+4136|            score += 200;  // Threat creation maintains initiative
+4137|        }
+4138|        
+4139|        // CHECK 2: Retreat penalty (piece moving backward without good reason)
+4140|        const fromRank = parseInt(fromSquare[1]);
+4141|        const toRank = parseInt(toSquare[1]);
+4142|        
+4143|        const isWhite = activeColor === 'w';
+4144|        const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+4145|        
+4146|        if (isRetreat && !isCapture && !createsThreat) {
+4147|            score -= 400;  // Retreating without purpose loses tempo
+4148|            debugLog("[V40_INIT]", `⚠️ Retreating ${movingPiece} from ${fromSquare} to ${toSquare}`);
+4149|        }
+4150|        
+4151|        // CHECK 3: Development lead evaluation
+4152|        if (moveNumber <= 15) {
+4153|            const devScore = evaluateDevelopmentLead(board, activeColor);
+4154|            score += devScore * 2;
+4155|        }
+4156|        
+4157|        // CHECK 4: Same piece moving multiple times early (tempo loss)
+4158|        if (moveNumber <= 12) {
+4159|            const pieceType = movingPiece.toLowerCase();
+4160|            
+4161|            // Track piece origin squares for repeated moves
+4162|            if (!v40StrategicState.pieceMoveCounts) {
+4163|                v40StrategicState.pieceMoveCounts = new Map();
+4164|            }
+4165|            
+4166|            const count = v40StrategicState.pieceMoveCounts.get(fromSquare) || 0;
+4167|            if (count > 0) {
+4168|                score -= 200 * count;  // Penalty for moving same piece again
+4169|                debugLog("[V40_INIT]", `⚠️ Same piece moved ${count + 1} times in opening`);
+4170|            }
+4171|        }
+4172|        
+4173|        // CHECK 5: Passive vs Active - moves that don't improve position
+4174|        if (!isCapture && !isCheck && !createsThreat) {
+4175|            // Is this a passive defensive move?
+4176|            if (isDefensiveMove(move, board, activeColor)) {
+4177|                score -= 200;
+4178|            }
+4179|            
+4180|            // Does this improve piece activity?
+4181|            if (improvesPieceActivity(move, board, activeColor)) {
+4182|                score += 200;
+4183|            }
+4184|        }
+4185|        
+4186|    } catch (e) {
+4187|        debugLog("[V40_INIT]", `Error: ${e.message}`);
+4188|    }
+4189|    
+4190|    return score;
+4191|}
+4192|
+4193|/**
+4194| * v40.1: QUEEN MOVEMENT PENALTY
+4195| * Prevents disasters like Qd1-Qd3-Qe4-Qd3 sequence (4 queen moves in first 10 moves)
+4196| * Heavy penalty for excessive queen movement in opening/early middlegame
+4197| */
+4198|function v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) {
+4199|    let penalty = 0;
+4200|    
+4201|    try {
+4202|        const fromSquare = move.substring(0, 2);
+4203|        const movingPiece = board.get(fromSquare);
+4204|        
+4205|        if (!movingPiece) return 0;
+4206|        
+4207|        const isQueen = movingPiece.toLowerCase() === 'q';
+4208|        
+4209|        if (isQueen && moveNumber <= 20) {
+4210|            // Track queen moves
+4211|            if (moveNumber > v40LastQueenMoveNumber) {
+4212|                v40QueenMoveHistory.push(moveNumber);
+4213|                v40LastQueenMoveNumber = moveNumber;
+4214|            }
+4215|            
+4216|            // Count queen moves in the game so far
+4217|            const queenMoves = v40QueenMoveHistory.length;
+4218|            
+4219|            if (moveNumber <= 10) {
+4220|                // Opening: Heavy penalty for queen moves
+4221|                if (queenMoves >= 1) {
+4222|                    penalty -= 300;  // First queen move
+4223|                    debugLog("[V40_QUEEN]", `⚠️ Queen move #${queenMoves} in opening`);
+4224|                }
+4225|                if (queenMoves >= 2) {
+4226|                    penalty -= 600;  // Second queen move
+4227|                    debugLog("[V40_QUEEN]", `🚨 Second queen move in opening!`);
+4228|                }
+4229|                if (queenMoves >= 3) {
+4230|                    penalty -= 1500;  // Three queen moves = disaster
+4231|                    debugLog("[V40_QUEEN]", `🚨🚨 THREE queen moves in opening - losing tempo!`);
+4232|                }
+4233|                if (queenMoves >= 4) {
+4234|                    penalty -= 3000;  // Four+ queen moves = catastrophic
+4235|                    debugLog("[V40_QUEEN]", `🚨🚨🚨 FOUR+ queen moves - initiative destroyed!`);
+4236|                }
+4237|            } else if (moveNumber <= 20) {
+4238|                // Early middlegame: moderate penalty
+4239|                if (queenMoves >= 4) {
+4240|                    penalty -= 500;
+4241|                }
+4242|                if (queenMoves >= 6) {
+4243|                    penalty -= 1000;
+4244|                }
+4245|            }
+4246|            
+4247|            // Check if queen is being pushed around (retreating)
+4248|            const toSquare = move.substring(2, 4);
+4249|            const fromRank = parseInt(fromSquare[1]);
+4250|            const toRank = parseInt(toSquare[1]);
+4251|            const isWhite = activeColor === 'w';
+4252|            const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+4253|            
+4254|            if (isRetreat) {
+4255|                penalty -= 400;  // Queen retreat is especially bad
+4256|                debugLog("[V40_QUEEN]", `⚠️ Queen retreating from ${fromSquare} to ${toSquare}`);
+4257|            }
+4258|            
+4259|            // Queen early development penalty (before minor pieces)
+4260|            if (moveNumber <= 8) {
+4261|                const minorsDeveloped = countDevelopedMinorPieces(board, activeColor);
+4262|                if (minorsDeveloped < 3) {
+4263|                    penalty -= 500;
+4264|                    debugLog("[V40_QUEEN]", `⚠️ Queen out before minor pieces developed`);
+4265|                }
+4266|            }
+4267|        }
+4268|        
+4269|    } catch (e) {
+4270|        debugLog("[V40_QUEEN]", `Error: ${e.message}`);
+4271|    }
+4272|    
+4273|    return penalty;
+4274|}
+4275|
+4276|/**
+4277| * v40.1: Helper - Count developed minor pieces
+4278| */
+4279|function countDevelopedMinorPieces(board, color) {
+4280|    let count = 0;
+4281|    const knightChar = color === 'w' ? 'N' : 'n';
+4282|    const bishopChar = color === 'w' ? 'B' : 'b';
+4283|    const startRank = color === 'w' ? '1' : '8';
+4284|    
+4285|    for (const [square, piece] of board) {
+4286|        if (piece === knightChar || piece === bishopChar) {
+4287|            // Check if NOT on starting rank
+4288|            if (square[1] !== startRank) {
+4289|                count++;
+4290|            }
+4291|        }
+4292|    }
+4293|    
+4294|    return count;
+4295|}
+4296|
+4297|/**
+4298| * v40.1: Helper - Detect threats after move
+4299| */
+4300|function detectsThreatsAfterMove(move, board, activeColor) {

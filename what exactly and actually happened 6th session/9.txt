@@ -1,0 +1,4 @@
+Now I need to implement the new functions. Let me find a good location to add them:
+Action: $ grep -n "function v40QueenMovementPenalty" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 4198:function v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

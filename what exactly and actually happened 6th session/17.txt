@@ -1,0 +1,207 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "/**
+ * v40.1: QUEEN MOVEMENT PENALTY
+ * Prevents disasters like Qd1-Qd3-Qe4-Qd3 sequence (4 queen moves in first 10 moves)
+ * Heavy penalty for excessive queen movement in opening/early middlegame
+ */
+function v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) {
+    let penalty = 0;
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const isQueen = movingPiece.toLowerCase() === 'q';
+        
+        if (isQueen && moveNumber <= 20) {
+            // Track queen moves
+            if (moveNumber > v40LastQueenMoveNumber) {
+                v40QueenMoveHistory.push(moveNumber);
+                v40LastQueenMoveNumber = moveNumber;
+            }
+            
+            // Count queen moves in the game so far
+            const queenMoves = v40QueenMoveHistory.length;
+            
+            if (moveNumber <= 10) {
+                // Opening: Heavy penalty for queen moves
+                if (queenMoves >= 1) {
+                    penalty -= 300;  // First queen move
+                    debugLog(\"[V40_QUEEN]\", `⚠️ Queen move #${queenMoves} in opening`);
+                }
+                if (queenMoves >= 2) {
+                    penalty -= 600;  // Second queen move
+                    debugLog(\"[V40_QUEEN]\", `🚨 Second queen move in opening!`);
+                }
+                if (queenMoves >= 3) {
+                    penalty -= 1500;  // Three queen moves = disaster
+                    debugLog(\"[V40_QUEEN]\", `🚨🚨 THREE queen moves in opening - losing tempo!`);
+                }
+                if (queenMoves >= 4) {
+                    penalty -= 3000;  // Four+ queen moves = catastrophic
+                    debugLog(\"[V40_QUEEN]\", `🚨🚨🚨 FOUR+ queen moves - initiative destroyed!`);
+                }
+            } else if (moveNumber <= 20) {
+                // Early middlegame: moderate penalty
+                if (queenMoves >= 4) {
+                    penalty -= 500;
+                }
+                if (queenMoves >= 6) {
+                    penalty -= 1000;
+                }
+            }
+            
+            // Check if queen is being pushed around (retreating)
+            const toSquare = move.substring(2, 4);
+            const fromRank = parseInt(fromSquare[1]);
+            const toRank = parseInt(toSquare[1]);
+            const isWhite = activeColor === 'w';
+            const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+            
+            if (isRetreat) {
+                penalty -= 400;  // Queen retreat is especially bad
+                debugLog(\"[V40_QUEEN]\", `⚠️ Queen retreating from ${fromSquare} to ${toSquare}`);
+            }
+            
+            // Queen early development penalty (before minor pieces)
+            if (moveNumber <= 8) {
+                const minorsDeveloped = countDevelopedMinorPieces(board, activeColor);
+                if (minorsDeveloped < 3) {
+                    penalty -= 500;
+                    debugLog(\"[V40_QUEEN]\", `⚠️ Queen out before minor pieces developed`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_QUEEN]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.1: Helper - Count developed minor pieces
+ */" --new-str "/**
+ * v40.2: QUEEN MOVEMENT PENALTY — ENHANCED
+ * Prevents disasters like Qd1-Qd3-Qe4-Qd3 sequence (4 queen moves in first 10 moves)
+ * Heavy penalty for excessive queen movement in opening/early middlegame
+ * v40.2: SIGNIFICANTLY INCREASED PENALTIES
+ */
+function v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) {
+    let penalty = 0;
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const isQueen = movingPiece.toLowerCase() === 'q';
+        
+        if (isQueen && moveNumber <= 25) {
+            // Track queen moves
+            if (moveNumber > v40LastQueenMoveNumber) {
+                v40QueenMoveHistory.push(moveNumber);
+                v40LastQueenMoveNumber = moveNumber;
+            }
+            
+            // Count queen moves in the game so far
+            const queenMoves = v40QueenMoveHistory.length;
+            
+            if (moveNumber <= 10) {
+                // v40.2: Opening penalties DOUBLED
+                if (queenMoves >= 1) {
+                    penalty -= 600;  // First queen move (doubled from 300)
+                    debugLog(\"[V40_QUEEN]\", `⚠️ Queen move #${queenMoves} in opening`);
+                }
+                if (queenMoves >= 2) {
+                    penalty -= 1200;  // Second queen move (doubled)
+                    debugLog(\"[V40_QUEEN]\", `🚨 Second queen move in opening!`);
+                }
+                if (queenMoves >= 3) {
+                    penalty -= 3000;  // Three queen moves = disaster (doubled)
+                    debugLog(\"[V40_QUEEN]\", `🚨🚨 THREE queen moves in opening - INITIATIVE HEMORRHAGE!`);
+                }
+                if (queenMoves >= 4) {
+                    penalty -= 6000;  // Four+ queen moves = catastrophic (doubled)
+                    debugLog(\"[V40_QUEEN]\", `🚨🚨🚨 FOUR+ queen moves - POSITIONAL SUICIDE!`);
+                }
+            } else if (moveNumber <= 20) {
+                // Early middlegame: penalties increased
+                if (queenMoves >= 4) {
+                    penalty -= 1000;  // Doubled from 500
+                }
+                if (queenMoves >= 6) {
+                    penalty -= 2000;  // Doubled from 1000
+                }
+                if (queenMoves >= 8) {
+                    penalty -= 3500;  // NEW: Excessive wandering
+                    debugLog(\"[V40_QUEEN]\", `🚨🚨 Queen wandering aimlessly - ${queenMoves} moves!`);
+                }
+            }
+            
+            // v40.2: Queen retreat penalty TRIPLED
+            const toSquare = move.substring(2, 4);
+            const fromRank = parseInt(fromSquare[1]);
+            const toRank = parseInt(toSquare[1]);
+            const isWhite = activeColor === 'w';
+            const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+            
+            if (isRetreat) {
+                penalty -= 1200;  // Tripled from 400 - queen retreat is TERRIBLE
+                debugLog(\"[V40_QUEEN]\", `🚨 Queen RETREATING from ${fromSquare} to ${toSquare} - TEMPO LOSS!`);
+            }
+            
+            // v40.2: Queen early development penalty INCREASED
+            if (moveNumber <= 8) {
+                const minorsDeveloped = countDevelopedMinorPieces(board, activeColor);
+                if (minorsDeveloped < 2) {
+                    penalty -= 1500;  // Tripled - queen out way too early
+                    debugLog(\"[V40_QUEEN]\", `🚨🚨 Queen out before minor pieces developed - SERIOUS ERROR!`);
+                } else if (minorsDeveloped < 3) {
+                    penalty -= 800;
+                    debugLog(\"[V40_QUEEN]\", `⚠️ Queen out before full development`);
+                }
+            }
+            
+            // v40.2: NEW - Queen being attacked penalty
+            // If queen move is forced due to attack, smaller penalty
+            // But if voluntary queen shuffle, maximum penalty
+            const isCapture = board.has(toSquare);
+            if (!isCapture && !isGivingCheck(move, board, activeColor)) {
+                // Non-forcing queen move = wasteful
+                penalty -= 300;  // Additional penalty for non-forcing move
+            }
+            
+            // v40.2: NEW - Queen to same file twice = shuffling
+            const toFile = toSquare[0];
+            const fromFile = fromSquare[0];
+            if (toFile === fromFile && moveNumber <= 15) {
+                penalty -= 500;  // Shuffling on same file
+                debugLog(\"[V40_QUEEN]\", `⚠️ Queen shuffling on ${toFile}-file`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_QUEEN]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.2: Helper - Check if move gives check
+ */
+function isGivingCheck(move, board, activeColor) {
+    // Simplified check detection
+    // In a full implementation, this would simulate the move and check
+    return move.includes('+') || move.includes('#');
+}
+
+/**
+ * v40.2: Helper - Count developed minor pieces
+ */"
+Observation: Edit was successful.

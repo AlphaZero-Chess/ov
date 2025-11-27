@@ -1,0 +1,17 @@
+Now let me update the combined score calculation:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        // v40.1: TRUE ALPHAZERO weighted merge — v40 DOMINANT (55%)
+        // Engine provides baseline, but v40 superhuman evaluation is PRIMARY
+        const combinedScore = (
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.45 +  // Engine reduced to 45%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.45 +
+            normalizedPolicyPrior * 0.8 + // Policy bonus slightly reduced
+            v40Bonus                      // v40 DOMINANT at 55%
+        );" --new-str "        // v40.2: TRUE ALPHAZERO weighted merge — v40 ABSOLUTE DOMINANT (65%)
+        // Engine provides baseline, but v40 superhuman evaluation is ABSOLUTE PRIMARY
+        const combinedScore = (
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.35 +  // Engine reduced to 35%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.35 +
+            normalizedPolicyPrior * 0.6 + // Policy bonus reduced
+            v40Bonus                      // v40 ABSOLUTE DOMINANT at 65%
+        );"
+Observation: Edit was successful.
