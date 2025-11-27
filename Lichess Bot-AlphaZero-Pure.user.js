@@ -6356,6 +6356,555 @@ function v40IsForcingMove(move, board, activeColor) {
     return false;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.4: GODLIKE SUPERHUMAN FUNCTIONS
+// Addressing the specific failures in the second test game:
+// 1. Passive opening (d3 instead of d4) - Opening Principles
+// 2. Knight fork blindness (Nxg3+ tactic) - Enhanced Knight Detection
+// 3. Discovered attack blindness - Enhanced Discovery Detection
+// 4. Queen mate on g2 - Enhanced Queen Mating Patterns
+// 5. Pawn shield weakness - Pawn Shield Integrity
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.4: OPENING PRINCIPLES EVALUATION
+ * Penalizes passive openings like 2.d3 and rewards principled play
+ * AlphaZero always plays active, principled openings
+ */
+function v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40OpeningPrinciplesEnabled || moveNumber > 12) return 0;
+    
+    let score = 0;
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const pieceType = movingPiece.toLowerCase();
+        const isWhite = activeColor === 'w';
+        
+        // PRINCIPLE 1: Control the center with pawns (e4, d4 for white; e5, d5 for black)
+        if (pieceType === 'p') {
+            const idealSquares = isWhite ? ['e4', 'd4'] : ['e5', 'd5'];
+            const passiveSquares = isWhite ? ['e3', 'd3'] : ['e6', 'd6'];
+            
+            if (idealSquares.includes(toSquare)) {
+                score += CONFIG.v40OpeningCentralPawnBonus || 6000;
+                debugLog("[V40_OPENING]", `✅ PRINCIPLED: Central pawn to ${toSquare}`);
+            } else if (passiveSquares.includes(toSquare) && moveNumber <= 4) {
+                score += CONFIG.v40OpeningPassivePenalty || -8000;
+                debugLog("[V40_OPENING]", `🚨 PASSIVE OPENING: d3/e3 instead of d4/e4!`);
+            }
+        }
+        
+        // PRINCIPLE 2: Develop knights before bishops (usually)
+        if (pieceType === 'n' && moveNumber <= 6) {
+            const goodKnightSquares = isWhite ? ['f3', 'c3', 'd2', 'e2'] : ['f6', 'c6', 'd7', 'e7'];
+            if (goodKnightSquares.includes(toSquare)) {
+                score += CONFIG.v40OpeningKnightDevBonus || 4000;
+                debugLog("[V40_OPENING]", `✅ KNIGHT DEVELOPMENT: ${toSquare}`);
+            }
+        }
+        
+        // PRINCIPLE 3: Castle early for king safety
+        if (move === 'e1g1' || move === 'e1c1' || move === 'e8g8' || move === 'e8c8') {
+            if (moveNumber <= 10) {
+                score += CONFIG.v40OpeningCastlingBonus || 8000;
+                debugLog("[V40_OPENING]", `✅ EARLY CASTLING - Excellent!`);
+            }
+        }
+        
+        // PRINCIPLE 4: Don't move the same piece twice in opening
+        if (moveNumber <= 8 && pieceType !== 'p') {
+            // Check if this piece has moved before (simplified check)
+            const startSquares = getStartingSquare(pieceType, isWhite);
+            if (!startSquares.includes(fromSquare)) {
+                // Piece has moved before, now moving again
+                score += CONFIG.v40OpeningDoubleMovepenalty || -4000;
+                debugLog("[V40_OPENING]", `⚠️ Moving same piece twice: ${pieceType} from ${fromSquare}`);
+            }
+        }
+        
+        // PRINCIPLE 5: Queen should not come out too early
+        if (pieceType === 'q' && moveNumber <= 8) {
+            score += CONFIG.v40OpeningEarlyQueenPenalty || -6000;
+            debugLog("[V40_OPENING]", `⚠️ EARLY QUEEN MOVE in opening!`);
+        }
+        
+        // PRINCIPLE 6: Don't block central pawns with pieces
+        if (pieceType !== 'p' && moveNumber <= 6) {
+            const blockedSquares = isWhite ? ['d2', 'e2'] : ['d7', 'e7'];
+            if (blockedSquares.includes(toSquare)) {
+                const pawnBehind = isWhite ? board.get(toSquare[0] + '2') : board.get(toSquare[0] + '7');
+                if (pawnBehind && pawnBehind.toLowerCase() === 'p') {
+                    score += CONFIG.v40OpeningBlockPawnPenalty || -3000;
+                    debugLog("[V40_OPENING]", `⚠️ Blocking central pawn with ${pieceType}`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_OPENING]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.4: Helper - Get starting squares for piece type
+ */
+function getStartingSquare(pieceType, isWhite) {
+    const backRank = isWhite ? '1' : '8';
+    switch (pieceType) {
+        case 'n': return [`b${backRank}`, `g${backRank}`];
+        case 'b': return [`c${backRank}`, `f${backRank}`];
+        case 'r': return [`a${backRank}`, `h${backRank}`];
+        case 'q': return [`d${backRank}`];
+        case 'k': return [`e${backRank}`];
+        default: return [];
+    }
+}
+
+/**
+ * v40.4: ENHANCED DISCOVERED ATTACK DETECTION
+ * Detects discovered attacks that might be missed by the engine
+ * Addresses the Nf5 -> Nxg3+ winning the exchange pattern
+ */
+function v40EnhancedDiscoveredAttackDetection(fen, move, board, activeColor) {
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find all enemy pieces that could give discovered attacks
+        for (const [enemySq, enemyPiece] of simBoard) {
+            if (!enemyPiece) continue;
+            const isEnemy = (enemyPiece === enemyPiece.toUpperCase()) === (enemyColor === 'w');
+            if (!isEnemy) continue;
+            
+            const enemyType = enemyPiece.toLowerCase();
+            
+            // Knights are especially dangerous for discoveries
+            if (enemyType === 'n') {
+                // Check if knight can attack our valuable pieces
+                const knightAttacks = getKnightAttacks(enemySq);
+                for (const attackSq of knightAttacks) {
+                    const targetPiece = simBoard.get(attackSq);
+                    if (targetPiece) {
+                        const isOurs = (targetPiece === targetPiece.toUpperCase()) === (activeColor === 'w');
+                        if (isOurs) {
+                            const targetType = targetPiece.toLowerCase();
+                            // Knight can attack our valuable piece
+                            if (targetType === 'q') {
+                                penalty -= 9000;
+                                debugLog("[V40_DISCOVER]", `🚨 KNIGHT CAN ATTACK QUEEN from ${enemySq}!`);
+                            } else if (targetType === 'r') {
+                                penalty -= 5000;
+                                debugLog("[V40_DISCOVER]", `⚠️ Knight can attack rook from ${enemySq}`);
+                            } else if (targetType === 'k') {
+                                penalty -= 15000;  // Knight check is very dangerous
+                                debugLog("[V40_DISCOVER]", `🚨🚨 KNIGHT CAN CHECK KING from ${enemySq}!`);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Sliding pieces (bishop, rook, queen) for discovery
+            if (enemyType === 'b' || enemyType === 'r' || enemyType === 'q') {
+                // Check if our move opened a line for enemy
+                const directions = getSlidingDirections(enemyType);
+                for (const [dx, dy] of directions) {
+                    let x = (enemySq.charCodeAt(0) - 'a'.charCodeAt(0));
+                    let y = parseInt(enemySq[1]) - 1;
+                    
+                    let blocked = false;
+                    while (true) {
+                        x += dx;
+                        y += dy;
+                        if (x < 0 || x > 7 || y < 0 || y > 7) break;
+                        
+                        const sq = String.fromCharCode(x + 97) + (y + 1);
+                        const piece = simBoard.get(sq);
+                        
+                        if (piece) {
+                            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+                            if (isOurs) {
+                                const targetType = piece.toLowerCase();
+                                if (targetType === 'k') {
+                                    penalty -= 10000;
+                                    debugLog("[V40_DISCOVER]", `🚨 DISCOVERED CHECK POSSIBLE!`);
+                                } else if (targetType === 'q' && !blocked) {
+                                    penalty -= 7000;
+                                    debugLog("[V40_DISCOVER]", `⚠️ Queen exposed to ${enemyType}`);
+                                }
+                            }
+                            blocked = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_DISCOVER]", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.4: Helper - Get knight attack squares
+ */
+function getKnightAttacks(square) {
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    const attacks = [];
+    const offsets = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+    
+    for (const [dx, dy] of offsets) {
+        const newFile = file + dx;
+        const newRank = rank + dy;
+        if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+            attacks.push(String.fromCharCode(newFile + 97) + (newRank + 1));
+        }
+    }
+    return attacks;
+}
+
+/**
+ * v40.4: Helper - Get sliding piece directions
+ */
+function getSlidingDirections(pieceType) {
+    const bishopDirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
+    const rookDirs = [[-1,0],[1,0],[0,-1],[0,1]];
+    
+    switch (pieceType) {
+        case 'b': return bishopDirs;
+        case 'r': return rookDirs;
+        case 'q': return [...bishopDirs, ...rookDirs];
+        default: return [];
+    }
+}
+
+/**
+ * v40.4: KNIGHT INVASION PENALTY
+ * Detects when enemy knights have dangerous invasion squares
+ * Addresses the Nf5-Nxg3+ pattern from the test game
+ */
+function v40KnightInvasionPenalty(fen, move, board, activeColor) {
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find enemy knights
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (!isEnemy || piece.toLowerCase() !== 'n') continue;
+            
+            const knightFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const knightRank = parseInt(square[1]) - 1;
+            
+            // Check if knight is in our territory (dangerous invasion)
+            const dangerousRanks = isWhite ? [2, 3, 4] : [3, 4, 5];  // Ranks 3-5 for white, 4-6 for black
+            if (dangerousRanks.includes(knightRank)) {
+                penalty -= 2500;
+                debugLog("[V40_KNIGHT_INV]", `⚠️ Enemy knight invaded to ${square}`);
+                
+                // CRITICAL: Knight near our king's castled position
+                const ourKing = findKing(simBoard, activeColor);
+                if (ourKing) {
+                    const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+                    const kingRank = parseInt(ourKing[1]) - 1;
+                    
+                    if (Math.abs(knightFile - kingFile) <= 2 && Math.abs(knightRank - kingRank) <= 2) {
+                        penalty -= 5000;
+                        debugLog("[V40_KNIGHT_INV]", `🚨 KNIGHT NEAR KING! ${square} attacks ${ourKing}`);
+                    }
+                }
+                
+                // Check knight attack squares for valuable targets
+                const knightAttacks = getKnightAttacks(square);
+                for (const attackSq of knightAttacks) {
+                    const target = simBoard.get(attackSq);
+                    if (target) {
+                        const isOurs = (target === target.toUpperCase()) === (activeColor === 'w');
+                        if (isOurs) {
+                            const targetType = target.toLowerCase();
+                            if (targetType === 'q') {
+                                penalty -= 8000;
+                                debugLog("[V40_KNIGHT_INV]", `🚨🚨 KNIGHT THREATENS QUEEN!`);
+                            } else if (targetType === 'r') {
+                                penalty -= 4000;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Check if knight can give check
+            const knightAttacks2 = getKnightAttacks(square);
+            const ourKing2 = findKing(simBoard, activeColor);
+            if (ourKing2 && knightAttacks2.includes(ourKing2)) {
+                penalty -= 6000;
+                debugLog("[V40_KNIGHT_INV]", `🚨 KNIGHT CAN GIVE CHECK from ${square}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_KNIGHT_INV]", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.4: ENHANCED QUEEN MATING PATTERN DETECTION
+ * Detects queen mate threats like Qxg2# from the test game
+ */
+function v40EnhancedQueenMatingPatterns(fen, move, board, activeColor) {
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find our king
+        const ourKing = findKing(simBoard, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]) - 1;
+        const isWhite = activeColor === 'w';
+        
+        // Find enemy queen
+        let enemyQueen = null;
+        for (const [square, piece] of simBoard) {
+            if (!piece) continue;
+            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+            if (isEnemy && piece.toLowerCase() === 'q') {
+                enemyQueen = square;
+                break;
+            }
+        }
+        
+        if (!enemyQueen) return 0;
+        
+        // Check for classic mating squares (g2/g7, h2/h7, f2/f7)
+        const matingSquares = isWhite ? ['g2', 'h2', 'f2', 'h1', 'g1'] : ['g7', 'h7', 'f7', 'h8', 'g8'];
+        
+        for (const mateSq of matingSquares) {
+            // Check if enemy queen can reach this square
+            if (canQueenReach(enemyQueen, mateSq, simBoard)) {
+                // Check if this would be checkmate
+                const sqFile = mateSq.charCodeAt(0) - 'a'.charCodeAt(0);
+                const sqRank = parseInt(mateSq[1]) - 1;
+                
+                // If queen can reach a square adjacent to our king
+                if (Math.abs(sqFile - kingFile) <= 1 && Math.abs(sqRank - kingRank) <= 1) {
+                    penalty -= 8000;
+                    debugLog("[V40_QMATE]", `🚨 QUEEN CAN REACH ${mateSq} - MATING THREAT!`);
+                    
+                    // Check if g2/g7 pawn is missing (very dangerous)
+                    const criticalPawn = isWhite ? 'g2' : 'g7';
+                    const pawn = simBoard.get(criticalPawn);
+                    if (!pawn || pawn.toLowerCase() !== 'p') {
+                        penalty -= 10000;
+                        debugLog("[V40_QMATE]", `🚨🚨 ${criticalPawn} PAWN MISSING - MATE IMMINENT!`);
+                    }
+                }
+            }
+        }
+        
+        // Check for back rank mate with queen
+        const backRank = isWhite ? 0 : 7;
+        if (kingRank === backRank) {
+            // King on back rank, check if queen can deliver mate
+            for (let file = 0; file <= 7; file++) {
+                const sq = String.fromCharCode(file + 97) + (backRank + 1);
+                if (canQueenReach(enemyQueen, sq, simBoard)) {
+                    penalty -= 5000;
+                    debugLog("[V40_QMATE]", `⚠️ Queen can reach back rank ${sq}`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40_QMATE]", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.4: Helper - Check if queen can reach a square
+ */
+function canQueenReach(queenSq, targetSq, board) {
+    if (queenSq === targetSq) return true;
+    
+    const qFile = queenSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const qRank = parseInt(queenSq[1]) - 1;
+    const tFile = targetSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(targetSq[1]) - 1;
+    
+    const fileDiff = tFile - qFile;
+    const rankDiff = tRank - qRank;
+    
+    // Queen moves like rook or bishop
+    const isRookMove = fileDiff === 0 || rankDiff === 0;
+    const isBishopMove = Math.abs(fileDiff) === Math.abs(rankDiff);
+    
+    if (!isRookMove && !isBishopMove) return false;
+    
+    // Check path is clear
+    const dx = fileDiff === 0 ? 0 : (fileDiff > 0 ? 1 : -1);
+    const dy = rankDiff === 0 ? 0 : (rankDiff > 0 ? 1 : -1);
+    
+    let x = qFile + dx;
+    let y = qRank + dy;
+    
+    while (x !== tFile || y !== tRank) {
+        const sq = String.fromCharCode(x + 97) + (y + 1);
+        if (board.get(sq)) return false;  // Path blocked
+        x += dx;
+        y += dy;
+    }
+    
+    // Check if target square is empty or has capturable piece
+    const targetPiece = board.get(targetSq);
+    return !targetPiece || true;  // Can capture
+}
+
+/**
+ * v40.4: PAWN SHIELD INTEGRITY EVALUATION
+ * Ensures king's pawn shield is maintained
+ * Addresses the g2 weakness from the test game
+ */
+function v40PawnShieldIntegrityEval(fen, move, board, activeColor) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Simulate the move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find our king
+        const ourKing = findKing(simBoard, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        
+        // Check if king has castled (on g or c file)
+        const isCastledKingside = isWhite ? (kingFile >= 5) : (kingFile >= 5);
+        const isCastledQueenside = isWhite ? (kingFile <= 2) : (kingFile <= 2);
+        
+        if (!isCastledKingside && !isCastledQueenside) return 0;  // King hasn't castled
+        
+        // Define pawn shield squares
+        let shieldSquares;
+        if (isCastledKingside) {
+            shieldSquares = isWhite ? ['f2', 'g2', 'h2'] : ['f7', 'g7', 'h7'];
+        } else {
+            shieldSquares = isWhite ? ['a2', 'b2', 'c2'] : ['a7', 'b7', 'c7'];
+        }
+        
+        const pawnChar = isWhite ? 'P' : 'p';
+        let intactPawns = 0;
+        let missingPawns = [];
+        let advancedPawns = [];
+        
+        for (const sq of shieldSquares) {
+            const piece = simBoard.get(sq);
+            if (piece === pawnChar) {
+                intactPawns++;
+            } else {
+                missingPawns.push(sq);
+                // Check if pawn has advanced
+                const advancedSq = isWhite ? sq[0] + '3' : sq[0] + '6';
+                const advancedSq2 = isWhite ? sq[0] + '4' : sq[0] + '5';
+                if (simBoard.get(advancedSq) === pawnChar || simBoard.get(advancedSq2) === pawnChar) {
+                    advancedPawns.push(sq[0]);
+                }
+            }
+        }
+        
+        // Scoring
+        if (intactPawns === 3) {
+            score += CONFIG.v40PawnShieldBonus || 3000;
+        } else if (intactPawns === 2) {
+            score -= 1500;
+        } else if (intactPawns === 1) {
+            score -= 4000;
+            debugLog("[V40_PAWNSHIELD]", `⚠️ Only 1 pawn shield remaining!`);
+        } else {
+            score -= 8000;
+            debugLog("[V40_PAWNSHIELD]", `🚨 NO PAWN SHIELD - King exposed!`);
+        }
+        
+        // Extra penalty for g2/g7 missing (classic weakness)
+        const criticalPawn = isWhite ? 'g2' : 'g7';
+        if (missingPawns.includes(criticalPawn)) {
+            score -= 5000;
+            debugLog("[V40_PAWNSHIELD]", `🚨 CRITICAL: ${criticalPawn} pawn missing!`);
+        }
+        
+        // Penalty for moving pawn shield pawns
+        if (movingPiece && movingPiece.toLowerCase() === 'p' && shieldSquares.includes(fromSquare)) {
+            score -= 3000;
+            debugLog("[V40_PAWNSHIELD]", `⚠️ Moving pawn shield pawn from ${fromSquare}`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40_PAWNSHIELD]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
 /**
  * v40: Evaluate goal alignment with strategic plan
  * True AlphaZero evaluates moves based on how well they fit the plan
@@ -21202,17 +21751,39 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.3 NEW: INITIATIVE PRESERVATION — Never lose the initiative
                 const initiativePreservationBonus = v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
                 
-                // v40.3: COMBINED v40 SCORE — 75% ABSOLUTE DOMINANT INFLUENCE
-                // This makes v40 the ULTIMATE factor in move selection
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.4 GODLIKE: NEW TACTICAL & POSITIONAL BLINDSPOT PREVENTION
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.4: OPENING PRINCIPLES — Enforce principled play (prevents d3 disasters)
+                const openingPrinciplesScore = v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) * 0.9;
+                
+                // v40.4: ENHANCED DISCOVERED ATTACK DETECTION — Prevents Nxg3+ type blindspots
+                const discoveredAttackPenalty = v40EnhancedDiscoveredAttackDetection(fen, move, board, activeColor) * 1.0;
+                
+                // v40.4: KNIGHT INVASION PENALTY — Prevent enemy knight infiltration
+                const knightInvasionPenalty = v40KnightInvasionPenalty(fen, move, board, activeColor) * 0.8;
+                
+                // v40.4: ENHANCED QUEEN MATING PATTERNS — Detect Qxg2# type mates
+                const queenMatingPenalty = v40EnhancedQueenMatingPatterns(fen, move, board, activeColor) * 0.9;
+                
+                // v40.4: PAWN SHIELD INTEGRITY — Critical for king safety
+                const pawnShieldScore = v40PawnShieldIntegrityEval(fen, move, board, activeColor) * 0.7;
+                
+                // v40.4: COMBINED v40 SCORE — 80% GODLIKE DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE DOMINANT factor in move selection
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
                                antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
-                               counterattackBonus + initiativePreservationBonus;
-                v40Bonus = v40DeepScore * 0.75;  // 75% influence — ULTIMATE PARADIGM SHIFT
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 NEW additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore;
+                v40Bonus = v40DeepScore * 0.80;  // 80% influence — GODLIKE PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.3 ULTIMATE EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.4 GODLIKE EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -21227,7 +21798,12 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 75% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog("[V40_INTEGRATE]", `   🆕 OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 PawnShield: ${pawnShieldScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 80% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
             } catch (e) {
                 debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
