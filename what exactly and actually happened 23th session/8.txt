@@ -1,0 +1,5 @@
+Now let me add the v40.13 functions. First, let me find where to add them:
+Action: $ cd /app && grep -n "v40QueenTrapPreventionEval\|// v40.12 Helper" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 12244:function v40QueenTrapPreventionEval(fen, move, board, activeColor, moveNumber) {
+27626:                const queenTrapPreventionScore = v40QueenTrapPreventionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+Exit code: 0

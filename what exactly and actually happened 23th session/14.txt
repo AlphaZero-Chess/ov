@@ -1,0 +1,37 @@
+Now let me add the v40.13 function calls and integration:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.12: QUEEN TRAP PREVENTION — Drive away infiltrating queen
+                const queenTrapPreventionScore = v40QueenTrapPreventionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.12: COMBINED v40 SCORE — 100% PROACTIVE SUPREME DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE PROACTIVE SUPREME factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus +" --new-str "                // v40.12: QUEEN TRAP PREVENTION — Drive away infiltrating queen
+                const queenTrapPreventionScore = v40QueenTrapPreventionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.13 ULTIMATE TACTICAL SUPREME: ZERO BLUNDER TACTICAL SYSTEM
+                // From latest game: Bot played Bd3 allowing exd3, queen ate EVERYTHING
+                // This is THE MOST CRITICAL FIX - ABSOLUTE ZERO simple tactical blunders!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.13: IMMEDIATE MATERIAL LOSS — Check if move loses material IMMEDIATELY
+                const immediateMaterialLossScore = v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber) * 5.0;
+                
+                // v40.13: CAPTURE CHAIN ANALYSIS — Calculate result of capture sequences
+                const captureChainScore = v40CaptureChainAnalysisEval(fen, move, board, activeColor, moveNumber) * 3.0;
+                
+                // v40.13: QUEEN INFILTRATION ABSOLUTE — Don't let queen eat pieces freely
+                const queenInfiltrationAbsoluteScore = v40QueenInfiltrationAbsoluteEval(fen, move, board, activeColor, moveNumber) * 4.0;
+                
+                // v40.13: PRE-MOVE SAFETY CHECK — Comprehensive safety verification
+                const preMoveSafetyScore = v40PreMoveSafetyCheckEval(fen, move, board, activeColor, moveNumber) * 4.0;
+                
+                // v40.13: OPENING BLUNDER PREVENTION — No blunders in opening
+                const openingBlunderScore = v40OpeningBlunderPreventionEval(fen, move, board, activeColor, moveNumber) * 3.5;
+                
+                // v40.13: SIMPLE THREAT DETECTION — Don't miss simple threats
+                const simpleThreatScore = v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) * 3.0;
+                
+                // v40.13: COMBINED v40 SCORE — 100% ULTIMATE TACTICAL SUPREME INFLUENCE
+                // This makes v40 the ABSOLUTE ULTIMATE TACTICAL SUPREME factor
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus +"
+Observation: Edit was successful.

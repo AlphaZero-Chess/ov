@@ -1,0 +1,5 @@
+Let me find the exact integration point for v40.12 to add v40.13:
+Action: $ cd /app && grep -n "v40.12 PROACTIVE SUPREME additions\|prophylacticExchangeScore + pawnStormAnticipationScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 28349:                               // v40.12 PROACTIVE SUPREME additions:
+28350:                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+Exit code: 0

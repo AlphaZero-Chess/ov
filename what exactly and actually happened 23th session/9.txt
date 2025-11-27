@@ -1,0 +1,104 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+12300|    return score;
+12301|}
+12302|
+12303|/**
+12304| * v40.12 Helper: Check if a move would attack a specific square
+12305| */
+12306|function wouldMoveAttackSquare(move, movingPiece, targetSquare, board) {
+12307|    if (!movingPiece) return false;
+12308|    
+12309|    const toSquare = move.substring(2, 4);
+12310|    const pieceType = movingPiece.toLowerCase();
+12311|    
+12312|    const toFile = toSquare.charCodeAt(0) - 97;
+12313|    const toRank = parseInt(toSquare[1]);
+12314|    const targetFile = targetSquare.charCodeAt(0) - 97;
+12315|    const targetRank = parseInt(targetSquare[1]);
+12316|    
+12317|    const fileDiff = Math.abs(toFile - targetFile);
+12318|    const rankDiff = Math.abs(toRank - targetRank);
+12319|    
+12320|    // Knight attacks
+12321|    if (pieceType === 'n') {
+12322|        return (fileDiff === 1 && rankDiff === 2) || (fileDiff === 2 && rankDiff === 1);
+12323|    }
+12324|    
+12325|    // Bishop attacks (diagonal)
+12326|    if (pieceType === 'b') {
+12327|        return fileDiff === rankDiff && fileDiff > 0;
+12328|    }
+12329|    
+12330|    // Rook attacks (file/rank)
+12331|    if (pieceType === 'r') {
+12332|        return (fileDiff === 0 || rankDiff === 0) && (fileDiff + rankDiff > 0);
+12333|    }
+12334|    
+12335|    // Queen attacks (diagonal + file/rank)
+12336|    if (pieceType === 'q') {
+12337|        return (fileDiff === rankDiff && fileDiff > 0) || 
+12338|               ((fileDiff === 0 || rankDiff === 0) && (fileDiff + rankDiff > 0));
+12339|    }
+12340|    
+12341|    // Pawn attacks
+12342|    if (pieceType === 'p') {
+12343|        const isWhite = movingPiece === movingPiece.toUpperCase();
+12344|        const pawnAttackRank = isWhite ? toRank + 1 : toRank - 1;
+12345|        return fileDiff === 1 && targetRank === pawnAttackRank;
+12346|    }
+12347|    
+12348|    return false;
+12349|}
+12350|
+12351|// ═══════════════════════════════════════════════════════════════════════════════
+12352|
+12353|/**
+12354| * v40.9 Helper: Find all attacked pieces for a color
+12355| */
+12356|function findAttackedPiecesV40_9(board, color) {
+12357|    const attacked = [];
+12358|    const isWhite = color === 'w';
+12359|    const enemyColor = isWhite ? 'b' : 'w';
+12360|    
+12361|    for (const [square, piece] of board) {
+12362|        if (!piece) continue;
+12363|        const pieceIsWhite = piece === piece.toUpperCase();
+12364|        if (pieceIsWhite !== isWhite) continue;
+12365|        
+12366|        const pieceType = piece.toLowerCase();
+12367|        if (pieceType === 'k') continue;  // King attacks handled separately
+12368|        
+12369|        // Check if this square is attacked by enemy
+12370|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+12371|            // Check if it's adequately defended
+12372|            const isDefended = isSquareDefendedByColor(board, square, color);
+12373|            
+12374|            // If attacked by something of lower value, still need to consider
+12375|            const attackers = findAttackersOfSquare(board, square, enemyColor);
+12376|            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+12377|            const ourPieceValue = getPieceValueSimple(pieceType);
+12378|            
+12379|            // Consider it under attack if:
+12380|            // 1. Not defended at all, or
+12381|            // 2. Attacker is of lower value than our piece
+12382|            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+12383|                attacked.push({
+12384|                    square,
+12385|                    piece,
+12386|                    value: ourPieceValue,
+12387|                    lowestAttackerValue
+12388|                });
+12389|            }
+12390|        }
+12391|    }
+12392|    
+12393|    // Sort by piece value (highest first - queen, then rook, etc.)
+12394|    attacked.sort((a, b) => b.value - a.value);
+12395|    
+12396|    return attacked;
+12397|}
+12398|
+12399|/**
+12400| * v40.9 Helper: Find all hanging pieces (attacked and not defended)

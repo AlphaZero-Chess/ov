@@ -1,0 +1,131 @@
+Let me examine the v40.12 functions more closely and the latest game to identify the core issues:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+11673|function v40ProphylacticExchangeEval(fen, move, board, activeColor, moveNumber) {
+11674|    if (!CONFIG.v40ProphylacticExchangeEnabled) return 0;
+11675|    
+11676|    let score = 0;
+11677|    const isWhite = activeColor === 'w';
+11678|    
+11679|    try {
+11680|        const fromSquare = move.substring(0, 2);
+11681|        const toSquare = move.substring(2, 4);
+11682|        const movingPiece = board.get(fromSquare);
+11683|        const capturedPiece = board.get(toSquare);
+11684|        
+11685|        if (!movingPiece || !capturedPiece) return 0;
+11686|        
+11687|        const movingType = movingPiece.toLowerCase();
+11688|        const capturedType = capturedPiece.toLowerCase();
+11689|        
+11690|        // Find our king
+11691|        let ourKing = null;
+11692|        for (const [sq, piece] of board) {
+11693|            if (piece && piece.toLowerCase() === 'k') {
+11694|                const pieceIsWhite = piece === piece.toUpperCase();
+11695|                if (pieceIsWhite === isWhite) {
+11696|                    ourKing = sq;
+11697|                    break;
+11698|                }
+11699|            }
+11700|        }
+11701|        
+11702|        if (!ourKing) return 0;
+11703|        
+11704|        const kingFile = ourKing.charCodeAt(0) - 97;
+11705|        const kingRank = parseInt(ourKing[1]);
+11706|        const kingOnKingside = kingFile >= 4;
+11707|        const kingOnQueenside = kingFile <= 3;
+11708|        
+11709|        // Check if capture is on f/g/h files (kingside) or a/b/c files (queenside)
+11710|        const captureFile = toSquare[0];
+11711|        const captureFileNum = toSquare.charCodeAt(0) - 97;
+11712|        
+11713|        // CRITICAL: Capturing pieces that can be recaptured by pawns opening files toward king
+11714|        // Example: Bxf6 gxf6 opens g-file, Nxf6 gxf6 opens g-file
+11715|        
+11716|        // Check for pawn recapture possibility
+11717|        const enemyPawnFiles = ['f', 'g', 'h']; // Files where pawn recaptures open toward white king
+11718|        
+11719|        // If we capture on f6 (or f3 for black), check if g-pawn can recapture
+11720|        if (captureFile === 'f') {
+11721|            const recaptureRank = isWhite ? '6' : '3'; // f6 for white attacking, f3 for black attacking
+11722|            const gPawnSquare = isWhite ? 'g7' : 'g2'; // Enemy's g-pawn that could recapture
+11723|            const hPawnSquare = isWhite ? 'h7' : 'h2';
+11724|            
+11725|            if (toSquare[1] === recaptureRank) {
+11726|                // Check if enemy g-pawn exists and can recapture
+11727|                const enemyGPawn = board.get(gPawnSquare);
+11728|                if (enemyGPawn && enemyGPawn.toLowerCase() === 'p') {
+11729|                    // This capture will likely result in gxf6, opening g-file!
+11730|                    if (kingOnKingside) {
+11731|                        score += CONFIG.v40OpenGFileExchangePenalty || -500000;
+11732|                        debugLog("[V40.12_PROPHYLACTIC]", `🚨🚨🚨 DANGER: ${move} will be recaptured gxf opening G-FILE toward king!`);
+11733|                    }
+11734|                }
+11735|            }
+11736|        }
+11737|        
+11738|        // If we capture on g6 (or g3 for black), check if h-pawn can recapture
+11739|        if (captureFile === 'g') {
+11740|            const recaptureRank = isWhite ? '6' : '3';
+11741|            const hPawnSquare = isWhite ? 'h7' : 'h2';
+11742|            
+11743|            if (toSquare[1] === recaptureRank || toSquare === 'g6' || toSquare === 'g3') {
+11744|                const enemyHPawn = board.get(hPawnSquare);
+11745|                if (enemyHPawn && enemyHPawn.toLowerCase() === 'p') {
+11746|                    if (kingOnKingside) {
+11747|                        score += CONFIG.v40OpenHFileExchangePenalty || -400000;
+11748|                        debugLog("[V40.12_PROPHYLACTIC]", `🚨🚨 DANGER: ${move} will be recaptured hxg opening H-FILE toward king!`);
+11749|                    }
+11750|                }
+11751|            }
+11752|        }
+11753|        
+11754|        // If we capture on b6 (or b3 for black), queenside file opening
+11755|        if (captureFile === 'b' || captureFile === 'c') {
+11756|            const recaptureRank = isWhite ? '6' : '3';
+11757|            const aPawnSquare = isWhite ? 'a7' : 'a2';
+11758|            const cPawnSquare = isWhite ? 'c7' : 'c2';
+11759|            
+11760|            if (kingOnQueenside) {
+11761|                const enemyAPawn = board.get(aPawnSquare);
+11762|                const enemyCPawn = board.get(cPawnSquare);
+11763|                
+11764|                if ((captureFile === 'b' && enemyAPawn) || (captureFile === 'c' && enemyCPawn)) {
+11765|                    score += CONFIG.v40OpenQueensideFilePenalty || -300000;
+11766|                    debugLog("[V40.12_PROPHYLACTIC]", `🚨 DANGER: ${move} may open file toward queenside-castled king!`);
+11767|                }
+11768|            }
+11769|        }
+11770|        
+11771|        // CRITICAL: Exchanging king's defender pieces
+11772|        // Don't trade pieces that are defending the king's position
+11773|        if (['b', 'n'].includes(movingType)) {
+11774|            // Check if this piece is on a square defending kingside
+11775|            const fromFile = fromSquare.charCodeAt(0) - 97;
+11776|            const fromRank = parseInt(fromSquare[1]);
+11777|            
+11778|            // Piece on f1-f3 or g1-g3 (for white) defending kingside
+11779|            if (kingOnKingside) {
+11780|                if ((fromFile === 5 || fromFile === 6) && (isWhite ? fromRank <= 3 : fromRank >= 6)) {
+11781|                    // Trading away kingside defender
+11782|                    score += CONFIG.v40TradeKingsideDefenderPenalty || -200000;
+11783|                    debugLog("[V40.12_PROPHYLACTIC]", `🚨 Trading ${movingType.toUpperCase()} from kingside defensive position!`);
+11784|                }
+11785|            }
+11786|        }
+11787|        
+11788|    } catch (e) {
+11789|        debugLog("[V40.12_PROPHYLACTIC]", `Error: ${e.message}`);
+11790|    }
+11791|    
+11792|    return score;
+11793|}
+11794|
+11795|/**
+11796| * v40.12 PROACTIVE: PAWN STORM ANTICIPATION
+11797| * Detect when opponent is setting up a pawn storm BEFORE it happens
+11798| * From French Defense loss: f5-f4 pawn storm came but bot didn't react
+11799| * This detects f7/f5 or f2/f4 pawn configurations signaling incoming storm
+11800| */
