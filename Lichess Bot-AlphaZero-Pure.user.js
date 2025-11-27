@@ -4085,6 +4085,74 @@ function v40DeepMatingNetDetection(fen, move, board, activeColor) {
             }
         }
         
+        // v40.3 CHECK 7: Ra1# SPECIFIC PATTERN - King on edge file with rook on 1st/8th
+        // This is exactly what happened in the lost game: Ka3 → Ra1#
+        if (kingFile === 0 || kingFile === 7) {  // King on a-file or h-file
+            const targetRank = kingFile === 0 ? '1' : '1';  // Check both first ranks
+            for (const rookSq of enemyRooks) {
+                const rookFile = rookSq.charCodeAt(0) - 'a'.charCodeAt(0);
+                const rookRank = rookSq[1];
+                
+                // Rook on a1 or a8 when king is on a-file = immediate mate threat
+                if (kingFile === 0 && rookFile === 0 && (rookRank === '1' || rookRank === '8')) {
+                    penalty -= 5000;  // CRITICAL: Ra1# or Ra8# imminent
+                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 Ra1# PATTERN: Rook on a-file edge, king trapped!`);
+                }
+                // Same for h-file
+                if (kingFile === 7 && rookFile === 7 && (rookRank === '1' || rookRank === '8')) {
+                    penalty -= 5000;
+                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 Rh1# PATTERN: Rook on h-file edge, king trapped!`);
+                }
+                
+                // Rook ready to deliver mate on 1st/8th rank
+                if ((rookRank === '1' || rookRank === '8') && Math.abs(rookFile - kingFile) <= 1) {
+                    penalty -= 3500;
+                    debugLog("[V40_MATING_NET]", `🚨🚨 Rook on back rank near edge king - MATE THREAT!`);
+                }
+            }
+            
+            // Queen can also deliver Ra1# style mates
+            for (const queenSq of enemyQueen) {
+                const queenFile = queenSq.charCodeAt(0) - 'a'.charCodeAt(0);
+                const queenRank = queenSq[1];
+                
+                if ((queenRank === '1' || queenRank === '8') && Math.abs(queenFile - kingFile) <= 1) {
+                    penalty -= 4000;
+                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 Queen on back rank near edge king - MATE THREAT!`);
+                }
+            }
+        }
+        
+        // v40.3 CHECK 8: King trapped between edge and enemy pieces
+        // Count escape squares in detail
+        let totalEscapeSquares = 0;
+        for (let df = -1; df <= 1; df++) {
+            for (let dr = -1; dr <= 1; dr++) {
+                if (df === 0 && dr === 0) continue;
+                const newFile = kingFile + df;
+                const newRank = kingRank + dr;
+                if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) continue;
+                
+                const escSq = String.fromCharCode(newFile + 97) + (newRank + 1);
+                const pieceOnSquare = simBoard.get(escSq);
+                
+                if (!pieceOnSquare) {
+                    totalEscapeSquares++;
+                } else {
+                    const isOurs = (pieceOnSquare === pieceOnSquare.toUpperCase()) === (activeColor === 'w');
+                    if (!isOurs) totalEscapeSquares++;  // Can capture
+                }
+            }
+        }
+        
+        if (totalEscapeSquares <= 1 && isCornerArea) {
+            penalty -= 4000;  // King nearly trapped
+            debugLog("[V40_MATING_NET]", `🚨🚨🚨 KING NEARLY TRAPPED - Only ${totalEscapeSquares} escape squares!`);
+        } else if (totalEscapeSquares <= 2 && isCornerArea) {
+            penalty -= 2000;
+            debugLog("[V40_MATING_NET]", `🚨🚨 Limited king mobility in corner area`);
+        }
+        
     } catch (e) {
         debugLog("[V40_MATING_NET]", `Error: ${e.message}`);
     }
@@ -5861,6 +5929,7 @@ function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
     
     let score = 0;
     const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    const isWhite = activeColor === 'w';
     
     try {
         // Simulate move
@@ -5874,10 +5943,20 @@ function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
             simBoard.set(toSquare, movingPiece);
         }
         
-        // Calculate space advantage
+        // v40.3: ENHANCED SPACE CALCULATION - True territorial control
         const ourSpace = v40CalculateSpaceAdvantage(simBoard, activeColor);
         const enemySpace = v40CalculateSpaceAdvantage(simBoard, enemyColor);
         const spaceAdvantage = ourSpace - enemySpace;
+        
+        // v40.3: RANK-BASED TERRITORY CONTROL
+        const ourTerritoryRanks = v40CalculateTerritoryDepth(simBoard, activeColor);
+        const enemyTerritoryRanks = v40CalculateTerritoryDepth(simBoard, enemyColor);
+        const territoryAdvantage = ourTerritoryRanks - enemyTerritoryRanks;
+        
+        if (territoryAdvantage > 2) {
+            score += CONFIG.v40SpaceRestrictionValue || 6000;
+            debugLog("[V40_SPACE]", `🏰 TERRITORIAL EXPANSION: +${territoryAdvantage} ranks`);
+        }
         
         if (spaceAdvantage > 10) {
             score += CONFIG.v40SpaceAdvantageBonus || 10000;
@@ -5886,7 +5965,7 @@ function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
             score += (CONFIG.v40SpaceAdvantageBonus || 10000) * 0.5;
         }
         
-        // Central domination
+        // v40.3: CENTRAL FILE CONTROL (d and e files especially)
         const centralControl = v40CalculateCentralControl(simBoard, activeColor);
         const enemyCentralControl = v40CalculateCentralControl(simBoard, enemyColor);
         
@@ -5894,10 +5973,44 @@ function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
             score += CONFIG.v40CentralDominationBonus || 8000;
         }
         
-        // Positional squeeze
-        if (spaceAdvantage > 15) {
+        // v40.3: OPEN FILE DOMINATION - Critical for the c-file invasion problem
+        const openFileControl = v40CalculateOpenFileControl(simBoard, activeColor);
+        const enemyOpenFileControl = v40CalculateOpenFileControl(simBoard, enemyColor);
+        
+        if (openFileControl > enemyOpenFileControl) {
+            score += (CONFIG.v40CentralDominationBonus || 8000) * 0.8;
+            debugLog("[V40_SPACE]", `✅ OPEN FILE CONTROL: +${openFileControl - enemyOpenFileControl}`);
+        } else if (enemyOpenFileControl > openFileControl + 1) {
+            // v40.3: WARNING - Enemy controls open files!
+            score -= CONFIG.v40SpaceRestrictionValue || 6000;
+            debugLog("[V40_SPACE]", `⚠️ ENEMY FILE CONTROL: -${enemyOpenFileControl - openFileControl}`);
+        }
+        
+        // v40.3: OUTPOST CONTROL - Squares we control in enemy territory
+        const ourOutposts = v40CountOutpostSquares(simBoard, activeColor);
+        const enemyOutposts = v40CountOutpostSquares(simBoard, enemyColor);
+        
+        if (ourOutposts > enemyOutposts) {
+            score += (CONFIG.v40ExpansionBonus || 4000) * (ourOutposts - enemyOutposts);
+        }
+        
+        // v40.3: PAWN CHAIN SPACE - Pawns determine territory
+        const pawnChainAdvantage = v40EvaluatePawnChainSpace(simBoard, activeColor);
+        score += pawnChainAdvantage * 500;
+        
+        // v40.3: Positional squeeze
+        if (spaceAdvantage > 15 && territoryAdvantage > 2) {
             score += CONFIG.v40SqueezeBonus || 12000;
-            debugLog("[V40_SPACE]", `✅ POSITIONAL SQUEEZE ACTIVE`);
+            debugLog("[V40_SPACE]", `✅ POSITIONAL SQUEEZE ACTIVE - ASPHYXIATION IMMINENT`);
+        } else if (spaceAdvantage > 12) {
+            score += (CONFIG.v40SqueezeBonus || 12000) * 0.6;
+        }
+        
+        // v40.3: EXPANSION POTENTIAL - Can we expand further?
+        const toRank = parseInt(toSquare[1]);
+        const isExpanding = isWhite ? (toRank >= 5) : (toRank <= 4);
+        if (isExpanding && movingPiece && movingPiece.toLowerCase() !== 'k') {
+            score += CONFIG.v40ExpansionBonus || 4000;
         }
         
     } catch (e) {
@@ -5959,6 +6072,142 @@ function v40CalculateCentralControl(board, activeColor) {
     }
     
     return control;
+}
+
+/**
+ * v40.3: Calculate territory depth (how far our pieces penetrate)
+ */
+function v40CalculateTerritoryDepth(board, activeColor) {
+    let maxDepth = 0;
+    const isWhite = activeColor === 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isOurs = (piece === piece.toUpperCase()) === isWhite;
+        if (!isOurs) continue;
+        
+        const rank = parseInt(square[1]);
+        const depth = isWhite ? rank : (9 - rank);  // How far into enemy territory
+        
+        if (depth > maxDepth) maxDepth = depth;
+    }
+    
+    return maxDepth;
+}
+
+/**
+ * v40.3: Calculate open file control
+ * Critical for preventing invasions like the c-file problem in the lost game
+ */
+function v40CalculateOpenFileControl(board, activeColor) {
+    let control = 0;
+    const isWhite = activeColor === 'w';
+    const rookChar = isWhite ? 'R' : 'r';
+    const queenChar = isWhite ? 'Q' : 'q';
+    
+    // Check each file
+    for (let fileIdx = 0; fileIdx < 8; fileIdx++) {
+        const fileLetter = String.fromCharCode(97 + fileIdx);
+        let pawnsOnFile = 0;
+        let ourHeavyPieces = 0;
+        
+        // Count pawns and heavy pieces on this file
+        for (let rank = 1; rank <= 8; rank++) {
+            const sq = fileLetter + rank;
+            const piece = board.get(sq);
+            
+            if (piece && piece.toLowerCase() === 'p') {
+                pawnsOnFile++;
+            }
+            
+            if (piece && (piece === rookChar || piece === queenChar)) {
+                ourHeavyPieces++;
+            }
+        }
+        
+        // Open or semi-open file with our heavy pieces = control
+        if (pawnsOnFile <= 1 && ourHeavyPieces > 0) {
+            control += ourHeavyPieces * 2;
+            
+            // Extra credit for central files (c, d, e, f)
+            if (fileIdx >= 2 && fileIdx <= 5) {
+                control += ourHeavyPieces;
+            }
+        }
+    }
+    
+    return control;
+}
+
+/**
+ * v40.3: Count outpost squares controlled in enemy territory
+ */
+function v40CountOutpostSquares(board, activeColor) {
+    let outposts = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Outpost squares in enemy territory
+    const outpostRanks = isWhite ? [5, 6, 7] : [2, 3, 4];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isOurs = (piece === piece.toUpperCase()) === isWhite;
+        if (!isOurs) continue;
+        
+        const rank = parseInt(square[1]);
+        const pieceType = piece.toLowerCase();
+        
+        // Minor pieces and rooks on outpost squares
+        if (outpostRanks.includes(rank) && (pieceType === 'n' || pieceType === 'b' || pieceType === 'r')) {
+            outposts++;
+            
+            // Knights on central outposts are especially valuable
+            const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            if (pieceType === 'n' && file >= 2 && file <= 5) {
+                outposts++;  // Extra credit
+            }
+        }
+    }
+    
+    return outposts;
+}
+
+/**
+ * v40.3: Evaluate pawn chain space contribution
+ */
+function v40EvaluatePawnChainSpace(board, activeColor) {
+    let chainAdvantage = 0;
+    const isWhite = activeColor === 'w';
+    const pawnChar = isWhite ? 'P' : 'p';
+    
+    let ourPawnRanks = [];
+    let enemyPawnRanks = [];
+    
+    for (const [square, piece] of board) {
+        if (piece && piece.toLowerCase() === 'p') {
+            const rank = parseInt(square[1]);
+            if (piece === pawnChar) {
+                ourPawnRanks.push(rank);
+            } else {
+                enemyPawnRanks.push(rank);
+            }
+        }
+    }
+    
+    // Average pawn advancement
+    const ourAvg = ourPawnRanks.length > 0 ? 
+        ourPawnRanks.reduce((a, b) => a + b, 0) / ourPawnRanks.length : 0;
+    const enemyAvg = enemyPawnRanks.length > 0 ? 
+        enemyPawnRanks.reduce((a, b) => a + b, 0) / enemyPawnRanks.length : 0;
+    
+    // For white, higher average is better; for black, lower is better
+    if (isWhite) {
+        chainAdvantage = ourAvg - (8 - enemyAvg);
+    } else {
+        chainAdvantage = (8 - ourAvg) - enemyAvg;
+    }
+    
+    return chainAdvantage;
 }
 
 /**
@@ -20898,12 +21147,19 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.3 NEW: SPACE DOMINATION — Territory control
                 const spaceDominationBonus = v40SpaceDominationEvaluation(fen, move, board, activeColor) * 0.5;
                 
+                // v40.3 NEW: COUNTERATTACK PRIORITY — Active defense is best defense
+                const counterattackBonus = v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) * 0.7;
+                
+                // v40.3 NEW: INITIATIVE PRESERVATION — Never lose the initiative
+                const initiativePreservationBonus = v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+                
                 // v40.3: COMBINED v40 SCORE — 75% ABSOLUTE DOMINANT INFLUENCE
                 // This makes v40 the ULTIMATE factor in move selection
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
-                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus;
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus;
                 v40Bonus = v40DeepScore * 0.75;  // 75% influence — ULTIMATE PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
@@ -20920,6 +21176,8 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 75% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
             } catch (e) {
