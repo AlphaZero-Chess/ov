@@ -1,0 +1,44 @@
+=== SESSION 13 SUMMARY - v40.4 STOCKFISH INITIALIZATION FIX ===
+
+ISSUE IDENTIFIED:
+Error in console: "Uncaught (in promise) TypeError: window.STOCKFISH is not a function"
+Location: Line 22633 in initializeChessEngine() function
+Root Cause: The @require script (stockfish1.js from GitHub CDN) wasn't loading properly
+
+FIX IMPLEMENTED:
+1. ROBUST ENGINE INITIALIZATION with retry mechanism:
+   - Added engineInitAttempts counter
+   - MAX_ENGINE_INIT_ATTEMPTS = 10
+   - ENGINE_INIT_RETRY_DELAY = 500ms between retries
+   - Checks if window.STOCKFISH is a function before calling
+   - Retries automatically if not available
+
+2. FALLBACK INITIALIZATION system:
+   - tryFallbackStockfishInit() function added
+   - Tries multiple CDN sources:
+     * cdn.jsdelivr.net/npm/stockfish.js@10.0.2
+     * unpkg.com/stockfish.js@10.0.2
+     * cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2
+   - Dynamic script injection approach
+   - WebAssembly support detection
+
+3. ERROR HANDLING improvements:
+   - Try-catch block around initialization
+   - Detailed console logging for debugging
+   - Graceful degradation if all attempts fail
+
+CODE CHANGES:
+- Lines 22626-22757: Complete rewrite of initializeChessEngine()
+- Added tryFallbackStockfishInit() function
+- Updated console messages to reflect v40.4 GODLIKE
+
+ADDITIONAL FIX:
+- Renamed duplicate canQueenReach function (line 17126) to canQueenReachLegacy
+  to avoid function redefinition issues
+
+VERIFICATION:
+- Syntax check passed: node --check passed
+- Line count: 24,370 lines
+- All v40 functions intact: 95 v40 functions present
+
+STATUS: READY FOR TESTING
