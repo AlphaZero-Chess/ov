@@ -1,0 +1,37 @@
+Now let me add v40.22 CONFIG parameters for knight infiltration and check sequence detection:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    v40QuietMoveAllowsTacticPenalty: -600000000,    // Quiet move allows tactic
+    v40QuietMoveNoDefensePenalty: -400000000,       // Quiet move when we need defense
+};" --new-str "    v40QuietMoveAllowsTacticPenalty: -600000000,    // Quiet move allows tactic
+    v40QuietMoveNoDefensePenalty: -400000000,       // Quiet move when we need defense
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.22: KNIGHT INFILTRATION & CHECK SEQUENCE DETECTION SUPREME
+    // From game analysis: Bot played a3 ignoring Nxg2 knight check leading to mate!
+    // The knight infiltration pattern Nh4-Nxg2-Nf3+-Ne1+-Nf3+ was COMPLETELY MISSED!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40KnightInfiltrationEnabled: true,
+    v40KnightCheckSequencePenalty: -2000000000,     // Knight check sequence (perpetual/mate)
+    v40KnightOnKingsidePenalty: -500000000,         // Enemy knight near our king
+    v40KnightOn4thRankKingsidePenalty: -800000000,  // Knight on h4/h5 (or a4/a5 for black)
+    v40KnightForkThreatPenalty: -600000000,         // Knight threatens fork
+    v40AllowKnightNearKingPenalty: -700000000,      // Move allows knight to approach king
+    
+    // v40.22: PERPETUAL CHECK DETECTION — Detect perpetual/mating check patterns
+    v40PerpetualCheckEnabled: true,
+    v40PerpetualCheckThreatPenalty: -1500000000,    // Opponent threatens perpetual
+    v40MatingCheckSequencePenalty: -3000000000,     // Check sequence leads to mate
+    v40AllowCheckSequencePenalty: -800000000,       // Move allows opponent check sequence
+    
+    // v40.22: PIECE INFILTRATION GENERAL — Any piece infiltrating our camp
+    v40PieceInfiltrationEnabled: true,
+    v40PieceOn2ndRankPenalty: -600000000,           // Enemy piece on our 2nd rank
+    v40PieceNearKingPenalty: -400000000,            // Enemy piece within 2 squares of king
+    v40MultipleInfiltratorsPenalty: -900000000,     // Multiple enemy pieces infiltrating
+    
+    // v40.22: MUST RESPOND TO THREAT — Don't ignore immediate threats!
+    v40MustRespondEnabled: true,
+    v40IgnoreThreatPenalty: -1200000000,            // Ignored a serious threat
+    v40GreedyWhileUnderAttackPenalty: -800000000,   // Grabbed material while under attack
+    v40PassiveMoveUnderAttackPenalty: -600000000,   // Passive move when being attacked
+};"
+Observation: Edit was successful.

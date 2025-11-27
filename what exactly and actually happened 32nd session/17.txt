@@ -1,0 +1,46 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+33358|                debugLog("[V40_INTEGRATE]", `   🔥🔥 KingCorridorDefense: ${kingCorridorDefenseScore.toFixed(1)}`);
+33359|                debugLog("[V40_INTEGRATE]", `   🔥🔥 LuftCreation: ${luftCreationScore.toFixed(1)}`);
+33360|                debugLog("[V40_INTEGRATE]", `   🔥🔥 WinningPosition: ${winningPositionScore.toFixed(1)}`);
+33361|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ PromotionThreat: ${promotionThreatScore.toFixed(1)}`);
+33362|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ ForcingSequence: ${forcingSequenceScore.toFixed(1)}`);
+33363|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ KingWeakening: ${kingWeakeningScore.toFixed(1)}`);
+33364|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ PieceSafetyV40: ${pieceSafetyV40Score.toFixed(1)}`);
+33365|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+33366|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+33367|                debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
+33368|                debugLog("[V40_INTEGRATE]", `   MatingAttack: ${matingAttackScore.toFixed(1)}`);
+33369|                debugLog("[V40_INTEGRATE]", `   G-FILE ATTACK: ${gFileAttackScore.toFixed(1)}`);
+33370|                debugLog("[V40_INTEGRATE]", `   KINGSIDE ATTACK PATTERN: ${kingsideAttackPatternScore.toFixed(1)}`);
+33371|                debugLog("[V40_INTEGRATE]", `   PASSIVE QUEENSIDE: ${passiveQueensideScore.toFixed(1)}`);
+33372|                debugLog("[V40_INTEGRATE]", `   BAD EXCHANGE FILE: ${badExchangeFileScore.toFixed(1)}`);
+33373|                debugLog("[V40_INTEGRATE]", `   PAWN STORM: ${pawnStormScore.toFixed(1)}`);
+33374|                debugLog("[V40_INTEGRATE]", `   DEFEND KINGSIDE: ${defendKingsideScore.toFixed(1)}`);
+33375|                debugLog("[V40_INTEGRATE]", `   KINGSIDE PAWN WEAKNESS: ${kingsidePawnWeaknessScore.toFixed(1)}`);
+33376|                debugLog("[V40_INTEGRATE]", `   🆕 PROPHYLACTIC EXCHANGE: ${prophylacticExchangeScore.toFixed(1)}`);
+33377|                debugLog("[V40_INTEGRATE]", `   🆕 PAWN STORM ANTICIPATION: ${pawnStormAnticipationScore.toFixed(1)}`);
+33378|                debugLog("[V40_INTEGRATE]", `   🆕 DON'T CREATE WEAKNESSES: ${dontCreateWeaknessesScore.toFixed(1)}`);
+33379|                debugLog("[V40_INTEGRATE]", `   🆕 PRESERVE KING SHELTER: ${preserveKingShelterScore.toFixed(1)}`);
+33380|                debugLog("[V40_INTEGRATE]", `   🆕 ATTACK TRAJECTORY: ${attackTrajectoryScore.toFixed(1)}`);
+33381|                debugLog("[V40_INTEGRATE]", `   🆕 QUEEN TRAP PREVENTION: ${queenTrapPreventionScore.toFixed(1)}`);
+33382|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+33383|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+33384|            } catch (e) {
+33385|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+33386|                v40Bonus = 0;
+33387|            }
+33388|        }
+33389|        
+33390|        // v40.10: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (100%)
+33391|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY GODLIKE
+33392|        const combinedScore = (
+33393|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.00 +  // Engine reduced to 0% - v40 is GOD
+33394|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.00 +
+33395|            normalizedPolicyPrior * 0.00 + // Policy bonus removed - v40 is GOD
+33396|            v40Bonus                      // v40 GODLIKE DOMINANT at 100%
+33397|        );
+33398|        
+33399|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp (100% v40 GODLIKE)`);
+33400|        

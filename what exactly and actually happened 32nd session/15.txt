@@ -1,0 +1,15 @@
+Now update the combined score to include v40.22:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `👑 SUPERHUMAN BEAST v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME EVALUATION`);" --new-str "                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `👑 SUPERHUMAN BEAST v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME EVALUATION`);"
+Observation: Edit was successful.

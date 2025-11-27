@@ -1,0 +1,4 @@
+Now let me find where to add the v40.22 functions (after v40.21):
+Action: $ cd /app && grep -n "function v40QuietMoveDangerEval" "Lichess Bot-AlphaZero-Pure.user.js" | tail -1
+Observation: 17130:function v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

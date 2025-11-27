@@ -1,0 +1,4 @@
+Now let me add debug logs for v40.22. First let me find where the debug logs are:
+Action: $ cd /app && grep -n "PieceSafetyV40:" "Lichess Bot-AlphaZero-Pure.user.js" | tail -1
+Observation: 33364:                debugLog("[V40_INTEGRATE]", `   ♟️♟️ PieceSafetyV40: ${pieceSafetyV40Score.toFixed(1)}`);
+Exit code: 0

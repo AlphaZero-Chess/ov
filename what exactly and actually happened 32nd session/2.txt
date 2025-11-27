@@ -1,0 +1,8 @@
+
+Action: $ cd /app && grep -n "function v40DeepPawnChainEval\|function v40ForcingLineDetectionEval\|function v40QuietMoveDangerEval\|function isPassedPawnV40_21\|function calculatePromotionChainV40_21" "Lichess Bot-AlphaZero-Pure.user.js" 2>/dev/null
+Observation: 16645:function v40DeepPawnChainEval(fen, move, board, activeColor, moveNumber) {
+16770:function calculatePromotionChainV40_21(startSquare, board, color, maxDepth) {
+16844:function isPassedPawnV40_21(square, board, color) {
+16871:function v40ForcingLineDetectionEval(fen, move, board, activeColor, moveNumber) {
+17100:function v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

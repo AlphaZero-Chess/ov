@@ -1,0 +1,4 @@
+Now let me integrate the v40.22 functions into the main evaluation. First, let me find the integration point:
+Action: $ cd /app && grep -n "deepPawnChainScore + forcingLineScore + quietMoveDangerScore" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 33296:                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore;
+Exit code: 0
