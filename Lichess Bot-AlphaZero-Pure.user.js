@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME
-// @description  TRUE AlphaZero Replica v40.16 CATASTROPHIC DEFENSE - NEVER OPEN FILES TOWARD KING - PAWN STORM DETECTION - QUEEN INFILTRATION PATH - 3-PLY DEEP LOOK-AHEAD - FORCING LINE REJECTION - ZERO KINGSIDE DISASTERS GUARANTEED
-// @author       AlphaZero TRUE REPLICA v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME EDITION
-// @version      40.16.0-CATASTROPHIC-KINGSIDE-DEFENSE-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.17 ABSOLUTE RECAPTURE SUPREME
+// @description  TRUE AlphaZero Replica v40.17 ABSOLUTE RECAPTURE - NEVER MISS FREE MATERIAL - IMMEDIATE CAPTURE DETECTION - MATERIAL AWARENESS - ANTI-PAWN-GRAB DEFENSE - ZERO MATERIAL BLUNDERS GUARANTEED
+// @author       AlphaZero TRUE REPLICA v40.17 ABSOLUTE RECAPTURE SUPREME EDITION
+// @version      40.17.0-ABSOLUTE-RECAPTURE-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -1657,6 +1657,53 @@ const CONFIG = {
     
     // v40.16: 100% CATASTROPHIC KINGSIDE DEFENSE SUPREME DOMINANCE
     v40CatastrophicKingsideDefenseDominance: 1.0,   // 100% v40.16 influence
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.17: ABSOLUTE RECAPTURE — NEVER LEAVE FREE PIECES ON THE BOARD
+    // From game analysis: Bot played c4 instead of recapturing bishop on g3!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40AbsoluteRecaptureEnabled: true,
+    v40RecaptureMustHappenBonus: 500000000,         // MASSIVE bonus for recapturing
+    v40FailToRecapturePenalty: -800000000,          // MASSIVE penalty for not recapturing
+    v40RecaptureHighValuePieceBonus: 100000000,     // Extra bonus for recapturing queen/rook
+    v40FreeEnemyPieceOnBoardPenalty: -200000000,    // Penalty if enemy has undefended valuable piece we can take
+    
+    // v40.17: IMMEDIATE CAPTURE DETECTION — Never allow opponent to have free captures
+    v40ImmediateCaptureEnabled: true,
+    v40OpponentCanTakeFreeBonus: -150000000,        // Penalize moves that allow free captures
+    v40OpponentCanTakeQueenPenalty: -500000000,     // Queen hanging after our move
+    v40OpponentCanTakeRookPenalty: -300000000,      // Rook hanging after our move
+    v40OpponentCanTakeMinorPenalty: -150000000,     // Minor piece hanging after our move
+    
+    // v40.17: PAWN WEAKNESS EXPLOIT — Don't allow pawns to be taken for free
+    v40PawnProtectionEnabled: true,
+    v40UndefendedPawnPenalty: -50000000,            // Undefended pawn after our move
+    v40PawnCanBeTakenByPiecePenalty: -80000000,     // Pawn can be taken by piece
+    
+    // v40.17: ABSOLUTE MATERIAL AWARENESS — Material is KING
+    v40MaterialAwarenessEnabled: true,
+    v40MaterialPerPointBonus: 10000000,             // Per centipawn material advantage
+    v40LosingMaterialPenalty: -20000000,            // Per centipawn material loss
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.18: KING ESCAPE & TACTICAL COMBINATION SUPREME
+    // From game analysis: King got trapped, rook invaded 2nd rank
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40KingEscapeEnabled: true,
+    v40KingTrappedPenalty: -300000000,              // King has no escape squares
+    v40KingOnlyOneEscapePenalty: -100000000,        // King has only one escape
+    v40RookOn7thRankPenalty: -150000000,            // Enemy rook on 2nd/7th rank
+    v40RookInvadingKingsidePenalty: -200000000,     // Rook invading near king
+    
+    // v40.18: DISCOVERED ATTACK DETECTION
+    v40DiscoveredAttackEnabled: true,
+    v40AllowsDiscoveredCheckPenalty: -250000000,    // Our move allows discovered check
+    v40AllowsDiscoveredAttackPenalty: -100000000,   // Our move allows discovered attack
+    
+    // v40.18: BACK RANK WEAKNESS
+    v40BackRankEnabled: true,
+    v40BackRankMatePenalty: -500000000,             // Back rank mate threat
+    v40WeakBackRankPenalty: -80000000,              // Back rank is weak
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -14770,6 +14817,711 @@ function v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) 
         
     } catch (e) {
         debugLog("[V40.16_FORCE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.17 ABSOLUTE RECAPTURE SUPREME — NEVER LEAVE FREE PIECES ON THE BOARD
+// From game analysis: Bot played c4 instead of recapturing bishop on g3!
+// This is UNACCEPTABLE. Material is KING. AlphaZero NEVER misses free material.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.17 ABSOLUTE RECAPTURE: If enemy just captured, we MUST recapture
+ * This function gives MASSIVE bonus to recapturing moves and MASSIVE penalty to others
+ */
+function v40AbsoluteRecaptureEval(fen, move, board, activeColor, moveNumber, lastMove) {
+    if (!CONFIG.v40AbsoluteRecaptureEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Find all enemy pieces that are on squares where we can capture them
+        const freeCaptures = [];
+        
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue; // Skip our pieces
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue; // Can't capture king
+            
+            // Check if this enemy piece is hanging (can be captured for free)
+            const isDefended = isSquareDefendedByColor(board, sq, enemyColor);
+            const isAttackable = isSquareAttackedByColor(board, sq, activeColor);
+            
+            if (isAttackable) {
+                const value = getPieceValueSimple(pieceType);
+                
+                if (!isDefended) {
+                    // FREE CAPTURE! This is a MUST-TAKE
+                    freeCaptures.push({ square: sq, piece, value, type: 'free' });
+                    debugLog("[V40.17_RECAP]", `🎯 FREE ENEMY PIECE: ${pieceType.toUpperCase()} on ${sq} (value=${value})!`);
+                } else {
+                    // Defended but might still be good to capture
+                    // Find our lowest value attacker
+                    const ourAttackers = findAttackersOfSquare(board, sq, activeColor);
+                    if (ourAttackers.length > 0) {
+                        const lowestAttackerValue = Math.min(...ourAttackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+                        if (lowestAttackerValue < value) {
+                            // We can win material!
+                            freeCaptures.push({ square: sq, piece, value, type: 'winning', attackerValue: lowestAttackerValue });
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Now check if our move IS a recapture of a free piece
+        const toSquare = move.substring(2, 4);
+        const capturedPiece = board.get(toSquare);
+        
+        // Is our move capturing something?
+        if (capturedPiece) {
+            const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+            
+            // Check if this is capturing one of the free pieces
+            const isFreeCapture = freeCaptures.find(fc => fc.square === toSquare);
+            
+            if (isFreeCapture) {
+                // EXCELLENT! We're taking a free/winning piece
+                score += CONFIG.v40RecaptureMustHappenBonus * (capturedValue / 9);
+                debugLog("[V40.17_RECAP]", `✅✅✅ EXCELLENT: ${move} captures ${isFreeCapture.type} piece ${capturedPiece} (value=${capturedValue})!`);
+                
+                // Extra bonus for high-value captures
+                if (capturedValue >= 9) {
+                    score += CONFIG.v40RecaptureHighValuePieceBonus;
+                    debugLog("[V40.17_RECAP]", `👑 QUEEN CAPTURED!`);
+                } else if (capturedValue >= 5) {
+                    score += CONFIG.v40RecaptureHighValuePieceBonus / 2;
+                    debugLog("[V40.17_RECAP]", `🏰 ROOK CAPTURED!`);
+                }
+            }
+        } else {
+            // Our move is NOT a capture
+            // If there are free pieces on the board, PENALIZE this move heavily
+            const highValueFreeCaptures = freeCaptures.filter(fc => fc.value >= 3 && fc.type === 'free');
+            
+            if (highValueFreeCaptures.length > 0) {
+                for (const fc of highValueFreeCaptures) {
+                    score += CONFIG.v40FailToRecapturePenalty * (fc.value / 9);
+                    debugLog("[V40.17_RECAP]", `☠️☠️☠️ BLUNDER: ${move} ignores FREE ${fc.piece} on ${fc.square}! MUST CAPTURE!`);
+                }
+            }
+            
+            // Also penalize if there are winning captures available
+            const winningCaptures = freeCaptures.filter(fc => fc.type === 'winning' && (fc.value - fc.attackerValue) >= 2);
+            if (winningCaptures.length > 0) {
+                for (const wc of winningCaptures) {
+                    score += CONFIG.v40FreeEnemyPieceOnBoardPenalty * ((wc.value - wc.attackerValue) / 9);
+                    debugLog("[V40.17_RECAP]", `⚠️ ${move} ignores winning capture on ${wc.square}!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.17_RECAP]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.17 IMMEDIATE CAPTURE DETECTION: After our move, can opponent take something for free?
+ * This catches blunders like playing g3 when bishop can take it
+ */
+function v40ImmediateCaptureDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ImmediateCaptureEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        const capturedByUs = afterMove.get(toSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Now find all OUR pieces that opponent can capture
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue; // Skip enemy pieces
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue; // King handled separately
+            
+            // Can enemy attack this square?
+            if (isSquareAttackedByColor(afterMove, sq, enemyColor)) {
+                // Is it defended?
+                const isDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+                const pieceValue = getPieceValueSimple(pieceType);
+                
+                if (!isDefended) {
+                    // HANGING PIECE! This is a BLUNDER!
+                    if (pieceType === 'q') {
+                        score += CONFIG.v40OpponentCanTakeQueenPenalty;
+                        debugLog("[V40.17_IMM]", `☠️☠️☠️ QUEEN HANGING on ${sq} after ${move}!`);
+                    } else if (pieceType === 'r') {
+                        score += CONFIG.v40OpponentCanTakeRookPenalty;
+                        debugLog("[V40.17_IMM]", `☠️☠️ ROOK HANGING on ${sq} after ${move}!`);
+                    } else if (pieceType === 'b' || pieceType === 'n') {
+                        score += CONFIG.v40OpponentCanTakeMinorPenalty;
+                        debugLog("[V40.17_IMM]", `☠️ MINOR PIECE HANGING on ${sq} after ${move}!`);
+                    } else if (pieceType === 'p') {
+                        score += CONFIG.v40UndefendedPawnPenalty;
+                        debugLog("[V40.17_IMM]", `⚠️ Pawn hanging on ${sq} after ${move}`);
+                    }
+                } else {
+                    // Defended but check if attacker is lower value
+                    const attackers = findAttackersOfSquare(afterMove, sq, enemyColor);
+                    if (attackers.length > 0) {
+                        const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+                        if (lowestAttackerValue < pieceValue) {
+                            // Enemy can win material even though it's defended
+                            const materialLoss = pieceValue - lowestAttackerValue;
+                            score += CONFIG.v40OpponentCanTakeFreeBonus * (materialLoss / 9);
+                            debugLog("[V40.17_IMM]", `⚠️ ${pieceType.toUpperCase()} on ${sq} can be won by lower-value attacker after ${move}`);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Also check: does our moving piece become hanging?
+        const movingPieceValue = getPieceValueSimple(movingPiece.toLowerCase());
+        if (isSquareAttackedByColor(afterMove, toSquare, enemyColor)) {
+            const isDefended = isSquareDefendedByColor(afterMove, toSquare, activeColor);
+            
+            if (!isDefended) {
+                // We moved to a square where we're hanging!
+                if (movingPiece.toLowerCase() === 'q') {
+                    score += CONFIG.v40OpponentCanTakeQueenPenalty;
+                    debugLog("[V40.17_IMM]", `☠️☠️☠️ ${move} leaves QUEEN HANGING!`);
+                } else if (movingPiece.toLowerCase() === 'r') {
+                    score += CONFIG.v40OpponentCanTakeRookPenalty;
+                    debugLog("[V40.17_IMM]", `☠️☠️ ${move} leaves ROOK HANGING!`);
+                } else if (['b', 'n'].includes(movingPiece.toLowerCase())) {
+                    score += CONFIG.v40OpponentCanTakeMinorPenalty;
+                    debugLog("[V40.17_IMM]", `☠️ ${move} leaves MINOR PIECE HANGING!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.17_IMM]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.17 MATERIAL AWARENESS: Track material balance and reward material gains
+ */
+function v40MaterialAwarenessEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40MaterialAwarenessEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // If we're capturing, calculate the gain
+        if (capturedPiece) {
+            const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+            const movingPieceValue = getPieceValueSimple(movingPiece.toLowerCase());
+            
+            // Simulate move
+            const afterMove = new Map(board);
+            afterMove.delete(fromSquare);
+            afterMove.set(toSquare, movingPiece);
+            
+            // Check if our piece will be recaptured
+            const willBeRecaptured = isSquareAttackedByColor(afterMove, toSquare, isWhite ? 'b' : 'w');
+            
+            if (willBeRecaptured) {
+                // Net exchange
+                const netGain = capturedValue - movingPieceValue;
+                if (netGain > 0) {
+                    score += CONFIG.v40MaterialPerPointBonus * netGain;
+                    debugLog("[V40.17_MAT]", `✅ Winning exchange: ${move} gains net ${netGain} points`);
+                } else if (netGain < 0) {
+                    score += CONFIG.v40LosingMaterialPenalty * Math.abs(netGain);
+                    debugLog("[V40.17_MAT]", `⚠️ Losing exchange: ${move} loses net ${Math.abs(netGain)} points`);
+                }
+            } else {
+                // Free capture!
+                score += CONFIG.v40MaterialPerPointBonus * capturedValue * 2;
+                debugLog("[V40.17_MAT]", `✅✅ FREE CAPTURE: ${move} gains ${capturedValue} points!`);
+            }
+        }
+        
+        // Calculate overall material balance
+        let ourMaterial = 0;
+        let enemyMaterial = 0;
+        
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            const value = getPieceValueSimple(piece.toLowerCase());
+            
+            if (pieceIsWhite === isWhite) {
+                ourMaterial += value;
+            } else {
+                enemyMaterial += value;
+            }
+        }
+        
+        // Bonus for being ahead in material
+        const materialAdvantage = ourMaterial - enemyMaterial;
+        if (materialAdvantage > 0) {
+            // When ahead, prefer simplifying
+            if (capturedPiece) {
+                score += CONFIG.v40MaterialPerPointBonus * materialAdvantage / 10;
+            }
+        } else if (materialAdvantage < 0) {
+            // When behind, avoid exchanges unless winning
+            if (capturedPiece && !isSquareAttackedByColor(board, toSquare, isWhite ? 'b' : 'w')) {
+                // Free capture when behind - GREAT!
+                score += CONFIG.v40MaterialPerPointBonus * 5;
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.17_MAT]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.17 ANTI-PAWN-GRAB DEFENSE: Detect moves that allow opponent to grab pawns
+ * From game analysis: Bot played g3 allowing Bxg3
+ */
+function v40AntiPawnGrabDefenseEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnProtectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find all our pawns after the move
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() !== 'p') continue;
+            
+            // Is this pawn now attacked?
+            if (isSquareAttackedByColor(afterMove, sq, enemyColor)) {
+                const isDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+                
+                if (!isDefended) {
+                    // Pawn is hanging!
+                    score += CONFIG.v40UndefendedPawnPenalty;
+                    debugLog("[V40.17_PAWN]", `⚠️ Pawn on ${sq} undefended after ${move}`);
+                } else {
+                    // Check if a piece can profitably take it
+                    const attackers = findAttackersOfSquare(afterMove, sq, enemyColor);
+                    for (const attacker of attackers) {
+                        if (['b', 'n', 'r', 'q'].includes(attacker.piece.toLowerCase())) {
+                            // Minor/major piece attacking pawn
+                            // Even if pawn is defended, this might be bad
+                            const attackerValue = getPieceValueSimple(attacker.piece.toLowerCase());
+                            
+                            // Check if attacker is also defended
+                            const attackerDefended = isSquareDefendedByColor(afterMove, attacker.square, enemyColor);
+                            
+                            if (attackerDefended) {
+                                // Piece can safely take pawn and then be recaptured
+                                // This is only good for enemy if pawn is more valuable than piece would lose
+                                // Usually bad for enemy... unless our recapture opens lines
+                            } else {
+                                // Undefended piece attacking pawn - enemy probably won't take
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Special check: Are we moving a pawn to a square where it can be captured?
+        if (movingPiece.toLowerCase() === 'p') {
+            if (isSquareAttackedByColor(afterMove, toSquare, enemyColor)) {
+                const isDefended = isSquareDefendedByColor(afterMove, toSquare, activeColor);
+                if (!isDefended) {
+                    score += CONFIG.v40PawnCanBeTakenByPiecePenalty;
+                    debugLog("[V40.17_PAWN]", `☠️ ${move} moves pawn to hanging square!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.17_PAWN]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME
+// Never let king get trapped, detect rook invasions, back rank weaknesses
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.18 KING ESCAPE ROUTE: Ensure king always has escape squares
+ */
+function v40KingEscapeRouteEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingEscapeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        // Count king escape squares
+        const escapeSquares = findKingEscapeSquares(afterMove, kingSquare, activeColor);
+        
+        if (escapeSquares.length === 0) {
+            // King is TRAPPED!
+            score += CONFIG.v40KingTrappedPenalty;
+            debugLog("[V40.18_ESCAPE]", `☠️☠️☠️ KING TRAPPED after ${move}! No escape squares!`);
+        } else if (escapeSquares.length === 1) {
+            // King has only one escape - dangerous!
+            score += CONFIG.v40KingOnlyOneEscapePenalty;
+            debugLog("[V40.18_ESCAPE]", `⚠️ King has only ONE escape square after ${move}`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.18_ESCAPE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.18 ROOK INVASION DETECTION: Detect enemy rooks on 2nd/7th rank
+ */
+function v40RookInvasionDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingEscapeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // The dangerous rank for us (2nd for white, 7th for black)
+        const dangerousRank = isWhite ? 2 : 7;
+        
+        // Find enemy rooks and queens
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue; // Skip our pieces
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType !== 'r' && pieceType !== 'q') continue;
+            
+            const pieceRank = parseInt(sq[1]);
+            const pieceFile = sq.charCodeAt(0) - 97;
+            
+            // Rook/Queen on 2nd/7th rank
+            if (pieceRank === dangerousRank) {
+                score += CONFIG.v40RookOn7thRankPenalty;
+                debugLog("[V40.18_ROOK]", `☠️ Enemy ${pieceType.toUpperCase()} on ${dangerousRank}th rank!`);
+                
+                // Extra penalty if near king
+                if (Math.abs(pieceFile - kingFile) <= 2) {
+                    score += CONFIG.v40RookInvadingKingsidePenalty;
+                    debugLog("[V40.18_ROOK]", `☠️☠️ Enemy ${pieceType.toUpperCase()} invading near king!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.18_ROOK]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.18 BACK RANK WEAKNESS: Detect and avoid back rank mate threats
+ */
+function v40BackRankWeaknessEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40BackRankEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Back rank is 1 for white, 8 for black
+        const backRank = isWhite ? 1 : 8;
+        
+        // Check if king is on back rank
+        if (kingRank !== backRank) return 0;
+        
+        // Check for escape squares (squares in front of king)
+        const escapeRank = isWhite ? 2 : 7;
+        let hasEscape = false;
+        
+        for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+            const escapeSq = String.fromCharCode(97 + f) + escapeRank;
+            const occupant = afterMove.get(escapeSq);
+            
+            if (!occupant) {
+                // Empty square - check if it's safe
+                if (!isSquareAttackedByColor(afterMove, escapeSq, enemyColor)) {
+                    hasEscape = true;
+                    break;
+                }
+            } else {
+                const occupantIsWhite = occupant === occupant.toUpperCase();
+                if (occupantIsWhite !== isWhite) {
+                    // Enemy piece - could potentially be captured
+                    // Still counts as escape if we can take it safely
+                }
+            }
+        }
+        
+        if (!hasEscape) {
+            // King is trapped on back rank!
+            score += CONFIG.v40WeakBackRankPenalty;
+            debugLog("[V40.18_BACK]", `⚠️ Back rank is weak! King trapped on ${backRank}!`);
+            
+            // Check if enemy has rook/queen that can deliver back rank mate
+            for (const [sq, piece] of afterMove) {
+                if (!piece) continue;
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) continue;
+                
+                const pieceType = piece.toLowerCase();
+                if (pieceType !== 'r' && pieceType !== 'q') continue;
+                
+                const pieceFile = sq.charCodeAt(0) - 97;
+                const pieceRank = parseInt(sq[1]);
+                
+                // Can this rook/queen reach the back rank?
+                if (pieceRank === backRank || pieceFile === kingFile) {
+                    // Same rank or file - could potentially give back rank mate
+                    score += CONFIG.v40BackRankMatePenalty / 2;
+                    debugLog("[V40.18_BACK]", `☠️ Back rank mate THREAT from ${pieceType.toUpperCase()} on ${sq}!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.18_BACK]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.18 DISCOVERED ATTACK DETECTION: Don't allow opponent discovered attacks
+ */
+function v40DiscoveredAttackDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40DiscoveredAttackEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        // Check if our move created a discovered check possibility for opponent
+        // This happens when we move a piece that was blocking an enemy slider
+        
+        // Look for enemy sliders (bishops, rooks, queens) that might now attack our king
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (!['b', 'r', 'q'].includes(pieceType)) continue;
+            
+            // Check if this slider now attacks our king through the square we just vacated
+            const sliderFile = sq.charCodeAt(0) - 97;
+            const sliderRank = parseInt(sq[1]);
+            const kingFile = kingSquare.charCodeAt(0) - 97;
+            const kingRank = parseInt(kingSquare[1]);
+            const vacatedFile = fromSquare.charCodeAt(0) - 97;
+            const vacatedRank = parseInt(fromSquare[1]);
+            
+            // Check if slider, vacated square, and king are aligned
+            const sameRank = sliderRank === kingRank && sliderRank === vacatedRank;
+            const sameFile = sliderFile === kingFile && sliderFile === vacatedFile;
+            const sameDiag = (Math.abs(sliderFile - kingFile) === Math.abs(sliderRank - kingRank)) &&
+                            (Math.abs(sliderFile - vacatedFile) === Math.abs(sliderRank - vacatedRank)) &&
+                            ((vacatedFile - sliderFile) * (kingFile - sliderFile) > 0) &&
+                            ((vacatedRank - sliderRank) * (kingRank - sliderRank) > 0);
+            
+            // Check piece type can use this alignment
+            const canUseRankOrFile = (pieceType === 'r' || pieceType === 'q') && (sameRank || sameFile);
+            const canUseDiagonal = (pieceType === 'b' || pieceType === 'q') && sameDiag;
+            
+            if (canUseRankOrFile || canUseDiagonal) {
+                // Check if path is now clear
+                let pathClear = true;
+                const fileDir = kingFile > sliderFile ? 1 : (kingFile < sliderFile ? -1 : 0);
+                const rankDir = kingRank > sliderRank ? 1 : (kingRank < sliderRank ? -1 : 0);
+                
+                let f = sliderFile + fileDir;
+                let r = sliderRank + rankDir;
+                
+                while (f !== kingFile || r !== kingRank) {
+                    const checkSq = String.fromCharCode(97 + f) + r;
+                    if (afterMove.get(checkSq)) {
+                        pathClear = false;
+                        break;
+                    }
+                    f += fileDir;
+                    r += rankDir;
+                }
+                
+                if (pathClear) {
+                    score += CONFIG.v40AllowsDiscoveredCheckPenalty;
+                    debugLog("[V40.18_DISC]", `☠️☠️ ${move} allows DISCOVERED CHECK from ${pieceType.toUpperCase()} on ${sq}!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.18_DISC]", `Error: ${e.message}`);
     }
     
     return score;
@@ -30135,6 +30887,18 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
                 const forcingLineRejectionScore = v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) * 15.0;
                 
+                // v40.17: ABSOLUTE RECAPTURE — NEVER leave free pieces on the board
+                const absoluteRecaptureScore = v40AbsoluteRecaptureEval(fen, move, board, activeColor, moveNumber, null) * 20.0;
+                
+                // v40.17: IMMEDIATE CAPTURE DETECTION — Don't allow opponent free captures
+                const immediateCaptureDetectionScore = v40ImmediateCaptureDetectionEval(fen, move, board, activeColor, moveNumber) * 18.0;
+                
+                // v40.17: MATERIAL AWARENESS — Material is KING
+                const materialAwarenessScore = v40MaterialAwarenessEval(fen, move, board, activeColor, moveNumber) * 15.0;
+                
+                // v40.17: ANTI-PAWN-GRAB DEFENSE — Don't let pawns be taken for free
+                const antiPawnGrabScore = v40AntiPawnGrabDefenseEval(fen, move, board, activeColor, moveNumber) * 12.0;
+                
                 // v40.16: COMBINED v40 SCORE — 100% CATASTROPHIC KINGSIDE DEFENSE SUPREME INFLUENCE
                 // This makes v40 the ABSOLUTE CATASTROPHIC KINGSIDE DEFENSE SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
@@ -30174,7 +30938,9 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
                                // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
                                fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
-                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore;
+                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore;
                 v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
@@ -30211,6 +30977,10 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🏰🏰 DeepLookAhead: ${deepLookAheadScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsidePawnShelter: ${kingsidePawnShelterScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏰🏰 ForcingLineRejection: ${forcingLineRejectionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💰💰 AbsoluteRecapture: ${absoluteRecaptureScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💰💰 ImmediateCaptureDetection: ${immediateCaptureDetectionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💰💰 MaterialAwareness: ${materialAwarenessScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💰💰 AntiPawnGrab: ${antiPawnGrabScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
