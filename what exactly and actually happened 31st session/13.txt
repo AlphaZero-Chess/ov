@@ -1,0 +1,43 @@
+Now let me add v40.21 CONFIG parameters for even deeper forcing line calculation:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.20: PIECE SAFETY ABSOLUTE — Never allow free takes
+    v40PieceSafetyAbsoluteEnabled: true,
+    v40BishopHangingAfterMovePenalty: -300000000,   // Bishop becomes hanging after our move
+    v40PawnTakesBishopPenalty: -500000000,          // Opponent pawn can take our bishop
+    v40TacticalSequenceMissedPenalty: -800000000,   // We missed a tactical sequence
+};" --new-str "    // v40.20: PIECE SAFETY ABSOLUTE — Never allow free takes
+    v40PieceSafetyAbsoluteEnabled: true,
+    v40BishopHangingAfterMovePenalty: -300000000,   // Bishop becomes hanging after our move
+    v40PawnTakesBishopPenalty: -500000000,          // Opponent pawn can take our bishop
+    v40TacticalSequenceMissedPenalty: -800000000,   // We missed a tactical sequence
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.21: DEEP PAWN CHAIN CALCULATION — From game: missed c4-cxd3-dxc2-cxb1=R
+    // The bot COMPLETELY missed a 4-move pawn promotion sequence!
+    // This MUST calculate full pawn chains to promotion with ABSOLUTE certainty
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40DeepPawnChainEnabled: true,
+    v40PawnChainDepth: 6,                           // Calculate 6 pawn moves deep
+    v40PawnCaptureCreatesPassedPenalty: -800000000, // Pawn capture creates passed pawn
+    v40PawnPromotionSequencePenalty: -2000000000,   // CRITICAL: Pawn can promote in sequence
+    v40AllowPawnAdvancePenalty: -300000000,         // Allow opponent pawn to advance
+    v40AdvancedPasserPenalty: -600000000,           // Passer on 3rd/6th rank
+    v40PromoterOnSecondPenalty: -1500000000,        // Passer on 2nd/7th rank (1 move from queen!)
+    
+    // v40.21: ABSOLUTE FORCING LINE CALCULATION — Calculate ALL forcing sequences
+    v40ForcingLineDepth: 8,                         // Calculate 8 ply deep forcing lines
+    v40ForcingCheckBonus: 300000000,                // Forcing check
+    v40ForcingCaptureBonus: 200000000,              // Forcing capture
+    v40ForcingThreatBonus: 150000000,               // Forcing threat
+    v40AllowForcingSequencePenalty: -500000000,     // Allowing opponent forcing sequence
+    
+    // v40.21: PROPHYLACTIC PAWN BLOCKADE — Stop enemy passers!
+    v40BlockadeEnabled: true,
+    v40BlockadeBonus: 400000000,                    // Move that blockades passed pawn
+    v40NoBlockadePenalty: -300000000,               // No blockader when enemy has passed pawn
+    
+    // v40.21: QUIET MOVE DANGER DETECTION — \"Innocent\" moves that lose
+    v40QuietMoveEnabled: true,
+    v40QuietMoveAllowsTacticPenalty: -600000000,    // Quiet move allows tactic
+    v40QuietMoveNoDefensePenalty: -400000000,       // Quiet move when we need defense
+};"
+Observation: Edit was successful.

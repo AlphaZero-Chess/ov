@@ -1,0 +1,5 @@
+
+Action: $ cd /app && grep -n "v40.20: PIECE SAFETY ABSOLUTE" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 1762:    // v40.20: PIECE SAFETY ABSOLUTE — Never allow free takes
+32575:                // v40.20: PIECE SAFETY ABSOLUTE — Never allow pieces to become hanging after move
+Exit code: 0
