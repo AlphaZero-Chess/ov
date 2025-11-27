@@ -1,0 +1,7 @@
+Now let me integrate v40.8 functions into computeCombinedScore. Let me find the location:
+Action: $ cd /app && grep -n "v40.7 DIVINE additions\|blunderCheckScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 24635:                const blunderCheckScore = v40AbsoluteBlunderCheck(fen, move, board, activeColor) * 2.0;
+24652:                               // v40.7 DIVINE additions:
+24653:                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore;
+24690:                debugLog("[V40_INTEGRATE]", `   🆕 BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+Exit code: 0

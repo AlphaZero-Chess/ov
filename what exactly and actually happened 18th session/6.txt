@@ -1,0 +1,109 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+5105|function v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) {
+5106|    if (!CONFIG.v40AntiPassivityEnabled) return 0;
+5107|    
+5108|    let score = 0;
+5109|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+5110|    
+5111|    try {
+5112|        const fromSquare = move.substring(0, 2);
+5113|        const toSquare = move.substring(2, 4);
+5114|        const movingPiece = board.get(fromSquare);
+5115|        
+5116|        if (!movingPiece) return 0;
+5117|        
+5118|        const pieceType = movingPiece.toLowerCase();
+5119|        const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+5120|        const fromRank = parseInt(fromSquare[1]) - 1;
+5121|        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+5122|        const toRank = parseInt(toSquare[1]) - 1;
+5123|        
+5124|        // Simulate the move
+5125|        const simBoard = new Map(board);
+5126|        simBoard.delete(fromSquare);
+5127|        simBoard.set(toSquare, movingPiece);
+5128|        
+5129|        // CHECK 1: Is this a backward move? (retreating without threat)
+5130|        const isWhite = activeColor === 'w';
+5131|        const isBackward = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+5132|        
+5133|        if (isBackward && pieceType !== 'k') {
+5134|            // Check if the backward move creates a threat
+5135|            const createsNewThreat = v40MoveCreaetesThreat(move, simBoard, activeColor);
+5136|            if (!createsNewThreat) {
+5137|                score += CONFIG.v40PassivityPenalty || -8000;
+5138|                debugLog("[V40_ANTIPASSIVE]", `🚨 PASSIVE BACKWARD MOVE: ${move} - no threat created`);
+5139|            }
+5140|        }
+5141|        
+5142|        // CHECK 2: Queen passivity check
+5143|        if (pieceType === 'q') {
+5144|            // Queen should be active in middlegame
+5145|            if (moveNumber > 10) {
+5146|                const queenActivity = v40CalculatePieceActivity(toSquare, simBoard, activeColor);
+5147|                if (queenActivity < 3) {
+5148|                    score += CONFIG.v40PassiveQueenPenalty || -5000;
+5149|                    debugLog("[V40_ANTIPASSIVE]", `⚠️ PASSIVE QUEEN on ${toSquare}`);
+5150|                }
+5151|            }
+5152|            
+5153|            // Queen shuffling detection (same squares repeatedly)
+5154|            if (v40IsQueenShuffling(move, board, activeColor)) {
+5155|                score += (CONFIG.v40PassiveQueenPenalty || -5000) * 1.5;
+5156|                debugLog("[V40_ANTIPASSIVE]", `🚨🚨 QUEEN SHUFFLING DETECTED`);
+5157|            }
+5158|        }
+5159|        
+5160|        // CHECK 3: Rook passivity check
+5161|        if (pieceType === 'r') {
+5162|            const rookActivity = v40CalculatePieceActivity(toSquare, simBoard, activeColor);
+5163|            if (rookActivity < 2) {
+5164|                score += CONFIG.v40PassiveRookPenalty || -3000;
+5165|                debugLog("[V40_ANTIPASSIVE]", `⚠️ PASSIVE ROOK on ${toSquare}`);
+5166|            }
+5167|            
+5168|            // Rook should be on open files or attacking
+5169|            const isOnOpenFile = isOpenFile(toSquare[0], simBoard);
+5170|            if (!isOnOpenFile && !v40MoveCreaetesThreat(move, simBoard, activeColor)) {
+5171|                score += (CONFIG.v40PassiveRookPenalty || -3000) * 0.5;
+5172|            }
+5173|        }
+5174|        
+5175|        // CHECK 4: Does the move improve the position?
+5176|        const positionImprovement = v40CalculatePositionImprovement(move, board, simBoard, activeColor);
+5177|        if (positionImprovement <= 0 && moveNumber > 8) {
+5178|            score += CONFIG.v40NoThreatPenalty || -2500;
+5179|            debugLog("[V40_ANTIPASSIVE]", `⚠️ Move ${move} doesn't improve position`);
+5180|        } else if (positionImprovement > 0) {
+5181|            score += positionImprovement * 500;  // Bonus for improvement
+5182|        }
+5183|        
+5184|        // CHECK 5: Active piece count
+5185|        const activePieces = v40CountActivePieces(simBoard, activeColor);
+5186|        if (activePieces < (CONFIG.v40ActivePiecesRequired || 4)) {
+5187|            score += CONFIG.v40IdlePiecePenalty || -4000;
+5188|            debugLog("[V40_ANTIPASSIVE]", `⚠️ Only ${activePieces} active pieces`);
+5189|        }
+5190|        
+5191|        // BONUS: Reward ACTIVE moves
+5192|        if (v40MoveCreaetesThreat(move, simBoard, activeColor)) {
+5193|            score += CONFIG.v40ActivePieceBonus || 3000;
+5194|        }
+5195|        
+5196|    } catch (e) {
+5197|        debugLog("[V40_ANTIPASSIVE]", `Error: ${e.message}`);
+5198|    }
+5199|    
+5200|    return score;
+5201|}
+5202|
+5203|/**
+5204| * v40.3: Check if move creates a threat
+5205| */
+5206|function v40MoveCreaetesThreat(move, board, activeColor) {
+5207|    const toSquare = move.substring(2, 4);
+5208|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+5209|    const toRank = parseInt(toSquare[1]) - 1;
+5210|    const enemyColor = activeColor === 'w' ? 'b' : 'w';

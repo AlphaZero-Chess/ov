@@ -1,0 +1,63 @@
+
+Action: $ cd /app && grep -n "function v40\|function isSquareAttackedByColor\|function isSquareDefendedByColor\|function getEnemyPawnAttackSquares\|function findAllHangingPieces\|function getPieceValueSimple\|function getLowestAttackerValue\|function countPiecesForColor\|function canWeRecaptureOn" "Lichess Bot-AlphaZero-Pure.user.js" | tail -60
+Observation: 5409:function v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) {
+5458:function v40EvaluatePositionalTrajectory(board, activeColor, moveNumber) {
+5494:function v40EvaluateKingSafetySimple(board, color) {
+5519:function v40CheckHorizonEffect(fen, move, board, activeColor) {
+5550:function v40StrategicProjection(board, activeColor, moveNumber) {
+5580:function v40CountCentralPawns(board, activeColor) {
+5599:function v40EndgameTrajectory(board, activeColor) {
+5639:function v40IsPassedPawn(square, board, color) {
+5663:function v40KingEndgameActivity(kingSquare) {
+5676:function v40EnhancedMatingPatternDetection(fen, move, board, activeColor) {
+5757:function v40CheckCornerMateVulnerability(board, kingSquare, activeColor) {
+5823:function v40CheckBackRankMatePattern(board, kingSquare, activeColor) {
+5872:function v40CheckStaircaseMatePattern(board, kingSquare, activeColor) {
+5904:function v40CheckQRMatePattern(board, kingSquare, activeColor) {
+5938:function v40EstimateMateDistance(board, activeColor) {
+5967:function v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) {
+6023:function v40IsUnderPressure(board, activeColor) {
+6047:function v40EvaluateThreatValue(move, board, activeColor) {
+6076:function v40IsPassiveDefenseMove(move, board, activeColor) {
+6091:function v40IsActiveDefense(move, oldBoard, newBoard, activeColor) {
+6102:function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
+6201:function v40CalculateSpaceAdvantage(board, activeColor) {
+6237:function v40CalculateCentralControl(board, activeColor) {
+6255:function v40CalculateTerritoryDepth(board, activeColor) {
+6277:function v40CalculateOpenFileControl(board, activeColor) {
+6320:function v40CountOutpostSquares(board, activeColor) {
+6353:function v40EvaluatePawnChainSpace(board, activeColor) {
+6391:function v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) {
+6437:function v40HasInitiative(board, activeColor) {
+6464:function v40HasInitiativeAfterMove(board, activeColor, move) {
+6474:function v40IsForcingMove(move, board, activeColor) {
+6500:function v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) {
+6602:function v40EnhancedDiscoveredAttackDetection(fen, move, board, activeColor) {
+6735:function v40KnightInvasionPenalty(fen, move, board, activeColor) {
+6818:function v40EnhancedQueenMatingPatterns(fen, move, board, activeColor) {
+6945:function v40PawnShieldIntegrityEval(fen, move, board, activeColor) {
+7044:function v40QueenInfiltrationDetection(fen, move, board, activeColor) {
+7179:function v40EnhancedHangingPieceDetection(fen, move, board, activeColor) {
+7347:function getLowestAttackerValue(board, targetSquare, attackingColor) {
+7373:function getPieceValueSimple(pieceType) {
+7410:function v40KingCornerSafetyEval(fen, move, board, activeColor) {
+7590:function v40CheckSequenceDetection(fen, move, board, activeColor) {
+7712:function v40CenterPawnProtection(fen, move, board, activeColor) {
+7790:function v40PawnTensionResolution(fen, move, board, activeColor, lastMove) {
+7894:function v40QueenRaidPrevention(fen, move, board, activeColor) {
+7998:function v40TacticalPriorityOverride(fen, move, board, activeColor, moveNumber) {
+8080:function v40DevelopmentSafetyCheck(fen, move, board, activeColor, moveNumber) {
+8144:function v40ImmediateThreatResponse(fen, move, board, activeColor, lastMove) {
+8515:function getLowestAttackerValue(board, square, attackingColor) {
+8560:function v40RecaptureUrgency(fen, move, board, activeColor, lastOpponentMove) {
+8607:function v40PieceOnAttackedSquareDetection(fen, move, board, activeColor) {
+8691:function v40MaterialHemorrhageDetection(fen, move, board, activeColor) {
+8750:function v40AbsoluteBlunderCheck(fen, move, board, activeColor) {
+8817:function countPiecesForColor(board, color) {
+8833:function canWeRecaptureOn(board, square, ourColor) {
+8858:function isSquareAttackedByColor(board, square, attackingColor) {
+8883:function isSquareDefendedByColor(board, square, defendingColor) {
+8890:function getEnemyPawnAttackSquares(board, enemyColor) {
+8922:function findAllHangingPieces(board, ourColor) {
+13091:function isSquareAttackedByColor(board, square, attackingColor) {
+Exit code: 0

@@ -1,0 +1,94 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+24630|                
+24631|                // v40.7: MATERIAL HEMORRHAGE — Detect moves leading to material loss chain
+24632|                const hemorrhageScore = v40MaterialHemorrhageDetection(fen, move, board, activeColor) * 1.3;
+24633|                
+24634|                // v40.7: ABSOLUTE BLUNDER CHECK — Final safety verification
+24635|                const blunderCheckScore = v40AbsoluteBlunderCheck(fen, move, board, activeColor) * 2.0;
+24636|                
+24637|                // v40.7: COMBINED v40 SCORE — 95% DIVINE DOMINANT INFLUENCE
+24638|                // This makes v40 the ABSOLUTE DIVINE factor in move selection
+24639|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+24640|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+24641|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+24642|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+24643|                               counterattackBonus + initiativePreservationBonus +
+24644|                               // v40.4 additions:
+24645|                               openingPrinciplesScore + discoveredAttackPenalty + 
+24646|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+24647|                               // v40.5 additions:
+24648|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+24649|                               // v40.6 ULTIMATE additions:
+24650|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+24651|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+24652|                               // v40.7 DIVINE additions:
+24653|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore;
+24654|                v40Bonus = v40DeepScore * 0.95;  // 95% influence — DIVINE PARADIGM SHIFT
+24655|                
+24656|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+24657|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.7 DIVINE EVALUATION`);
+24658|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+24659|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+24660|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+24661|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+24662|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+24663|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+24664|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+24665|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+24666|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+24667|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+24668|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+24669|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+24670|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+24671|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+24672|                debugLog("[V40_INTEGRATE]", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+24673|                debugLog("[V40_INTEGRATE]", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+24674|                debugLog("[V40_INTEGRATE]", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+24675|                debugLog("[V40_INTEGRATE]", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+24676|                debugLog("[V40_INTEGRATE]", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+24677|                debugLog("[V40_INTEGRATE]", `   QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+24678|                debugLog("[V40_INTEGRATE]", `   HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+24679|                debugLog("[V40_INTEGRATE]", `   KingCorner: ${kingCornerScore.toFixed(1)}`);
+24680|                debugLog("[V40_INTEGRATE]", `   CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+24681|                debugLog("[V40_INTEGRATE]", `   CenterPawn: ${centerPawnScore.toFixed(1)}`);
+24682|                debugLog("[V40_INTEGRATE]", `   PawnTension: ${pawnTensionScore.toFixed(1)}`);
+24683|                debugLog("[V40_INTEGRATE]", `   QueenRaid: ${queenRaidScore.toFixed(1)}`);
+24684|                debugLog("[V40_INTEGRATE]", `   TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
+24685|                debugLog("[V40_INTEGRATE]", `   DevSafety: ${devSafetyScore.toFixed(1)}`);
+24686|                debugLog("[V40_INTEGRATE]", `   ThreatResponse: ${threatResponseScore.toFixed(1)}`);
+24687|                debugLog("[V40_INTEGRATE]", `   🆕 RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
+24688|                debugLog("[V40_INTEGRATE]", `   🆕 PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
+24689|                debugLog("[V40_INTEGRATE]", `   🆕 Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
+24690|                debugLog("[V40_INTEGRATE]", `   🆕 BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+24691|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 95% bonus=${v40Bonus.toFixed(1)}cp`);
+24692|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+24693|            } catch (e) {
+24694|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+24695|                v40Bonus = 0;
+24696|            }
+24697|        }
+24698|        
+24699|        // v40.7: TRUE ALPHAZERO DIVINE weighted merge — v40 DIVINE DOMINANT (95%)
+24700|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY DIVINE
+24701|        const combinedScore = (
+24702|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.05 +  // Engine reduced to 5%
+24703|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.05 +
+24704|            normalizedPolicyPrior * 0.20 + // Policy bonus reduced further
+24705|            v40Bonus                      // v40 DIVINE DOMINANT at 95%
+24706|        );
+24707|        
+24708|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
+24709|        
+24710|        return combinedScore;
+24711|    } catch (e) {
+24712|        debugLog("[Q+POLICY]", "⚠️ Error computing combined score:", e.message);
+24713|        return engineScore;
+24714|    }
+24715|}
+24716|
+24717|/**
+24718| * NEW v18.0.0: Legacy stub for v17 compatibility
+24719| */
+24720|function computeLongHorizonScore(fen, move, alternatives, engineScore) {

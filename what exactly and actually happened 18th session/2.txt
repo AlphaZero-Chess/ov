@@ -1,0 +1,63 @@
+Let me check the current state of v40.7 helper functions and see if they're complete:
+Action: $ cd /app && grep -n "function v40\|function isSquareAttackedByColor\|function isSquareDefendedByColor\|function getEnemyPawnAttackSquares\|function findAllHangingPieces\|function getPieceValueSimple\|function getLowestAttackerValue\|function countPiecesForColor\|function canWeRecaptureOn" "Lichess Bot-AlphaZero-Pure.user.js" | head -60
+Observation: 1939:function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+2029:function v40InitializeOrReuseTree(fen, legalMoves) {
+2068:function v40CreateNewTree(fen, legalMoves) {
+2093:function v40ValueNetworkEmulation(fen, move, board, activeColor, moveNumber) {
+2156:function v40EvaluateMaterial(board, activeColor) {
+2174:function v40EvaluateMobility(board, activeColor) {
+2208:function v40EvaluateKingSafety(board, activeColor, moveNumber) {
+2242:function v40EvaluatePawnStructure(board, activeColor) {
+2310:function v40EvaluateSpaceControl(board, activeColor) {
+2337:function v40EvaluateInitiative(board, activeColor, moveNumber) {
+2368:function v40EvaluatePieceCoordination(board, activeColor) {
+2409:function v40EvaluateCenterControl(board, activeColor) {
+2436:function v40EvaluateMoveQuality(fen, move, board, activeColor, moveNumber) {
+2501:function v40EvaluateEndgame(board, activeColor) {
+2565:function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+2707:function v40DeepKingSafetyAnalysis(fen, move, board, activeColor, moveNumber) {
+2746:function v40FileAndDiagonalControl(fen, move, board, activeColor) {
+2790:function v40PieceCoordinationEval(fen, move, board, activeColor) {
+2825:function v40MultiPassBlunderCheck(fen, move, board, activeColor) {
+2981:function v40CheckDiscoveredAttacks(fen, move, board, activeColor) {
+3052:function v40IsOnLine(px, py, x1, y1, x2, y2) {
+3071:function v40CheckDesperado(fen, move, board, activeColor) {
+3083:function v40CheckZwischenzug(fen, move, board, activeColor) {
+3093:function v40CheckQueenTrap(fen, move, board, activeColor) {
+3173:function v40CheckOverloadedPieces(fen, move, board, activeColor) {
+3183:function v40CheckMatingNet(fen, move, board, activeColor) {
+3249:function v40CheckPerpetualMiss(fen, move, board, activeColor) {
+3260:function v40CheckHangingPieces(fen, move, board, activeColor) {
+3323:function v40CountAttackers(board, targetSquare, attackingColor) {
+3348:function v40CountDefenders(board, targetSquare, defendingColor) {
+3374:function v40CanPieceAttack(pieceType, fromFile, fromRank, toFile, toRank, board, color) {
+3418:function v40IsPathClear(fromFile, fromRank, toFile, toRank, board) {
+3439:function v40CheckForForks(fen, move, board, activeColor) {
+3536:function v40CheckPinsSkewers(fen, move, board, activeColor) {
+3638:function v40CheckBackRankMate(fen, move, board, activeColor) {
+3744:function v40ImmediateMoveRejection(move, board, activeColor, moveNumber) {
+3801:function v40DeepStrategicEvaluation(fen, move, board, activeColor, moveNumber) {
+3830:function v40FlawlessEndgameEvaluation(fen, move, board, activeColor) {
+3899:function v40WebWeavingEvaluation(fen, move, board, activeColor) {
+3926:function v40PatternRecognition(fen, move, board, activeColor) {
+3967:function v40DelayedGratificationEval(fen, move, board, activeColor, moveNumber) {
+3991:function v40ResilienceEvaluation(fen, move, board, activeColor) {
+4023:function v40InitiativeEvaluation(fen, move, board, activeColor, moveNumber) {
+4091:function v40DeepMatingNetDetection(fen, move, board, activeColor) {
+4343:function v40FileControlEvaluation(fen, move, board, activeColor) {
+4471:function v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) {
+4552:function v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) {
+4781:function v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) {
+4875:function v40RookInfiltrationDetection(fen, move, board, activeColor) {
+4975:function v40KingSafetyCorridorEval(fen, move, board, activeColor) {
+5105:function v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) {
+5206:function v40MoveCreaetesThreat(move, board, activeColor) {
+5237:function v40CanPieceAttackSquare(piece, fromFile, fromRank, toFile, toRank) {
+5263:function v40CalculatePieceActivity(square, board, activeColor) {
+5293:function v40IsQueenShuffling(move, board, activeColor) {
+5320:function v40CalculatePositionImprovement(move, oldBoard, newBoard, activeColor) {
+5339:function v40CountControlledSquares(board, activeColor) {
+5363:function v40CalculateCentralization(board, activeColor) {
+5383:function v40CountActivePieces(board, activeColor) {
+5409:function v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

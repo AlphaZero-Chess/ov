@@ -1,0 +1,8 @@
+
+Action: $ cd /app && grep -n "function v40OpeningAggressionEval\|function v40ExchangeQualityEval\|function v40ActivePieceRequirementEval\|function v40CounterplayGenerationEval\|function v40CentralControlSupremeEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 9069:function v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) {
+9138:function v40ExchangeQualityEval(fen, move, board, activeColor) {
+9219:function v40ActivePieceRequirementEval(fen, move, board, activeColor, moveNumber) {
+9274:function v40CounterplayGenerationEval(fen, move, board, activeColor, moveNumber) {
+9323:function v40CentralControlSupremeEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

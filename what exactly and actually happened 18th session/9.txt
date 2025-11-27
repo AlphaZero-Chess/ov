@@ -1,0 +1,46 @@
+Now let me add v40.8 CONFIG parameters to address the passivity and poor exchange issues:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.7: ENHANCED 95% DOMINANCE — Make v40 ABSOLUTELY DIVINE DOMINANT
+    v40DivineeDominance: 0.95,              // 95% v40 dominance (up from 90%)
+};" --new-str "    // v40.7: ENHANCED 95% DOMINANCE — Make v40 ABSOLUTELY DIVINE DOMINANT
+    v40DivineeDominance: 0.95,              // 95% v40 dominance (up from 90%)
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.8 TRANSCENDENT: ANTI-PASSIVITY & EXCHANGE QUALITY SUPREME
+    // From King's Pawn Game loss: d3 instead of d4, Qc1 passive, poor exchanges
+    // The bot must play ACTIVELY and make QUALITY exchanges only
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.8: OPENING AGGRESSION — Prefer d4/e4 over d3/e3
+    v40OpeningAggressionEnabled: true,
+    v40PassivePawnPenalty: -25000,          // d3/e3 when d4/e4 possible = BAD
+    v40CenterPawnAdvanceBonus: 15000,       // d4/e4 moves get bonus
+    v40AggressiveOpeningRequired: true,      // Require aggressive opening
+    
+    // v40.8: EXCHANGE QUALITY — Don't trade pieces that help opponent
+    v40ExchangeQualityEnabled: true,
+    v40BadExchangePenalty: -30000,          // Trading piece that centralizes enemy
+    v40GoodExchangeBonus: 10000,            // Trading inactive piece for active
+    v40QueenCentralizationPenalty: -20000,  // Exchanges that centralize enemy queen
+    
+    // v40.8: ACTIVE PIECE REQUIREMENT — All pieces must be active
+    v40ActivePieceRequirementEnabled: true,
+    v40IdlePieceHeavyPenalty: -15000,       // Penalty per idle piece
+    v40AllPiecesActiveBonu: 12000,          // Bonus when all pieces active
+    v40MinimumActivePieces: 5,              // Require at least 5 active pieces
+    
+    // v40.8: COUNTERPLAY GENERATION — Must create threats when attacked
+    v40CounterplayGenerationEnabled: true,
+    v40NoCounterplayPenalty: -18000,        // Under attack with no counterplay = bad
+    v40CounterplayBonus: 8000,              // Creating counterplay threats
+    v40DefenseOnlyPenalty: -12000,          // Pure defense without counter = passive
+    
+    // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
+    v40CentralControlSupremeEnabled: true,
+    v40NoCenterControlPenalty: -20000,      // No center pawns = bad
+    v40CenterDominanceBonus: 15000,         // Controlling center = excellent
+    v40CenterPawnAbsenceEarlyPenalty: -25000, // No d4/e4 by move 5 = very bad
+    
+    // v40.8: 97% TRANSCENDENT DOMINANCE — Make v40 ABSOLUTELY TRANSCENDENT
+    v40TranscendentDominance: 0.97,         // 97% v40 dominance (up from 95%)
+};"
+Observation: Edit was successful.

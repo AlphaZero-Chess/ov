@@ -1,0 +1,69 @@
+Now let me see what needs to be implemented. Looking at the issues in the game:
+1. Move 2: d3 (passive) - the bot should prefer d4
+2. Move 11: Qc1 (passive queen)
+3. Overall lack of active play
+
+Let me add v40.8 improvements to address these issues. First, let me check the CONFIG section to add new parameters:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1230|    v40MaterialLossChainPenalty: -80000,    // Penalty for move that leads to material chain loss
+1231|    v40MultiplePiecesHangingPenalty: -100000, // Multiple pieces hanging = disaster
+1232|    
+1233|    // v40.7: ENEMY PAWN CAPTURE RESPONSE — When enemy pawn captures our piece
+1234|    v40EnemyPawnCaptureEnabled: true,
+1235|    v40PawnTookPieceRecapturePenalty: -35000, // Must recapture when pawn takes piece
+1236|    v40PawnForkDetectionPenalty: -40000,     // Pawn forking our pieces
+1237|    
+1238|    // v40.7: ABSOLUTE BLUNDER CHECK — Final safety check before any move
+1239|    v40AbsoluteBlunderCheckEnabled: true,
+1240|    v40BlunderThreshold: -500,              // Material loss threshold for blunder
+1241|    v40BlunderCheckPasses: 30,              // Number of verification passes
+1242|    
+1243|    // v40.7: ENHANCED 95% DOMINANCE — Make v40 ABSOLUTELY DIVINE DOMINANT
+1244|    v40DivineeDominance: 0.95,              // 95% v40 dominance (up from 90%)
+1245|};
+1246|
+1247|// ═══════════════════════════════════════════════════════════════════════
+1248|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1249|// ═══════════════════════════════════════════════════════════════════════
+1250|
+1251|/**
+1252| * v37: TRUE MCTS Node structure for proper tree search
+1253| */
+1254|class MCTSNode {
+1255|    constructor(move, parent = null, prior = 1.0) {
+1256|        this.move = move;
+1257|        this.parent = parent;
+1258|        this.children = new Map();
+1259|        this.visits = 0;
+1260|        this.totalValue = 0;
+1261|        this.prior = prior;           // Policy prior (P)
+1262|        this.virtualLoss = 0;
+1263|        this.isExpanded = false;
+1264|        this.isTerminal = false;
+1265|        this.depth = parent ? parent.depth + 1 : 0;
+1266|    }
+1267|    
+1268|    get value() {
+1269|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1270|    }
+1271|    
+1272|    get ucb1Score() {
+1273|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1274|        
+1275|        const exploitation = this.value;
+1276|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+1277|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+1278|        
+1279|        return exploitation + exploration;
+1280|    }
+1281|    
+1282|    get puctScore() {
+1283|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1284|        
+1285|        const Q = this.value;
+1286|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+1287|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+1288|        
+1289|        // Apply virtual loss for diversity
+1290|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);

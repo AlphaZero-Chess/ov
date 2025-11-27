@@ -1,0 +1,20 @@
+Let me check the current CONFIG values and see if we need to boost the anti-passivity:
+Action: $ cd /app && grep -n "v40AntiPassivity\|v40Passiv\|PassivityPenalty\|PassiveQueen\|PassiveRook\|ActivePieceBonus" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 1015:    v40AntiPassivityEnabled: true,
+1016:    v40PassivityPenalty: -8000,             // Penalty for passive moves
+1019:    v40PassiveQueenPenalty: -5000,          // Penalty for passive queen
+1020:    v40PassiveRookPenalty: -3000,           // Penalty for passive rook
+1047:    v40PassiveDefensePenalty: -6000,        // Penalty for passive defense
+1061:    v40ActivePieceBonus: 3000,              // Per active piece
+1095:    v40PassiveOpeningPenalty: -15000,       // Penalty for passive opening moves (d3, h3, a3 too early)
+5105:function v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) {
+5106:    if (!CONFIG.v40AntiPassivityEnabled) return 0;
+5137:                score += CONFIG.v40PassivityPenalty || -8000;
+5148:                    score += CONFIG.v40PassiveQueenPenalty || -5000;
+5155:                score += (CONFIG.v40PassiveQueenPenalty || -5000) * 1.5;
+5164:                score += CONFIG.v40PassiveRookPenalty || -3000;
+5171:                score += (CONFIG.v40PassiveRookPenalty || -3000) * 0.5;
+5193:            score += CONFIG.v40ActivePieceBonus || 3000;
+6002:                    score += CONFIG.v40PassiveDefensePenalty || -6000;
+23851:                const antiPassivityBonus = v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+Exit code: 0

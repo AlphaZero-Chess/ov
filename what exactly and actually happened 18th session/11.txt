@@ -1,0 +1,119 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+8950|                attackSquares.push(String.fromCharCode(pFile + 1 + 97) + (attackRank + 1));
+8951|            }
+8952|        }
+8953|    }
+8954|    
+8955|    return attackSquares;
+8956|}
+8957|
+8958|/**
+8959| * v40.7 Helper: Find all hanging pieces
+8960| */
+8961|function findAllHangingPieces(board, ourColor) {
+8962|    const hanging = [];
+8963|    const isWhite = ourColor === 'w';
+8964|    const enemyColor = ourColor === 'w' ? 'b' : 'w';
+8965|    
+8966|    for (const [square, piece] of board) {
+8967|        if (!piece) continue;
+8968|        const pieceIsWhite = piece === piece.toUpperCase();
+8969|        if (pieceIsWhite !== isWhite) continue;
+8970|        
+8971|        const pieceType = piece.toLowerCase();
+8972|        if (pieceType === 'k') continue; // King can't be "hanging"
+8973|        
+8974|        const isAttacked = isSquareAttackedByColor(board, square, enemyColor);
+8975|        const isDefended = isSquareDefendedByColor(board, square, ourColor);
+8976|        
+8977|        if (isAttacked && !isDefended) {
+8978|            hanging.push({ square, piece });
+8979|        }
+8980|    }
+8981|    
+8982|    return hanging;
+8983|}
+8984|
+8985|/**
+8986| * v40.7 Helper: Calculate material balance for a color
+8987| */
+8988|function calculateMaterialBalance(board, color) {
+8989|    let ourMaterial = 0;
+8990|    let theirMaterial = 0;
+8991|    const isWhite = color === 'w';
+8992|    
+8993|    for (const [square, piece] of board) {
+8994|        if (!piece) continue;
+8995|        const pieceIsWhite = piece === piece.toUpperCase();
+8996|        const value = getPieceValueSimple(piece.toLowerCase());
+8997|        
+8998|        if (pieceIsWhite === isWhite) {
+8999|            ourMaterial += value;
+9000|        } else {
+9001|            theirMaterial += value;
+9002|        }
+9003|    }
+9004|    
+9005|    return ourMaterial - theirMaterial;
+9006|}
+9007|
+9008|/**
+9009| * v40.7 Helper: Find best enemy capture
+9010| */
+9011|function findBestEnemyCapture(board, enemyColor) {
+9012|    let bestCapture = null;
+9013|    let bestValue = 0;
+9014|    const isWhite = enemyColor === 'w';
+9015|    const ourColor = enemyColor === 'w' ? 'b' : 'w';
+9016|    
+9017|    for (const [fromSq, piece] of board) {
+9018|        if (!piece) continue;
+9019|        const pieceIsWhite = piece === piece.toUpperCase();
+9020|        if (pieceIsWhite !== isWhite) continue;
+9021|        
+9022|        const pieceType = piece.toLowerCase();
+9023|        const pFile = fromSq.charCodeAt(0) - 'a'.charCodeAt(0);
+9024|        const pRank = parseInt(fromSq[1]) - 1;
+9025|        
+9026|        // Check all possible captures
+9027|        for (const [toSq, targetPiece] of board) {
+9028|            if (!targetPiece) continue;
+9029|            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+9030|            if (targetIsWhite === isWhite) continue; // Can't capture own pieces
+9031|            
+9032|            const tFile = toSq.charCodeAt(0) - 'a'.charCodeAt(0);
+9033|            const tRank = parseInt(toSq[1]) - 1;
+9034|            
+9035|            if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, enemyColor)) {
+9036|                const captureValue = getPieceValueSimple(targetPiece.toLowerCase());
+9037|                
+9038|                // Check if capture is defended
+9039|                const isDefended = isSquareDefendedByColor(board, toSq, ourColor);
+9040|                
+9041|                // Calculate net value (capture - risk)
+9042|                let netValue = captureValue;
+9043|                if (isDefended) {
+9044|                    netValue -= getPieceValueSimple(pieceType);
+9045|                }
+9046|                
+9047|                if (netValue > bestValue) {
+9048|                    bestValue = netValue;
+9049|                    bestCapture = { from: fromSq, to: toSq, value: netValue };
+9050|                }
+9051|            }
+9052|        }
+9053|    }
+9054|    
+9055|    return bestCapture;
+9056|}
+9057|
+9058|/**
+9059| * v40: Evaluate goal alignment with strategic plan
+9060| * True AlphaZero evaluates moves based on how well they fit the plan
+9061| */
+9062|function evaluateGoalAlignment(move, plan) {
+9063|    if (!plan || !plan.type) return 0.5;
+9064|    
+9065|    let alignment = 0.5;
