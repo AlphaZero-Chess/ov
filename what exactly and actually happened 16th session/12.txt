@@ -1,0 +1,84 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+23380|                
+23381|                // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+23382|                const queenInfiltrationScore = v40QueenInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+23383|                
+23384|                // v40.5: ENHANCED HANGING PIECE DETECTION — Prevent material losses
+23385|                const hangingPieceScore = v40EnhancedHangingPieceDetection(fen, move, board, activeColor) * 1.2;
+23386|                
+23387|                // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+23388|                const kingCornerScore = v40KingCornerSafetyEval(fen, move, board, activeColor) * 0.9;
+23389|                
+23390|                // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+23391|                const checkSequenceScore = v40CheckSequenceDetection(fen, move, board, activeColor) * 1.0;
+23392|                
+23393|                // v40.5: COMBINED v40 SCORE — 85% TRANSCENDENT DOMINANT INFLUENCE
+23394|                // This makes v40 the ABSOLUTE TRANSCENDENT factor in move selection
+23395|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+23396|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+23397|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+23398|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+23399|                               counterattackBonus + initiativePreservationBonus +
+23400|                               // v40.4 additions:
+23401|                               openingPrinciplesScore + discoveredAttackPenalty + 
+23402|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+23403|                               // v40.5 NEW additions:
+23404|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore;
+23405|                v40Bonus = v40DeepScore * 0.85;  // 85% influence — TRANSCENDENT PARADIGM SHIFT
+23406|                
+23407|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+23408|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.5 TRANSCENDENT EVALUATION`);
+23409|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+23410|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+23411|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+23412|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+23413|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+23414|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+23415|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+23416|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+23417|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+23418|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+23419|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+23420|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+23421|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+23422|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+23423|                debugLog("[V40_INTEGRATE]", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+23424|                debugLog("[V40_INTEGRATE]", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+23425|                debugLog("[V40_INTEGRATE]", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+23426|                debugLog("[V40_INTEGRATE]", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+23427|                debugLog("[V40_INTEGRATE]", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+23428|                debugLog("[V40_INTEGRATE]", `   🆕 QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+23429|                debugLog("[V40_INTEGRATE]", `   🆕 HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+23430|                debugLog("[V40_INTEGRATE]", `   🆕 KingCorner: ${kingCornerScore.toFixed(1)}`);
+23431|                debugLog("[V40_INTEGRATE]", `   🆕 CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+23432|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 85% bonus=${v40Bonus.toFixed(1)}cp`);
+23433|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+23434|            } catch (e) {
+23435|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+23436|                v40Bonus = 0;
+23437|            }
+23438|        }
+23439|        
+23440|        // v40.5: TRUE ALPHAZERO TRANSCENDENT weighted merge — v40 TRANSCENDENT DOMINANT (85%)
+23441|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY TRANSCENDENT
+23442|        const combinedScore = (
+23443|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.15 +  // Engine reduced to 15%
+23444|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.15 +
+23445|            normalizedPolicyPrior * 0.35 + // Policy bonus reduced further
+23446|            v40Bonus                      // v40 TRANSCENDENT DOMINANT at 85%
+23447|        );
+23448|        
+23449|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
+23450|        
+23451|        return combinedScore;
+23452|    } catch (e) {
+23453|        debugLog("[Q+POLICY]", "⚠️ Error computing combined score:", e.message);
+23454|        return engineScore;
+23455|    }
+23456|}
+23457|
+23458|/**
+23459| * NEW v18.0.0: Legacy stub for v17 compatibility
+23460| */

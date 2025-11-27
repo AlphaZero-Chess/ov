@@ -1,0 +1,57 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+    v40CheckSequenceEnabled: true,
+    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+    v40MultiCheckPenalty: -25000,           // Multiple checks possible = danger
+    
+    // v40.5: ENHANCED 85% DOMINANCE — Make v40 even more dominant
+    v40Dominance: 0.85,                     // 85% v40 dominance (up from 80%)
+};" --new-str "    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+    v40CheckSequenceEnabled: true,
+    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+    v40MultiCheckPenalty: -25000,           // Multiple checks possible = danger
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.6 ULTIMATE: CRITICAL CENTER & TACTICAL BLINDSPOT FIXES
+    // From Nimzowitsch Defense: Ne5 hung d4, then Qxd4, Qxb2 queen raid
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.6: CENTER PAWN PROTECTION — Prevent hanging center pawns
+    v40CenterPawnProtectionEnabled: true,
+    v40HangingCenterPawnPenalty: -35000,    // MASSIVE penalty for hanging d4/d5/e4/e5
+    v40HangingExtendedCenterPenalty: -18000, // Penalty for extended center pawns hanging
+    v40CenterPawnTensionPenalty: -6000,     // Penalty for unresolved center tension
+    
+    // v40.6: PAWN TENSION RESOLUTION — Must recapture when pawn taken
+    v40PawnTensionEnabled: true,
+    v40RecapturePriorityBonus: 12000,       // Bonus for recapturing immediately
+    v40UnresolvedTensionPenalty: -25000,    // Penalty for unresolved pawn tension
+    v40AbandonedPawnPenalty: -30000,        // Penalty for abandoning defended pawn
+    
+    // v40.6: QUEEN RAID PREVENTION — Prevent enemy queen material raids
+    v40QueenRaidPreventionEnabled: true,
+    v40QueenRaidPawnPenalty: -22000,        // Penalty for queen raiding pawn
+    v40QueenRaidRookPenalty: -40000,        // MASSIVE penalty for queen raiding rook
+    v40QueenRaidMinorPenalty: -28000,       // Penalty for queen raiding minor piece
+    v40QueenRaidWithThreatPenalty: -45000,  // Penalty for queen raid with king threat
+    
+    // v40.6: TACTICAL PRIORITY — When tactics demand, override positional
+    v40TacticalPriorityEnabled: true,
+    v40HangingPiecePenalty: -15000,         // Penalty per hanging piece
+    v40ProtectedPieceBonus: 8000,           // Bonus for protecting hanging piece
+    v40ThreatCreationBonus: 4000,           // Bonus per threat created
+    
+    // v40.6: DEVELOPMENT SAFETY — Development must not create tactics
+    v40DevelopmentSafetyEnabled: true,
+    v40DevelopmentAbandonPawnPenalty: -35000, // Dev move that abandons pawn
+    v40EarlyQueenPenalty: -10000,           // Early queen development penalty
+    
+    // v40.6: IMMEDIATE THREAT RESPONSE — Must respond to threats
+    v40ImmediateThreatEnabled: true,
+    v40ThreatAddressedBonus: 10000,         // Bonus for addressing threat
+    v40ThreatIgnoredPenalty: -20000,        // Penalty for ignoring threat
+    
+    // v40.6: ENHANCED 90% DOMINANCE — Make v40 ULTIMATE DOMINANT
+    v40Dominance: 0.90,                     // 90% v40 dominance (up from 85%)
+};"
+Observation: Edit was successful.

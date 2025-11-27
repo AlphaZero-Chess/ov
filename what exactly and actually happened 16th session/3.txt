@@ -1,0 +1,74 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1130|    // ═══════════════════════════════════════════════════════════════════════
+1131|    // v40.5.0: CRITICAL TACTICAL BLINDSPOT FIXES — From Nimzowitsch Defense loss
+1132|    // ═══════════════════════════════════════════════════════════════════════
+1133|    
+1134|    // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+1135|    v40QueenInfiltrationEnabled: true,
+1136|    v40QueenInfiltrationPenalty: -18000,    // Massive penalty for queen infiltration to our half
+1137|    v40QueenOnOpenFilePenalty: -10000,      // Queen on open file towards our king
+1138|    v40QueenNearKingPenalty: -12000,        // Enemy queen near our king
+1139|    v40AllowQueenInvasionPenalty: -25000,   // Penalty for allowing queen invasion
+1140|    
+1141|    // v40.5: HANGING PIECE DETECTION ENHANCEMENT — Prevent Bxb3 disasters
+1142|    v40HangingPieceEnabled: true,
+1143|    v40HangingRookPenalty: -20000,          // MASSIVE penalty for hanging rook
+1144|    v40HangingMinorPenalty: -12000,         // Penalty for hanging minor piece
+1145|    v40UndefendedPiecePenalty: -8000,       // Penalty for undefended pieces
+1146|    v40LooserCheck: true,                   // Deep check for piece safety
+1147|    
+1148|    // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+1149|    v40KingCornerEnabled: true,
+1150|    v40KingCornerPenalty: -15000,           // Penalty for cornered king
+1151|    v40DiagonalAttackToKingPenalty: -12000, // Bishop diagonal attack
+1152|    v40QueenBishopCoordPenalty: -18000,     // Queen+Bishop coordination penalty
+1153|    v40KingH1H2Vulnerability: -20000,       // Specific h1/h2 vulnerability
+1154|    
+1155|    // v40.5: QUEEN TRADE ANALYSIS — Better understanding of queen exchanges
+1156|    v40QueenTradeEnabled: true,
+1157|    v40BadQueenTradePenalty: -15000,        // Penalty for bad queen trade
+1158|    v40QueenExchangeAnalysis: true,         // Analyze queen exchange consequences
+1159|    
+1160|    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+1161|    v40CheckSequenceEnabled: true,
+1162|    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+1163|    v40MultiCheckPenalty: -25000,           // Multiple checks possible = danger
+1164|    
+1165|    // v40.5: ENHANCED 85% DOMINANCE — Make v40 even more dominant
+1166|    v40Dominance: 0.85,                     // 85% v40 dominance (up from 80%)
+1167|};
+1168|
+1169|// ═══════════════════════════════════════════════════════════════════════
+1170|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1171|// ═══════════════════════════════════════════════════════════════════════
+1172|
+1173|/**
+1174| * v37: TRUE MCTS Node structure for proper tree search
+1175| */
+1176|class MCTSNode {
+1177|    constructor(move, parent = null, prior = 1.0) {
+1178|        this.move = move;
+1179|        this.parent = parent;
+1180|        this.children = new Map();
+1181|        this.visits = 0;
+1182|        this.totalValue = 0;
+1183|        this.prior = prior;           // Policy prior (P)
+1184|        this.virtualLoss = 0;
+1185|        this.isExpanded = false;
+1186|        this.isTerminal = false;
+1187|        this.depth = parent ? parent.depth + 1 : 0;
+1188|    }
+1189|    
+1190|    get value() {
+1191|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1192|    }
+1193|    
+1194|    get ucb1Score() {
+1195|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1196|        
+1197|        const exploitation = this.value;
+1198|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+1199|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+1200|        

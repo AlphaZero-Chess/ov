@@ -1,0 +1,44 @@
+Now let me update the weighted merge comment and values:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+23470|        }
+23471|        
+23472|        // v40.5: TRUE ALPHAZERO TRANSCENDENT weighted merge — v40 TRANSCENDENT DOMINANT (85%)
+23473|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY TRANSCENDENT
+23474|        const combinedScore = (
+23475|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.15 +  // Engine reduced to 15%
+23476|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.15 +
+23477|            normalizedPolicyPrior * 0.35 + // Policy bonus reduced further
+23478|            v40Bonus                      // v40 TRANSCENDENT DOMINANT at 85%
+23479|        );
+23480|        
+23481|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
+23482|        
+23483|        return combinedScore;
+23484|    } catch (e) {
+23485|        debugLog("[Q+POLICY]", "⚠️ Error computing combined score:", e.message);
+23486|        return engineScore;
+23487|    }
+23488|}
+23489|
+23490|/**
+23491| * NEW v18.0.0: Legacy stub for v17 compatibility
+23492| */
+23493|function computeLongHorizonScore(fen, move, alternatives, engineScore) {
+23494|    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+23495|    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+23496|}
+23497|
+23498|/**
+23499| * NEW v17.0.0: Get creativity temperature for current move
+23500| * Anneals from high exploration (early game) to low (late game)
+23501| * Linear decay over temperatureDecayMoves
+23502| */
+23503|function getCreativityTemperature(moveNumber) {
+23504|    const decayMoves = ALPHAZERO_ESSENCE.temperatureDecayMoves;
+23505|    
+23506|    if (moveNumber >= decayMoves) {
+23507|        return ALPHAZERO_ESSENCE.temperatureEnd;
+23508|    }
+23509|    
+23510|    // Linear annealing

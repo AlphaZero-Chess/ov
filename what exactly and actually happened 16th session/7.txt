@@ -1,0 +1,94 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+7590|}
+7591|
+7592|/**
+7593| * v40.5: Helper - Get potential checking squares for a piece type
+7594| */
+7595|function getPotentialCheckSquares(kingFile, kingRank, pieceType) {
+7596|    const squares = [];
+7597|    
+7598|    if (pieceType === 'q' || pieceType === 'r') {
+7599|        // Rook/queen check from same file or rank
+7600|        for (let i = 0; i < 8; i++) {
+7601|            if (i !== kingRank) squares.push(String.fromCharCode(kingFile + 97) + (i + 1));
+7602|            if (i !== kingFile) squares.push(String.fromCharCode(i + 97) + (kingRank + 1));
+7603|        }
+7604|    }
+7605|    
+7606|    if (pieceType === 'q' || pieceType === 'b') {
+7607|        // Bishop/queen check from diagonals
+7608|        for (let d = 1; d <= 7; d++) {
+7609|            if (kingFile + d <= 7 && kingRank + d <= 7) 
+7610|                squares.push(String.fromCharCode(kingFile + d + 97) + (kingRank + d + 1));
+7611|            if (kingFile + d <= 7 && kingRank - d >= 0) 
+7612|                squares.push(String.fromCharCode(kingFile + d + 97) + (kingRank - d + 1));
+7613|            if (kingFile - d >= 0 && kingRank + d <= 7) 
+7614|                squares.push(String.fromCharCode(kingFile - d + 97) + (kingRank + d + 1));
+7615|            if (kingFile - d >= 0 && kingRank - d >= 0) 
+7616|                squares.push(String.fromCharCode(kingFile - d + 97) + (kingRank - d + 1));
+7617|        }
+7618|    }
+7619|    
+7620|    return squares;
+7621|}
+7622|
+7623|/**
+7624| * v40: Evaluate goal alignment with strategic plan
+7625| * True AlphaZero evaluates moves based on how well they fit the plan
+7626| */
+7627|function evaluateGoalAlignment(move, plan) {
+7628|    if (!plan || !plan.type) return 0.5;
+7629|    
+7630|    let alignment = 0.5;
+7631|    const toSquare = move.substring(2, 4);
+7632|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+7633|    
+7634|    // Check alignment with plan type
+7635|    switch (plan.type) {
+7636|        case 'kingside_attack':
+7637|            if (toFile >= 5) alignment += 0.2;  // Moves toward kingside
+7638|            break;
+7639|        case 'queenside_attack':
+7640|            if (toFile <= 2) alignment += 0.2;  // Moves toward queenside
+7641|            break;
+7642|        case 'central_control':
+7643|            if (toFile >= 2 && toFile <= 5) alignment += 0.15;
+7644|            break;
+7645|        case 'pawn_storm':
+7646|            if (move[0] === toSquare[0]) alignment += 0.1; // Same piece moving
+7647|            break;
+7648|        case 'piece_coordination':
+7649|            alignment += 0.1;  // Any piece activity is good
+7650|            break;
+7651|    }
+7652|    
+7653|    return Math.min(1.0, Math.max(0, alignment));
+7654|}
+7655|
+7656|/**
+7657| * v40: Evaluate positional squeeze - how much space we control vs opponent
+7658| * AlphaZero excels at slowly squeezing positions
+7659| */
+7660|function evaluatePositionalSqueeze(board, color) {
+7661|    let ourSquares = 0;
+7662|    let enemySquares = 0;
+7663|    
+7664|    // Count pieces in advanced positions
+7665|    for (const [square, piece] of board) {
+7666|        if (!piece) continue;
+7667|        
+7668|        const isOurs = (piece === piece.toUpperCase()) === (color === 'w');
+7669|        const rank = parseInt(square[1]);
+7670|        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+7671|        
+7672|        // Advanced territory bonus
+7673|        const advancedBonus = color === 'w' ? 
+7674|            (rank >= 5 ? rank - 4 : 0) : 
+7675|            (rank <= 4 ? 5 - rank : 0);
+7676|        
+7677|        // Central bonus
+7678|        const centralBonus = (file >= 2 && file <= 5) ? 1 : 0;
+7679|        
+7680|        if (isOurs) ourSquares += advancedBonus + centralBonus;

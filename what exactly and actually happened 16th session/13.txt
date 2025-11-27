@@ -1,0 +1,141 @@
+Now let me update the computeCombinedScore to include v40.6 functions:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                
+                // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+                const queenInfiltrationScore = v40QueenInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+                
+                // v40.5: ENHANCED HANGING PIECE DETECTION — Prevent material losses
+                const hangingPieceScore = v40EnhancedHangingPieceDetection(fen, move, board, activeColor) * 1.2;
+                
+                // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+                const kingCornerScore = v40KingCornerSafetyEval(fen, move, board, activeColor) * 0.9;
+                
+                // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+                const checkSequenceScore = v40CheckSequenceDetection(fen, move, board, activeColor) * 1.0;
+                
+                // v40.5: COMBINED v40 SCORE — 85% TRANSCENDENT DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE TRANSCENDENT factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 NEW additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore;
+                v40Bonus = v40DeepScore * 0.85;  // 85% influence — TRANSCENDENT PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `🦁 SUPERHUMAN BEAST v40.5 TRANSCENDENT EVALUATION`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 KingCorner: ${kingCornerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 85% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);" --new-str "                
+                // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+                const queenInfiltrationScore = v40QueenInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+                
+                // v40.5: ENHANCED HANGING PIECE DETECTION — Prevent material losses
+                const hangingPieceScore = v40EnhancedHangingPieceDetection(fen, move, board, activeColor) * 1.2;
+                
+                // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+                const kingCornerScore = v40KingCornerSafetyEval(fen, move, board, activeColor) * 0.9;
+                
+                // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+                const checkSequenceScore = v40CheckSequenceDetection(fen, move, board, activeColor) * 1.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.6 ULTIMATE: CRITICAL CENTER & TACTICAL BLINDSPOT FIXES
+                // Addresses: Ne5 hanging d4, Qxd4, Qxb2 queen raid disasters
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.6: CENTER PAWN PROTECTION — Prevent hanging center pawns (d4/d5/e4/e5)
+                const centerPawnScore = v40CenterPawnProtection(fen, move, board, activeColor) * 1.5;
+                
+                // v40.6: PAWN TENSION RESOLUTION — Must recapture when pawn taken
+                const pawnTensionScore = v40PawnTensionResolution(fen, move, board, activeColor, lastOpponentMove) * 1.3;
+                
+                // v40.6: QUEEN RAID PREVENTION — Prevent enemy queen material raids
+                const queenRaidScore = v40QueenRaidPrevention(fen, move, board, activeColor) * 1.4;
+                
+                // v40.6: TACTICAL PRIORITY OVERRIDE — Tactics > Positional when needed
+                const tacticalPriorityScore = v40TacticalPriorityOverride(fen, move, board, activeColor, moveNumber) * 1.2;
+                
+                // v40.6: DEVELOPMENT SAFETY — Development must not create tactics
+                const devSafetyScore = v40DevelopmentSafetyCheck(fen, move, board, activeColor, moveNumber) * 1.1;
+                
+                // v40.6: IMMEDIATE THREAT RESPONSE — Must respond to threats
+                const threatResponseScore = v40ImmediateThreatResponse(fen, move, board, activeColor, lastOpponentMove) * 1.2;
+                
+                // v40.6: COMBINED v40 SCORE — 90% ULTIMATE DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE ULTIMATE factor in move selection
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+                               // v40.6 ULTIMATE additions:
+                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+                               tacticalPriorityScore + devSafetyScore + threatResponseScore;
+                v40Bonus = v40DeepScore * 0.90;  // 90% influence — ULTIMATE PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `🦁 SUPERHUMAN BEAST v40.6 ULTIMATE EVALUATION`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   KingCorner: ${kingCornerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 CenterPawn: ${centerPawnScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 PawnTension: ${pawnTensionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 QueenRaid: ${queenRaidScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 DevSafety: ${devSafetyScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🆕 ThreatResponse: ${threatResponseScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 90% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);"
+Observation: Edit was successful.

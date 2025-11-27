@@ -1,0 +1,19 @@
+Now let me add the CONFIG parameters for the v40.6 functions:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1160|    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+1161|    v40CheckSequenceEnabled: true,
+1162|    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+1163|    v40MultiCheckPenalty: -25000,           // Multiple checks possible = danger
+1164|    
+1165|    // v40.5: ENHANCED 85% DOMINANCE — Make v40 even more dominant
+1166|    v40Dominance: 0.85,                     // 85% v40 dominance (up from 80%)
+1167|};
+1168|
+1169|// ═══════════════════════════════════════════════════════════════════════
+1170|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1171|// ═══════════════════════════════════════════════════════════════════════
+1172|
+1173|/**
+1174| * v37: TRUE MCTS Node structure for proper tree search
+1175| */
