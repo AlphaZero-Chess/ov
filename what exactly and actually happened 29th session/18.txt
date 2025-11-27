@@ -1,0 +1,360 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    } catch (e) {
+        debugLog(\"[V40.17_PAWN]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.9 Helper: Find all attacked pieces for a color
+ */
+function findAttackedPiecesV40_9(board, color) {" --new-str "    } catch (e) {
+        debugLog(\"[V40.17_PAWN]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME
+// Never let king get trapped, detect rook invasions, back rank weaknesses
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.18 KING ESCAPE ROUTE: Ensure king always has escape squares
+ */
+function v40KingEscapeRouteEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingEscapeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        // Count king escape squares
+        const escapeSquares = findKingEscapeSquares(afterMove, kingSquare, activeColor);
+        
+        if (escapeSquares.length === 0) {
+            // King is TRAPPED!
+            score += CONFIG.v40KingTrappedPenalty;
+            debugLog(\"[V40.18_ESCAPE]\", `☠️☠️☠️ KING TRAPPED after ${move}! No escape squares!`);
+        } else if (escapeSquares.length === 1) {
+            // King has only one escape - dangerous!
+            score += CONFIG.v40KingOnlyOneEscapePenalty;
+            debugLog(\"[V40.18_ESCAPE]\", `⚠️ King has only ONE escape square after ${move}`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.18_ESCAPE]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.18 ROOK INVASION DETECTION: Detect enemy rooks on 2nd/7th rank
+ */
+function v40RookInvasionDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingEscapeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // The dangerous rank for us (2nd for white, 7th for black)
+        const dangerousRank = isWhite ? 2 : 7;
+        
+        // Find enemy rooks and queens
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue; // Skip our pieces
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType !== 'r' && pieceType !== 'q') continue;
+            
+            const pieceRank = parseInt(sq[1]);
+            const pieceFile = sq.charCodeAt(0) - 97;
+            
+            // Rook/Queen on 2nd/7th rank
+            if (pieceRank === dangerousRank) {
+                score += CONFIG.v40RookOn7thRankPenalty;
+                debugLog(\"[V40.18_ROOK]\", `☠️ Enemy ${pieceType.toUpperCase()} on ${dangerousRank}th rank!`);
+                
+                // Extra penalty if near king
+                if (Math.abs(pieceFile - kingFile) <= 2) {
+                    score += CONFIG.v40RookInvadingKingsidePenalty;
+                    debugLog(\"[V40.18_ROOK]\", `☠️☠️ Enemy ${pieceType.toUpperCase()} invading near king!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.18_ROOK]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.18 BACK RANK WEAKNESS: Detect and avoid back rank mate threats
+ */
+function v40BackRankWeaknessEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40BackRankEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 97;
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // Back rank is 1 for white, 8 for black
+        const backRank = isWhite ? 1 : 8;
+        
+        // Check if king is on back rank
+        if (kingRank !== backRank) return 0;
+        
+        // Check for escape squares (squares in front of king)
+        const escapeRank = isWhite ? 2 : 7;
+        let hasEscape = false;
+        
+        for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+            const escapeSq = String.fromCharCode(97 + f) + escapeRank;
+            const occupant = afterMove.get(escapeSq);
+            
+            if (!occupant) {
+                // Empty square - check if it's safe
+                if (!isSquareAttackedByColor(afterMove, escapeSq, enemyColor)) {
+                    hasEscape = true;
+                    break;
+                }
+            } else {
+                const occupantIsWhite = occupant === occupant.toUpperCase();
+                if (occupantIsWhite !== isWhite) {
+                    // Enemy piece - could potentially be captured
+                    // Still counts as escape if we can take it safely
+                }
+            }
+        }
+        
+        if (!hasEscape) {
+            // King is trapped on back rank!
+            score += CONFIG.v40WeakBackRankPenalty;
+            debugLog(\"[V40.18_BACK]\", `⚠️ Back rank is weak! King trapped on ${backRank}!`);
+            
+            // Check if enemy has rook/queen that can deliver back rank mate
+            for (const [sq, piece] of afterMove) {
+                if (!piece) continue;
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) continue;
+                
+                const pieceType = piece.toLowerCase();
+                if (pieceType !== 'r' && pieceType !== 'q') continue;
+                
+                const pieceFile = sq.charCodeAt(0) - 97;
+                const pieceRank = parseInt(sq[1]);
+                
+                // Can this rook/queen reach the back rank?
+                if (pieceRank === backRank || pieceFile === kingFile) {
+                    // Same rank or file - could potentially give back rank mate
+                    score += CONFIG.v40BackRankMatePenalty / 2;
+                    debugLog(\"[V40.18_BACK]\", `☠️ Back rank mate THREAT from ${pieceType.toUpperCase()} on ${sq}!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.18_BACK]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.18 DISCOVERED ATTACK DETECTION: Don't allow opponent discovered attacks
+ */
+function v40DiscoveredAttackDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40DiscoveredAttackEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        let kingSquare = null;
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite && piece.toLowerCase() === 'k') {
+                kingSquare = sq;
+                break;
+            }
+        }
+        
+        if (!kingSquare) return 0;
+        
+        // Check if our move created a discovered check possibility for opponent
+        // This happens when we move a piece that was blocking an enemy slider
+        
+        // Look for enemy sliders (bishops, rooks, queens) that might now attack our king
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (!['b', 'r', 'q'].includes(pieceType)) continue;
+            
+            // Check if this slider now attacks our king through the square we just vacated
+            const sliderFile = sq.charCodeAt(0) - 97;
+            const sliderRank = parseInt(sq[1]);
+            const kingFile = kingSquare.charCodeAt(0) - 97;
+            const kingRank = parseInt(kingSquare[1]);
+            const vacatedFile = fromSquare.charCodeAt(0) - 97;
+            const vacatedRank = parseInt(fromSquare[1]);
+            
+            // Check if slider, vacated square, and king are aligned
+            const sameRank = sliderRank === kingRank && sliderRank === vacatedRank;
+            const sameFile = sliderFile === kingFile && sliderFile === vacatedFile;
+            const sameDiag = (Math.abs(sliderFile - kingFile) === Math.abs(sliderRank - kingRank)) &&
+                            (Math.abs(sliderFile - vacatedFile) === Math.abs(sliderRank - vacatedRank)) &&
+                            ((vacatedFile - sliderFile) * (kingFile - sliderFile) > 0) &&
+                            ((vacatedRank - sliderRank) * (kingRank - sliderRank) > 0);
+            
+            // Check piece type can use this alignment
+            const canUseRankOrFile = (pieceType === 'r' || pieceType === 'q') && (sameRank || sameFile);
+            const canUseDiagonal = (pieceType === 'b' || pieceType === 'q') && sameDiag;
+            
+            if (canUseRankOrFile || canUseDiagonal) {
+                // Check if path is now clear
+                let pathClear = true;
+                const fileDir = kingFile > sliderFile ? 1 : (kingFile < sliderFile ? -1 : 0);
+                const rankDir = kingRank > sliderRank ? 1 : (kingRank < sliderRank ? -1 : 0);
+                
+                let f = sliderFile + fileDir;
+                let r = sliderRank + rankDir;
+                
+                while (f !== kingFile || r !== kingRank) {
+                    const checkSq = String.fromCharCode(97 + f) + r;
+                    if (afterMove.get(checkSq)) {
+                        pathClear = false;
+                        break;
+                    }
+                    f += fileDir;
+                    r += rankDir;
+                }
+                
+                if (pathClear) {
+                    score += CONFIG.v40AllowsDiscoveredCheckPenalty;
+                    debugLog(\"[V40.18_DISC]\", `☠️☠️ ${move} allows DISCOVERED CHECK from ${pieceType.toUpperCase()} on ${sq}!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.18_DISC]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.9 Helper: Find all attacked pieces for a color
+ */
+function findAttackedPiecesV40_9(board, color) {"
+Observation: Edit was successful.

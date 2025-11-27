@@ -1,0 +1,31 @@
+Let me add v40.18 CONFIG entries for additional improvements:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.17: ABSOLUTE MATERIAL AWARENESS — Material is KING
+    v40MaterialAwarenessEnabled: true,
+    v40MaterialPerPointBonus: 10000000,             // Per centipawn material advantage
+    v40LosingMaterialPenalty: -20000000,            // Per centipawn material loss
+};" --new-str "    // v40.17: ABSOLUTE MATERIAL AWARENESS — Material is KING
+    v40MaterialAwarenessEnabled: true,
+    v40MaterialPerPointBonus: 10000000,             // Per centipawn material advantage
+    v40LosingMaterialPenalty: -20000000,            // Per centipawn material loss
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.18: KING ESCAPE & TACTICAL COMBINATION SUPREME
+    // From game analysis: King got trapped, rook invaded 2nd rank
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40KingEscapeEnabled: true,
+    v40KingTrappedPenalty: -300000000,              // King has no escape squares
+    v40KingOnlyOneEscapePenalty: -100000000,        // King has only one escape
+    v40RookOn7thRankPenalty: -150000000,            // Enemy rook on 2nd/7th rank
+    v40RookInvadingKingsidePenalty: -200000000,     // Rook invading near king
+    
+    // v40.18: DISCOVERED ATTACK DETECTION
+    v40DiscoveredAttackEnabled: true,
+    v40AllowsDiscoveredCheckPenalty: -250000000,    // Our move allows discovered check
+    v40AllowsDiscoveredAttackPenalty: -100000000,   // Our move allows discovered attack
+    
+    // v40.18: BACK RANK WEAKNESS
+    v40BackRankEnabled: true,
+    v40BackRankMatePenalty: -500000000,             // Back rank mate threat
+    v40WeakBackRankPenalty: -80000000,              // Back rank is weak
+};"
+Observation: Edit was successful.

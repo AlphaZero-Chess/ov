@@ -1,0 +1,74 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30600|                debugLog("[V40_INTEGRATE]", `   ⭐ SimpleThreat: ${simpleThreatScore.toFixed(1)}`);
+30601|                debugLog("[V40_INTEGRATE]", `   🔥🔥 LookAheadBlunder: ${lookAheadBlunderScore.toFixed(1)}`);
+30602|                debugLog("[V40_INTEGRATE]", `   🔥🔥 TripleCheck: ${tripleCheckScore.toFixed(1)}`);
+30603|                debugLog("[V40_INTEGRATE]", `   🔥🔥 FailSafe: ${failSafeScore.toFixed(1)}`);
+30604|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ PiecePreservation: ${piecePreservationScore.toFixed(1)}`);
+30605|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ AllPiecesSafety: ${allPiecesSafetyScore.toFixed(1)}`);
+30606|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ ProphylaxisMove: ${prophylaxisMoveScore.toFixed(1)}`);
+30607|                debugLog("[V40_INTEGRATE]", `   🏰🏰 FileOpeningTowardKing: ${fileOpeningTowardKingScore.toFixed(1)}`);
+30608|                debugLog("[V40_INTEGRATE]", `   🏰🏰 PawnStormDetection: ${pawnStormDetectionScore.toFixed(1)}`);
+30609|                debugLog("[V40_INTEGRATE]", `   🏰🏰 QueenInfiltrationPath: ${queenInfiltrationPathScore.toFixed(1)}`);
+30610|                debugLog("[V40_INTEGRATE]", `   🏰🏰 DeepLookAhead: ${deepLookAheadScore.toFixed(1)}`);
+30611|                debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsidePawnShelter: ${kingsidePawnShelterScore.toFixed(1)}`);
+30612|                debugLog("[V40_INTEGRATE]", `   🏰🏰 ForcingLineRejection: ${forcingLineRejectionScore.toFixed(1)}`);
+30613|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+30614|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+30615|                debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
+30616|                debugLog("[V40_INTEGRATE]", `   MatingAttack: ${matingAttackScore.toFixed(1)}`);
+30617|                debugLog("[V40_INTEGRATE]", `   G-FILE ATTACK: ${gFileAttackScore.toFixed(1)}`);
+30618|                debugLog("[V40_INTEGRATE]", `   KINGSIDE ATTACK PATTERN: ${kingsideAttackPatternScore.toFixed(1)}`);
+30619|                debugLog("[V40_INTEGRATE]", `   PASSIVE QUEENSIDE: ${passiveQueensideScore.toFixed(1)}`);
+30620|                debugLog("[V40_INTEGRATE]", `   BAD EXCHANGE FILE: ${badExchangeFileScore.toFixed(1)}`);
+30621|                debugLog("[V40_INTEGRATE]", `   PAWN STORM: ${pawnStormScore.toFixed(1)}`);
+30622|                debugLog("[V40_INTEGRATE]", `   DEFEND KINGSIDE: ${defendKingsideScore.toFixed(1)}`);
+30623|                debugLog("[V40_INTEGRATE]", `   KINGSIDE PAWN WEAKNESS: ${kingsidePawnWeaknessScore.toFixed(1)}`);
+30624|                debugLog("[V40_INTEGRATE]", `   🆕 PROPHYLACTIC EXCHANGE: ${prophylacticExchangeScore.toFixed(1)}`);
+30625|                debugLog("[V40_INTEGRATE]", `   🆕 PAWN STORM ANTICIPATION: ${pawnStormAnticipationScore.toFixed(1)}`);
+30626|                debugLog("[V40_INTEGRATE]", `   🆕 DON'T CREATE WEAKNESSES: ${dontCreateWeaknessesScore.toFixed(1)}`);
+30627|                debugLog("[V40_INTEGRATE]", `   🆕 PRESERVE KING SHELTER: ${preserveKingShelterScore.toFixed(1)}`);
+30628|                debugLog("[V40_INTEGRATE]", `   🆕 ATTACK TRAJECTORY: ${attackTrajectoryScore.toFixed(1)}`);
+30629|                debugLog("[V40_INTEGRATE]", `   🆕 QUEEN TRAP PREVENTION: ${queenTrapPreventionScore.toFixed(1)}`);
+30630|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+30631|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+30632|            } catch (e) {
+30633|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+30634|                v40Bonus = 0;
+30635|            }
+30636|        }
+30637|        
+30638|        // v40.10: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (100%)
+30639|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY GODLIKE
+30640|        const combinedScore = (
+30641|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.00 +  // Engine reduced to 0% - v40 is GOD
+30642|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.00 +
+30643|            normalizedPolicyPrior * 0.00 + // Policy bonus removed - v40 is GOD
+30644|            v40Bonus                      // v40 GODLIKE DOMINANT at 100%
+30645|        );
+30646|        
+30647|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp (100% v40 GODLIKE)`);
+30648|        
+30649|        return combinedScore;
+30650|    } catch (e) {
+30651|        debugLog("[Q+POLICY]", "⚠️ Error computing combined score:", e.message);
+30652|        return engineScore;
+30653|    }
+30654|}
+30655|
+30656|/**
+30657| * NEW v18.0.0: Legacy stub for v17 compatibility
+30658| */
+30659|function computeLongHorizonScore(fen, move, alternatives, engineScore) {
+30660|    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+30661|    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+30662|}
+30663|
+30664|/**
+30665| * NEW v17.0.0: Get creativity temperature for current move
+30666| * Anneals from high exploration (early game) to low (late game)
+30667| * Linear decay over temperatureDecayMoves
+30668| */
+30669|function getCreativityTemperature(moveNumber) {
+30670|    const decayMoves = ALPHAZERO_ESSENCE.temperatureDecayMoves;

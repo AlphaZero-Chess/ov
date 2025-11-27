@@ -1,0 +1,23 @@
+
+Action: $ cd /app && grep -n "function v40.*Eval" "Lichess Bot-AlphaZero-Pure.user.js" | tail -20
+Observation: 12254:function v40AttackTrajectoryEval(fen, move, board, activeColor, moveNumber) {
+12394:function v40QueenTrapPreventionEval(fen, move, board, activeColor, moveNumber) {
+12513:function v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber) {
+12648:function v40CaptureChainAnalysisEval(fen, move, board, activeColor, moveNumber) {
+12733:function v40QueenInfiltrationAbsoluteEval(fen, move, board, activeColor, moveNumber) {
+12867:function v40PreMoveSafetyCheckEval(fen, move, board, activeColor, moveNumber) {
+13048:function v40OpeningBlunderPreventionEval(fen, move, board, activeColor, moveNumber) {
+13114:function v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) {
+13626:function v40PiecePreservationEval(fen, move, board, activeColor, moveNumber) {
+13821:function v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) {
+13885:function v40FileOpeningTowardKingEval(fen, move, board, activeColor, moveNumber) {
+13995:function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+14124:function v40QueenInfiltrationPathEval(fen, move, board, activeColor, moveNumber) {
+14250:function v40DeepLookAheadEval(fen, move, board, activeColor, moveNumber) {
+14624:function v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) {
+14722:function v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) {
+14815:function v40AbsoluteRecaptureEval(fen, move, board, activeColor, moveNumber, lastMove) {
+14918:function v40ImmediateCaptureDetectionEval(fen, move, board, activeColor, moveNumber) {
+15014:function v40MaterialAwarenessEval(fen, move, board, activeColor, moveNumber) {
+15100:function v40AntiPawnGrabDefenseEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

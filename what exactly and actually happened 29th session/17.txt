@@ -1,0 +1,64 @@
+Now let me add the v40.18 functions after v40AntiPawnGrabDefenseEval:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+15160|                            // Even if pawn is defended, this might be bad
+15161|                            const attackerValue = getPieceValueSimple(attacker.piece.toLowerCase());
+15162|                            
+15163|                            // Check if attacker is also defended
+15164|                            const attackerDefended = isSquareDefendedByColor(afterMove, attacker.square, enemyColor);
+15165|                            
+15166|                            if (attackerDefended) {
+15167|                                // Piece can safely take pawn and then be recaptured
+15168|                                // This is only good for enemy if pawn is more valuable than piece would lose
+15169|                                // Usually bad for enemy... unless our recapture opens lines
+15170|                            } else {
+15171|                                // Undefended piece attacking pawn - enemy probably won't take
+15172|                            }
+15173|                        }
+15174|                    }
+15175|                }
+15176|            }
+15177|        }
+15178|        
+15179|        // Special check: Are we moving a pawn to a square where it can be captured?
+15180|        if (movingPiece.toLowerCase() === 'p') {
+15181|            if (isSquareAttackedByColor(afterMove, toSquare, enemyColor)) {
+15182|                const isDefended = isSquareDefendedByColor(afterMove, toSquare, activeColor);
+15183|                if (!isDefended) {
+15184|                    score += CONFIG.v40PawnCanBeTakenByPiecePenalty;
+15185|                    debugLog("[V40.17_PAWN]", `☠️ ${move} moves pawn to hanging square!`);
+15186|                }
+15187|            }
+15188|        }
+15189|        
+15190|    } catch (e) {
+15191|        debugLog("[V40.17_PAWN]", `Error: ${e.message}`);
+15192|    }
+15193|    
+15194|    return score;
+15195|}
+15196|
+15197|// ═══════════════════════════════════════════════════════════════════════════════
+15198|
+15199|/**
+15200| * v40.9 Helper: Find all attacked pieces for a color
+15201| */
+15202|function findAttackedPiecesV40_9(board, color) {
+15203|    const attacked = [];
+15204|    const isWhite = color === 'w';
+15205|    const enemyColor = isWhite ? 'b' : 'w';
+15206|    
+15207|    for (const [square, piece] of board) {
+15208|        if (!piece) continue;
+15209|        const pieceIsWhite = piece === piece.toUpperCase();
+15210|        if (pieceIsWhite !== isWhite) continue;
+15211|        
+15212|        const pieceType = piece.toLowerCase();
+15213|        if (pieceType === 'k') continue;  // King attacks handled separately
+15214|        
+15215|        // Check if this square is attacked by enemy
+15216|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+15217|            // Check if it's adequately defended
+15218|            const isDefended = isSquareDefendedByColor(board, square, color);
+15219|            
+15220|            // If attacked by something of lower value, still need to consider

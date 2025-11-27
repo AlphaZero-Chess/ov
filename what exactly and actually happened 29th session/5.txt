@@ -1,0 +1,10 @@
+Now I need to integrate the v40.17 functions into the main evaluation. Let me find where the v40.16 functions are being called and add v40.17:
+Action: $ cd /app && grep -n "v40FileOpeningTowardKingEval\|v40PawnStormDetectionEval\|v40QueenInfiltrationPathEval\|v40DeepLookAheadEval\|v40KingsidePawnShelterEval\|v40ForcingLineRejectionEval" "Lichess Bot-AlphaZero-Pure.user.js" | grep -v "function v40" | head -30
+Observation: 30422:                const pawnStormScore = v40PawnStormDetectionEvalV11(fen, move, board, activeColor, moveNumber) * 2.0;
+30520:                const fileOpeningTowardKingScore = v40FileOpeningTowardKingEval(fen, move, board, activeColor, moveNumber) * 15.0;
+30523:                const pawnStormDetectionScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 10.0;
+30526:                const queenInfiltrationPathScore = v40QueenInfiltrationPathEval(fen, move, board, activeColor, moveNumber) * 8.0;
+30529:                const deepLookAheadScore = v40DeepLookAheadEval(fen, move, board, activeColor, moveNumber) * 12.0;
+30532:                const kingsidePawnShelterScore = v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) * 5.0;
+30535:                const forcingLineRejectionScore = v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) * 15.0;
+Exit code: 0

@@ -1,0 +1,17 @@
+Now I need to add the v40.17 function calls. Let me find the right location:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
+                const forcingLineRejectionScore = v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) * 15.0;" --new-str "                // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
+                const forcingLineRejectionScore = v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) * 15.0;
+                
+                // v40.17: ABSOLUTE RECAPTURE — NEVER leave free pieces on the board
+                const absoluteRecaptureScore = v40AbsoluteRecaptureEval(fen, move, board, activeColor, moveNumber, null) * 20.0;
+                
+                // v40.17: IMMEDIATE CAPTURE DETECTION — Don't allow opponent free captures
+                const immediateCaptureDetectionScore = v40ImmediateCaptureDetectionEval(fen, move, board, activeColor, moveNumber) * 18.0;
+                
+                // v40.17: MATERIAL AWARENESS — Material is KING
+                const materialAwarenessScore = v40MaterialAwarenessEval(fen, move, board, activeColor, moveNumber) * 15.0;
+                
+                // v40.17: ANTI-PAWN-GRAB DEFENSE — Don't let pawns be taken for free
+                const antiPawnGrabScore = v40AntiPawnGrabDefenseEval(fen, move, board, activeColor, moveNumber) * 12.0;"
+Observation: Edit was successful.

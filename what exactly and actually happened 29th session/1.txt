@@ -1,0 +1,29 @@
+Now I understand the current state. Session 28 ended at analyzing the game issues and planning v40.17 ABSOLUTE RECAPTURE. The v40.17 was planned but NOT yet implemented. Let me continue with implementing v40.17.
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1655|    v40ForcingLineLosesMaterialPenalty: -15000000,  // Reject if loses material
+1656|    v40ForcingLineRuinsPositionPenalty: -8000000,   // Reject if ruins position
+1657|    
+1658|    // v40.16: 100% CATASTROPHIC KINGSIDE DEFENSE SUPREME DOMINANCE
+1659|    v40CatastrophicKingsideDefenseDominance: 1.0,   // 100% v40.16 influence
+1660|};
+1661|
+1662|// ═══════════════════════════════════════════════════════════════════════
+1663|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1664|// ═══════════════════════════════════════════════════════════════════════
+1665|
+1666|/**
+1667| * v37: TRUE MCTS Node structure for proper tree search
+1668| */
+1669|class MCTSNode {
+1670|    constructor(move, parent = null, prior = 1.0) {
+1671|        this.move = move;
+1672|        this.parent = parent;
+1673|        this.children = new Map();
+1674|        this.visits = 0;
+1675|        this.totalValue = 0;
+1676|        this.prior = prior;           // Policy prior (P)
+1677|        this.virtualLoss = 0;
+1678|        this.isExpanded = false;
+1679|        this.isTerminal = false;
+1680|        this.depth = parent ? parent.depth + 1 : 0;
