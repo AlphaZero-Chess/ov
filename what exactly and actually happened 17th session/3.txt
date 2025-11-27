@@ -1,0 +1,31 @@
+I see the issue. The v40.6 functions exist but there's a critical problem - the `lastOpponentMove` variable needs to be tracked properly. Let me check how it's being passed in computeCombinedScore:
+Action: $ cd /app && grep -n "lastOpponentMove\|lastMove" "Lichess Bot-AlphaZero-Pure.user.js" | head -40
+Observation: 7753:function v40PawnTensionResolution(fen, move, board, activeColor, lastMove) {
+7762:        if (lastMove && lastMove.length >= 4) {
+7763:            const enemyFromSquare = lastMove.substring(0, 2);
+7764:            const enemyToSquare = lastMove.substring(2, 4);
+8107:function v40ImmediateThreatResponse(fen, move, board, activeColor, lastMove) {
+8115:        if (!lastMove) return 0;
+8118:        const enemyToSquare = lastMove.substring(2, 4);
+9668:        const lastMoveFile = recentMoves[recentMoves.length - 1]?.substring(2, 3);
+9672:        if (lastMoveFile && thisMoveFile) {
+9673:            const fileDist = Math.abs(lastMoveFile.charCodeAt(0) - thisMoveFile.charCodeAt(0));
+11450:let lastMoveWasDeveloping = true;
+11542:        lastMoveWasDeveloping = true;
+11545:        lastMoveWasDeveloping = false;
+11564:    lastMoveWasDeveloping = true;
+16888:function detectMaterialCrisis(fen, lastMove, evaluation) {
+16905:    if (lastMove && lastMove.includes('x')) {
+16918:function findBestRecaptureMove(fen, lastMoveSquare, alternatives) {
+16919:    if (!lastMoveSquare || !alternatives || alternatives.length === 0) return null;
+16925:            if (targetSquare === lastMoveSquare) {
+16926:                debugLog("[RECAPTURE]", `✅ Found recapture: ${alt.move} on ${lastMoveSquare}`);
+20313:let lastOpponentMove = null;     // Track opponent's last move
+22852:    if (lastOpponentMove) {
+22853:        const threatLevel = analyzeOpponentThreats(lastOpponentMove, currentFen, multiPVLines);
+23403:                const pawnTensionScore = v40PawnTensionResolution(fen, move, board, activeColor, lastOpponentMove) * 1.3;
+23415:                const threatResponseScore = v40ImmediateThreatResponse(fen, move, board, activeColor, lastOpponentMove) * 1.2;
+24708:        lastOpponentMove = null; // Our move, not opponent's
+24728:        lastOpponentMove = message.d.uci;
+24729:        debugLog("[THREAT]", `📥 Opponent move recorded: ${lastOpponentMove}`);
+Exit code: 0

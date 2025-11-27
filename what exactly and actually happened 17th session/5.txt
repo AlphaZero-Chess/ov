@@ -1,0 +1,93 @@
+The file has 26,020 lines and passes syntax check. Now let me analyze the new game failure and implement v40.7 ABSOLUTE TACTICAL PRIORITY:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+7961|function v40TacticalPriorityOverride(fen, move, board, activeColor, moveNumber) {
+7962|    if (!CONFIG.v40TacticalPriorityEnabled) return 0;
+7963|    
+7964|    let bonus = 0;
+7965|    let penalty = 0;
+7966|    const isWhite = activeColor === 'w';
+7967|    
+7968|    try {
+7969|        // In the opening (first 15 moves), tactics are CRITICAL
+7970|        const isOpening = moveNumber <= 15;
+7971|        const multiplier = isOpening ? 1.5 : 1.0;
+7972|        
+7973|        // Simulate the move
+7974|        const simBoard = new Map(board);
+7975|        const fromSquare = move.substring(0, 2);
+7976|        const toSquare = move.substring(2, 4);
+7977|        const movingPiece = board.get(fromSquare);
+7978|        
+7979|        if (movingPiece) {
+7980|            simBoard.delete(fromSquare);
+7981|            simBoard.set(toSquare, movingPiece);
+7982|        }
+7983|        
+7984|        // CHECK 1: Does our move leave a piece hanging?
+7985|        const hangingPieces = findHangingPieces(simBoard, activeColor);
+7986|        if (hangingPieces.length > 0) {
+7987|            for (const hp of hangingPieces) {
+7988|                const val = getSimplePieceValue(hp.piece);
+7989|                penalty -= val * 20 * multiplier;
+7990|                debugLog("[V40_TACTICAL]", `🚨 HANGING ${hp.piece} ON ${hp.square}! Penalty: ${val * 20 * multiplier}`);
+7991|            }
+7992|        }
+7993|        
+7994|        // CHECK 2: Does our move protect hanging pieces?
+7995|        const beforeHanging = findHangingPieces(board, activeColor);
+7996|        const afterHanging = findHangingPieces(simBoard, activeColor);
+7997|        
+7998|        const piecesProtected = beforeHanging.length - afterHanging.length;
+7999|        if (piecesProtected > 0) {
+8000|            bonus += piecesProtected * 8000 * multiplier;
+8001|            debugLog("[V40_TACTICAL]", `✅ PROTECTED ${piecesProtected} hanging piece(s)!`);
+8002|        }
+8003|        
+8004|        // CHECK 3: Does our move threaten enemy pieces?
+8005|        const threatsCreated = countThreatsAfterMove(simBoard, activeColor);
+8006|        if (threatsCreated > 0) {
+8007|            bonus += threatsCreated * 3000 * multiplier;
+8008|            debugLog("[V40_TACTICAL]", `✅ Created ${threatsCreated} new threat(s)!`);
+8009|        }
+8010|        
+8011|        // CHECK 4: In opening, prioritize center control
+8012|        if (isOpening) {
+8013|            const centerControl = evaluateCenterControlAfterMove(simBoard, activeColor);
+8014|            bonus += centerControl * 2000;
+8015|            debugLog("[V40_TACTICAL]", `Opening center control: ${centerControl}`);
+8016|        }
+8017|        
+8018|        // CHECK 5: Are we capturing material?
+8019|        const capturedPiece = board.get(toSquare);
+8020|        if (capturedPiece) {
+8021|            const captureValue = getSimplePieceValue(capturedPiece);
+8022|            
+8023|            // Make sure it's an enemy piece
+8024|            const capturedIsWhite = capturedPiece === capturedPiece.toUpperCase();
+8025|            if (capturedIsWhite !== isWhite) {
+8026|                bonus += captureValue * 15 * multiplier;
+8027|                debugLog("[V40_TACTICAL]", `✅ CAPTURING ${capturedPiece}! Value: ${captureValue}`);
+8028|            }
+8029|        }
+8030|        
+8031|    } catch (e) {
+8032|        debugLog("[V40_TACTICAL]", `Error: ${e.message}`);
+8033|    }
+8034|    
+8035|    return bonus + penalty;
+8036|}
+8037|
+8038|/**
+8039| * v40.6 ULTIMATE: DEVELOPMENT SAFETY CHECK
+8040| * CRITICAL: In opening, developing moves MUST NOT create tactics
+8041| * Ne5 developed but created a tactical hole!
+8042| */
+8043|function v40DevelopmentSafetyCheck(fen, move, board, activeColor, moveNumber) {
+8044|    if (!CONFIG.v40DevelopmentSafetyEnabled) return 0;
+8045|    if (moveNumber > 20) return 0;  // Only in opening
+8046|    
+8047|    let penalty = 0;
+8048|    const isWhite = activeColor === 'w';
+8049|    
+8050|    try {

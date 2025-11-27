@@ -1,0 +1,80 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+8144|function v40ImmediateThreatResponse(fen, move, board, activeColor, lastMove) {
+8145|    if (!CONFIG.v40ImmediateThreatEnabled) return 0;
+8146|    
+8147|    let bonus = 0;
+8148|    let penalty = 0;
+8149|    const isWhite = activeColor === 'w';
+8150|    
+8151|    try {
+8152|        if (!lastMove) return 0;
+8153|        
+8154|        // What did opponent threaten with their move?
+8155|        const enemyToSquare = lastMove.substring(2, 4);
+8156|        
+8157|        // Find pieces threatened by enemy's last move position
+8158|        const threatenedPieces = findThreatenedPiecesFrom(board, enemyToSquare, activeColor);
+8159|        
+8160|        if (threatenedPieces.length === 0) return 0;
+8161|        
+8162|        // Simulate our move
+8163|        const simBoard = new Map(board);
+8164|        const fromSquare = move.substring(0, 2);
+8165|        const toSquare = move.substring(2, 4);
+8166|        const movingPiece = board.get(fromSquare);
+8167|        
+8168|        if (movingPiece) {
+8169|            simBoard.delete(fromSquare);
+8170|            simBoard.set(toSquare, movingPiece);
+8171|        }
+8172|        
+8173|        // Check if we addressed the threats
+8174|        for (const threat of threatenedPieces) {
+8175|            // Option 1: We captured the threatening piece
+8176|            if (toSquare === enemyToSquare) {
+8177|                bonus += 10000;
+8178|                debugLog("[V40_THREAT]", `✅ CAPTURED threatening piece on ${enemyToSquare}!`);
+8179|                continue;
+8180|            }
+8181|            
+8182|            // Option 2: We moved the threatened piece
+8183|            if (fromSquare === threat.square) {
+8184|                bonus += 8000;
+8185|                debugLog("[V40_THREAT]", `✅ MOVED threatened ${threat.piece} from ${threat.square}!`);
+8186|                continue;
+8187|            }
+8188|            
+8189|            // Option 3: We blocked or defended
+8190|            const stillThreatened = isSquareThreatenedFrom(simBoard, threat.square, enemyToSquare, activeColor);
+8191|            const nowDefended = isSquareDefended(simBoard, threat.square, activeColor);
+8192|            
+8193|            if (!stillThreatened || nowDefended) {
+8194|                bonus += 6000;
+8195|                debugLog("[V40_THREAT]", `✅ DEFENDED ${threat.piece} on ${threat.square}!`);
+8196|                continue;
+8197|            }
+8198|            
+8199|            // THREAT NOT ADDRESSED!
+8200|            const pieceValue = getSimplePieceValue(threat.piece);
+8201|            penalty -= pieceValue * 25;
+8202|            debugLog("[V40_THREAT]", `🚨 THREAT TO ${threat.piece} ON ${threat.square} NOT ADDRESSED!`);
+8203|        }
+8204|        
+8205|    } catch (e) {
+8206|        debugLog("[V40_THREAT]", `Error: ${e.message}`);
+8207|    }
+8208|    
+8209|    return bonus + penalty;
+8210|}
+8211|
+8212|// ═══════════════════════════════════════════════════════════════════════════════
+8213|// v40.6 ULTIMATE: HELPER FUNCTIONS
+8214|// ═══════════════════════════════════════════════════════════════════════════════
+8215|
+8216|/**
+8217| * v40.6 Helper: Check if a pawn was taken
+8218| */
+8219|function checkIfPawnWasTaken(board, square, ourColor) {
+8220|    // We need to check if the square had our pawn before

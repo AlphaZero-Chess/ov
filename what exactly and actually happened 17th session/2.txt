@@ -1,0 +1,111 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+7753|function v40PawnTensionResolution(fen, move, board, activeColor, lastMove) {
+7754|    if (!CONFIG.v40PawnTensionEnabled) return 0;
+7755|    
+7756|    let bonus = 0;
+7757|    let penalty = 0;
+7758|    const isWhite = activeColor === 'w';
+7759|    
+7760|    try {
+7761|        // If last move was a pawn capture, we MUST respond to the tension
+7762|        if (lastMove && lastMove.length >= 4) {
+7763|            const enemyFromSquare = lastMove.substring(0, 2);
+7764|            const enemyToSquare = lastMove.substring(2, 4);
+7765|            
+7766|            // Did enemy take one of our pawns?
+7767|            const pawnWasTaken = checkIfPawnWasTaken(board, enemyToSquare, activeColor);
+7768|            
+7769|            if (pawnWasTaken) {
+7770|                // Check if our move recaptures
+7771|                const ourToSquare = move.substring(2, 4);
+7772|                
+7773|                if (ourToSquare === enemyToSquare) {
+7774|                    // We are recapturing! GOOD!
+7775|                    bonus += CONFIG.v40RecapturePriorityBonus || 10000;
+7776|                    debugLog("[V40_TENSION]", `✅ RECAPTURING on ${enemyToSquare} - EXCELLENT!`);
+7777|                } else {
+7778|                    // Check if there's a pawn still hanging after this move
+7779|                    const simBoard = new Map(board);
+7780|                    const fromSquare = move.substring(0, 2);
+7781|                    const toSquare = move.substring(2, 4);
+7782|                    const movingPiece = board.get(fromSquare);
+7783|                    
+7784|                    if (movingPiece) {
+7785|                        simBoard.delete(fromSquare);
+7786|                        simBoard.set(toSquare, movingPiece);
+7787|                    }
+7788|                    
+7789|                    // Check center pawns for hanging after our move
+7790|                    const criticalPawns = ['d4', 'd5', 'e4', 'e5'];
+7791|                    for (const sq of criticalPawns) {
+7792|                        const piece = simBoard.get(sq);
+7793|                        if (!piece || piece.toLowerCase() !== 'p') continue;
+7794|                        
+7795|                        const pieceIsWhite = piece === 'P';
+7796|                        if (pieceIsWhite !== isWhite) continue;
+7797|                        
+7798|                        const isDefended = isSquareDefended(simBoard, sq, activeColor);
+7799|                        const isAttacked = isSquareAttacked(simBoard, sq, activeColor === 'w' ? 'b' : 'w');
+7800|                        
+7801|                        if (isAttacked && !isDefended) {
+7802|                            penalty -= CONFIG.v40UnresolvedTensionPenalty || -20000;
+7803|                            debugLog("[V40_TENSION]", `🚨 UNRESOLVED TENSION! ${sq} is still hanging!`);
+7804|                        }
+7805|                    }
+7806|                }
+7807|            }
+7808|        }
+7809|        
+7810|        // Also check if our move creates hanging pawns
+7811|        const simBoard = new Map(board);
+7812|        const fromSquare = move.substring(0, 2);
+7813|        const toSquare = move.substring(2, 4);
+7814|        const movingPiece = board.get(fromSquare);
+7815|        
+7816|        if (movingPiece) {
+7817|            simBoard.delete(fromSquare);
+7818|            simBoard.set(toSquare, movingPiece);
+7819|        }
+7820|        
+7821|        // If we moved a defender, check if any pawn is now hanging
+7822|        if (movingPiece && movingPiece.toLowerCase() !== 'p') {
+7823|            const criticalPawns = ['d4', 'd5', 'e4', 'e5', 'c3', 'c4', 'c5', 'c6'];
+7824|            for (const sq of criticalPawns) {
+7825|                const piece = simBoard.get(sq);
+7826|                if (!piece || piece.toLowerCase() !== 'p') continue;
+7827|                
+7828|                const pieceIsWhite = piece === 'P';
+7829|                if (pieceIsWhite !== isWhite) continue;
+7830|                
+7831|                // Was this pawn defended by the piece we moved?
+7832|                const wasDefendedByMover = wasSquareDefendedByPiece(board, sq, fromSquare, movingPiece);
+7833|                if (wasDefendedByMover) {
+7834|                    const stillDefended = isSquareDefended(simBoard, sq, activeColor);
+7835|                    const isAttacked = isSquareAttacked(simBoard, sq, activeColor === 'w' ? 'b' : 'w');
+7836|                    
+7837|                    if (!stillDefended && isAttacked) {
+7838|                        penalty -= CONFIG.v40AbandonedPawnPenalty || -25000;
+7839|                        debugLog("[V40_TENSION]", `🚨🚨 ABANDONED PAWN! Moving ${movingPiece} left ${sq} hanging!`);
+7840|                    }
+7841|                }
+7842|            }
+7843|        }
+7844|        
+7845|    } catch (e) {
+7846|        debugLog("[V40_TENSION]", `Error: ${e.message}`);
+7847|    }
+7848|    
+7849|    return bonus + penalty;
+7850|}
+7851|
+7852|/**
+7853| * v40.6 ULTIMATE: QUEEN RAID PREVENTION
+7854| * CRITICAL: Prevent enemy queen from invading to capture material
+7855| * After Qxd4, the bot allowed Qxb2 - this queen raid must be prevented!
+7856| */
+7857|function v40QueenRaidPrevention(fen, move, board, activeColor) {
+7858|    if (!CONFIG.v40QueenRaidPreventionEnabled) return 0;
+7859|    
+7860|    let penalty = 0;

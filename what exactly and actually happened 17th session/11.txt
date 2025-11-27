@@ -1,0 +1,6 @@
+
+Action: $ cd /app && grep -n "function evaluateGoalAlignment\|function evaluateCenterControl" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 8330:function evaluateCenterControlAfterMove(board, color) {
+8553:function evaluateGoalAlignment(move, plan) {
+22580:function evaluateCenterControl(fen) {
+Exit code: 0

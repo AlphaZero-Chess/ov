@@ -1,0 +1,481 @@
+Now let me add the v40.7 functions after the v40.6 helper functions. I'll insert them before `evaluateGoalAlignment`:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "/**
+ * v40: Evaluate goal alignment with strategic plan
+ * True AlphaZero evaluates moves based on how well they fit the plan
+ */
+function evaluateGoalAlignment(move, plan) {" --new-str "// ═══════════════════════════════════════════════════════════════════════════════
+// v40.7 DIVINE: ABSOLUTE TACTICAL BLINDSPOT ELIMINATION FUNCTIONS
+// From Alekhine Defense loss analysis: Must detect moves to attacked squares,
+// recapture urgency, and prevent material hemorrhage
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.7 DIVINE: RECAPTURE URGENCY
+ * When opponent captures our material, we MUST recapture immediately
+ * Prevents: d4 captured → Nc3 instead of recapture → dxc3 wins knight
+ */
+function v40RecaptureUrgency(fen, move, board, activeColor, lastOpponentMove) {
+    if (!CONFIG.v40RecaptureUrgencyEnabled) return 0;
+    
+    let bonus = 0;
+    let penalty = 0;
+    
+    try {
+        // If opponent just captured something, we need to recapture
+        if (!lastOpponentMove) return 0;
+        
+        const enemyToSquare = lastOpponentMove.substring(2, 4);
+        const ourToSquare = move.substring(2, 4);
+        
+        // Check if there was a capture (opponent moved to a square we had a piece)
+        // We detect this by checking if our piece count decreased
+        const ourPiecesNow = countPiecesForColor(board, activeColor);
+        
+        // Simple heuristic: if opponent just captured material, recapture is urgent
+        // The enemyToSquare should have been our piece
+        
+        // Check if we can recapture on that square
+        const canRecapture = canWeRecaptureOn(board, enemyToSquare, activeColor);
+        
+        if (canRecapture) {
+            if (ourToSquare === enemyToSquare) {
+                // We ARE recapturing - EXCELLENT!
+                bonus += CONFIG.v40RecaptureUrgencyBonus || 50000;
+                debugLog(\"[V40.7_RECAPTURE]\", `✅✅ RECAPTURING on ${enemyToSquare}! +${bonus}`);
+            } else {
+                // We CAN recapture but chose not to - BAD!
+                penalty -= CONFIG.v40FailToRecapturePenalty || -60000;
+                debugLog(\"[V40.7_RECAPTURE]\", `🚨🚨🚨 FAILED TO RECAPTURE on ${enemyToSquare}! MASSIVE PENALTY!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.7_RECAPTURE]\", `Error: ${e.message}`);
+    }
+    
+    return bonus + penalty;
+}
+
+/**
+ * v40.7 DIVINE: PIECE ON ATTACKED SQUARE DETECTION
+ * CRITICAL: Detect when we're about to move a piece to a square enemy can capture
+ * Prevents: Nc3 when c3 pawn is hanging, or developing to attacked squares
+ */
+function v40PieceOnAttackedSquareDetection(fen, move, board, activeColor) {
+    if (!CONFIG.v40PieceOnAttackedSquareEnabled) return 0;
+    
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const pieceType = movingPiece.toLowerCase();
+        if (pieceType === 'k') return 0; // King moves are handled separately
+        
+        // Simulate our move
+        const simBoard = new Map(board);
+        simBoard.delete(fromSquare);
+        simBoard.set(toSquare, movingPiece);
+        
+        // Check if the square we're moving TO is attacked by enemy
+        const isToSquareAttacked = isSquareAttackedByColor(simBoard, toSquare, enemyColor);
+        
+        if (isToSquareAttacked) {
+            // Check if we're defended there
+            const isDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+            
+            if (!isDefended) {
+                // MOVING TO UNDEFENDED ATTACKED SQUARE = DISASTER!
+                switch (pieceType) {
+                    case 'q':
+                        penalty -= CONFIG.v40QueenToAttackedSquarePenalty || -70000;
+                        debugLog(\"[V40.7_ATTACKED_SQ]\", `🚨🚨🚨 QUEEN TO ATTACKED SQUARE ${toSquare}! CATASTROPHIC!`);
+                        break;
+                    case 'r':
+                        penalty -= CONFIG.v40RookToAttackedSquarePenalty || -55000;
+                        debugLog(\"[V40.7_ATTACKED_SQ]\", `🚨🚨 ROOK TO ATTACKED SQUARE ${toSquare}!`);
+                        break;
+                    case 'b':
+                        penalty -= CONFIG.v40BishopToAttackedSquarePenalty || -45000;
+                        debugLog(\"[V40.7_ATTACKED_SQ]\", `🚨🚨 BISHOP TO ATTACKED SQUARE ${toSquare}!`);
+                        break;
+                    case 'n':
+                        penalty -= CONFIG.v40KnightToAttackedSquarePenalty || -45000;
+                        debugLog(\"[V40.7_ATTACKED_SQ]\", `🚨🚨 KNIGHT TO ATTACKED SQUARE ${toSquare}!`);
+                        break;
+                }
+            } else {
+                // Defended but check if attacker is worth less (bad trade)
+                const lowestAttacker = getLowestAttackerValue(simBoard, toSquare, enemyColor);
+                const pieceValue = getPieceValueSimple(pieceType);
+                
+                if (lowestAttacker < pieceValue) {
+                    // We're putting piece where it can be taken by lower value piece!
+                    penalty -= (pieceValue - lowestAttacker) * 8000;
+                    debugLog(\"[V40.7_ATTACKED_SQ]\", `⚠️ ${pieceType.toUpperCase()} to ${toSquare} can be taken by lower value piece!`);
+                }
+            }
+        }
+        
+        // SPECIAL CHECK: Are we moving to a pawn's attack square?
+        // This caught the Nc3 blunder where c3 was attacked by d4 pawn
+        const enemyPawnAttackSquares = getEnemyPawnAttackSquares(simBoard, enemyColor);
+        if (enemyPawnAttackSquares.includes(toSquare)) {
+            const isDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+            if (!isDefended) {
+                penalty -= 35000;
+                debugLog(\"[V40.7_ATTACKED_SQ]\", `🚨 PIECE TO PAWN ATTACK SQUARE ${toSquare}! HANGING!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.7_ATTACKED_SQ]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.7 DIVINE: MATERIAL HEMORRHAGE DETECTION
+ * Detect when a move leads to a chain of material losses
+ * Prevents: Moves that lose material over sequence of forced captures
+ */
+function v40MaterialHemorrhageDetection(fen, move, board, activeColor) {
+    if (!CONFIG.v40MaterialHemorrhageEnabled) return 0;
+    
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate our move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Count how many of our pieces are hanging after this move
+        const hangingPieces = findAllHangingPieces(simBoard, activeColor);
+        
+        if (hangingPieces.length > 1) {
+            // MULTIPLE PIECES HANGING = DISASTER!
+            penalty -= CONFIG.v40MultiplePiecesHangingPenalty || -100000;
+            debugLog(\"[V40.7_HEMORRHAGE]\", `🚨🚨🚨 ${hangingPieces.length} PIECES HANGING! HEMORRHAGE!`);
+            
+            for (const hp of hangingPieces) {
+                debugLog(\"[V40.7_HEMORRHAGE]\", `   - ${hp.piece} on ${hp.square}`);
+            }
+        } else if (hangingPieces.length === 1) {
+            // One piece hanging - still bad
+            const pieceValue = getPieceValueSimple(hangingPieces[0].piece.toLowerCase());
+            penalty -= pieceValue * 5000;
+            debugLog(\"[V40.7_HEMORRHAGE]\", `🚨 ${hangingPieces[0].piece} hanging on ${hangingPieces[0].square}`);
+        }
+        
+        // Check if moving piece is now hanging (didn't already count)
+        if (movingPiece) {
+            const movingPieceNowHanging = isSquareAttackedByColor(simBoard, toSquare, enemyColor) &&
+                                          !isSquareDefendedByColor(simBoard, toSquare, activeColor);
+            if (movingPieceNowHanging) {
+                const pieceValue = getPieceValueSimple(movingPiece.toLowerCase());
+                penalty -= pieceValue * 10000;
+                debugLog(\"[V40.7_HEMORRHAGE]\", `🚨 MOVED PIECE ${movingPiece} NOW HANGING ON ${toSquare}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.7_HEMORRHAGE]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+/**
+ * v40.7 DIVINE: ABSOLUTE BLUNDER CHECK
+ * Final verification - check if move loses significant material
+ * This is the LAST LINE OF DEFENSE against tactical oversights
+ */
+function v40AbsoluteBlunderCheck(fen, move, board, activeColor) {
+    if (!CONFIG.v40AbsoluteBlunderCheckEnabled) return 0;
+    
+    let penalty = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate our move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Calculate material balance before and after
+        const materialBefore = calculateMaterialBalance(board, activeColor);
+        
+        // Simulate enemy's best capture response
+        const enemyBestCapture = findBestEnemyCapture(simBoard, enemyColor);
+        
+        if (enemyBestCapture) {
+            // Simulate enemy capture
+            const afterEnemyCapture = new Map(simBoard);
+            afterEnemyCapture.delete(enemyBestCapture.from);
+            afterEnemyCapture.set(enemyBestCapture.to, simBoard.get(enemyBestCapture.from));
+            
+            const materialAfter = calculateMaterialBalance(afterEnemyCapture, activeColor);
+            const materialLoss = materialAfter - materialBefore;
+            
+            // Account for our capture if any
+            let ourGain = 0;
+            if (capturedPiece) {
+                const capturedIsEnemy = (capturedPiece === capturedPiece.toUpperCase()) !== (activeColor === 'w');
+                if (capturedIsEnemy) {
+                    ourGain = getPieceValueSimple(capturedPiece.toLowerCase());
+                }
+            }
+            
+            const netLoss = materialLoss - ourGain;
+            
+            if (netLoss < CONFIG.v40BlunderThreshold) {
+                // BLUNDER DETECTED!
+                penalty -= Math.abs(netLoss) * 100;
+                debugLog(\"[V40.7_BLUNDER]\", `🚨🚨🚨 BLUNDER DETECTED! Move ${move} loses ~${Math.abs(netLoss)} material!`);
+                debugLog(\"[V40.7_BLUNDER]\", `   Enemy can respond with: ${enemyBestCapture.from}${enemyBestCapture.to}`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.7_BLUNDER]\", `Error: ${e.message}`);
+    }
+    
+    return penalty;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.7 DIVINE: HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.7 Helper: Count pieces for a color
+ */
+function countPiecesForColor(board, color) {
+    let count = 0;
+    const isWhite = color === 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) count++;
+    }
+    
+    return count;
+}
+
+/**
+ * v40.7 Helper: Check if we can recapture on a square
+ */
+function canWeRecaptureOn(board, square, ourColor) {
+    const isWhite = ourColor === 'w';
+    const targetFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const targetRank = parseInt(square[1]) - 1;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(sq[1]) - 1;
+        
+        if (canPieceAttackSquareV40(pieceType, pFile, pRank, targetFile, targetRank, board, ourColor)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.7 Helper: Check if square is attacked by color
+ */
+function isSquareAttackedByColor(board, square, attackingColor) {
+    const targetFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const targetRank = parseInt(square[1]) - 1;
+    const isWhite = attackingColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(sq[1]) - 1;
+        
+        if (canPieceAttackSquareV40(pieceType, pFile, pRank, targetFile, targetRank, board, attackingColor)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.7 Helper: Check if square is defended by color
+ */
+function isSquareDefendedByColor(board, square, defendingColor) {
+    return isSquareAttackedByColor(board, square, defendingColor);
+}
+
+/**
+ * v40.7 Helper: Get squares attacked by enemy pawns
+ */
+function getEnemyPawnAttackSquares(board, enemyColor) {
+    const attackSquares = [];
+    const isWhite = enemyColor === 'w';
+    const direction = isWhite ? 1 : -1;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (piece.toLowerCase() !== 'p') continue;
+        
+        const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(sq[1]) - 1;
+        
+        // Pawn attacks diagonally
+        const attackRank = pRank + direction;
+        if (attackRank >= 0 && attackRank <= 7) {
+            if (pFile > 0) {
+                attackSquares.push(String.fromCharCode(pFile - 1 + 97) + (attackRank + 1));
+            }
+            if (pFile < 7) {
+                attackSquares.push(String.fromCharCode(pFile + 1 + 97) + (attackRank + 1));
+            }
+        }
+    }
+    
+    return attackSquares;
+}
+
+/**
+ * v40.7 Helper: Find all hanging pieces
+ */
+function findAllHangingPieces(board, ourColor) {
+    const hanging = [];
+    const isWhite = ourColor === 'w';
+    const enemyColor = ourColor === 'w' ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue; // King can't be \"hanging\"
+        
+        const isAttacked = isSquareAttackedByColor(board, square, enemyColor);
+        const isDefended = isSquareDefendedByColor(board, square, ourColor);
+        
+        if (isAttacked && !isDefended) {
+            hanging.push({ square, piece });
+        }
+    }
+    
+    return hanging;
+}
+
+/**
+ * v40.7 Helper: Calculate material balance for a color
+ */
+function calculateMaterialBalance(board, color) {
+    let ourMaterial = 0;
+    let theirMaterial = 0;
+    const isWhite = color === 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        const value = getPieceValueSimple(piece.toLowerCase());
+        
+        if (pieceIsWhite === isWhite) {
+            ourMaterial += value;
+        } else {
+            theirMaterial += value;
+        }
+    }
+    
+    return ourMaterial - theirMaterial;
+}
+
+/**
+ * v40.7 Helper: Find best enemy capture
+ */
+function findBestEnemyCapture(board, enemyColor) {
+    let bestCapture = null;
+    let bestValue = 0;
+    const isWhite = enemyColor === 'w';
+    const ourColor = enemyColor === 'w' ? 'b' : 'w';
+    
+    for (const [fromSq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const pFile = fromSq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(fromSq[1]) - 1;
+        
+        // Check all possible captures
+        for (const [toSq, targetPiece] of board) {
+            if (!targetPiece) continue;
+            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+            if (targetIsWhite === isWhite) continue; // Can't capture own pieces
+            
+            const tFile = toSq.charCodeAt(0) - 'a'.charCodeAt(0);
+            const tRank = parseInt(toSq[1]) - 1;
+            
+            if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, enemyColor)) {
+                const captureValue = getPieceValueSimple(targetPiece.toLowerCase());
+                
+                // Check if capture is defended
+                const isDefended = isSquareDefendedByColor(board, toSq, ourColor);
+                
+                // Calculate net value (capture - risk)
+                let netValue = captureValue;
+                if (isDefended) {
+                    netValue -= getPieceValueSimple(pieceType);
+                }
+                
+                if (netValue > bestValue) {
+                    bestValue = netValue;
+                    bestCapture = { from: fromSq, to: toSq, value: netValue };
+                }
+            }
+        }
+    }
+    
+    return bestCapture;
+}
+
+/**
+ * v40: Evaluate goal alignment with strategic plan
+ * True AlphaZero evaluates moves based on how well they fit the plan
+ */
+function evaluateGoalAlignment(move, plan) {"
+Observation: Edit was successful.

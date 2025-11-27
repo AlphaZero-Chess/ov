@@ -1,0 +1,72 @@
+The v40.6 functions exist but the issue is clear from the new game analysis - the bot is still making fundamental tactical errors. The problem in the latest game was:
+
+**Move 4-5:** After Black played `cxd4`, White played `Nc3` instead of recapturing. Then Black played `dxc3` winning a FREE KNIGHT!
+
+This means the v40.6 functions are not detecting:
+1. **The d4 pawn was captured and hanging on d4** - White should recapture
+2. **Nc3 put the knight on a square that was about to be captured**
+
+Let me implement v40.7 ABSOLUTE TACTICAL PRIORITY with stronger detection:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1155|    
+1156|    // v40.5: QUEEN TRADE ANALYSIS — Better understanding of queen exchanges
+1157|    v40QueenTradeEnabled: true,
+1158|    v40BadQueenTradePenalty: -15000,        // Penalty for bad queen trade
+1159|    v40QueenExchangeAnalysis: true,         // Analyze queen exchange consequences
+1160|    
+1161|    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+1162|    v40CheckSequenceEnabled: true,
+1163|    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+1164|    v40MultiCheckPenalty: -25000,           // Multiple checks possible = danger
+1165|    
+1166|    // ═══════════════════════════════════════════════════════════════════════
+1167|    // v40.6 ULTIMATE: CRITICAL CENTER & TACTICAL BLINDSPOT FIXES
+1168|    // From Nimzowitsch Defense: Ne5 hung d4, then Qxd4, Qxb2 queen raid
+1169|    // ═══════════════════════════════════════════════════════════════════════
+1170|    
+1171|    // v40.6: CENTER PAWN PROTECTION — Prevent hanging center pawns
+1172|    v40CenterPawnProtectionEnabled: true,
+1173|    v40HangingCenterPawnPenalty: -35000,    // MASSIVE penalty for hanging d4/d5/e4/e5
+1174|    v40HangingExtendedCenterPenalty: -18000, // Penalty for extended center pawns hanging
+1175|    v40CenterPawnTensionPenalty: -6000,     // Penalty for unresolved center tension
+1176|    
+1177|    // v40.6: PAWN TENSION RESOLUTION — Must recapture when pawn taken
+1178|    v40PawnTensionEnabled: true,
+1179|    v40RecapturePriorityBonus: 12000,       // Bonus for recapturing immediately
+1180|    v40UnresolvedTensionPenalty: -25000,    // Penalty for unresolved pawn tension
+1181|    v40AbandonedPawnPenalty: -30000,        // Penalty for abandoning defended pawn
+1182|    
+1183|    // v40.6: QUEEN RAID PREVENTION — Prevent enemy queen material raids
+1184|    v40QueenRaidPreventionEnabled: true,
+1185|    v40QueenRaidPawnPenalty: -22000,        // Penalty for queen raiding pawn
+1186|    v40QueenRaidRookPenalty: -40000,        // MASSIVE penalty for queen raiding rook
+1187|    v40QueenRaidMinorPenalty: -28000,       // Penalty for queen raiding minor piece
+1188|    v40QueenRaidWithThreatPenalty: -45000,  // Penalty for queen raid with king threat
+1189|    
+1190|    // v40.6: TACTICAL PRIORITY — When tactics demand, override positional
+1191|    v40TacticalPriorityEnabled: true,
+1192|    v40HangingPiecePenalty: -15000,         // Penalty per hanging piece
+1193|    v40ProtectedPieceBonus: 8000,           // Bonus for protecting hanging piece
+1194|    v40ThreatCreationBonus: 4000,           // Bonus per threat created
+1195|    
+1196|    // v40.6: DEVELOPMENT SAFETY — Development must not create tactics
+1197|    v40DevelopmentSafetyEnabled: true,
+1198|    v40DevelopmentAbandonPawnPenalty: -35000, // Dev move that abandons pawn
+1199|    v40EarlyQueenPenalty: -10000,           // Early queen development penalty
+1200|    
+1201|    // v40.6: IMMEDIATE THREAT RESPONSE — Must respond to threats
+1202|    v40ImmediateThreatEnabled: true,
+1203|    v40ThreatAddressedBonus: 10000,         // Bonus for addressing threat
+1204|    v40ThreatIgnoredPenalty: -20000,        // Penalty for ignoring threat
+1205|    
+1206|    // v40.6: ENHANCED 90% DOMINANCE — Make v40 ULTIMATE DOMINANT
+1207|    v40Dominance: 0.90,                     // 90% v40 dominance (up from 85%)
+1208|};
+1209|
+1210|// ═══════════════════════════════════════════════════════════════════════
+1211|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1212|// ═══════════════════════════════════════════════════════════════════════
+1213|
+1214|/**
+1215| * v37: TRUE MCTS Node structure for proper tree search

@@ -1,0 +1,44 @@
+Now I need to add v40.7 CONFIG parameters and implement new functions. Let me add v40.7 ABSOLUTE TACTICAL BLINDSPOT ELIMINATION:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.6: ENHANCED 90% DOMINANCE — Make v40 ULTIMATE DOMINANT
+    v40Dominance: 0.90,                     // 90% v40 dominance (up from 85%)
+};" --new-str "    // v40.6: ENHANCED 90% DOMINANCE — Make v40 ULTIMATE DOMINANT
+    v40Dominance: 0.90,                     // 90% v40 dominance (up from 85%)
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.7 DIVINE: ABSOLUTE TACTICAL BLINDSPOT ELIMINATION
+    // From Alekhine Defense loss: d4 captured, Nc3 allowed dxc3 winning knight!
+    // The bot MUST see that developing to a square that can be captured = DEATH
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.7: RECAPTURE URGENCY — When material taken, MUST recapture or have reason
+    v40RecaptureUrgencyEnabled: true,
+    v40RecaptureUrgencyBonus: 50000,        // MASSIVE bonus for recapturing
+    v40FailToRecapturePenalty: -60000,      // HUGE penalty for not recapturing
+    v40RecaptureTimeoutPenalty: -40000,     // Penalty if recapture opportunity missed
+    
+    // v40.7: PIECE ON ATTACKED SQUARE — Don't develop to square enemy can take
+    v40PieceOnAttackedSquareEnabled: true,
+    v40KnightToAttackedSquarePenalty: -45000, // Knight to square that can be taken
+    v40BishopToAttackedSquarePenalty: -45000, // Bishop to square that can be taken
+    v40RookToAttackedSquarePenalty: -55000,   // Rook to attacked square
+    v40QueenToAttackedSquarePenalty: -70000,  // Queen to attacked square
+    
+    // v40.7: MATERIAL HEMORRHAGE DETECTION — Detect when we're losing material chain
+    v40MaterialHemorrhageEnabled: true,
+    v40MaterialLossChainPenalty: -80000,    // Penalty for move that leads to material chain loss
+    v40MultiplePiecesHangingPenalty: -100000, // Multiple pieces hanging = disaster
+    
+    // v40.7: ENEMY PAWN CAPTURE RESPONSE — When enemy pawn captures our piece
+    v40EnemyPawnCaptureEnabled: true,
+    v40PawnTookPieceRecapturePenalty: -35000, // Must recapture when pawn takes piece
+    v40PawnForkDetectionPenalty: -40000,     // Pawn forking our pieces
+    
+    // v40.7: ABSOLUTE BLUNDER CHECK — Final safety check before any move
+    v40AbsoluteBlunderCheckEnabled: true,
+    v40BlunderThreshold: -500,              // Material loss threshold for blunder
+    v40BlunderCheckPasses: 30,              // Number of verification passes
+    
+    // v40.7: ENHANCED 95% DOMINANCE — Make v40 ABSOLUTELY DIVINE DOMINANT
+    v40DivineeDominance: 0.95,              // 95% v40 dominance (up from 90%)
+};"
+Observation: Edit was successful.

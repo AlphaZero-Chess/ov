@@ -1,0 +1,3 @@
+Now let me check syntax validity:
+Action: $ cd /app && node -c "Lichess Bot-AlphaZero-Pure.user.js" 2>&1
+Observation: Exit code: 0
