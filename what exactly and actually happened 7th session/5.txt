@@ -1,0 +1,4 @@
+Now let me check the calculateMove function to see how moves are currently being selected:
+Action: $ grep -n "function calculateMove" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 21037:function calculateMove() {
+Exit code: 0

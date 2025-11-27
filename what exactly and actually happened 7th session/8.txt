@@ -1,0 +1,154 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+19550|}
+19551|
+19552|/**
+19553| * NEW v18.0.0: Compute combined Q+Policy score (TRUE ALPHAZERO)
+19554| * Replaces v17 elegance-based scoring with mathematical Q+Policy merge
+19555| * Returns combined score in centipawn scale
+19556| */
+19557|function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+19558|    try {
+19559|        // Get engine Q-value (normalized)
+19560|        const engine_Q = engineScore;
+19561|        
+19562|        // Get rollout Q-value (normalized, default to engine if not provided)
+19563|        const rollout_Q = rolloutScore !== undefined ? rolloutScore : engineScore;
+19564|        
+19565|        // Get policy prior (softmax of MultiPV)
+19566|        const policyPrior = computePolicyPrior(move, alternatives);
+19567|        
+19568|        // Normalize policy prior to centipawn bonus scale (-50..+50)
+19569|        // Higher probability = positive bonus, lower = negative
+19570|        const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
+19571|        
+19572|        // ═══════════════════════════════════════════════════════════════════
+19573|        // v40.1.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION — PARADIGM SHIFT
+19574|        // CRITICAL: v40 now has 55% DOMINANT INFLUENCE — this IS the superhuman
+19575|        // Add v40's deep positional/strategic/tactical evaluation
+19576|        // ═══════════════════════════════════════════════════════════════════
+19577|        let v40Bonus = 0;
+19578|        let v40DeepScore = 0;
+19579|        let v40MatingNetPenalty = 0;
+19580|        let v40FileControlBonus = 0;
+19581|        let v40InitiativeBonus = 0;
+19582|        
+19583|        if (CONFIG.v40Enabled && fen) {
+19584|            try {
+19585|                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+19586|                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+19587|                
+19588|                // v40.2: Enhanced deep evaluations — STRONGER WEIGHTS
+19589|                const board = parseFenToBoard(fen);
+19590|                const activeColor = fen.split(' ')[1];
+19591|                const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+19592|                
+19593|                // v40.2: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+19594|                // CRITICAL: Increased from 0.5 to 1.2 — mating nets MUST be respected
+19595|                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 1.2;
+19596|                
+19597|                // v40.2: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+19598|                // CRITICAL: Increased from 0.3 to 0.8 — file control is crucial
+19599|                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 0.8;
+19600|                
+19601|                // v40.2: INITIATIVE TRACKING (prevents initiative collapse)
+19602|                // CRITICAL: Increased from 0.4 to 1.0 — initiative loss = position loss
+19603|                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 1.0;
+19604|                
+19605|                // v40.2: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+19606|                // CRITICAL: Multiplied by 1.5 — queen movement must be heavily penalized
+19607|                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) * 1.5;
+19608|                
+19609|                // v40.2: NEW — PROPHYLACTIC BONUS (preventing opponent's plans)
+19610|                const prophylacticBonus = v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+19611|                
+19612|                // v40.2: NEW — ROOK INFILTRATION DETECTION
+19613|                const rookInfiltrationPenalty = v40RookInfiltrationDetection(fen, move, board, activeColor) * 0.9;
+19614|                
+19615|                // v40.2: NEW — KING SAFETY CORRIDOR
+19616|                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.7;
+19617|                
+19618|                // v40.2: COMBINED v40 SCORE — 65% DOMINANT INFLUENCE (was 55%)
+19619|                // This makes v40 the ABSOLUTE DOMINANT factor in move selection
+19620|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+19621|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+19622|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty;
+19623|                v40Bonus = v40DeepScore * 0.65;  // 65% influence — TRUE PARADIGM SHIFT
+19624|                
+19625|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+19626|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.2 DOMINANT EVALUATION`);
+19627|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+19628|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+19629|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+19630|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+19631|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+19632|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+19633|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+19634|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+19635|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+19636|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 65% bonus=${v40Bonus.toFixed(1)}cp`);
+19637|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+19638|            } catch (e) {
+19639|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+19640|                v40Bonus = 0;
+19641|            }
+19642|        }
+19643|        
+19644|        // v40.2: TRUE ALPHAZERO weighted merge — v40 ABSOLUTE DOMINANT (65%)
+19645|        // Engine provides baseline, but v40 superhuman evaluation is ABSOLUTE PRIMARY
+19646|        const combinedScore = (
+19647|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.35 +  // Engine reduced to 35%
+19648|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.35 +
+19649|            normalizedPolicyPrior * 0.6 + // Policy bonus reduced
+19650|            v40Bonus                      // v40 ABSOLUTE DOMINANT at 65%
+19651|        );
+19652|        
+19653|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
+19654|        
+19655|        return combinedScore;
+19656|    } catch (e) {
+19657|        debugLog("[Q+POLICY]", "⚠️ Error computing combined score:", e.message);
+19658|        return engineScore;
+19659|    }
+19660|}
+19661|
+19662|/**
+19663| * NEW v18.0.0: Legacy stub for v17 compatibility
+19664| */
+19665|function computeLongHorizonScore(fen, move, alternatives, engineScore) {
+19666|    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+19667|    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+19668|}
+19669|
+19670|/**
+19671| * NEW v17.0.0: Get creativity temperature for current move
+19672| * Anneals from high exploration (early game) to low (late game)
+19673| * Linear decay over temperatureDecayMoves
+19674| */
+19675|function getCreativityTemperature(moveNumber) {
+19676|    const decayMoves = ALPHAZERO_ESSENCE.temperatureDecayMoves;
+19677|    
+19678|    if (moveNumber >= decayMoves) {
+19679|        return ALPHAZERO_ESSENCE.temperatureEnd;
+19680|    }
+19681|    
+19682|    // Linear annealing
+19683|    const t = Math.max(
+19684|        ALPHAZERO_ESSENCE.temperatureEnd,
+19685|        ALPHAZERO_ESSENCE.temperatureStart - 
+19686|        ((moveNumber / decayMoves) * (ALPHAZERO_ESSENCE.temperatureStart - ALPHAZERO_ESSENCE.temperatureEnd))
+19687|    );
+19688|    
+19689|    return t;
+19690|}
+19691|
+19692|/**
+19693| * NEW v18.0.0: Check absolute safety limit (TRUE ALPHAZERO)
+19694| * Returns true if move passes safety check, false otherwise
+19695| * ABSOLUTE RULE: engineTopScore - combinedScore <= safetyDropLimit
+19696| */
+19697|function checkAbsoluteSafety(engineTopScore, combinedScore, move) {
+19698|    const evalDrop = engineTopScore - combinedScore;
+19699|    
+19700|    if (evalDrop > TRUE_ALPHAZERO.safetyDropLimit) {

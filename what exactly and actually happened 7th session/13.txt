@@ -1,0 +1,43 @@
+Now let me update the CONFIG to increase MCTS simulations and other critical parameters:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40: MASTER SWITCH - Enable v40 TRUE AlphaZero
+    v40Enabled: true,
+    
+    // v40: TRUE PERSISTENT MCTS — AlphaZero's Core (PARADIGM SHIFT)
+    // This is the REAL implementation - tree persists across moves
+    v40PersistentTreeEnabled: true,         // TRUE persistent tree across moves
+    v40MCTSSimulations: 10000,              // MASSIVE simulation count (5000→10000)
+    v40MCTSMaxDepth: 500,                   // Maximum tree depth (400→500)
+    v40PUCTConstant: 2.5,                   // PUCT exploration constant (AlphaZero optimal)
+    v40FPUReduction: 0.25,                  // First Play Urgency reduction
+    v40DirichletAlpha: 0.3,                 // Dirichlet noise alpha (paper value)
+    v40DirichletEpsilon: 0.25,              // Noise weight at root
+    v40BackpropGamma: 0.998,                // Discount factor for backpropagation
+    v40VirtualLoss: 3,                      // Virtual loss for parallel search diversity
+    v40TreeReuseFraction: 0.95,             // Fraction of tree to reuse between moves
+    v40MinVisitsBeforeExpand: 1,            // Minimum visits before node expansion
+    v40ProgressiveWideningC: 1.5,           // Progressive widening constant
+    v40ProgressiveWideningA: 0.5,           // Progressive widening exponent
+    v40TemperatureMoves: 30,                // Moves to use temperature for selection
+    v40Temperature: 1.0,                    // Temperature for move selection
+    v40TemperatureDropoff: 0.7,             // Temperature after X moves" --new-str "    // v40: MASTER SWITCH - Enable v40 TRUE AlphaZero
+    v40Enabled: true,
+    
+    // v40.3: TRUE PERSISTENT MCTS — AlphaZero's Core (ULTIMATE EDITION)
+    // MASSIVELY increased simulations for true superhuman strength
+    v40PersistentTreeEnabled: true,         // TRUE persistent tree across moves
+    v40MCTSSimulations: 50000,              // MASSIVE simulation count (10000→50000) v40.3
+    v40MCTSMaxDepth: 800,                   // Maximum tree depth (500→800) v40.3
+    v40PUCTConstant: 2.5,                   // PUCT exploration constant (AlphaZero optimal)
+    v40FPUReduction: 0.20,                  // First Play Urgency reduction (0.25→0.20) v40.3
+    v40DirichletAlpha: 0.3,                 // Dirichlet noise alpha (paper value)
+    v40DirichletEpsilon: 0.25,              // Noise weight at root
+    v40BackpropGamma: 0.999,                // Discount factor for backpropagation (0.998→0.999) v40.3
+    v40VirtualLoss: 3,                      // Virtual loss for parallel search diversity
+    v40TreeReuseFraction: 0.98,             // Fraction of tree to reuse between moves (0.95→0.98) v40.3
+    v40MinVisitsBeforeExpand: 1,            // Minimum visits before node expansion
+    v40ProgressiveWideningC: 1.5,           // Progressive widening constant
+    v40ProgressiveWideningA: 0.5,           // Progressive widening exponent
+    v40TemperatureMoves: 30,                // Moves to use temperature for selection
+    v40Temperature: 1.0,                    // Temperature for move selection
+    v40TemperatureDropoff: 0.7,             // Temperature after X moves"
+Observation: Edit was successful.

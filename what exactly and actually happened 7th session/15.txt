@@ -1,0 +1,96 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40: PREDICTIVE OUTCOME MODELING — See The Future
+    v40PredictiveEnabled: true,
+    v40OutcomeSimulationDepth: 80,          // Simulate 80 moves ahead (60→80)
+    v40WinProbabilityTracking: true,        // Win probability tracking
+    v40PositionTrajectory: true,            // Position trajectory tracking
+    v40TrendAnalysis: true,                 // Evaluation trend analysis
+    v40SimulationRollouts: 300,             // Rollouts per outcome sim (200→300)
+    v40FutureThreatPrediction: true,        // Future threat prediction
+    v40CriticalMomentDetection: true,       // Critical moment detection
+    v40TrajectoryMemory: 80,                // Positions to remember (50→80)
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+// ═══════════════════════════════════════════════════════════════════════" --new-str "    // v40: PREDICTIVE OUTCOME MODELING — See The Future
+    v40PredictiveEnabled: true,
+    v40OutcomeSimulationDepth: 80,          // Simulate 80 moves ahead (60→80)
+    v40WinProbabilityTracking: true,        // Win probability tracking
+    v40PositionTrajectory: true,            // Position trajectory tracking
+    v40TrendAnalysis: true,                 // Evaluation trend analysis
+    v40SimulationRollouts: 300,             // Rollouts per outcome sim (200→300)
+    v40FutureThreatPrediction: true,        // Future threat prediction
+    v40CriticalMomentDetection: true,       // Critical moment detection
+    v40TrajectoryMemory: 80,                // Positions to remember (50→80)
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.3.0: ULTIMATE SUPERHUMAN BEAST — NEW PARAMETERS
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.3: ANTI-PASSIVITY SYSTEM — Forces Active Play
+    v40AntiPassivityEnabled: true,
+    v40PassivityPenalty: -8000,             // Penalty for passive moves
+    v40PieceActivityThreshold: 3,           // Minimum activity score
+    v40ActivePiecesRequired: 4,             // Minimum active pieces
+    v40PassiveQueenPenalty: -5000,          // Penalty for passive queen
+    v40PassiveRookPenalty: -3000,           // Penalty for passive rook
+    v40NoThreatPenalty: -2500,              // Penalty for creating no threats
+    v40ImprovementRequired: true,           // Move must improve position
+    
+    // v40.3: DEEP HORIZON EVALUATION — True 30+ Move Planning
+    v40DeepHorizonEnabled: true,
+    v40DeepHorizonDepth: 60,                // 60 half-moves (30 full moves)
+    v40HorizonEffectPrevention: true,       // Prevent horizon effect blindness
+    v40StrategicProjection: 100,            // Project 100 moves for strategy
+    v40TacticalHorizonBoost: 80,            // Extra tactical horizon
+    v40PositionalTrajectory: true,          // Track positional trends
+    
+    // v40.3: ENHANCED MATING PATTERN LIBRARY
+    v40MatingPatternEnabled: true,
+    v40CornerMatePatterns: true,            // Corner mating patterns (Ra1#)
+    v40BackRankPatterns: true,              // Back rank mate patterns
+    v40SmotheredMatePatterns: true,         // Smothered mate recognition
+    v40QueenRookMatePatterns: true,         // Q+R mating patterns
+    v40TwoRookMatePatterns: true,           // Double rook mates
+    v40KingHuntPatterns: true,              // King chase patterns
+    v40StaircaseMatePatterns: true,         // Staircase mate patterns
+    v40MatingNetEarlyWarning: 15,           // Warn 15 moves before mate threat
+    
+    // v40.3: COUNTERATTACK PRIORITY SYSTEM
+    v40CounterattackEnabled: true,
+    v40CounterattackBonus: 15000,           // Bonus for counterattack moves
+    v40ActiveDefensePreference: 12000,      // Prefer active defense
+    v40PassiveDefensePenalty: -6000,        // Penalty for passive defense
+    v40CounterThreatValue: 8000,            // Value of creating counter-threats
+    v40AttackBestDefense: true,             // Attack is best defense mode
+    
+    // v40.3: SPACE DOMINATION SYSTEM
+    v40SpaceDominationEnabled: true,
+    v40SpaceAdvantageBonus: 10000,          // Bonus for space advantage
+    v40CentralDominationBonus: 8000,        // Central control bonus
+    v40SpaceRestrictionValue: 6000,         // Value of restricting opponent
+    v40ExpansionBonus: 4000,                // Bonus for space expansion
+    v40SqueezeBonus: 12000,                 // Bonus for positional squeeze
+    
+    // v40.3: PIECE ACTIVITY SCORING
+    v40PieceActivityEnabled: true,
+    v40ActivePieceBonus: 3000,              // Per active piece
+    v40IdlePiecePenalty: -4000,             // Per idle piece
+    v40PieceHarmonyBonus: 5000,             // Coordinated pieces bonus
+    v40UncoordinatedPenalty: -3000,         // Uncoordinated pieces penalty
+    v40OptimalSquareBonus: 6000,            // Piece on optimal square
+    
+    // v40.3: INITIATIVE PRESERVATION
+    v40InitiativePreservationEnabled: true,
+    v40InitiativeLossPenalty: -10000,       // SEVERE penalty for losing initiative
+    v40InitiativeGainBonus: 8000,           // Bonus for gaining initiative
+    v40TempoChainBonus: 6000,               // Bonus for tempo chain
+    v40MomentumBonus: 5000,                 // Bonus for maintaining momentum
+    v40ForcingSequenceBonus: 7000,          // Bonus for forcing sequences
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+// ═══════════════════════════════════════════════════════════════════════"
+Observation: Edit was successful.

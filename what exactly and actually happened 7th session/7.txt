@@ -1,0 +1,6 @@
+Now let me check the v40TrueAlphaZeroMCTS function to see how it's integrated:
+Action: $ grep -n "v40TrueAlphaZeroMCTS\|v40SuperhumanBeastEvaluate" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 1699:function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+2325:function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+19586:                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+Exit code: 0

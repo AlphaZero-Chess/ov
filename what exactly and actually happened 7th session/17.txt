@@ -1,0 +1,94 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+4810|            const newIsEdge = newKingFile === 0 || newKingFile === 7 || 
+4811|                             newKingRank === 0 || newKingRank === 7;
+4812|            
+4813|            // Moving to center = good
+4814|            if (!newIsEdge && isEdge) {
+4815|                score += 400;  // Escaping edge
+4816|                debugLog("[V40_KING_CORRIDOR]", `✅ King moving toward center`);
+4817|            }
+4818|            
+4819|            // Moving away from corner = good
+4820|            if (!newIsCorner && isCorner) {
+4821|                score += 600;  // Escaping corner
+4822|                debugLog("[V40_KING_CORRIDOR]", `✅ King escaping corner`);
+4823|            }
+4824|        }
+4825|        
+4826|        // Check for "luft" - escape square creation
+4827|        if (movingPiece && movingPiece.toLowerCase() === 'p') {
+4828|            // Pawn move that creates luft
+4829|            for (let df = -1; df <= 1; df++) {
+4830|                for (let dr = -1; dr <= 1; dr++) {
+4831|                    if (df === 0 && dr === 0) continue;
+4832|                    const adjFile = kingFile + df;
+4833|                    const adjRank = kingRank + dr;
+4834|                    if (adjFile < 0 || adjFile > 7 || adjRank < 0 || adjRank > 7) continue;
+4835|                    
+4836|                    const adjSquare = String.fromCharCode(adjFile + 97) + (adjRank + 1);
+4837|                    if (fromSquare === adjSquare) {
+4838|                        score += 300;  // Creating luft
+4839|                        debugLog("[V40_KING_CORRIDOR]", `✅ Creating escape square for king`);
+4840|                    }
+4841|                }
+4842|            }
+4843|        }
+4844|        
+4845|    } catch (e) {
+4846|        debugLog("[V40_KING_CORRIDOR]", `Error: ${e.message}`);
+4847|    }
+4848|    
+4849|    return score;
+4850|}
+4851|
+4852|/**
+4853| * v40: Evaluate goal alignment with strategic plan
+4854| * True AlphaZero evaluates moves based on how well they fit the plan
+4855| */
+4856|function evaluateGoalAlignment(move, plan) {
+4857|    if (!plan || !plan.type) return 0.5;
+4858|    
+4859|    let alignment = 0.5;
+4860|    const toSquare = move.substring(2, 4);
+4861|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+4862|    
+4863|    // Check alignment with plan type
+4864|    switch (plan.type) {
+4865|        case 'kingside_attack':
+4866|            if (toFile >= 5) alignment += 0.2;  // Moves toward kingside
+4867|            break;
+4868|        case 'queenside_attack':
+4869|            if (toFile <= 2) alignment += 0.2;  // Moves toward queenside
+4870|            break;
+4871|        case 'central_control':
+4872|            if (toFile >= 2 && toFile <= 5) alignment += 0.15;
+4873|            break;
+4874|        case 'pawn_storm':
+4875|            if (move[0] === toSquare[0]) alignment += 0.1; // Same piece moving
+4876|            break;
+4877|        case 'piece_coordination':
+4878|            alignment += 0.1;  // Any piece activity is good
+4879|            break;
+4880|    }
+4881|    
+4882|    return Math.min(1.0, Math.max(0, alignment));
+4883|}
+4884|
+4885|/**
+4886| * v40: Evaluate positional squeeze - how much space we control vs opponent
+4887| * AlphaZero excels at slowly squeezing positions
+4888| */
+4889|function evaluatePositionalSqueeze(board, color) {
+4890|    let ourSquares = 0;
+4891|    let enemySquares = 0;
+4892|    
+4893|    // Count pieces in advanced positions
+4894|    for (const [square, piece] of board) {
+4895|        if (!piece) continue;
+4896|        
+4897|        const isOurs = (piece === piece.toUpperCase()) === (color === 'w');
+4898|        const rank = parseInt(square[1]);
+4899|        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+4900|        

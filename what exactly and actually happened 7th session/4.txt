@@ -1,0 +1,154 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+950|    v40PracticalChancesWeight: 4500,        // Practical chances (3000→4500)
+951|    
+952|    // v40: WEB-WEAVING — Multi-Front Strategic Pressure (ALIEN TIER)
+953|    v40WebWeavingEnabled: true,
+954|    v40MultiFrontPressure: 8000,            // Multi-front attack (5000→8000)
+955|    v40PressureBuildupBonus: 4500,          // Pressure buildup (3000→4500)
+956|    v40CoordinatedThreatBonus: 6000,        // Coordinated threats (4000→6000)
+957|    v40SqueezePatternBonus: 5000,           // Position squeeze (3500→5000)
+958|    v40DominationBonus: 8000,               // Total domination (5000→8000)
+959|    v40StrategicAsphyxiation: 7000,         // Cut off opponent plans (4500→7000)
+960|    v40CrossfireBonus: 5000,                // Multiple pieces on same target (3500→5000)
+961|    v40CentralAsphyxiation: 5500,           // Central domination squeeze (3500→5500)
+962|    
+963|    // v40: PATTERN RECOGNITION — Neural Network Emulation
+964|    v40PatternEnabled: true,
+965|    v40OutpostValue: 3500,                  // Outpost bonus (2500→3500)
+966|    v40BatteryValue: 4000,                  // Battery bonus (3000→4000)
+967|    v40FianchettoValue: 1600,               // Fianchetto (1200→1600)
+968|    v40OpenFileValue: 2400,                 // Open file (1800→2400)
+969|    v40SeventhRankValue: 3500,              // 7th rank (2500→3500)
+970|    v40ConnectedRooksValue: 2200,           // Connected rooks (1600→2200)
+971|    v40LongDiagonalValue: 2200,             // Long diagonal (1600→2200)
+972|    v40WeakColorComplexValue: 2800,         // Weak color complex (2000→2800)
+973|    v40IsolatedPawnPenalty: -2000,          // Isolated pawn (-1500→-2000)
+974|    v40BackwardPawnPenalty: -1600,          // Backward pawn (-1200→-1600)
+975|    v40DoubledPawnPenalty: -1400,           // Doubled pawn (-1000→-1400)
+976|    v40RookOnSeventhPair: 6000,             // Both rooks on 7th (4000→6000)
+977|    v40MinorPieceOutpost: 2800,             // Minor piece outpost (2000→2800)
+978|    v40BishopPairBonus: 1000,               // Bishop pair (800→1000)
+979|    v40BadBishopPenalty: -1400,             // Bad bishop (-1000→-1400)
+980|    v40KnightCentralization: 2000,          // Knight centralization (1500→2000)
+981|    v40KnightOutpostD5E5: 4000,             // Knight on d5/e5 (3000→4000)
+982|    
+983|    // v40: INITIATIVE & TEMPO — Absolute Dominance
+984|    v40InitiativeValue: 800,                // Per tempo value (600→800)
+985|    v40TempoGainBonus: 600,                 // Tempo gain (450→600)
+986|    v40DevelopmentUrgency: 6.0,             // Development urgency (4.5→6.0)
+987|    v40InitiativeChainBonus: 3500,          // Consecutive initiative (2500→3500)
+988|    v40ForcingMovePreference: 2000,         // Forcing moves (1500→2000)
+989|    v40AttackMomentumBonus: 3000,           // Attack momentum (2000→3000)
+990|    v40DevelopmentLeadBonus: 2000,          // Per undeveloped enemy piece (1500→2000)
+991|    v40WastedMovesPenalty: -2000,           // Tempo-wasting (-1500→-2000)
+992|    v40DoubleMovePenalty: -1600,            // Same piece twice early (-1200→-1600)
+993|    v40QueenEarlyPenalty: -1400,            // Queen out early (-1000→-1400)
+994|    
+995|    // v40: PREDICTIVE OUTCOME MODELING — See The Future
+996|    v40PredictiveEnabled: true,
+997|    v40OutcomeSimulationDepth: 80,          // Simulate 80 moves ahead (60→80)
+998|    v40WinProbabilityTracking: true,        // Win probability tracking
+999|    v40PositionTrajectory: true,            // Position trajectory tracking
+1000|    v40TrendAnalysis: true,                 // Evaluation trend analysis
+1001|    v40SimulationRollouts: 300,             // Rollouts per outcome sim (200→300)
+1002|    v40FutureThreatPrediction: true,        // Future threat prediction
+1003|    v40CriticalMomentDetection: true,       // Critical moment detection
+1004|    v40TrajectoryMemory: 80,                // Positions to remember (50→80)
+1005|};
+1006|
+1007|// ═══════════════════════════════════════════════════════════════════════
+1008|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1009|// ═══════════════════════════════════════════════════════════════════════
+1010|
+1011|/**
+1012| * v37: TRUE MCTS Node structure for proper tree search
+1013| */
+1014|class MCTSNode {
+1015|    constructor(move, parent = null, prior = 1.0) {
+1016|        this.move = move;
+1017|        this.parent = parent;
+1018|        this.children = new Map();
+1019|        this.visits = 0;
+1020|        this.totalValue = 0;
+1021|        this.prior = prior;           // Policy prior (P)
+1022|        this.virtualLoss = 0;
+1023|        this.isExpanded = false;
+1024|        this.isTerminal = false;
+1025|        this.depth = parent ? parent.depth + 1 : 0;
+1026|    }
+1027|    
+1028|    get value() {
+1029|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1030|    }
+1031|    
+1032|    get ucb1Score() {
+1033|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1034|        
+1035|        const exploitation = this.value;
+1036|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+1037|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+1038|        
+1039|        return exploitation + exploration;
+1040|    }
+1041|    
+1042|    get puctScore() {
+1043|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1044|        
+1045|        const Q = this.value;
+1046|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+1047|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+1048|        
+1049|        // Apply virtual loss for diversity
+1050|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);
+1051|        
+1052|        return Q + U - virtualLossAdjustment;
+1053|    }
+1054|    
+1055|    selectChild() {
+1056|        if (this.children.size === 0) return null;
+1057|        
+1058|        let bestChild = null;
+1059|        let bestScore = -Infinity;
+1060|        
+1061|        for (const [move, child] of this.children) {
+1062|            const score = child.puctScore;
+1063|            if (score > bestScore) {
+1064|                bestScore = score;
+1065|                bestChild = child;
+1066|            }
+1067|        }
+1068|        
+1069|        return bestChild;
+1070|    }
+1071|    
+1072|    expand(moves, priors = null) {
+1073|        for (let i = 0; i < moves.length; i++) {
+1074|            const move = moves[i];
+1075|            const prior = priors ? priors[i] : 1.0 / moves.length;
+1076|            this.children.set(move, new MCTSNode(move, this, prior));
+1077|        }
+1078|        this.isExpanded = true;
+1079|    }
+1080|    
+1081|    backpropagate(value) {
+1082|        let node = this;
+1083|        let depth = 0;
+1084|        
+1085|        while (node !== null) {
+1086|            node.visits++;
+1087|            // Decay value as we backpropagate up the tree
+1088|            const decayedValue = value * Math.pow(CONFIG.v37MCTSBackpropDecay, depth);
+1089|            node.totalValue += decayedValue;
+1090|            
+1091|            // Alternate sign for opponent's moves
+1092|            value = -value;
+1093|            node = node.parent;
+1094|            depth++;
+1095|        }
+1096|    }
+1097|    
+1098|    addVirtualLoss() {
+1099|        this.virtualLoss++;
+1100|    }
