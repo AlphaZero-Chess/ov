@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.8 SUPERHUMAN BEAST TRANSCENDENT
-// @description  TRUE AlphaZero Replica v40.8 TRANSCENDENT - 97% v40 ABSOLUTE DOMINANCE - 100K MCTS Simulations - OPENING AGGRESSION (d4>d3) - EXCHANGE QUALITY - ACTIVE PIECE REQUIREMENT - COUNTERPLAY GENERATION - CENTRAL CONTROL SUPREME - RECAPTURE URGENCY - PIECE ON ATTACKED SQUARE DETECTION - MATERIAL HEMORRHAGE DETECTION - ABSOLUTE BLUNDER CHECK - CENTER PAWN PROTECTION - PAWN TENSION RESOLUTION - QUEEN RAID PREVENTION - TACTICAL PRIORITY OVERRIDE - DEVELOPMENT SAFETY - IMMEDIATE THREAT RESPONSE - Queen Infiltration Detection - Enhanced Hanging Piece Detection - King Corner Safety - Check Sequence Detection - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
-// @author       AlphaZero TRUE REPLICA v40.8 SUPERHUMAN BEAST TRANSCENDENT EDITION
-// @version      40.8.0-SUPERHUMAN-BEAST-TRANSCENDENT
+// @name         Lichess Bot - TRUE ALPHAZERO v40.9 SUPERHUMAN BEAST OMNISCIENT
+// @description  TRUE AlphaZero Replica v40.9 OMNISCIENT - 99% v40 ABSOLUTE DOMINANCE - ATTACKED PIECE PRIORITY - PRE-MOVE THREAT SCAN - PIECE SAFETY ABSOLUTE - FORCED MOVE DETECTION - OPENING AGGRESSION (d4>d3) - EXCHANGE QUALITY - ACTIVE PIECE REQUIREMENT - COUNTERPLAY GENERATION - CENTRAL CONTROL SUPREME - RECAPTURE URGENCY - PIECE ON ATTACKED SQUARE DETECTION - MATERIAL HEMORRHAGE DETECTION - ABSOLUTE BLUNDER CHECK - CENTER PAWN PROTECTION - PAWN TENSION RESOLUTION - QUEEN RAID PREVENTION - TACTICAL PRIORITY OVERRIDE - DEVELOPMENT SAFETY - IMMEDIATE THREAT RESPONSE - Queen Infiltration Detection - Enhanced Hanging Piece Detection - King Corner Safety - Check Sequence Detection - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+// @author       AlphaZero TRUE REPLICA v40.9 SUPERHUMAN BEAST OMNISCIENT EDITION
+// @version      40.9.0-SUPERHUMAN-BEAST-OMNISCIENT
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -11,7 +11,7 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
- * v40.8.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — TRANSCENDENT EDITION
+ * v40.9.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — OMNISCIENT EDITION
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 
  * ██████████████████████████████████████████████████████████████████████████████████████████
@@ -1281,6 +1281,40 @@ const CONFIG = {
     
     // v40.8: 97% TRANSCENDENT DOMINANCE — Make v40 ABSOLUTELY TRANSCENDENT
     v40TranscendentDominance: 0.97,         // 97% v40 dominance (up from 95%)
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.9 OMNISCIENT: ATTACKED PIECE DETECTION & FORCED RESPONSE
+    // From Scandinavian loss: Bot played Ng3 while Queen on b5 was attacked by a6 pawn!
+    // The bot IGNORED the attack and lost its queen on move 17: axb5
+    // This is ABSOLUTELY UNACCEPTABLE for an AlphaZero replica
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.9: ATTACKED PIECE PRIORITY — MUST address attacked pieces
+    v40AttackedPiecePriorityEnabled: true,
+    v40QueenUnderAttackPenalty: -500000,    // If queen attacked and not addressed = CATASTROPHIC
+    v40RookUnderAttackPenalty: -200000,     // If rook attacked and not addressed
+    v40MinorPieceUnderAttackPenalty: -100000, // If minor piece attacked and not addressed
+    v40MustMoveAttackedPieceBonus: 300000,  // HUGE bonus for addressing attacked piece
+    
+    // v40.9: PRE-MOVE THREAT SCAN — Check what's under attack BEFORE moving
+    v40PreMoveThreatScanEnabled: true,
+    v40IgnoredQueenAttackPenalty: -800000,  // Ignoring queen attack = CATASTROPHE
+    v40IgnoredRookAttackPenalty: -400000,   // Ignoring rook attack
+    v40IgnoredMinorAttackPenalty: -150000,  // Ignoring minor piece attack
+    
+    // v40.9: PIECE SAFETY ABSOLUTE — Never leave valuable pieces en prise
+    v40PieceSafetyAbsoluteEnabled: true,
+    v40HangingQueenPenalty: -600000,        // Hanging queen after move = DISASTER
+    v40HangingRookPenalty: -300000,         // Hanging rook after move
+    v40HangingMinorPenalty: -150000,        // Hanging minor after move
+    
+    // v40.9: FORCED MOVE DETECTION — Some situations REQUIRE specific responses
+    v40ForcedMoveDetectionEnabled: true,
+    v40ForcedMoveBonus: 400000,             // Bonus for making the forced move
+    v40MissedForcedMovePenalty: -700000,    // Penalty for missing forced move
+    
+    // v40.9: 99% OMNISCIENT DOMINANCE — v40 is now ABSOLUTELY OMNISCIENT
+    v40OmniscientDominance: 0.99,           // 99% v40 dominance (up from 97%)
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -9710,6 +9744,611 @@ function countDiagonalMobility(square, board) {
     }
     
     return mobility;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.9 OMNISCIENT: ATTACKED PIECE DETECTION & FORCED RESPONSE SYSTEM
+// From Scandinavian loss: Bot played Ng3 while Queen on b5 was attacked by a6 pawn!
+// The bot IGNORED the attack and lost its queen on move 17: axb5
+// This is THE MOST CRITICAL FIX - the bot MUST address attacked pieces
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.9 OMNISCIENT: ATTACKED PIECE PRIORITY EVALUATION
+ * CRITICAL: Before making any move, detect if our valuable pieces are under attack
+ * If they are, we MUST address them - either move, defend, or trade favorably
+ */
+function v40AttackedPiecePriorityEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40AttackedPiecePriorityEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        
+        // STEP 1: Find ALL our attacked pieces BEFORE this move
+        const attackedPieces = findAttackedPiecesV40_9(board, activeColor);
+        
+        if (attackedPieces.length === 0) {
+            // No pieces under attack, no special handling needed
+            return 0;
+        }
+        
+        debugLog("[V40.9_ATTACKED]", `⚠️ ${attackedPieces.length} pieces under attack: ${attackedPieces.map(p => p.piece + '@' + p.square).join(', ')}`);
+        
+        // STEP 2: Check if this move addresses the attacked pieces
+        for (const attacked of attackedPieces) {
+            const pieceType = attacked.piece.toLowerCase();
+            const pieceValue = getPieceValueSimple(pieceType);
+            
+            // Check if we're moving the attacked piece to safety
+            if (fromSquare === attacked.square) {
+                // We ARE moving the attacked piece! Check if destination is safe
+                const destIsAttacked = isSquareAttackedByColor(board, toSquare, enemyColor);
+                const destIsDefended = isSquareDefendedByColor(board, toSquare, activeColor);
+                
+                if (!destIsAttacked) {
+                    // Moving to safe square - EXCELLENT
+                    score += CONFIG.v40MustMoveAttackedPieceBonus || 300000;
+                    debugLog("[V40.9_ATTACKED]", `✅✅ MOVING ${attacked.piece} FROM ATTACK to safe square ${toSquare}!`);
+                } else if (destIsDefended) {
+                    // Moving to defended square - acceptable
+                    score += (CONFIG.v40MustMoveAttackedPieceBonus || 300000) * 0.5;
+                    debugLog("[V40.9_ATTACKED]", `✅ MOVING ${attacked.piece} to defended square ${toSquare}`);
+                }
+                continue;  // This piece is being addressed
+            }
+            
+            // Check if we're capturing the attacker
+            const attackers = findAttackersOfSquare(board, attacked.square, enemyColor);
+            const capturedPiece = board.get(toSquare);
+            
+            if (capturedPiece) {
+                // We're capturing something - is it one of the attackers?
+                for (const attacker of attackers) {
+                    if (toSquare === attacker.square) {
+                        score += (CONFIG.v40MustMoveAttackedPieceBonus || 300000) * 0.8;
+                        debugLog("[V40.9_ATTACKED]", `✅ CAPTURING ATTACKER ${attacker.piece} on ${toSquare}!`);
+                        break;
+                    }
+                }
+            }
+            
+            // Check if we're blocking/defending the attacked piece
+            const isDefendingMove = isDefendingMoveV40_9(move, attacked.square, board, activeColor);
+            if (isDefendingMove) {
+                score += (CONFIG.v40MustMoveAttackedPieceBonus || 300000) * 0.6;
+                debugLog("[V40.9_ATTACKED]", `✅ DEFENDING ${attacked.piece} with ${move}`);
+                continue;
+            }
+            
+            // CRITICAL: This move does NOT address the attacked piece!
+            // Apply MASSIVE penalty based on piece value
+            if (pieceType === 'q') {
+                score += CONFIG.v40IgnoredQueenAttackPenalty || -800000;
+                debugLog("[V40.9_ATTACKED]", `🚨🚨🚨 CATASTROPHE! QUEEN ATTACK IGNORED! Move ${move} doesn't save queen on ${attacked.square}!`);
+            } else if (pieceType === 'r') {
+                score += CONFIG.v40IgnoredRookAttackPenalty || -400000;
+                debugLog("[V40.9_ATTACKED]", `🚨🚨 ROOK ATTACK IGNORED! Move ${move} doesn't save rook on ${attacked.square}!`);
+            } else if (pieceType === 'b' || pieceType === 'n') {
+                score += CONFIG.v40IgnoredMinorAttackPenalty || -150000;
+                debugLog("[V40.9_ATTACKED]", `🚨 MINOR PIECE ATTACK IGNORED! Move ${move} doesn't save ${attacked.piece} on ${attacked.square}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.9_ATTACKED]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.9 OMNISCIENT: PRE-MOVE THREAT SCAN
+ * Scan for threats BEFORE moving and ensure we don't ignore them
+ */
+function v40PreMoveThreatScanEval(fen, move, board, activeColor) {
+    if (!CONFIG.v40PreMoveThreatScanEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        
+        // Find our most valuable attacked piece
+        const mostValuableAttacked = findMostValuableAttackedPiece(board, activeColor);
+        
+        if (!mostValuableAttacked) return 0;
+        
+        const attackedPieceType = mostValuableAttacked.piece.toLowerCase();
+        const attackedSquare = mostValuableAttacked.square;
+        
+        // Check if this move addresses the threat
+        const addressesThreat = doesMoveAddressThreat(move, attackedSquare, board, activeColor, enemyColor);
+        
+        if (!addressesThreat) {
+            // CRITICAL: Move does NOT address the most important threat!
+            if (attackedPieceType === 'q') {
+                score += CONFIG.v40QueenUnderAttackPenalty || -500000;
+                debugLog("[V40.9_PRESCAN]", `🚨🚨🚨 QUEEN ON ${attackedSquare} UNDER ATTACK - MOVE ${move} IGNORES IT!`);
+            } else if (attackedPieceType === 'r') {
+                score += CONFIG.v40RookUnderAttackPenalty || -200000;
+                debugLog("[V40.9_PRESCAN]", `🚨🚨 ROOK ON ${attackedSquare} UNDER ATTACK - MOVE ${move} IGNORES IT!`);
+            } else if (attackedPieceType === 'b' || attackedPieceType === 'n') {
+                score += CONFIG.v40MinorPieceUnderAttackPenalty || -100000;
+                debugLog("[V40.9_PRESCAN]", `🚨 MINOR PIECE ON ${attackedSquare} UNDER ATTACK - MOVE ${move} IGNORES IT!`);
+            }
+        } else {
+            score += 50000;  // Good - addressing the threat
+            debugLog("[V40.9_PRESCAN]", `✅ Move ${move} addresses threat to ${attackedPieceType} on ${attackedSquare}`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.9_PRESCAN]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.9 OMNISCIENT: PIECE SAFETY ABSOLUTE CHECK
+ * After making a move, ensure we don't leave valuable pieces hanging
+ */
+function v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) {
+    if (!CONFIG.v40PieceSafetyAbsoluteEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Simulate the position after our move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            
+            // Handle promotion
+            if (move.length > 4) {
+                const promotionPiece = isWhite ? move[4].toUpperCase() : move[4].toLowerCase();
+                simBoard.set(toSquare, promotionPiece);
+            } else {
+                simBoard.set(toSquare, movingPiece);
+            }
+        }
+        
+        // Now check if ANY of our valuable pieces are hanging in the new position
+        const hangingPieces = findHangingPiecesV40_9(simBoard, activeColor);
+        
+        for (const hanging of hangingPieces) {
+            const pieceType = hanging.piece.toLowerCase();
+            const pieceValue = getPieceValueSimple(pieceType);
+            
+            if (pieceType === 'q') {
+                score += CONFIG.v40HangingQueenPenalty || -600000;
+                debugLog("[V40.9_SAFETY]", `🚨🚨🚨 HANGING QUEEN on ${hanging.square} AFTER move ${move}!`);
+            } else if (pieceType === 'r') {
+                score += CONFIG.v40HangingRookPenalty || -300000;
+                debugLog("[V40.9_SAFETY]", `🚨🚨 HANGING ROOK on ${hanging.square} AFTER move ${move}!`);
+            } else if (pieceType === 'b' || pieceType === 'n') {
+                score += CONFIG.v40HangingMinorPenalty || -150000;
+                debugLog("[V40.9_SAFETY]", `🚨 HANGING MINOR PIECE on ${hanging.square} AFTER move ${move}!`);
+            }
+        }
+        
+        // Check if the moved piece itself is now hanging
+        const movedPieceType = movingPiece ? movingPiece.toLowerCase() : null;
+        if (movedPieceType && movedPieceType !== 'k') {
+            const isNowAttacked = isSquareAttackedByColor(simBoard, toSquare, enemyColor);
+            const isNowDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+            
+            if (isNowAttacked && !isNowDefended) {
+                const pieceValue = getPieceValueSimple(movedPieceType);
+                if (movedPieceType === 'q') {
+                    score += CONFIG.v40HangingQueenPenalty || -600000;
+                    debugLog("[V40.9_SAFETY]", `🚨🚨🚨 QUEEN MOVED TO HANGING SQUARE ${toSquare}!`);
+                } else if (movedPieceType === 'r') {
+                    score += CONFIG.v40HangingRookPenalty || -300000;
+                    debugLog("[V40.9_SAFETY]", `🚨🚨 ROOK MOVED TO HANGING SQUARE ${toSquare}!`);
+                } else if (movedPieceType === 'b' || movedPieceType === 'n') {
+                    score += CONFIG.v40HangingMinorPenalty || -150000;
+                    debugLog("[V40.9_SAFETY]", `🚨 MINOR PIECE MOVED TO HANGING SQUARE ${toSquare}!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.9_SAFETY]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.9 OMNISCIENT: FORCED MOVE DETECTION
+ * Some positions have FORCED moves - we MUST make them
+ */
+function v40ForcedMoveDetectionEval(fen, move, board, activeColor) {
+    if (!CONFIG.v40ForcedMoveDetectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Check for forced situations:
+        // 1. King in check - must respond
+        // 2. Queen attacked by lower value piece - must save
+        // 3. Rook attacked by lower value piece - must save
+        
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        
+        // Check if king is in check
+        const kingSquare = findKingSquare(board, activeColor);
+        const kingInCheck = kingSquare && isSquareAttackedByColor(board, kingSquare, enemyColor);
+        
+        if (kingInCheck) {
+            // King is in check - this move MUST address the check
+            const simBoard = new Map(board);
+            const movingPiece = board.get(fromSquare);
+            if (movingPiece) {
+                simBoard.delete(fromSquare);
+                simBoard.set(toSquare, movingPiece);
+            }
+            
+            const newKingSquare = movingPiece && movingPiece.toLowerCase() === 'k' ? toSquare : kingSquare;
+            const stillInCheck = isSquareAttackedByColor(simBoard, newKingSquare, enemyColor);
+            
+            if (!stillInCheck) {
+                score += CONFIG.v40ForcedMoveBonus || 400000;
+                debugLog("[V40.9_FORCED]", `✅ Move ${move} correctly responds to check!`);
+            } else {
+                score += CONFIG.v40MissedForcedMovePenalty || -700000;
+                debugLog("[V40.9_FORCED]", `🚨🚨🚨 Move ${move} DOES NOT escape check!`);
+            }
+        }
+        
+        // Check if queen is attacked by lower value piece (pawn, knight, bishop)
+        const queenSquare = findQueenSquare(board, activeColor);
+        if (queenSquare) {
+            const queenAttackers = findAttackersOfSquare(board, queenSquare, enemyColor);
+            const hasLowValueAttacker = queenAttackers.some(a => {
+                const attackerType = a.piece.toLowerCase();
+                return attackerType === 'p' || attackerType === 'n' || attackerType === 'b';
+            });
+            
+            if (hasLowValueAttacker) {
+                // Queen is attacked by lower value piece - MUST address!
+                const addressesQueenAttack = doesMoveAddressThreat(move, queenSquare, board, activeColor, enemyColor);
+                
+                if (!addressesQueenAttack) {
+                    score += CONFIG.v40MissedForcedMovePenalty || -700000;
+                    debugLog("[V40.9_FORCED]", `🚨🚨🚨 QUEEN ATTACKED by low-value piece - move ${move} IGNORES IT!`);
+                } else {
+                    score += CONFIG.v40ForcedMoveBonus || 400000;
+                    debugLog("[V40.9_FORCED]", `✅ Move ${move} saves attacked queen!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.9_FORCED]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.9 OMNISCIENT: INSTANT RECAPTURE DETECTION
+ * If enemy just captured our piece, we MUST evaluate recapture immediately
+ */
+function v40InstantRecaptureEval(fen, move, board, activeColor, lastMove) {
+    let score = 0;
+    
+    try {
+        if (!lastMove) return 0;
+        
+        // Check if last move was a capture by examining if our piece disappeared
+        const lastMoveFrom = lastMove.substring(0, 2);
+        const lastMoveTo = lastMove.substring(2, 4);
+        
+        // If we can recapture on the square enemy just moved to
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        
+        if (toSquare === lastMoveTo) {
+            // This is a potential recapture
+            const capturingPiece = board.get(fromSquare);
+            const capturedPiece = board.get(toSquare);
+            
+            if (capturingPiece && capturedPiece) {
+                const ourValue = getPieceValueSimple(capturingPiece.toLowerCase());
+                const theirValue = getPieceValueSimple(capturedPiece.toLowerCase());
+                
+                // Check if recapture is safe or favorable
+                const isWhite = activeColor === 'w';
+                const enemyColor = isWhite ? 'b' : 'w';
+                
+                // Simulate the recapture
+                const simBoard = new Map(board);
+                simBoard.delete(fromSquare);
+                simBoard.set(toSquare, capturingPiece);
+                
+                const canTheyRetake = isSquareAttackedByColor(simBoard, toSquare, enemyColor);
+                
+                if (!canTheyRetake) {
+                    // Safe recapture
+                    score += 100000 + theirValue * 10;
+                    debugLog("[V40.9_RECAP]", `✅ Safe recapture ${move} (gain ${theirValue})`);
+                } else if (theirValue >= ourValue) {
+                    // Worth it even if they retake
+                    score += 50000 + (theirValue - ourValue) * 10;
+                    debugLog("[V40.9_RECAP]", `✅ Favorable recapture ${move}`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.9_RECAP]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.9 OMNISCIENT: HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.9 Helper: Find all attacked pieces for a color
+ */
+function findAttackedPiecesV40_9(board, color) {
+    const attacked = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;  // King attacks handled separately
+        
+        // Check if this square is attacked by enemy
+        if (isSquareAttackedByColor(board, square, enemyColor)) {
+            // Check if it's adequately defended
+            const isDefended = isSquareDefendedByColor(board, square, color);
+            
+            // If attacked by something of lower value, still need to consider
+            const attackers = findAttackersOfSquare(board, square, enemyColor);
+            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+            const ourPieceValue = getPieceValueSimple(pieceType);
+            
+            // Consider it under attack if:
+            // 1. Not defended at all, or
+            // 2. Attacker is of lower value than our piece
+            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+                attacked.push({
+                    square,
+                    piece,
+                    value: ourPieceValue,
+                    lowestAttackerValue
+                });
+            }
+        }
+    }
+    
+    // Sort by piece value (highest first - queen, then rook, etc.)
+    attacked.sort((a, b) => b.value - a.value);
+    
+    return attacked;
+}
+
+/**
+ * v40.9 Helper: Find all hanging pieces (attacked and not defended)
+ */
+function findHangingPiecesV40_9(board, color) {
+    const hanging = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;
+        
+        const isAttacked = isSquareAttackedByColor(board, square, enemyColor);
+        const isDefended = isSquareDefendedByColor(board, square, color);
+        
+        if (isAttacked && !isDefended) {
+            hanging.push({ square, piece, value: getPieceValueSimple(pieceType) });
+        }
+    }
+    
+    return hanging;
+}
+
+/**
+ * v40.9 Helper: Find most valuable attacked piece
+ */
+function findMostValuableAttackedPiece(board, color) {
+    const attacked = findAttackedPiecesV40_9(board, color);
+    return attacked.length > 0 ? attacked[0] : null;
+}
+
+/**
+ * v40.9 Helper: Find all attackers of a specific square
+ */
+function findAttackersOfSquare(board, targetSquare, attackerColor) {
+    const attackers = [];
+    const isWhite = attackerColor === 'w';
+    const tFile = targetSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(targetSquare[1]) - 1;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const pFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(square[1]) - 1;
+        
+        if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, attackerColor)) {
+            attackers.push({ square, piece });
+        }
+    }
+    
+    return attackers;
+}
+
+/**
+ * v40.9 Helper: Check if a move defends a specific square
+ */
+function isDefendingMoveV40_9(move, defendSquare, board, color) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece) return false;
+    
+    // Simulate the move
+    const simBoard = new Map(board);
+    simBoard.delete(fromSquare);
+    simBoard.set(toSquare, movingPiece);
+    
+    // Check if after the move, we now defend the target square
+    const pieceType = movingPiece.toLowerCase();
+    const tFile = defendSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(defendSquare[1]) - 1;
+    const mFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const mRank = parseInt(toSquare[1]) - 1;
+    
+    // Check if moved piece now defends the target
+    return canPieceAttackSquareV40(pieceType, mFile, mRank, tFile, tRank, simBoard, color);
+}
+
+/**
+ * v40.9 Helper: Check if move addresses a threat
+ */
+function doesMoveAddressThreat(move, threatSquare, board, color, enemyColor) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    // Option 1: Moving the threatened piece
+    if (fromSquare === threatSquare) {
+        // Check if destination is safe
+        const isDestSafe = !isSquareAttackedByColor(board, toSquare, enemyColor);
+        const isDestDefended = isSquareDefendedByColor(board, toSquare, color);
+        return isDestSafe || isDestDefended;
+    }
+    
+    // Option 2: Capturing an attacker
+    const attackers = findAttackersOfSquare(board, threatSquare, enemyColor);
+    for (const attacker of attackers) {
+        if (toSquare === attacker.square) {
+            return true;  // Capturing the attacker
+        }
+    }
+    
+    // Option 3: Blocking the attack (for sliding pieces)
+    // Check if our move interposes between attacker and threatened piece
+    for (const attacker of attackers) {
+        const attackerType = attacker.piece.toLowerCase();
+        if (attackerType === 'r' || attackerType === 'b' || attackerType === 'q') {
+            // Check if toSquare is between attacker and threatened piece
+            if (isSquareBetween(attacker.square, threatSquare, toSquare)) {
+                return true;  // Blocking the attack
+            }
+        }
+    }
+    
+    // Option 4: Adding a defender
+    if (isDefendingMoveV40_9(move, threatSquare, board, color)) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.9 Helper: Check if square C is between A and B on the same line
+ */
+function isSquareBetween(squareA, squareB, squareC) {
+    const aFile = squareA.charCodeAt(0) - 'a'.charCodeAt(0);
+    const aRank = parseInt(squareA[1]) - 1;
+    const bFile = squareB.charCodeAt(0) - 'a'.charCodeAt(0);
+    const bRank = parseInt(squareB[1]) - 1;
+    const cFile = squareC.charCodeAt(0) - 'a'.charCodeAt(0);
+    const cRank = parseInt(squareC[1]) - 1;
+    
+    // Check if C is on the line from A to B
+    const dxAB = bFile - aFile;
+    const dyAB = bRank - aRank;
+    const dxAC = cFile - aFile;
+    const dyAC = cRank - aRank;
+    
+    // Cross product should be 0 for collinear points
+    if (dxAB * dyAC !== dyAB * dxAC) return false;
+    
+    // Check if C is between A and B
+    const minFile = Math.min(aFile, bFile);
+    const maxFile = Math.max(aFile, bFile);
+    const minRank = Math.min(aRank, bRank);
+    const maxRank = Math.max(aRank, bRank);
+    
+    return cFile >= minFile && cFile <= maxFile && cRank >= minRank && cRank <= maxRank &&
+           !(cFile === aFile && cRank === aRank) && !(cFile === bFile && cRank === bRank);
+}
+
+/**
+ * v40.9 Helper: Find king square
+ */
+function findKingSquare(board, color) {
+    const isWhite = color === 'w';
+    
+    for (const [square, piece] of board) {
+        if (piece && piece.toLowerCase() === 'k') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                return square;
+            }
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * v40.9 Helper: Find queen square
+ */
+function findQueenSquare(board, color) {
+    const isWhite = color === 'w';
+    
+    for (const [square, piece] of board) {
+        if (piece && piece.toLowerCase() === 'q') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                return square;
+            }
+        }
+    }
+    
+    return null;
 }
 
 /**
@@ -24654,8 +25293,26 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
                 const centralControlSupremeScore = v40CentralControlSupremeEval(fen, move, board, activeColor, moveNumber) * 1.3;
                 
-                // v40.8: COMBINED v40 SCORE — 97% TRANSCENDENT DOMINANT INFLUENCE
-                // This makes v40 the ABSOLUTE TRANSCENDENT factor in move selection
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.9 OMNISCIENT: ATTACKED PIECE DETECTION & FORCED RESPONSE
+                // From Scandinavian loss: Bot played Ng3 while Queen on b5 was attacked!
+                // This is THE MOST CRITICAL FIX - bot MUST address attacked pieces
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.9: ATTACKED PIECE PRIORITY — CRITICAL: Must address attacked pieces
+                const attackedPiecePriorityScore = v40AttackedPiecePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.9: PRE-MOVE THREAT SCAN — Scan for threats before moving
+                const preMoveThreatScore = v40PreMoveThreatScanEval(fen, move, board, activeColor) * 2.0;
+                
+                // v40.9: PIECE SAFETY ABSOLUTE — Never leave valuable pieces hanging
+                const pieceSafetyAbsoluteScore = v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) * 2.0;
+                
+                // v40.9: FORCED MOVE DETECTION — Must make forced moves when required
+                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+                
+                // v40.9: COMBINED v40 SCORE — 99% OMNISCIENT DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE OMNISCIENT factor in move selection
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -24673,11 +25330,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
                                // v40.8 TRANSCENDENT additions:
                                openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
-                               counterplayGenScore + centralControlSupremeScore;
-                v40Bonus = v40DeepScore * 0.97;  // 97% influence — TRANSCENDENT PARADIGM SHIFT
+                               counterplayGenScore + centralControlSupremeScore +
+                               // v40.9 OMNISCIENT additions:
+                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore;
+                v40Bonus = v40DeepScore * 0.99;  // 99% influence — OMNISCIENT PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.8 TRANSCENDENT EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.9 OMNISCIENT EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -24711,12 +25370,16 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🆕 CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 97% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog("[V40_INTEGRATE]", `   OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 AttackedPiecePriority: ${attackedPiecePriorityScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 PreMoveThreat: ${preMoveThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 PieceSafetyAbsolute: ${pieceSafetyAbsoluteScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 ForcedMove: ${forcedMoveScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 99% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
             } catch (e) {
                 debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
@@ -24724,13 +25387,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
             }
         }
         
-        // v40.8: TRUE ALPHAZERO TRANSCENDENT weighted merge — v40 TRANSCENDENT DOMINANT (97%)
-        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY TRANSCENDENT
+        // v40.9: TRUE ALPHAZERO OMNISCIENT weighted merge — v40 OMNISCIENT DOMINANT (99%)
+        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY OMNISCIENT
         const combinedScore = (
-            TRUE_ALPHAZERO.qWeight * engine_Q * 0.03 +  // Engine reduced to 3%
-            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.03 +
-            normalizedPolicyPrior * 0.15 + // Policy bonus reduced further
-            v40Bonus                      // v40 TRANSCENDENT DOMINANT at 97%
+            TRUE_ALPHAZERO.qWeight * engine_Q * 0.01 +  // Engine reduced to 1%
+            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.01 +
+            normalizedPolicyPrior * 0.10 + // Policy bonus reduced further
+            v40Bonus                      // v40 OMNISCIENT DOMINANT at 99%
         );
         
         debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp`);
