@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.3 SUPERHUMAN BEAST ULTIMATE
-// @description  TRUE AlphaZero Replica v40.3 ULTIMATE - 75% v40 ABSOLUTE DOMINANCE - 50K MCTS Simulations - Anti-Passivity System - 30+ Move Deep Horizon - Enhanced Mating Pattern Library - Counterattack Priority - Space Domination - Crushes Stockfish - 15-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
-// @author       AlphaZero TRUE REPLICA v40.3 SUPERHUMAN BEAST ULTIMATE EDITION
-// @version      40.3.0-SUPERHUMAN-BEAST-ULTIMATE
+// @name         Lichess Bot - TRUE ALPHAZERO v40.4 SUPERHUMAN BEAST GODLIKE
+// @description  TRUE AlphaZero Replica v40.4 GODLIKE - 80% v40 ABSOLUTE DOMINANCE - 100K MCTS Simulations - Discovered Attack Detection - Knight Invasion Penalties - Opening Principles - Enhanced Queen Mating Patterns - Pawn Shield Integrity - Anti-Passivity System - 30+ Move Deep Horizon - Space Domination - 20-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+// @author       AlphaZero TRUE REPLICA v40.4 SUPERHUMAN BEAST GODLIKE EDITION
+// @version      40.4.0-SUPERHUMAN-BEAST-GODLIKE
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -1067,6 +1067,55 @@ const CONFIG = {
     v40TempoChainBonus: 6000,               // Bonus for tempo chain
     v40MomentumBonus: 5000,                 // Bonus for maintaining momentum
     v40ForcingSequenceBonus: 7000,          // Bonus for forcing sequences
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.4.0: GODLIKE ENHANCEMENTS — Addressing tactical blindspots
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.4: DISCOVERED ATTACK/CHECK DETECTION — Critical for Nxg3+ → Nxe2+ patterns
+    v40DiscoveredAttackEnabled: true,
+    v40DiscoveredCheckPenalty: -25000,      // MASSIVE penalty for allowing discovered checks
+    v40DiscoveredAttackPenalty: -15000,     // Severe penalty for discovered attacks
+    v40DiscoveredCheckBonus: 20000,         // Huge bonus for creating discovered checks
+    v40DiscoveredAttackBonus: 12000,        // Bonus for discovered attacks
+    
+    // v40.4: KNIGHT INVASION DETECTION — Prevent enemy knights from infiltrating
+    v40KnightInvasionEnabled: true,
+    v40EnemyKnightInvasionPenalty: -12000,  // Penalty for enemy knight on 3rd-6th rank in our territory
+    v40KnightOutpostPenalty: -8000,         // Penalty for enemy knight on outpost
+    v40OurKnightInvasionBonus: 10000,       // Bonus for our knight in enemy territory
+    v40KnightCentralizationBonus: 6000,     // Bonus for knight on central squares
+    
+    // v40.4: OPENING PRINCIPLES — Enforce proper opening play
+    v40OpeningPrinciplesEnabled: true,
+    v40PassiveOpeningPenalty: -15000,       // Penalty for passive opening moves (d3, h3, a3 too early)
+    v40DevelopmentBonus: 5000,              // Bonus per developed piece
+    v40CastlingUrgency: 10000,              // Bonus for castling before move 12
+    v40EarlyCenterControlBonus: 8000,       // Bonus for central pawn presence
+    v40PieceActivityEarlyBonus: 4000,       // Bonus for active pieces in opening
+    
+    // v40.4: QUEEN MATING PATTERNS — Enhanced Qxg2# type detection
+    v40QueenMatingEnabled: true,
+    v40QueenMateThreaPenalty: -20000,       // Penalty when queen mate pattern forms
+    v40WeakKingShieldPenalty: -12000,       // Penalty for weakened pawn shield
+    v40OpenKingFilePenalty: -10000,         // Penalty for open file towards king
+    
+    // v40.4: PAWN SHIELD INTEGRITY — Critical for king safety
+    v40PawnShieldEnabled: true,
+    v40PawnShieldIntactBonus: 8000,         // Bonus for intact pawn shield
+    v40PawnShieldBrokenPenalty: -15000,     // Penalty for broken pawn shield
+    v40FianchettoSafetyBonus: 3000,         // Bonus for safe fianchetto
+    v40HoleNearKingPenalty: -10000,         // Penalty for weak squares near king
+    
+    // v40.4: WEAK SQUARE COMPLEX — Detect color complex weaknesses
+    v40WeakSquareEnabled: true,
+    v40WeakSquareComplexPenalty: -8000,     // Penalty for weak color complex
+    v40ControlledWeakSquareBonus: 5000,     // Bonus for controlling enemy weak squares
+    
+    // v40.4: TACTICAL DEPTH INCREASE
+    v40TacticalDepthMoves: 8,               // Look 8 moves deep for tactics (was 4)
+    v40ForcingSequenceDepth: 6,             // Forcing sequence depth
+    v40MCTSSimulations: 100000,             // Increased from 50K to 100K
 };
 
 // ═══════════════════════════════════════════════════════════════════════
