@@ -1,0 +1,23 @@
+
+Action: $ grep -n "v40Bonus \* 0\.\|v40 ABSOLUTE DOMINANT\|v40.3:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 839:    // v40.3: TRUE PERSISTENT MCTS — AlphaZero's Core (ULTIMATE EDITION)
+1010:    // v40.3: ANTI-PASSIVITY SYSTEM — Forces Active Play
+1020:    // v40.3: DEEP HORIZON EVALUATION — True 30+ Move Planning
+1028:    // v40.3: ENHANCED MATING PATTERN LIBRARY
+1039:    // v40.3: COUNTERATTACK PRIORITY SYSTEM
+1047:    // v40.3: SPACE DOMINATION SYSTEM
+1055:    // v40.3: PIECE ACTIVITY SCORING
+1063:    // v40.3: INITIATIVE PRESERVATION
+4858: * v40.3: ANTI-PASSIVITY EVALUATION
+4961: * v40.3: Check if move creates a threat
+4992: * v40.3: Check if piece can attack a square
+5018: * v40.3: Calculate piece activity score
+5048: * v40.3: Check for queen shuffling pattern
+5075: * v40.3: Calculate position improvement from move
+5094: * v40.3: Count controlled squares
+5118: * v40.3: Calculate piece centralization score
+5138: * v40.3: Count active pieces
+5163: * v40.3: DEEP HORIZON EVALUATION
+5213: * v40.3: Evaluate positional trajectory
+5249: * v40.3: Simple king safety evaluation
+Exit code: 0

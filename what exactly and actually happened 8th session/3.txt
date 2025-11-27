@@ -1,0 +1,6 @@
+
+Action: $ grep -n "v40Bonus.*0\.65\|v40Bonus.*0\.75\|DOMINANT.*65\|DOMINANT.*75" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 20897:                v40Bonus = v40DeepScore * 0.65;  // 65% influence — TRUE PARADIGM SHIFT
+20918:        // v40.2: TRUE ALPHAZERO weighted merge — v40 ABSOLUTE DOMINANT (65%)
+20924:            v40Bonus                      // v40 ABSOLUTE DOMINANT at 65%
+Exit code: 0

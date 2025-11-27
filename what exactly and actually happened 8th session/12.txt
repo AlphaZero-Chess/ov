@@ -1,0 +1,91 @@
+The anti-passivity function exists. Now let me view the deep horizon evaluation:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+5163| * v40.3: DEEP HORIZON EVALUATION
+5164| * True 30+ move strategic planning with horizon effect prevention
+5165| */
+5166|function v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) {
+5167|    if (!CONFIG.v40DeepHorizonEnabled) return 0;
+5168|    
+5169|    let score = 0;
+5170|    
+5171|    try {
+5172|        // Simulate the move
+5173|        const simBoard = new Map(board);
+5174|        const fromSquare = move.substring(0, 2);
+5175|        const toSquare = move.substring(2, 4);
+5176|        const movingPiece = board.get(fromSquare);
+5177|        
+5178|        if (movingPiece) {
+5179|            simBoard.delete(fromSquare);
+5180|            simBoard.set(toSquare, movingPiece);
+5181|        }
+5182|        
+5183|        // PHASE 1: Evaluate long-term positional trajectory
+5184|        const trajectory = v40EvaluatePositionalTrajectory(simBoard, activeColor, moveNumber);
+5185|        score += trajectory * 1000;
+5186|        
+5187|        // PHASE 2: Check for horizon effect blindspots
+5188|        const horizonCheck = v40CheckHorizonEffect(fen, move, simBoard, activeColor);
+5189|        if (horizonCheck.dangerous) {
+5190|            score += horizonCheck.penalty;
+5191|            debugLog("[V40_HORIZON]", `⚠️ Horizon effect danger: ${horizonCheck.reason}`);
+5192|        }
+5193|        
+5194|        // PHASE 3: Strategic projection (30+ moves)
+5195|        const projection = v40StrategicProjection(simBoard, activeColor, moveNumber);
+5196|        score += projection * 500;
+5197|        
+5198|        // PHASE 4: Endgame trajectory (if approaching endgame)
+5199|        const totalMaterial = countTotalMaterial(simBoard);
+5200|        if (totalMaterial < 50) {
+5201|            const endgameTrajectory = v40EndgameTrajectory(simBoard, activeColor);
+5202|            score += endgameTrajectory * 800;
+5203|        }
+5204|        
+5205|    } catch (e) {
+5206|        debugLog("[V40_HORIZON]", `Error: ${e.message}`);
+5207|    }
+5208|    
+5209|    return score;
+5210|}
+5211|
+5212|/**
+5213| * v40.3: Evaluate positional trajectory
+5214| */
+5215|function v40EvaluatePositionalTrajectory(board, activeColor, moveNumber) {
+5216|    let trajectory = 0;
+5217|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+5218|    
+5219|    // Material balance
+5220|    let ourMaterial = 0;
+5221|    let enemyMaterial = 0;
+5222|    const pieceValues = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9 };
+5223|    
+5224|    for (const [square, piece] of board) {
+5225|        if (!piece) continue;
+5226|        const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+5227|        const value = pieceValues[piece.toLowerCase()] || 0;
+5228|        
+5229|        if (isOurs) ourMaterial += value;
+5230|        else enemyMaterial += value;
+5231|    }
+5232|    
+5233|    trajectory += (ourMaterial - enemyMaterial) * 0.5;
+5234|    
+5235|    // Space advantage
+5236|    const ourSpace = v40CountControlledSquares(board, activeColor);
+5237|    const enemySpace = v40CountControlledSquares(board, enemyColor);
+5238|    trajectory += (ourSpace - enemySpace) * 0.3;
+5239|    
+5240|    // King safety differential
+5241|    const ourKingSafety = v40EvaluateKingSafetySimple(board, activeColor);
+5242|    const enemyKingSafety = v40EvaluateKingSafetySimple(board, enemyColor);
+5243|    trajectory += (ourKingSafety - enemyKingSafety) * 0.4;
+5244|    
+5245|    return trajectory;
+5246|}
+5247|
+5248|/**
+5249| * v40.3: Simple king safety evaluation
+5250| */

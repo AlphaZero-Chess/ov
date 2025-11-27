@@ -1,0 +1,6 @@
+I see the v40 dominance is still at 65%, not 75% as mentioned in the description. Let me check what functions are missing and update the dominance to 75%:
+Action: $ grep -n "function v40AntiPassivity\|function v40DeepHorizon\|function v40MatingPatternLibrary\|function v40CounterattackPriority\|function v40SpaceDomination" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 4862:function v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) {
+5166:function v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) {
+5859:function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
+Exit code: 0
