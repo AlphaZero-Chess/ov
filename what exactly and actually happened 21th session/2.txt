@@ -1,0 +1,66 @@
+Good, I can see v40.10 was implemented in session 20. Now let me deeply analyze the latest game shared by the user:
+
+**LATEST GAME ANALYSIS:**
+```
+[White "AlphaZerp"]
+[Black "lichess AI level 8"]
+[Result "0-1"]
+[ECO "C01"]
+[Opening "French Defense: Exchange Variation"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5  ← Good, proper d4!
+4. Bd3 Bd6 5. Nc3 Nf6 6. Be3 c6 7. Nf3 Na6 
+8. Ne5 Nc5 9. O-O Nxd3 10. Qxd3 O-O 
+11. Bg5 Qc7 12. Bxf6 gxf6  ← Bad: Gave enemy open g-file!
+13. Nf3 Qd7 14. Qd2 Kh8 15. Ne2 Rg8 16. Ng3 Qg4 ← Queen infiltrating!
+17. a3 f5 18. b3 f4  ← Pawn storm coming, bot doesn't react
+19. c3 fxg3 20. fxg3 Bf5 ← Bishop targeting kingside
+21. Ne5 Bxe5 22. dxe5 Be6 ← Knight gone, bishop still attacking
+23. h3 Qxg3 ← DISASTER: Qxg3 wins pawn, attack is crushing
+24. Rf2 Rg7 25. Kh1 Rag8 26. Re1 Bxh3 ← h3 falls
+27. a4 Bxg2+ 28. Kg1 Qh3 29. Rf6 Be4+ 30. Qg5 Rxg5+ 31. Kf2 Rg2+ 32. Kf1 Ra2#
+```
+
+**CRITICAL PROBLEMS IDENTIFIED:**
+
+1. **Move 12: Bxf6 gxf6** - This gave Black the open g-file for a kingside attack! The bot should have seen this coming.
+
+2. **Move 16-19**: Queen infiltrated to g4, then pawn storm with f5, f4 came. Bot played passive a3, b3, c3 pawn moves instead of addressing the kingside attack!
+
+3. **Move 23: h3 allowed Qxg3** - This was a critical blunder allowing queen infiltration
+
+4. **Move 26-28: h3 pawn fell, then g2 fell** - Complete kingside collapse
+
+**The core issues are:**
+1. **KINGSIDE ATTACK BLINDNESS** - Bot doesn't recognize when a coordinated attack is coming
+2. **PASSIVE PAWN MOVES** - Playing a3, b3, c3 when king is under attack
+3. **BAD EXCHANGES** - Bxf6 opening the g-file for opponent
+4. **G-FILE CONTROL** - Not seeing enemy rooks lining up on g-file
+
+Let me now implement **v40.11 TRANSCENDENT SUPREME** with new fixes:
+Action: Based on the analysis of the latest game, I need to implement v40.11 with the following critical enhancements:
+
+1. **G-FILE ATTACK DETECTION** - Detect when enemy rooks are doubling on the g-file
+2. **KINGSIDE ATTACK PATTERN RECOGNITION** - Detect coordinated kingside attacks (Q+R+B)
+3. **PASSIVE QUEENSIDE MOVE PENALTY** - Don't play a3/b3/c3 when king is under attack
+4. **BAD EXCHANGE DETECTION** - Don't open files toward your own king (Bxf6 opening g-file)
+5. **QUEEN INFILTRATION ON KING** - Detect when queen reaches g3/g4/h3/h4 near king
+6. **PAWN STORM COUNTER** - Detect f5/f4 pawn storms and respond appropriately
+7. **DEFEND KINGSIDE PRIORITY** - When kingside is under attack, prioritize defensive moves
+
+The game showed:
+- Bot played Bxf6 which opened g-file for Black
+- Black played f5, f4 pawn storm
+- Queen infiltrated to g4, then g3
+- Rooks doubled on g-file
+- Total kingside collapse
+
+I need to create functions that:
+1. Detect when an exchange opens a file toward your king
+2. Detect when enemy queen is infiltrating the kingside
+3. Detect when enemy rooks are targeting the g-file
+4. Penalize passive queenside moves when kingside is under attack
+5. Reward defensive moves when under attack
+
+Let me implement these as v40.11 TRANSCENDENT SUPREME functions.
+Observation: Your thought has been logged.

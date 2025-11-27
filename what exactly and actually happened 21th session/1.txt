@@ -1,0 +1,114 @@
+I can see that session 20 already implemented the v40.10 GODLIKE features. Let me check what's still needed by looking at the integration section and see if all v40.10 functions are being called:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+26090|                
+26091|                // ═══════════════════════════════════════════════════════════════════
+26092|                // v40.10 GODLIKE: ABSOLUTE OPENING ENFORCEMENT & SACRIFICE DEFENSE
+26093|                // From latest loss: Bot STILL played d3 instead of d4, missed Bxh2+ sacrifice
+26094|                // These are THE FINAL CRITICAL FIXES for TRUE AlphaZero performance
+26095|                // ═══════════════════════════════════════════════════════════════════
+26096|                
+26097|                // v40.10: ABSOLUTE D4>D3 ENFORCEMENT — DEATH PENALTY for passive opening
+26098|                const absoluteOpeningScore = v40AbsoluteOpeningEnforcementEval(fen, move, board, activeColor, moveNumber) * 3.0;
+26099|                
+26100|                // v40.10: GREEK GIFT DEFENSE — Detect Bxh2+/Bxh7+ sacrifices
+26101|                const greekGiftScore = v40GreekGiftDefenseEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26102|                
+26103|                // v40.10: KING HUNT DETECTION — Detect when king is being hunted
+26104|                const kingHuntScore = v40KingHuntDetectionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26105|                
+26106|                // v40.10: CRITICAL EXCHANGE — Don't centralize enemy pieces
+26107|                const criticalExchangeScore = v40CriticalExchangeEval(fen, move, board, activeColor, moveNumber) * 2.0;
+26108|                
+26109|                // v40.10: MATING ATTACK AWARENESS — Detect impending mating attacks
+26110|                const matingAttackScore = v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26111|                
+26112|                // v40.10: COMBINED v40 SCORE — 100% GODLIKE DOMINANT INFLUENCE
+26113|                // This makes v40 the ABSOLUTE GODLIKE factor in move selection
+26114|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+26115|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+26116|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+26117|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+26118|                               counterattackBonus + initiativePreservationBonus +
+26119|                               // v40.4 additions:
+26120|                               openingPrinciplesScore + discoveredAttackPenalty + 
+26121|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+26122|                               // v40.5 additions:
+26123|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+26124|                               // v40.6 ULTIMATE additions:
+26125|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+26126|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+26127|                               // v40.7 DIVINE additions:
+26128|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+26129|                               // v40.8 TRANSCENDENT additions:
+26130|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+26131|                               counterplayGenScore + centralControlSupremeScore +
+26132|                               // v40.9 OMNISCIENT additions:
+26133|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+26134|                               // v40.10 GODLIKE additions:
+26135|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore;
+26136|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — GODLIKE PARADIGM SHIFT
+26137|                
+26138|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+26139|                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.10 GODLIKE EVALUATION`);
+26140|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+26141|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+26142|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+26143|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+26144|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+26145|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+26146|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+26147|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+26148|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+26149|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+26150|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+26151|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+26152|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+26153|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+26154|                debugLog("[V40_INTEGRATE]", `   OpeningPrinciples: ${openingPrinciplesScore.toFixed(1)}`);
+26155|                debugLog("[V40_INTEGRATE]", `   DiscoveredAttack: ${discoveredAttackPenalty.toFixed(1)}`);
+26156|                debugLog("[V40_INTEGRATE]", `   KnightInvasion: ${knightInvasionPenalty.toFixed(1)}`);
+26157|                debugLog("[V40_INTEGRATE]", `   QueenMating: ${queenMatingPenalty.toFixed(1)}`);
+26158|                debugLog("[V40_INTEGRATE]", `   PawnShield: ${pawnShieldScore.toFixed(1)}`);
+26159|                debugLog("[V40_INTEGRATE]", `   QueenInfiltration: ${queenInfiltrationScore.toFixed(1)}`);
+26160|                debugLog("[V40_INTEGRATE]", `   HangingPiece: ${hangingPieceScore.toFixed(1)}`);
+26161|                debugLog("[V40_INTEGRATE]", `   KingCorner: ${kingCornerScore.toFixed(1)}`);
+26162|                debugLog("[V40_INTEGRATE]", `   CheckSequence: ${checkSequenceScore.toFixed(1)}`);
+26163|                debugLog("[V40_INTEGRATE]", `   CenterPawn: ${centerPawnScore.toFixed(1)}`);
+26164|                debugLog("[V40_INTEGRATE]", `   PawnTension: ${pawnTensionScore.toFixed(1)}`);
+26165|                debugLog("[V40_INTEGRATE]", `   QueenRaid: ${queenRaidScore.toFixed(1)}`);
+26166|                debugLog("[V40_INTEGRATE]", `   TacticalPriority: ${tacticalPriorityScore.toFixed(1)}`);
+26167|                debugLog("[V40_INTEGRATE]", `   DevSafety: ${devSafetyScore.toFixed(1)}`);
+26168|                debugLog("[V40_INTEGRATE]", `   ThreatResponse: ${threatResponseScore.toFixed(1)}`);
+26169|                debugLog("[V40_INTEGRATE]", `   RecaptureUrgency: ${recaptureUrgencyScore.toFixed(1)}`);
+26170|                debugLog("[V40_INTEGRATE]", `   PieceOnAttacked: ${pieceOnAttackedScore.toFixed(1)}`);
+26171|                debugLog("[V40_INTEGRATE]", `   Hemorrhage: ${hemorrhageScore.toFixed(1)}`);
+26172|                debugLog("[V40_INTEGRATE]", `   BlunderCheck: ${blunderCheckScore.toFixed(1)}`);
+26173|                debugLog("[V40_INTEGRATE]", `   OpeningAggression: ${openingAggressionScore.toFixed(1)}`);
+26174|                debugLog("[V40_INTEGRATE]", `   ExchangeQuality: ${exchangeQualityScore.toFixed(1)}`);
+26175|                debugLog("[V40_INTEGRATE]", `   ActivePieceReq: ${activePieceRequirementScore.toFixed(1)}`);
+26176|                debugLog("[V40_INTEGRATE]", `   CounterplayGen: ${counterplayGenScore.toFixed(1)}`);
+26177|                debugLog("[V40_INTEGRATE]", `   CentralControlSupreme: ${centralControlSupremeScore.toFixed(1)}`);
+26178|                debugLog("[V40_INTEGRATE]", `   AttackedPiecePriority: ${attackedPiecePriorityScore.toFixed(1)}`);
+26179|                debugLog("[V40_INTEGRATE]", `   PreMoveThreat: ${preMoveThreatScore.toFixed(1)}`);
+26180|                debugLog("[V40_INTEGRATE]", `   PieceSafetyAbsolute: ${pieceSafetyAbsoluteScore.toFixed(1)}`);
+26181|                debugLog("[V40_INTEGRATE]", `   ForcedMove: ${forcedMoveScore.toFixed(1)}`);
+26182|                debugLog("[V40_INTEGRATE]", `   👑 ABSOLUTE OPENING: ${absoluteOpeningScore.toFixed(1)}`);
+26183|                debugLog("[V40_INTEGRATE]", `   👑 GREEK GIFT DEFENSE: ${greekGiftScore.toFixed(1)}`);
+26184|                debugLog("[V40_INTEGRATE]", `   👑 KING HUNT: ${kingHuntScore.toFixed(1)}`);
+26185|                debugLog("[V40_INTEGRATE]", `   👑 CRITICAL EXCHANGE: ${criticalExchangeScore.toFixed(1)}`);
+26186|                debugLog("[V40_INTEGRATE]", `   👑 MATING ATTACK: ${matingAttackScore.toFixed(1)}`);
+26187|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+26188|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+26189|            } catch (e) {
+26190|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+26191|                v40Bonus = 0;
+26192|            }
+26193|        }
+26194|        
+26195|        // v40.10: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (100%)
+26196|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY GODLIKE
+26197|        const combinedScore = (
+26198|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.00 +  // Engine reduced to 0% - v40 is GOD
+26199|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.00 +
+26200|            normalizedPolicyPrior * 0.00 + // Policy bonus removed - v40 is GOD

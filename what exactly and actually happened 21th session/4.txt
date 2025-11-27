@@ -1,0 +1,76 @@
+Now let me add the v40.11 CONFIG section and implement the new functions. First, let me add the CONFIG:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.10: 100% GODLIKE DOMINANCE — v40 is now ABSOLUTELY GODLIKE
+    v40GodlikeDominance: 1.0,               // 100% v40 dominance (up from 99%)
+};" --new-str "    // v40.10: 100% GODLIKE DOMINANCE — v40 is now ABSOLUTELY GODLIKE
+    v40GodlikeDominance: 1.0,               // 100% v40 dominance (up from 99%)
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN DETECTION
+    // From latest loss: Bot played Bxf6 opening g-file, allowed f5/f4 pawn storm,
+    // Queen infiltrated to g4/g3, rooks doubled on g-file - total kingside collapse!
+    // These fixes will make bot recognize and defend against coordinated attacks
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.11: G-FILE ATTACK DETECTION — Detect enemy rooks doubling on g-file
+    v40GFileAttackDetectionEnabled: true,
+    v40GFileDoubledRooksPenalty: -400000,   // Penalty when enemy rooks doubled on g-file
+    v40GFileQueenRookPenalty: -350000,      // Penalty for Q+R on g-file
+    v40OpenGFileTowardKingPenalty: -300000, // Penalty for moves that open g-file toward our king
+    
+    // v40.11: KINGSIDE ATTACK PATTERN RECOGNITION — Detect coordinated kingside attacks
+    v40KingsideAttackDetectionEnabled: true,
+    v40CoordinatedAttackPenalty: -500000,   // Penalty when Q+R+B all aimed at kingside
+    v40QueenOnGFilePenalty: -250000,        // Penalty for enemy queen on g-file
+    v40QueenInfiltrationG34Penalty: -350000, // Penalty for queen on g3/g4/h3/h4
+    v40PawnStormF5F4Penalty: -200000,       // Penalty when f5/f4 pawn storm detected
+    
+    // v40.11: PASSIVE QUEENSIDE MOVE PENALTY — Don't play a3/b3/c3 when under attack
+    v40PassiveQueensideMovePenalty: -300000, // Penalty for a3/b3/c3 when kingside under attack
+    v40ActiveDefenseBonus: 200000,          // Bonus for moves actively defending kingside
+    v40KingsidePriorityMultiplier: 3.0,     // Multiply kingside defense priority when under attack
+    
+    // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
+    v40BadExchangeFileOpeningEnabled: true,
+    v40OpenGFileByExchangePenalty: -350000, // Penalty for exchanges that open g-file
+    v40OpenHFileByExchangePenalty: -300000, // Penalty for exchanges that open h-file
+    v40OpenFileTowardKingPenalty: -250000,  // General penalty for opening files toward king
+    
+    // v40.11: QUEEN INFILTRATION ON KINGSIDE — Detect queen reaching dangerous squares
+    v40QueenKingsideInfiltrationEnabled: true,
+    v40QueenOnG3Penalty: -400000,           // Queen on g3 is extremely dangerous
+    v40QueenOnH3Penalty: -350000,           // Queen on h3 also dangerous
+    v40QueenOnG4Penalty: -300000,           // Queen on g4 attacking
+    v40QueenOnH4Penalty: -280000,           // Queen on h4 attacking
+    v40QueenAndRookOnGFilePenalty: -450000, // Q+R both on g-file = disaster
+    
+    // v40.11: PAWN STORM COUNTER — Detect and respond to f5/f4 pawn storms
+    v40PawnStormDetectionEnabled: true,
+    v40EnemyF4PawnPenalty: -150000,         // Enemy f4 pawn = attacking
+    v40EnemyF5PawnPenalty: -100000,         // Enemy f5 pawn = preparing storm
+    v40EnemyGPawnAdvancePenalty: -120000,   // Enemy g pawn advancing
+    v40EnemyHPawnAdvancePenalty: -100000,   // Enemy h pawn advancing
+    v40DefendAgainstPawnStormBonus: 180000, // Bonus for moves defending against storm
+    
+    // v40.11: DEFEND KINGSIDE PRIORITY — When under attack, prioritize defense
+    v40DefendKingsidePriorityEnabled: true,
+    v40MoveTowardKingBonus: 150000,         // Bonus for pieces moving to defend king
+    v40MoveAwayFromKingPenalty: -200000,    // Penalty for pieces moving away when under attack
+    v40BlockAttackingPieceBonus: 250000,    // Bonus for blocking attacking pieces
+    v40ExchangeAttackerBonus: 200000,       // Bonus for exchanging attacking pieces
+    
+    // v40.11: H-PAWN WEAKNESS DETECTION — h3/h6 pawn can become target
+    v40HPawnWeaknessEnabled: true,
+    v40WeakHPawnPenalty: -150000,           // Penalty for weak h3/h6 pawn
+    v40HPawnTargetedPenalty: -200000,       // Penalty when h-pawn is targeted
+    v40HPawnFallsScore: -300000,            // Score when h-pawn falls
+    
+    // v40.11: G-PAWN WEAKNESS DETECTION — g3/g6 pawn can become target  
+    v40GPawnWeaknessEnabled: true,
+    v40WeakGPawnPenalty: -180000,           // Penalty for weak g3/g6 pawn
+    v40GPawnTargetedPenalty: -220000,       // Penalty when g-pawn is targeted
+    v40GPawnFallsScore: -350000,            // Score when g-pawn falls
+    
+    // v40.11: 100% TRANSCENDENT SUPREME DOMINANCE
+    v40TranscendentSupremeDominance: 1.0,   // 100% v40 dominance
+};"
+Observation: Edit was successful.

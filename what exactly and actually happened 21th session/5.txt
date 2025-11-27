@@ -1,0 +1,21 @@
+Now let me find a good location to add the v40.11 functions. Let me look for where the v40.10 functions end:
+Action: $ grep -n "v40.10 Helper\|v40.10 Helper:\|v40MatingAttackAwarenessEval\|canQueenAttackSquare" "/app/Lichess Bot-AlphaZero-Pure.user.js" | tail -20
+Observation: 7301:            if (canQueenAttackSquare(enemyQueen, rookSq, simBoard)) {
+7329:function canQueenAttackSquare(queenSq, targetSq, board) {
+8127:            if (canQueenAttackSquare(enemyQueen, target, simBoard)) {
+8164:                if (canQueenAttackSquare(enemyQueen, target, simBoard)) {
+8166:                    if (canQueenAttackSquare(target, ourKing, simBoard)) {
+10624:function v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) {
+10647:                    if (canQueenAttackSquare(board, qSquare, zoneSquare)) {
+10739: * v40.10 Helper: Check if bishop can reach a target square (diagonal check)
+10755: * v40.10 Helper: Check if knight can reach a target square
+10771: * v40.10 Helper: Find all pieces of a specific type and color
+10791: * v40.10 Helper: Count defenders of a square
+10811: * v40.10 Helper: Count attackers of a square
+10831: * v40.10 Helper: Check if a piece can attack a target square
+10883: * v40.10 Helper: Check if path is blocked between two squares
+10910: * v40.10 Helper: Get king zone squares (3x3 around king + extended)
+10932: * v40.10 Helper: Check if queen can attack a square
+10934:function canQueenAttackSquare(board, queenSquare, targetSquare) {
+26179:                const matingAttackScore = v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) * 2.5;
+Exit code: 0

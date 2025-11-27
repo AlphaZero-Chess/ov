@@ -1,0 +1,66 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1318|    
+1319|    // ═══════════════════════════════════════════════════════════════════════════════
+1320|    // v40.10 GODLIKE: ABSOLUTE OPENING ENFORCEMENT & SACRIFICIAL PATTERN DETECTION
+1321|    // From latest loss: Bot played d3 AGAIN! Also missed Bxh2+ Greek Gift sacrifice
+1322|    // This is the FINAL fix - bot will NEVER play d3 when d4 is possible again
+1323|    // ═══════════════════════════════════════════════════════════════════════════════
+1324|    
+1325|    // v40.10: ABSOLUTE D4>D3 ENFORCEMENT — FINAL FIX
+1326|    v40AbsoluteOpeningEnforcementEnabled: true,
+1327|    v40D3WhenD4PossiblePenalty: -1000000,   // ABSOLUTE DEATH PENALTY for d3 when d4 is possible
+1328|    v40E3WhenE4PossiblePenalty: -1000000,   // Same for e3 when e4 possible
+1329|    v40D4BonusMultiplier: 100000,           // MASSIVE bonus for playing d4
+1330|    v40E4BonusMultiplier: 100000,           // Same for e4
+1331|    
+1332|    // v40.10: GREEK GIFT SACRIFICE DEFENSE — Detect Bxh2+/Bxh7+ patterns
+1333|    v40GreekGiftDefenseEnabled: true,
+1334|    v40GreekGiftThreatPenalty: -500000,     // Penalty for allowing Greek Gift
+1335|    v40GreekGiftPreventionBonus: 200000,    // Bonus for moves preventing Greek Gift
+1336|    v40GreekGiftDetectionDepth: 4,          // Look 4 moves ahead for sacrifice
+1337|    
+1338|    // v40.10: KING HUNT DETECTION — Detect when king is being hunted
+1339|    v40KingHuntDetectionEnabled: true,
+1340|    v40KingHuntPenalty: -400000,            // Penalty when king is being hunted
+1341|    v40KingEscapeBonus: 300000,             // Bonus for moves helping king escape
+1342|    v40KingExposedThreatMultiplier: 3.0,    // Multiply threats when king exposed
+1343|    
+1344|    // v40.10: SACRIFICIAL ATTACK PATTERN RECOGNITION
+1345|    v40SacrificialPatternEnabled: true,
+1346|    v40SacrificeOnKingsidePenalty: -300000, // Penalty for allowing kingside sacrifice
+1347|    v40SacrificeOnQueensidePenalty: -200000, // Penalty for allowing queenside sacrifice
+1348|    v40PawnStormDefenseBonus: 150000,       // Bonus for defending against pawn storms
+1349|    
+1350|    // v40.10: CRITICAL EXCHANGE EVALUATION — Don't centralize enemy pieces
+1351|    v40CriticalExchangeEnabled: true,
+1352|    v40ExchangeCentralizeEnemyPenalty: -150000, // Penalty for exchanges that centralize enemy
+1353|    v40ExchangeDecentralizeOwnPenalty: -100000, // Penalty for exchanges that decentralize our pieces
+1354|    v40GoodExchangeBonus: 80000,            // Bonus for favorable exchanges
+1355|    
+1356|    // v40.10: MATING ATTACK AWARENESS — Detect impending mating attacks
+1357|    v40MatingAttackAwarenessEnabled: true,
+1358|    v40MatingAttackPenalty: -600000,        // Penalty when mating attack developing
+1359|    v40MatingDefenseBonus: 400000,          // Bonus for moves that defend against mate
+1360|    v40LooseKingPenalty: -250000,           // Penalty for exposed king
+1361|    
+1362|    // v40.10: 100% GODLIKE DOMINANCE — v40 is now ABSOLUTELY GODLIKE
+1363|    v40GodlikeDominance: 1.0,               // 100% v40 dominance (up from 99%)
+1364|};
+1365|
+1366|// ═══════════════════════════════════════════════════════════════════════
+1367|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1368|// ═══════════════════════════════════════════════════════════════════════
+1369|
+1370|/**
+1371| * v37: TRUE MCTS Node structure for proper tree search
+1372| */
+1373|class MCTSNode {
+1374|    constructor(move, parent = null, prior = 1.0) {
+1375|        this.move = move;
+1376|        this.parent = parent;
+1377|        this.children = new Map();
+1378|        this.visits = 0;
+1379|        this.totalValue = 0;
+1380|        this.prior = prior;           // Policy prior (P)
