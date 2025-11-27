@@ -1,0 +1,6 @@
+Now I need to integrate these v40.16 functions into the main evaluation. Let me find where the v40.15 functions are called:
+Action: $ cd /app && grep -n "prophylaxisMoveScore\|piecePreservationScore + allPiecesSafetyScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 30111:                const prophylaxisMoveScore = v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+30149:                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore;
+30179:                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ ProphylaxisMove: ${prophylaxisMoveScore.toFixed(1)}`);
+Exit code: 0

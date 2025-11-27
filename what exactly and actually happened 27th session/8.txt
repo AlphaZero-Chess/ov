@@ -1,0 +1,59 @@
+Now I'll implement v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME. First, let me add the CONFIG values:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.15: 100% PIECE PRESERVATION SUPREME DOMINANCE
+    v40PiecePreservationDominance: 1.0,             // 100% v40.15 influence
+};" --new-str "    // v40.15: 100% PIECE PRESERVATION SUPREME DOMINANCE
+    v40PiecePreservationDominance: 1.0,             // 100% v40.15 influence
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME: NEVER ALLOW KINGSIDE DESTRUCTION
+    // From game analysis: Bot played Bxf6 gxf6 opening g-file toward castled king!
+    // Then allowed f5-f4-fxg3 pawn storm destroying entire kingside!
+    // Solution: ABSOLUTE REJECTION of any move that opens files toward our king
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.16: FILE OPENING TOWARD KING — CATASTROPHIC PENALTY
+    v40FileOpeningTowardKingEnabled: true,
+    v40OpenGFileTowardKingPenalty: -15000000,       // NEVER open g-file toward castled king
+    v40OpenHFileTowardKingPenalty: -12000000,       // NEVER open h-file toward castled king
+    v40OpenFFileTowardKingPenalty: -10000000,       // NEVER open f-file toward castled king
+    v40ExchangeOpensFileTowardKingPenalty: -20000000, // Bxf6 gxf6 type disasters
+    
+    // v40.16: PAWN STORM DETECTION — See it BEFORE it destroys you
+    v40PawnStormDetectionEnabled: true,
+    v40EnemyPawnStormAdvancingPenalty: -3000000,    // f5-f4 type pawn storms
+    v40PawnStormCanCaptureOurPawnPenalty: -8000000, // fxg3 type captures
+    v40PawnStormOpensFilesPenalty: -12000000,       // Storm opens files toward king
+    v40MultiPawnStormPenalty: -5000000,             // Multiple pawns storming
+    
+    // v40.16: QUEEN INFILTRATION PATH — See Qg4-Qxg3-Qh3 paths
+    v40QueenInfiltrationPathEnabled: true,
+    v40QueenCanReachG3Penalty: -4000000,            // Enemy queen can reach g3
+    v40QueenCanReachH3Penalty: -5000000,            // Enemy queen can reach h3
+    v40QueenInfiltrationSequencePenalty: -8000000,  // Complete infiltration sequence visible
+    v40QueenNearKingPenalty: -3000000,              // Enemy queen within 2 squares of king
+    
+    // v40.16: 3-PLY DEEP LOOK-AHEAD — Simulate our move, opponent's best, our response
+    v40DeepLookAheadEnabled: true,
+    v40DeepLookAheadDepth: 3,                       // 3 half-moves minimum
+    v40DeepLookAheadBadResultPenalty: -6000000,     // If we're worse after 3 plies
+    v40DeepLookAheadMaterialLossPenalty: -10000000, // If we lose material in 3 plies
+    v40DeepLookAheadCheckmateThreatPenalty: -50000000, // If checkmate possible in 3 plies
+    
+    // v40.16: KINGSIDE PAWN SHELTER — Never allow destruction
+    v40KingsidePawnShelterEnabled: true,
+    v40GFilePawnMissingPenalty: -2000000,           // g-pawn missing = weakness
+    v40HFilePawnMissingPenalty: -1500000,           // h-pawn missing = weakness
+    v40FFilePawnMissingPenalty: -1000000,           // f-pawn missing = weakness
+    v40KingsidePawnsAdvancedPenalty: -800000,       // Pawns advanced = weak
+    v40AllKingsidePawnsMissingPenalty: -20000000,   // Catastrophic!
+    
+    // v40.16: FORCING LINE REJECTION — Reject moves that allow forcing sequences
+    v40ForcingLineRejectionEnabled: true,
+    v40ForcingLineLeadsToMatePenalty: -100000000,   // Reject if mate in line
+    v40ForcingLineLosesMaterialPenalty: -15000000,  // Reject if loses material
+    v40ForcingLineRuinsPositionPenalty: -8000000,   // Reject if ruins position
+    
+    // v40.16: 100% CATASTROPHIC KINGSIDE DEFENSE SUPREME DOMINANCE
+    v40CatastrophicKingsideDefenseDominance: 1.0,   // 100% v40.16 influence
+};"
+Observation: Edit was successful.

@@ -1,0 +1,74 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13830|            }
+13831|            
+13832|            // Big bonus if ALL valuable pieces are defended
+13833|            if (['q', 'r', 'b', 'n'].includes(pieceType) && isDefended) {
+13834|                defensiveValue += CONFIG.v40MaintainDefenseBonus / 5 || 40000;
+13835|            }
+13836|        }
+13837|        
+13838|        score += defensiveValue;
+13839|        
+13840|    } catch (e) {
+13841|        debugLog("[V40.15_PROPH]", `Error: ${e.message}`);
+13842|    }
+13843|    
+13844|    return score;
+13845|}
+13846|
+13847|// ═══════════════════════════════════════════════════════════════════════════════
+13848|
+13849|/**
+13850| * v40.9 Helper: Find all attacked pieces for a color
+13851| */
+13852|function findAttackedPiecesV40_9(board, color) {
+13853|    const attacked = [];
+13854|    const isWhite = color === 'w';
+13855|    const enemyColor = isWhite ? 'b' : 'w';
+13856|    
+13857|    for (const [square, piece] of board) {
+13858|        if (!piece) continue;
+13859|        const pieceIsWhite = piece === piece.toUpperCase();
+13860|        if (pieceIsWhite !== isWhite) continue;
+13861|        
+13862|        const pieceType = piece.toLowerCase();
+13863|        if (pieceType === 'k') continue;  // King attacks handled separately
+13864|        
+13865|        // Check if this square is attacked by enemy
+13866|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+13867|            // Check if it's adequately defended
+13868|            const isDefended = isSquareDefendedByColor(board, square, color);
+13869|            
+13870|            // If attacked by something of lower value, still need to consider
+13871|            const attackers = findAttackersOfSquare(board, square, enemyColor);
+13872|            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+13873|            const ourPieceValue = getPieceValueSimple(pieceType);
+13874|            
+13875|            // Consider it under attack if:
+13876|            // 1. Not defended at all, or
+13877|            // 2. Attacker is of lower value than our piece
+13878|            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+13879|                attacked.push({
+13880|                    square,
+13881|                    piece,
+13882|                    value: ourPieceValue,
+13883|                    lowestAttackerValue
+13884|                });
+13885|            }
+13886|        }
+13887|    }
+13888|    
+13889|    // Sort by piece value (highest first - queen, then rook, etc.)
+13890|    attacked.sort((a, b) => b.value - a.value);
+13891|    
+13892|    return attacked;
+13893|}
+13894|
+13895|/**
+13896| * v40.9 Helper: Find all hanging pieces (attacked and not defended)
+13897| */
+13898|function findHangingPiecesV40_9(board, color) {
+13899|    const hanging = [];
+13900|    const isWhite = color === 'w';

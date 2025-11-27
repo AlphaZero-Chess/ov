@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -n "v40PiecePreservationDominance: 1.0" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 1607:    v40PiecePreservationDominance: 1.0,             // 100% v40.15 influence
+Exit code: 0

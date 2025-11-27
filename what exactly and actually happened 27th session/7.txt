@@ -1,0 +1,54 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1600|    v40HighValuePieceTakeablePenalty: -2000000,     // Extreme penalty for takeable bishop/knight/rook/queen
+1601|    
+1602|    // v40.15: PROPHYLAXIS — Prefer moves that prevent threats
+1603|    v40ProphylaxisBonus: 100000,                    // Bonus for moves that prevent future captures
+1604|    v40DefendThreatenedPieceBonus: 400000,          // Big bonus for defending attacked pieces
+1605|    
+1606|    // v40.15: 100% PIECE PRESERVATION SUPREME DOMINANCE
+1607|    v40PiecePreservationDominance: 1.0,             // 100% v40.15 influence
+1608|};
+1609|
+1610|// ═══════════════════════════════════════════════════════════════════════
+1611|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1612|// ═══════════════════════════════════════════════════════════════════════
+1613|
+1614|/**
+1615| * v37: TRUE MCTS Node structure for proper tree search
+1616| */
+1617|class MCTSNode {
+1618|    constructor(move, parent = null, prior = 1.0) {
+1619|        this.move = move;
+1620|        this.parent = parent;
+1621|        this.children = new Map();
+1622|        this.visits = 0;
+1623|        this.totalValue = 0;
+1624|        this.prior = prior;           // Policy prior (P)
+1625|        this.virtualLoss = 0;
+1626|        this.isExpanded = false;
+1627|        this.isTerminal = false;
+1628|        this.depth = parent ? parent.depth + 1 : 0;
+1629|    }
+1630|    
+1631|    get value() {
+1632|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1633|    }
+1634|    
+1635|    get ucb1Score() {
+1636|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1637|        
+1638|        const exploitation = this.value;
+1639|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+1640|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+1641|        
+1642|        return exploitation + exploration;
+1643|    }
+1644|    
+1645|    get puctScore() {
+1646|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1647|        
+1648|        const Q = this.value;
+1649|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+1650|            Math.sqrt(this.parent.visits) / (1 + this.visits);

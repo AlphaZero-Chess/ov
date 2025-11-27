@@ -1,0 +1,5 @@
+Now let me add debug logging for v40.16 scores:
+Action: $ cd /app && grep -n "SUPERHUMAN BEAST v40.15\|ProphylaxisMove:" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 30180:                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.15 PIECE PRESERVATION SUPREME EVALUATION`);
+30206:                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ ProphylaxisMove: ${prophylaxisMoveScore.toFixed(1)}`);
+Exit code: 0

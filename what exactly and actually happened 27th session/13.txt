@@ -1,0 +1,59 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30105|                const piecePreservationScore = v40PiecePreservationEval(fen, move, board, activeColor, moveNumber) * 8.0;
+30106|                
+30107|                // v40.15: ALL PIECES SAFETY CHECK — Ensure ALL pieces are safe after move
+30108|                const allPiecesSafetyScore = v40AllPiecesSafetyCheck(fen, move, board, activeColor, moveNumber) * 6.0;
+30109|                
+30110|                // v40.15: PROPHYLAXIS MOVE — Bonus for moves that maintain defense
+30111|                const prophylaxisMoveScore = v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+30112|                
+30113|                // v40.15: COMBINED v40 SCORE — 100% PIECE PRESERVATION SUPREME INFLUENCE
+30114|                // This makes v40 the ABSOLUTE PIECE PRESERVATION SUPREME factor
+30115|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+30116|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+30117|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+30118|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+30119|                               counterattackBonus + initiativePreservationBonus +
+30120|                               // v40.4 additions:
+30121|                               openingPrinciplesScore + discoveredAttackPenalty + 
+30122|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+30123|                               // v40.5 additions:
+30124|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+30125|                               // v40.6 ULTIMATE additions:
+30126|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+30127|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+30128|                               // v40.7 DIVINE additions:
+30129|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+30130|                               // v40.8 TRANSCENDENT additions:
+30131|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+30132|                               counterplayGenScore + centralControlSupremeScore +
+30133|                               // v40.9 OMNISCIENT additions:
+30134|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+30135|                               // v40.10 GODLIKE additions:
+30136|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+30137|                               // v40.11 TRANSCENDENT SUPREME additions:
+30138|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+30139|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+30140|                               // v40.12 PROACTIVE SUPREME additions:
+30141|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+30142|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+30143|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+30144|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+30145|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+30146|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+30147|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+30148|                               // v40.15 PIECE PRESERVATION SUPREME additions:
+30149|                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore;
+30150|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
+30151|                
+30152|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+30153|                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.15 PIECE PRESERVATION SUPREME EVALUATION`);
+30154|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+30155|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+30156|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+30157|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+30158|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+30159|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+30160|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);

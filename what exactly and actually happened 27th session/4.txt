@@ -1,0 +1,3 @@
+
+Action: $ cd /app && node --check "Lichess Bot-AlphaZero-Pure.user.js" 2>&1
+Observation: Exit code: 0

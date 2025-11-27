@@ -1,0 +1,4 @@
+
+Action: $ cd /app && wc -l "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 31770 Lichess Bot-AlphaZero-Pure.user.js
+Exit code: 0

@@ -1,0 +1,5 @@
+Now let me find where to add the v40.16 functions (after v40.15 functions):
+Action: $ cd /app && grep -n "v40ProphylaxisMoveEval\|// v40.9 Helper" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 13793:function v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) {
+29181:                const prophylaxisMoveScore = v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+Exit code: 0
