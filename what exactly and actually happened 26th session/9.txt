@@ -1,0 +1,46 @@
+Now let me add a v40.15 enhancement to penalize any move that allows even exchanges. Let me find where to add the new CONFIG and functions:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1568|    
+1569|    // v40.14: FAIL-SAFE REJECTION OF BLUNDERS
+1570|    v40FailSafeBlunderRejectionEnabled: true,
+1571|    v40BlunderScoreThreshold: -1000000,             // Any move with score below this is REJECTED
+1572|    
+1573|    // v40.14: 100% ABSOLUTE ZERO BLUNDER SUPREME DOMINANCE
+1574|    v40AbsoluteZeroBlunderDominance: 1.0,           // 100% v40.14 dominance
+1575|};
+1576|
+1577|// ═══════════════════════════════════════════════════════════════════════
+1578|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1579|// ═══════════════════════════════════════════════════════════════════════
+1580|
+1581|/**
+1582| * v37: TRUE MCTS Node structure for proper tree search
+1583| */
+1584|class MCTSNode {
+1585|    constructor(move, parent = null, prior = 1.0) {
+1586|        this.move = move;
+1587|        this.parent = parent;
+1588|        this.children = new Map();
+1589|        this.visits = 0;
+1590|        this.totalValue = 0;
+1591|        this.prior = prior;           // Policy prior (P)
+1592|        this.virtualLoss = 0;
+1593|        this.isExpanded = false;
+1594|        this.isTerminal = false;
+1595|        this.depth = parent ? parent.depth + 1 : 0;
+1596|    }
+1597|    
+1598|    get value() {
+1599|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1600|    }
+1601|    
+1602|    get ucb1Score() {
+1603|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1604|        
+1605|        const exploitation = this.value;
+1606|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+1607|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+1608|        
+1609|        return exploitation + exploration;
+1610|    }

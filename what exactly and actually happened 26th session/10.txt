@@ -1,0 +1,48 @@
+Now let me add the v40.15 CONFIG values and implement the PIECE PRESERVATION functions:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.14: FAIL-SAFE REJECTION OF BLUNDERS
+    v40FailSafeBlunderRejectionEnabled: true,
+    v40BlunderScoreThreshold: -1000000,             // Any move with score below this is REJECTED
+    
+    // v40.14: 100% ABSOLUTE ZERO BLUNDER SUPREME DOMINANCE
+    v40AbsoluteZeroBlunderDominance: 1.0,           // 100% v40.14 dominance
+};" --new-str "    // v40.14: FAIL-SAFE REJECTION OF BLUNDERS
+    v40FailSafeBlunderRejectionEnabled: true,
+    v40BlunderScoreThreshold: -1000000,             // Any move with score below this is REJECTED
+    
+    // v40.14: 100% ABSOLUTE ZERO BLUNDER SUPREME DOMINANCE
+    v40AbsoluteZeroBlunderDominance: 1.0,           // 100% v40.14 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.15 PIECE PRESERVATION SUPREME: DON'T ALLOW UNNECESSARY EXCHANGES
+    // From game analysis: Bot played Qb1 allowing Nxd3 (even exchange)
+    // Better was Qe2 which DEFENDS the bishop - piece preservation priority!
+    // Solution: PENALIZE moves that allow opponent to capture ANY of our pieces
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.15: PIECE PRESERVATION — Avoid moves that allow trades
+    v40PiecePreservationEnabled: true,
+    v40AllowExchangePenalty: -400000,               // Penalty for allowing any exchange
+    v40AllowMinorExchangePenalty: -500000,          // Penalty for allowing bishop/knight exchange
+    v40AllowRookExchangePenalty: -700000,           // Penalty for allowing rook exchange
+    v40AllowQueenExchangePenalty: -1000000,         // Penalty for allowing queen exchange
+    v40UnforcedExchangePenalty: -600000,            // Extra penalty if exchange was avoidable
+    
+    // v40.15: DEFENSE PRIORITY — Bonus for moves that maintain piece defense
+    v40MaintainDefenseBonus: 200000,                // Bonus for keeping pieces defended
+    v40AddDefenderBonus: 150000,                    // Bonus for adding defender to attacked piece
+    v40RemoveDefenderPenalty: -300000,              // Penalty for removing defender from piece
+    
+    // v40.15: PIECE SAFETY EVALUATION — Comprehensive piece safety
+    v40PieceSafetyCheckEnabled: true,
+    v40AnyPieceUnderAttackPenalty: -250000,         // Penalty for each undefended piece under attack
+    v40PieceCanBeTakenPenalty: -1200000,            // Severe penalty if ANY piece can be taken
+    v40HighValuePieceTakeablePenalty: -2000000,     // Extreme penalty for takeable bishop/knight/rook/queen
+    
+    // v40.15: PROPHYLAXIS — Prefer moves that prevent threats
+    v40ProphylaxisBonus: 100000,                    // Bonus for moves that prevent future captures
+    v40DefendThreatenedPieceBonus: 400000,          // Big bonus for defending attacked pieces
+    
+    // v40.15: 100% PIECE PRESERVATION SUPREME DOMINANCE
+    v40PiecePreservationDominance: 1.0,             // 100% v40.15 influence
+};"
+Observation: Edit was successful.

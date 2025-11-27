@@ -1,0 +1,278 @@
+Now let me add the v40.15 functions after the v40FailSafeBlunderCheck:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        return { isBlunder: false, score: 0 };
+        
+    } catch (e) {
+        debugLog(\"[V40.14_FAILSAFE]\", `Error: ${e.message}`);
+        return { isBlunder: false, score: 0 };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════" --new-str "        return { isBlunder: false, score: 0 };
+        
+    } catch (e) {
+        debugLog(\"[V40.14_FAILSAFE]\", `Error: ${e.message}`);
+        return { isBlunder: false, score: 0 };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.15 PIECE PRESERVATION SUPREME: DON'T ALLOW UNNECESSARY EXCHANGES
+// From game analysis: Bot played Qb1 allowing Nxd3 (even exchange)
+// Better was Qe2 which DEFENDS the bishop - piece preservation priority!
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.15 PIECE PRESERVATION: Check if move allows opponent to capture any piece
+ * Even if recapturable, we should prefer moves that DON'T allow trades
+ */
+function v40PiecePreservationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PiecePreservationEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        const weCapture = afterMove.get(toSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // What we captured (if anything)
+        const weCapturedValue = weCapture ? getPieceValueSimple(weCapture.toLowerCase()) : 0;
+        
+        // Find ALL pieces of ours that opponent can capture after our move
+        let totalThreatValue = 0;
+        let threatenedPieces = [];
+        
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue;
+            
+            const pieceValue = getPieceValueSimple(pieceType);
+            
+            // Is this piece attacked by enemy?
+            const isAttacked = isSquareAttackedByColor(afterMove, sq, enemyColor);
+            
+            if (isAttacked) {
+                // Check if defended
+                const isDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+                
+                // Find lowest value attacker
+                const attackers = findAttackersOfSquare(afterMove, sq, enemyColor);
+                let lowestAttackerValue = 999;
+                if (attackers.length > 0) {
+                    lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+                }
+                
+                if (!isDefended) {
+                    // UNDEFENDED PIECE UNDER ATTACK - Very bad!
+                    totalThreatValue += pieceValue;
+                    threatenedPieces.push({ sq, type: pieceType, value: pieceValue, undefended: true });
+                    
+                    score += CONFIG.v40PieceCanBeTakenPenalty || -1200000;
+                    if (['n', 'b', 'r', 'q'].includes(pieceType)) {
+                        score += CONFIG.v40HighValuePieceTakeablePenalty || -2000000;
+                    }
+                    debugLog(\"[V40.15_PRESERVE]\", `☠️ After ${move}, ${pieceType.toUpperCase()} on ${sq} CAN BE TAKEN (undefended)!`);
+                } else {
+                    // Defended but attacked - opponent can still trade
+                    // This is the key fix: penalize allowing ANY exchange
+                    if (lowestAttackerValue <= pieceValue) {
+                        // Opponent can profitably attack or trade
+                        const exchangePenalty = pieceType === 'q' ? CONFIG.v40AllowQueenExchangePenalty :
+                                               pieceType === 'r' ? CONFIG.v40AllowRookExchangePenalty :
+                                               ['n', 'b'].includes(pieceType) ? CONFIG.v40AllowMinorExchangePenalty :
+                                               CONFIG.v40AllowExchangePenalty;
+                        
+                        score += exchangePenalty || -400000;
+                        threatenedPieces.push({ sq, type: pieceType, value: pieceValue, undefended: false });
+                        debugLog(\"[V40.15_PRESERVE]\", `⚠️ After ${move}, opponent can trade for ${pieceType.toUpperCase()} on ${sq}`);
+                    }
+                }
+            }
+        }
+        
+        // SPECIAL: Check if we removed a defender from any piece
+        // Compare which pieces were defended BEFORE and are not defended AFTER
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (sq === toSquare) continue; // Skip the piece we're moving
+            if (sq === fromSquare) continue; // This square is now empty
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue;
+            
+            const wasDefended = isSquareDefendedByColor(board, sq, activeColor);
+            const isNowDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+            
+            if (wasDefended && !isNowDefended) {
+                // We removed a defender!
+                const isNowAttacked = isSquareAttackedByColor(afterMove, sq, enemyColor);
+                if (isNowAttacked) {
+                    const pieceValue = getPieceValueSimple(pieceType);
+                    score += CONFIG.v40RemoveDefenderPenalty * (pieceValue / 3) || -300000;
+                    debugLog(\"[V40.15_PRESERVE]\", `⚠️ Move ${move} removes defender from ${pieceType.toUpperCase()} on ${sq}!`);
+                }
+            }
+        }
+        
+        // BONUS: Check if our move ADDS defense to an attacked piece
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (sq === toSquare) continue;
+            
+            const wasAttacked = isSquareAttackedByColor(board, sq, enemyColor);
+            const wasDefended = isSquareDefendedByColor(board, sq, activeColor);
+            const isNowDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+            
+            if (wasAttacked && !wasDefended && isNowDefended) {
+                // We just defended an attacked piece!
+                score += CONFIG.v40DefendThreatenedPieceBonus || 400000;
+                debugLog(\"[V40.15_PRESERVE]\", `✅ Move ${move} DEFENDS attacked piece on ${sq}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.15_PRESERVE]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.15 PIECE SAFETY: Comprehensive check for all pieces' safety after move
+ * Returns penalty based on how many of our pieces are under threat
+ */
+function v40AllPiecesSafetyCheck(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PieceSafetyCheckEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Count how many of our pieces are attackable after this move
+        let attackableCount = 0;
+        let undefendedAttackableCount = 0;
+        
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue;
+            
+            const isAttacked = isSquareAttackedByColor(afterMove, sq, enemyColor);
+            const isDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+            
+            if (isAttacked) {
+                attackableCount++;
+                if (!isDefended) {
+                    undefendedAttackableCount++;
+                    const pieceValue = getPieceValueSimple(pieceType);
+                    score += CONFIG.v40AnyPieceUnderAttackPenalty * (pieceValue / 3) || -250000;
+                }
+            }
+        }
+        
+        // Severe penalty if we have multiple undefended pieces under attack
+        if (undefendedAttackableCount >= 2) {
+            score += -500000 * undefendedAttackableCount;
+            debugLog(\"[V40.15_SAFETY]\", `☠️ DANGER: ${undefendedAttackableCount} undefended pieces under attack after ${move}!`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.15_SAFETY]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.15 PROPHYLAXIS: Bonus for moves that prevent future threats
+ * Especially important for moves that keep pieces defended
+ */
+function v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PiecePreservationEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Check if our move maintains or improves defense of our pieces
+        let defensiveValue = 0;
+        
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (sq === toSquare) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue;
+            
+            const isAttacked = isSquareAttackedByColor(afterMove, sq, enemyColor);
+            const isDefended = isSquareDefendedByColor(afterMove, sq, activeColor);
+            
+            // Bonus if piece is defended when attacked
+            if (isAttacked && isDefended) {
+                defensiveValue += getPieceValueSimple(pieceType) * 10000;
+            }
+            
+            // Big bonus if ALL valuable pieces are defended
+            if (['q', 'r', 'b', 'n'].includes(pieceType) && isDefended) {
+                defensiveValue += CONFIG.v40MaintainDefenseBonus / 5 || 40000;
+            }
+        }
+        
+        score += defensiveValue;
+        
+    } catch (e) {
+        debugLog(\"[V40.15_PROPH]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════"
+Observation: Edit was successful.

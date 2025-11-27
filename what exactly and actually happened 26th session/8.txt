@@ -1,0 +1,84 @@
+Now I understand the issue better. The problem is the bot doesn't penalize moves that allow even exchanges when better alternatives exist. Let me implement v40.15 with **PIECE PRESERVATION PRIORITY**:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13420|
+13421|/**
+13422| * v40.14 ABSOLUTE ZERO BLUNDER: FAIL-SAFE BLUNDER REJECTION
+13423| * The FINAL safety check before committing to any move
+13424| * If this function returns true, the move MUST be rejected
+13425| */
+13426|function v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber) {
+13427|    if (!CONFIG.v40FailSafeBlunderRejectionEnabled) return { isBlunder: false, score: 0 };
+13428|    
+13429|    try {
+13430|        const fromSquare = move.substring(0, 2);
+13431|        const toSquare = move.substring(2, 4);
+13432|        const movingPiece = board.get(fromSquare);
+13433|        
+13434|        if (!movingPiece) return { isBlunder: false, score: 0 };
+13435|        
+13436|        const movingPieceType = movingPiece.toLowerCase();
+13437|        const movingPieceValue = getPieceValueSimple(movingPieceType);
+13438|        const isWhite = activeColor === 'w';
+13439|        const enemyColor = isWhite ? 'b' : 'w';
+13440|        
+13441|        // Simulate the move
+13442|        const simBoard = new Map(board);
+13443|        simBoard.delete(fromSquare);
+13444|        simBoard.set(toSquare, movingPiece);
+13445|        
+13446|        // CHECK 1: Is our moved piece IMMEDIATELY capturable by pawn?
+13447|        const pawnAttackers = findPawnAttacksOnSquare(simBoard, toSquare, enemyColor);
+13448|        if (pawnAttackers.length > 0) {
+13449|            const isDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+13450|            if (!isDefended || movingPieceValue > 1) {
+13451|                return {
+13452|                    isBlunder: true,
+13453|                    score: CONFIG.v40PieceOnPawnAttackedSquarePenalty || -8000000,
+13454|                    reason: `${movingPieceType.toUpperCase()} on ${toSquare} attacked by pawn on ${pawnAttackers[0]}`
+13455|                };
+13456|            }
+13457|        }
+13458|        
+13459|        // CHECK 2: Is our moved piece IMMEDIATELY capturable by any piece?
+13460|        const isAttacked = isSquareAttackedByColor(simBoard, toSquare, enemyColor);
+13461|        const isDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+13462|        
+13463|        if (isAttacked && !isDefended && movingPieceValue > 0) {
+13464|            return {
+13465|                isBlunder: true,
+13466|                score: -movingPieceValue * 1000000,
+13467|                reason: `${movingPieceType.toUpperCase()} on ${toSquare} is undefended and attacked`
+13468|            };
+13469|        }
+13470|        
+13471|        // CHECK 3: Does our move leave another piece hanging?
+13472|        for (const [sq, piece] of simBoard) {
+13473|            if (!piece) continue;
+13474|            const pieceIsWhite = piece === piece.toUpperCase();
+13475|            if (pieceIsWhite !== isWhite) continue;
+13476|            if (sq === toSquare) continue;
+13477|            
+13478|            const pieceType = piece.toLowerCase();
+13479|            if (pieceType === 'k') continue;
+13480|            
+13481|            const wasDefended = isSquareDefendedByColor(board, sq, activeColor);
+13482|            const isNowDefended = isSquareDefendedByColor(simBoard, sq, activeColor);
+13483|            const isUnderAttack = isSquareAttackedByColor(simBoard, sq, enemyColor);
+13484|            
+13485|            if (wasDefended && !isNowDefended && isUnderAttack) {
+13486|                const pieceValue = getPieceValueSimple(pieceType);
+13487|                return {
+13488|                    isBlunder: true,
+13489|                    score: -pieceValue * 800000,
+13490|                    reason: `${move} leaves ${pieceType.toUpperCase()} on ${sq} hanging`
+13491|                };
+13492|            }
+13493|        }
+13494|        
+13495|        return { isBlunder: false, score: 0 };
+13496|        
+13497|    } catch (e) {
+13498|        debugLog("[V40.14_FAILSAFE]", `Error: ${e.message}`);
+13499|        return { isBlunder: false, score: 0 };
+13500|    }

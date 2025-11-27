@@ -1,0 +1,205 @@
+The structure looks correct. Now, let me analyze what's happening. Based on the latest game, the bot is still making blunders. Let me think about the key issue:
+
+Looking at the user's latest game:
+```
+1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Nf3 Nf6 5. Bd3 Bg4 6. c3 e6 7. Be3 Bd6 
+8. O-O O-O 9. Nbd2 Nc6 10. Qc2 Rc8 11. Rad1 Nb4 12. Qb1 Nxd3 13. Qxd3 Qb6 
+```
+
+Looking at move 12: `Qb1` - This is strange because it doesn't address the Nb4 threat. The knight on b4 is attacking the queen on c2. So the bot moves the queen to b1, but then black plays `Nxd3` taking the bishop!
+
+The issue is that the bot didn't see that after Qb1, the knight can take the bishop for free. Let me implement an even more aggressive blunder prevention system. The core issue seems to be:
+
+1. The bot is not properly considering ALL pieces that can be captured after its move
+2. The evaluation is not detecting the sequence Qb1 → Nxd3 (knight takes undefended bishop)
+
+Let me add a v40.15 ULTRA-AGGRESSIVE blunder prevention that checks EVERY piece after each move:
+Action: Analyzing the game deeply:
+
+Looking at the game: 
+1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Nf3 Nf6 5. Bd3 Bg4 6. c3 e6 7. Be3 Bd6 
+8. O-O O-O 9. Nbd2 Nc6 10. Qc2 Rc8 11. Rad1 Nb4 12. Qb1 Nxd3 13. Qxd3 Qb6 
+
+Move 11: Rad1 (ok)
+Move 12: Qb1?? - Black has Nb4 attacking the queen. The bot plays Qb1 to move the queen. But wait - the knight on b4 can ALSO attack the bishop on d3! So after Qb1, black plays Nxd3 and captures the bishop.
+
+The existing v40LookAheadBlunderCheck should catch this! After Qb1:
+- simBoard has queen on b1 (moved from c2)
+- simBoard has bishop on d3
+- findAllCaptures should find that Nb4 can capture on d3
+- The capture should be detected
+
+But maybe the issue is:
+1. Is the board state correct when passed to the function?
+2. Is the knight on b4 actually being seen?
+
+Let me check if there's an issue with how the knight's moves are calculated. Looking at getPossibleMovesForPiece for knight:
+- knightDeltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]
+
+If knight is on b4 (file 1, rank 3 in 0-indexed), the targets are:
+- b4 → a2 (file -2, rank -1 = file -1, rank 2)
+- b4 → c2 (file +2, rank -1 = file 3, rank 2)
+- b4 → a6 (file -2, rank +1 = file -1, rank 4) - out of bounds
+- b4 → c6 (file +2, rank +1 = file 3, rank 4)
+- b4 → d5 (file +1, rank +2 = file 2, rank 5)
+- b4 → d3 (file +1, rank -2 = file 2, rank 1)  <-- THIS IS THE KEY ONE!
+
+Wait, b4 in 0-indexed:
+- file b = 1
+- rank 4 = 3 (0-indexed)
+
+Knight delta [2,-1] gives:
+- newFile = 1 + 2 = 3 (d)
+- newRank = 3 + (-1) = 2 (3 in 1-indexed)
+So target is d3!
+
+But wait, let me check the code again for getPossibleMovesForPiece:
+```
+const fromRank = parseInt(fromSquare[1]) - 1;
+```
+So for b4, fromRank = 4 - 1 = 3 ✓
+
+For [2,-1]:
+- newFile = 1 + 2 = 3
+- newRank = 3 + (-1) = 2
+- sq = 'd' + (2+1) = 'd3' ✓
+
+That's correct! So the knight CAN reach d3.
+
+The issue must be somewhere else. Let me check if there's a problem with the board state or if the CONFIG flags are disabled.
+
+Actually, I think I see a potential issue. Let me check how the v40LookAheadBlunderCheck handles the case where the piece being captured is NOT the one we just moved.
+
+In v40LookAheadBlunderCheck:
+1. We simulate our move (Qb1)
+2. We find all opponent captures
+3. For each capture, we check if it's capturing OUR piece
+
+The problem might be that the bishop on d3 was ALWAYS there - it wasn't "newly" exposed. The function should still catch it because it checks ALL our pieces that opponent can capture.
+
+Let me verify by looking at the capture detection:
+```javascript
+for (const capture of opponentCaptures) {
+    ...
+    const capturedPiece = afterOurMove.get(captureTo);
+    ...
+    // Is the captured piece OURS?
+    const capturedIsWhite = capturedPiece === capturedPiece.toUpperCase();
+    if (capturedIsWhite !== isWhite) continue; // Not our piece
+```
+
+Here's the issue: `if (capturedIsWhite !== isWhite) continue;`
+
+If we're white (isWhite = true) and capturedPiece is 'B' (white bishop), then:
+- capturedIsWhite = true (because 'B' === 'B'.toUpperCase())
+- capturedIsWhite !== isWhite → true !== true → false
+- So we DON'T skip, we process it ✓
+
+That's correct. But let me think again...
+
+Oh wait, there might be a subtle bug. Let me trace through:
+
+We're white, so isWhite = true, enemyColor = 'b'.
+
+We find opponent (black) captures. The knight on b4 is black, so it's found. It can capture on d3 where there's a white bishop.
+
+In the loop:
+- capturingPiece = 'n' (black knight)
+- capturedPiece = afterOurMove.get('d3') = 'B' (white bishop)
+
+Check: Is the captured piece OURS?
+- capturedIsWhite = 'B' === 'B'.toUpperCase() = true
+- if (capturedIsWhite !== isWhite) continue;
+- if (true !== true) continue; → false, so we DON'T skip ✓
+
+Then we check if it's recapturable. If Bd3 is not defended after the knight takes it, we apply the penalty.
+
+Let me check isRecapturable:
+```javascript
+const afterCapture = new Map(afterOurMove);
+afterCapture.delete(captureFrom); // Remove knight from b4
+afterCapture.set(captureTo, capturingPiece); // Put knight on d3
+const isRecapturable = isSquareAttackedByColor(afterCapture, captureTo, activeColor);
+```
+
+Wait, there's an issue! capturingPiece is 'n' (lowercase), but this is BLACK's knight. So we're putting 'n' on d3.
+
+But then we check `isSquareAttackedByColor(afterCapture, 'd3', 'w')` - can WHITE attack d3?
+
+After Qxd3, the queen CAN recapture! So isRecapturable would be true.
+
+Oh that's the problem. The code considers that after Nxd3, white can play Qxd3 to recapture. But wait - if the queen is on b1 (after Qb1), can the queen reach d3?
+
+Queen on b1:
+- Diagonals: a2, c2, d3! ✓
+
+So the queen CAN reach d3 from b1 diagonally. So after Nxd3, Qxd3 IS possible. So isRecapturable = true.
+
+But this is a BAD exchange! The knight (worth ~3) captured the bishop (worth ~3), and then the queen (worth ~9) takes the knight. Net material is even (we lose bishop, they lose knight), but the position evaluation doesn't penalize this enough.
+
+Actually wait - in terms of pure material:
+- Black captures Bishop (3 points)
+- White recaptures Knight (3 points)
+- Net = 0
+
+So it's actually even material-wise. But the bot shouldn't be putting pieces where they can be captured even if recapturable.
+
+Looking at the code again:
+```javascript
+if (!isRecapturable) {
+    // FREE CAPTURE - CATASTROPHIC BLUNDER!
+    const penalty = ...
+} else {
+    // Check if it's a bad exchange (opponent captures with lower value)
+    if (capturingValue < capturedValue) {
+        const materialLoss = capturedValue - capturingValue;
+        score += -materialLoss * 500000;
+    }
+}
+```
+
+The problem is: When knight (3) captures bishop (3), capturingValue (3) is NOT less than capturedValue (3), so no penalty is applied!
+
+This is a design issue. The code only penalizes when we LOSE material in the exchange, but Nxd3 Qxd3 is an even exchange. The bot doesn't understand that it shouldn't allow the bishop to be taken even for an even exchange unless there's a reason.
+
+Actually, wait. Looking at the game again:
+12. Qb1 Nxd3 13. Qxd3
+
+So after Qb1, black plays Nxd3, and white recaptures with Qxd3. Material is even. The bot played correctly by recapturing.
+
+The real question is: was Qb1 a bad move? Before Qb1:
+- Queen was on c2
+- Knight was on b4 attacking the queen
+- Bishop was on d3
+
+The queen HAD to move because it was attacked by the knight. So the bot moved to b1. But after Qb1, the knight can take the bishop.
+
+Wait, could the queen have gone to a different square that ALSO defends d3?
+
+Let me think about queen moves from c2:
+- Qa4, Qb3, Qc1, Qd1 (blocked?), Qe2, Qf5?, Qg6?, etc.
+
+From c2, can the queen go somewhere that:
+1. Gets away from Nb4's attack
+2. Also defends d3
+
+Qe2 - is e2 attacked by Nb4? No. Does Qe2 defend d3? Queen on e2 looks at d1, d2, d3 diagonally. Yes! Qe2 defends d3!
+
+So the better move was Qe2, not Qb1!
+
+The bot's evaluation of Qb1 should be lower than Qe2 because:
+- After Qb1, opponent can play Nxd3 (even if Qxd3 recaptures, we've allowed an exchange)
+- After Qe2, the bishop is still defended
+
+So the issue is that the bot's evaluation doesn't properly penalize moves that allow even exchanges when a better alternative exists.
+
+Actually, I think the real issue is that the bot doesn't VALUE piece protection enough. When evaluating moves, it should prefer moves that KEEP pieces defended rather than allowing trades.
+
+Let me implement a v40.15 enhancement that:
+1. Heavily penalizes any move that allows opponent to capture our piece (even if recapturable)
+2. Gives bonus for moves that maintain piece defense
+3. Checks if there's a BETTER alternative that keeps pieces safe
+
+This is getting complex. For now, let me add a simple fix: penalize ANY exchange that wasn't initiated by us.
+
+Observation: Your thought has been logged.

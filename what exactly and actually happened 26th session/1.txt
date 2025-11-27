@@ -1,0 +1,12 @@
+
+Action: $ cd /app && grep -n "v40LookAheadBlunderCheck\|v40TripleCheckBlunderVerification\|v40FailSafeBlunderCheck" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 1547:    v40LookAheadBlunderCheckEnabled: true,
+13099:function v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) {
+13100:    if (!CONFIG.v40LookAheadBlunderCheckEnabled) return 0;
+13386:function v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) {
+13396:            const lookAheadBlunder = v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber);
+13426:function v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber) {
+28811:                const lookAheadBlunderScore = v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) * 10.0;
+28814:                const tripleCheckScore = v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) * 5.0;
+28817:                const failSafeCheck = v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber);
+Exit code: 0

@@ -1,0 +1,104 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+29050|                // From French Defense loss: Bot played Bxf6 allowing gxf6 opening g-file
+29051|                // v40.11 was REACTIVE - v40.12 is PROACTIVE - prevents setup!
+29052|                // ═══════════════════════════════════════════════════════════════════
+29053|                
+29054|                // v40.12: PROPHYLACTIC EXCHANGE — Don't open files toward king!
+29055|                const prophylacticExchangeScore = v40ProphylacticExchangeEval(fen, move, board, activeColor, moveNumber) * 3.0;
+29056|                
+29057|                // v40.12: PAWN STORM ANTICIPATION — See storm BEFORE it arrives
+29058|                const pawnStormAnticipationScore = v40PawnStormAnticipationEval(fen, move, board, activeColor, moveNumber) * 2.5;
+29059|                
+29060|                // v40.12: DON'T CREATE WEAKNESSES — h3/g3 under attack is FATAL
+29061|                const dontCreateWeaknessesScore = v40DontCreateWeaknessesEval(fen, move, board, activeColor, moveNumber) * 3.0;
+29062|                
+29063|                // v40.12: PRESERVE KING SHELTER — Keep defenders near king
+29064|                const preserveKingShelterScore = v40PreserveKingShelterEval(fen, move, board, activeColor, moveNumber) * 2.5;
+29065|                
+29066|                // v40.12: ATTACK TRAJECTORY — See where pieces are AIMING
+29067|                const attackTrajectoryScore = v40AttackTrajectoryEval(fen, move, board, activeColor, moveNumber) * 2.0;
+29068|                
+29069|                // v40.12: QUEEN TRAP PREVENTION — Drive away infiltrating queen
+29070|                const queenTrapPreventionScore = v40QueenTrapPreventionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+29071|                
+29072|                // ═══════════════════════════════════════════════════════════════════
+29073|                // v40.13 ULTIMATE TACTICAL SUPREME: ZERO BLUNDER TACTICAL SYSTEM
+29074|                // From latest game: Bot played Bd3 allowing exd3, queen ate EVERYTHING
+29075|                // This is THE MOST CRITICAL FIX - ABSOLUTE ZERO simple tactical blunders!
+29076|                // ═══════════════════════════════════════════════════════════════════
+29077|                
+29078|                // v40.13: IMMEDIATE MATERIAL LOSS — Check if move loses material IMMEDIATELY
+29079|                const immediateMaterialLossScore = v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber) * 5.0;
+29080|                
+29081|                // v40.13: CAPTURE CHAIN ANALYSIS — Calculate result of capture sequences
+29082|                const captureChainScore = v40CaptureChainAnalysisEval(fen, move, board, activeColor, moveNumber) * 3.0;
+29083|                
+29084|                // v40.13: QUEEN INFILTRATION ABSOLUTE — Don't let queen eat pieces freely
+29085|                const queenInfiltrationAbsoluteScore = v40QueenInfiltrationAbsoluteEval(fen, move, board, activeColor, moveNumber) * 4.0;
+29086|                
+29087|                // v40.13: PRE-MOVE SAFETY CHECK — Comprehensive safety verification
+29088|                const preMoveSafetyScore = v40PreMoveSafetyCheckEval(fen, move, board, activeColor, moveNumber) * 4.0;
+29089|                
+29090|                // v40.13: OPENING BLUNDER PREVENTION — No blunders in opening
+29091|                const openingBlunderScore = v40OpeningBlunderPreventionEval(fen, move, board, activeColor, moveNumber) * 3.5;
+29092|                
+29093|                // v40.13: SIMPLE THREAT DETECTION — Don't miss simple threats
+29094|                const simpleThreatScore = v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) * 3.0;
+29095|                
+29096|                // ═══════════════════════════════════════════════════════════════════
+29097|                // v40.14 ABSOLUTE ZERO BLUNDER SUPREME: THE FINAL SAFETY NET
+29098|                // From game analysis: Bot played Bd3 where exd3 captures bishop
+29099|                // These functions LOOK AHEAD and REJECT ANY MOVE where opponent captures
+29100|                // ═══════════════════════════════════════════════════════════════════
+29101|                
+29102|                // v40.14: LOOK-AHEAD BLUNDER CHECK — Simulate opponent's best response
+29103|                const lookAheadBlunderScore = v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) * 10.0;
+29104|                
+29105|                // v40.14: TRIPLE-CHECK VERIFICATION — Run blunder check 3 times
+29106|                const tripleCheckScore = v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) * 5.0;
+29107|                
+29108|                // v40.14: FAIL-SAFE BLUNDER REJECTION — Final safety check
+29109|                const failSafeCheck = v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber);
+29110|                const failSafeScore = failSafeCheck.isBlunder ? failSafeCheck.score * 10.0 : 0;
+29111|                
+29112|                if (failSafeCheck.isBlunder) {
+29113|                    debugLog("[V40.14_FAILSAFE]", `☠️☠️☠️ FAIL-SAFE TRIGGERED: ${move} is a BLUNDER! Reason: ${failSafeCheck.reason}`);
+29114|                }
+29115|                
+29116|                // v40.14: COMBINED v40 SCORE — 100% ABSOLUTE ZERO BLUNDER SUPREME INFLUENCE
+29117|                // This makes v40 the ABSOLUTE ZERO BLUNDER SUPREME factor
+29118|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+29119|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+29120|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+29121|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+29122|                               counterattackBonus + initiativePreservationBonus +
+29123|                               // v40.4 additions:
+29124|                               openingPrinciplesScore + discoveredAttackPenalty + 
+29125|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+29126|                               // v40.5 additions:
+29127|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+29128|                               // v40.6 ULTIMATE additions:
+29129|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+29130|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+29131|                               // v40.7 DIVINE additions:
+29132|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+29133|                               // v40.8 TRANSCENDENT additions:
+29134|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+29135|                               counterplayGenScore + centralControlSupremeScore +
+29136|                               // v40.9 OMNISCIENT additions:
+29137|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+29138|                               // v40.10 GODLIKE additions:
+29139|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+29140|                               // v40.11 TRANSCENDENT SUPREME additions:
+29141|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+29142|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+29143|                               // v40.12 PROACTIVE SUPREME additions:
+29144|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+29145|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+29146|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+29147|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+29148|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+29149|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+29150|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore;

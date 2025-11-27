@@ -1,0 +1,110 @@
+Good, the FEN parsing looks correct. Now let me analyze what's happening with the latest game. The issue is likely one of:
+
+1. The function returns early due to an error
+2. The penalties are not strong enough relative to other bonuses
+3. Some code path is not detecting the issue
+
+Let me look at the evaluation score integration to understand how the final score is computed:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28800|                
+28801|                // v40.13: SIMPLE THREAT DETECTION — Don't miss simple threats
+28802|                const simpleThreatScore = v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) * 3.0;
+28803|                
+28804|                // ═══════════════════════════════════════════════════════════════════
+28805|                // v40.14 ABSOLUTE ZERO BLUNDER SUPREME: THE FINAL SAFETY NET
+28806|                // From game analysis: Bot played Bd3 where exd3 captures bishop
+28807|                // These functions LOOK AHEAD and REJECT ANY MOVE where opponent captures
+28808|                // ═══════════════════════════════════════════════════════════════════
+28809|                
+28810|                // v40.14: LOOK-AHEAD BLUNDER CHECK — Simulate opponent's best response
+28811|                const lookAheadBlunderScore = v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) * 10.0;
+28812|                
+28813|                // v40.14: TRIPLE-CHECK VERIFICATION — Run blunder check 3 times
+28814|                const tripleCheckScore = v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) * 5.0;
+28815|                
+28816|                // v40.14: FAIL-SAFE BLUNDER REJECTION — Final safety check
+28817|                const failSafeCheck = v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber);
+28818|                const failSafeScore = failSafeCheck.isBlunder ? failSafeCheck.score * 10.0 : 0;
+28819|                
+28820|                if (failSafeCheck.isBlunder) {
+28821|                    debugLog("[V40.14_FAILSAFE]", `☠️☠️☠️ FAIL-SAFE TRIGGERED: ${move} is a BLUNDER! Reason: ${failSafeCheck.reason}`);
+28822|                }
+28823|                
+28824|                // v40.14: COMBINED v40 SCORE — 100% ABSOLUTE ZERO BLUNDER SUPREME INFLUENCE
+28825|                // This makes v40 the ABSOLUTE ZERO BLUNDER SUPREME factor
+28826|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+28827|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+28828|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+28829|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+28830|                               counterattackBonus + initiativePreservationBonus +
+28831|                               // v40.4 additions:
+28832|                               openingPrinciplesScore + discoveredAttackPenalty + 
+28833|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+28834|                               // v40.5 additions:
+28835|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+28836|                               // v40.6 ULTIMATE additions:
+28837|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+28838|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+28839|                               // v40.7 DIVINE additions:
+28840|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+28841|                               // v40.8 TRANSCENDENT additions:
+28842|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+28843|                               counterplayGenScore + centralControlSupremeScore +
+28844|                               // v40.9 OMNISCIENT additions:
+28845|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+28846|                               // v40.10 GODLIKE additions:
+28847|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+28848|                               // v40.11 TRANSCENDENT SUPREME additions:
+28849|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+28850|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+28851|                               // v40.12 PROACTIVE SUPREME additions:
+28852|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+28853|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+28854|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+28855|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+28856|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+28857|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+28858|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore;
+28859|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
+28860|                
+28861|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+28862|                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.14 ABSOLUTE ZERO BLUNDER SUPREME EVALUATION`);
+28863|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+28864|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+28865|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+28866|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+28867|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+28868|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+28869|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+28870|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+28871|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+28872|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+28873|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+28874|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+28875|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+28876|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+28877|                debugLog("[V40_INTEGRATE]", `   ⭐ ImmediateMaterialLoss: ${immediateMaterialLossScore.toFixed(1)}`);
+28878|                debugLog("[V40_INTEGRATE]", `   ⭐ CaptureChain: ${captureChainScore.toFixed(1)}`);
+28879|                debugLog("[V40_INTEGRATE]", `   ⭐ QueenInfiltrationAbsolute: ${queenInfiltrationAbsoluteScore.toFixed(1)}`);
+28880|                debugLog("[V40_INTEGRATE]", `   ⭐ PreMoveSafety: ${preMoveSafetyScore.toFixed(1)}`);
+28881|                debugLog("[V40_INTEGRATE]", `   ⭐ OpeningBlunder: ${openingBlunderScore.toFixed(1)}`);
+28882|                debugLog("[V40_INTEGRATE]", `   ⭐ SimpleThreat: ${simpleThreatScore.toFixed(1)}`);
+28883|                debugLog("[V40_INTEGRATE]", `   🔥🔥 LookAheadBlunder: ${lookAheadBlunderScore.toFixed(1)}`);
+28884|                debugLog("[V40_INTEGRATE]", `   🔥🔥 TripleCheck: ${tripleCheckScore.toFixed(1)}`);
+28885|                debugLog("[V40_INTEGRATE]", `   🔥🔥 FailSafe: ${failSafeScore.toFixed(1)}`);
+28886|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+28887|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+28888|                debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
+28889|                debugLog("[V40_INTEGRATE]", `   MatingAttack: ${matingAttackScore.toFixed(1)}`);
+28890|                debugLog("[V40_INTEGRATE]", `   G-FILE ATTACK: ${gFileAttackScore.toFixed(1)}`);
+28891|                debugLog("[V40_INTEGRATE]", `   KINGSIDE ATTACK PATTERN: ${kingsideAttackPatternScore.toFixed(1)}`);
+28892|                debugLog("[V40_INTEGRATE]", `   PASSIVE QUEENSIDE: ${passiveQueensideScore.toFixed(1)}`);
+28893|                debugLog("[V40_INTEGRATE]", `   BAD EXCHANGE FILE: ${badExchangeFileScore.toFixed(1)}`);
+28894|                debugLog("[V40_INTEGRATE]", `   PAWN STORM: ${pawnStormScore.toFixed(1)}`);
+28895|                debugLog("[V40_INTEGRATE]", `   DEFEND KINGSIDE: ${defendKingsideScore.toFixed(1)}`);
+28896|                debugLog("[V40_INTEGRATE]", `   KINGSIDE PAWN WEAKNESS: ${kingsidePawnWeaknessScore.toFixed(1)}`);
+28897|                debugLog("[V40_INTEGRATE]", `   🆕 PROPHYLACTIC EXCHANGE: ${prophylacticExchangeScore.toFixed(1)}`);
+28898|                debugLog("[V40_INTEGRATE]", `   🆕 PAWN STORM ANTICIPATION: ${pawnStormAnticipationScore.toFixed(1)}`);
+28899|                debugLog("[V40_INTEGRATE]", `   🆕 DON'T CREATE WEAKNESSES: ${dontCreateWeaknessesScore.toFixed(1)}`);
+28900|                debugLog("[V40_INTEGRATE]", `   🆕 PRESERVE KING SHELTER: ${preserveKingShelterScore.toFixed(1)}`);

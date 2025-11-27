@@ -1,0 +1,96 @@
+Now let me add the v40.15 function calls and update the score integration:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                if (failSafeCheck.isBlunder) {
+                    debugLog(\"[V40.14_FAILSAFE]\", `☠️☠️☠️ FAIL-SAFE TRIGGERED: ${move} is a BLUNDER! Reason: ${failSafeCheck.reason}`);
+                }
+                
+                // v40.14: COMBINED v40 SCORE — 100% ABSOLUTE ZERO BLUNDER SUPREME INFLUENCE
+                // This makes v40 the ABSOLUTE ZERO BLUNDER SUPREME factor
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+                               // v40.6 ULTIMATE additions:
+                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+                               // v40.7 DIVINE additions:
+                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+                               // v40.8 TRANSCENDENT additions:
+                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+                               counterplayGenScore + centralControlSupremeScore +
+                               // v40.9 OMNISCIENT additions:
+                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+                               // v40.10 GODLIKE additions:
+                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+                               // v40.11 TRANSCENDENT SUPREME additions:
+                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+                               // v40.12 PROACTIVE SUPREME additions:
+                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+                               lookAheadBlunderScore + tripleCheckScore + failSafeScore;" --new-str "                if (failSafeCheck.isBlunder) {
+                    debugLog(\"[V40.14_FAILSAFE]\", `☠️☠️☠️ FAIL-SAFE TRIGGERED: ${move} is a BLUNDER! Reason: ${failSafeCheck.reason}`);
+                }
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.15 PIECE PRESERVATION SUPREME: DON'T ALLOW UNNECESSARY EXCHANGES
+                // From game analysis: Bot played Qb1 allowing Nxd3 (even exchange)
+                // Better was Qe2 which DEFENDS the bishop - piece preservation priority!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.15: PIECE PRESERVATION — Penalize moves that allow ANY trade
+                const piecePreservationScore = v40PiecePreservationEval(fen, move, board, activeColor, moveNumber) * 8.0;
+                
+                // v40.15: ALL PIECES SAFETY CHECK — Ensure ALL pieces are safe after move
+                const allPiecesSafetyScore = v40AllPiecesSafetyCheck(fen, move, board, activeColor, moveNumber) * 6.0;
+                
+                // v40.15: PROPHYLAXIS MOVE — Bonus for moves that maintain defense
+                const prophylaxisMoveScore = v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.15: COMBINED v40 SCORE — 100% PIECE PRESERVATION SUPREME INFLUENCE
+                // This makes v40 the ABSOLUTE PIECE PRESERVATION SUPREME factor
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+                               // v40.6 ULTIMATE additions:
+                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+                               // v40.7 DIVINE additions:
+                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+                               // v40.8 TRANSCENDENT additions:
+                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+                               counterplayGenScore + centralControlSupremeScore +
+                               // v40.9 OMNISCIENT additions:
+                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+                               // v40.10 GODLIKE additions:
+                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+                               // v40.11 TRANSCENDENT SUPREME additions:
+                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+                               // v40.12 PROACTIVE SUPREME additions:
+                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+                               // v40.15 PIECE PRESERVATION SUPREME additions:
+                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore;"
+Observation: Edit was successful.

@@ -1,0 +1,174 @@
+Let me see the full function and also check the findAllCaptures function:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13220|        // Check left-diagonal pawn position
+13221|        if (targetFile > 0) {
+13222|            const leftPawnSquare = String.fromCharCode(targetFile - 1 + 97) + pawnRank;
+13223|            const piece = board.get(leftPawnSquare);
+13224|            if (piece && piece.toLowerCase() === 'p') {
+13225|                const pieceIsWhite = piece === piece.toUpperCase();
+13226|                if (pieceIsWhite === isWhite) {
+13227|                    attackingPawns.push(leftPawnSquare);
+13228|                }
+13229|            }
+13230|        }
+13231|        
+13232|        // Check right-diagonal pawn position
+13233|        if (targetFile < 7) {
+13234|            const rightPawnSquare = String.fromCharCode(targetFile + 1 + 97) + pawnRank;
+13235|            const piece = board.get(rightPawnSquare);
+13236|            if (piece && piece.toLowerCase() === 'p') {
+13237|                const pieceIsWhite = piece === piece.toUpperCase();
+13238|                if (pieceIsWhite === isWhite) {
+13239|                    attackingPawns.push(rightPawnSquare);
+13240|                }
+13241|            }
+13242|        }
+13243|    }
+13244|    
+13245|    return attackingPawns;
+13246|}
+13247|
+13248|/**
+13249| * v40.14 Helper: Find ALL possible captures for a color
+13250| * Returns array of {from, to, piece} for each capture
+13251| */
+13252|function findAllCaptures(board, captureColor) {
+13253|    const captures = [];
+13254|    const isWhite = captureColor === 'w';
+13255|    
+13256|    for (const [fromSquare, piece] of board) {
+13257|        if (!piece) continue;
+13258|        const pieceIsWhite = piece === piece.toUpperCase();
+13259|        if (pieceIsWhite !== isWhite) continue;
+13260|        
+13261|        const pieceType = piece.toLowerCase();
+13262|        
+13263|        // Find all squares this piece can move to
+13264|        const possibleMoves = getPossibleMovesForPiece(fromSquare, piece, board);
+13265|        
+13266|        for (const toSquare of possibleMoves) {
+13267|            const targetPiece = board.get(toSquare);
+13268|            if (targetPiece) {
+13269|                // There's a piece on the target square
+13270|                const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+13271|                if (targetIsWhite !== isWhite) {
+13272|                    // It's an enemy piece - this is a capture!
+13273|                    captures.push({
+13274|                        from: fromSquare,
+13275|                        to: toSquare,
+13276|                        piece: piece
+13277|                    });
+13278|                }
+13279|            }
+13280|        }
+13281|    }
+13282|    
+13283|    return captures;
+13284|}
+13285|
+13286|/**
+13287| * v40.14 Helper: Get all possible moves for a piece
+13288| * Returns array of squares the piece can move to
+13289| */
+13290|function getPossibleMovesForPiece(fromSquare, piece, board) {
+13291|    const moves = [];
+13292|    const pieceType = piece.toLowerCase();
+13293|    const isWhite = piece === piece.toUpperCase();
+13294|    const fromFile = fromSquare.charCodeAt(0) - 97;
+13295|    const fromRank = parseInt(fromSquare[1]) - 1;
+13296|    
+13297|    switch (pieceType) {
+13298|        case 'p':
+13299|            // Pawn captures diagonally
+13300|            const pawnDir = isWhite ? 1 : -1;
+13301|            const captureRank = fromRank + pawnDir;
+13302|            if (captureRank >= 0 && captureRank <= 7) {
+13303|                if (fromFile > 0) {
+13304|                    moves.push(String.fromCharCode(fromFile - 1 + 97) + (captureRank + 1));
+13305|                }
+13306|                if (fromFile < 7) {
+13307|                    moves.push(String.fromCharCode(fromFile + 1 + 97) + (captureRank + 1));
+13308|                }
+13309|            }
+13310|            break;
+13311|            
+13312|        case 'n':
+13313|            // Knight moves
+13314|            const knightDeltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+13315|            for (const [df, dr] of knightDeltas) {
+13316|                const newFile = fromFile + df;
+13317|                const newRank = fromRank + dr;
+13318|                if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+13319|                    moves.push(String.fromCharCode(newFile + 97) + (newRank + 1));
+13320|                }
+13321|            }
+13322|            break;
+13323|            
+13324|        case 'b':
+13325|            // Bishop moves (diagonals)
+13326|            for (const [df, dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]) {
+13327|                for (let i = 1; i <= 7; i++) {
+13328|                    const newFile = fromFile + df * i;
+13329|                    const newRank = fromRank + dr * i;
+13330|                    if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) break;
+13331|                    const sq = String.fromCharCode(newFile + 97) + (newRank + 1);
+13332|                    moves.push(sq);
+13333|                    if (board.get(sq)) break; // Blocked
+13334|                }
+13335|            }
+13336|            break;
+13337|            
+13338|        case 'r':
+13339|            // Rook moves (files and ranks)
+13340|            for (const [df, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+13341|                for (let i = 1; i <= 7; i++) {
+13342|                    const newFile = fromFile + df * i;
+13343|                    const newRank = fromRank + dr * i;
+13344|                    if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) break;
+13345|                    const sq = String.fromCharCode(newFile + 97) + (newRank + 1);
+13346|                    moves.push(sq);
+13347|                    if (board.get(sq)) break; // Blocked
+13348|                }
+13349|            }
+13350|            break;
+13351|            
+13352|        case 'q':
+13353|            // Queen moves (diagonals + files + ranks)
+13354|            for (const [df, dr] of [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]) {
+13355|                for (let i = 1; i <= 7; i++) {
+13356|                    const newFile = fromFile + df * i;
+13357|                    const newRank = fromRank + dr * i;
+13358|                    if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) break;
+13359|                    const sq = String.fromCharCode(newFile + 97) + (newRank + 1);
+13360|                    moves.push(sq);
+13361|                    if (board.get(sq)) break; // Blocked
+13362|                }
+13363|            }
+13364|            break;
+13365|            
+13366|        case 'k':
+13367|            // King moves (one square any direction)
+13368|            for (const [df, dr] of [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]) {
+13369|                const newFile = fromFile + df;
+13370|                const newRank = fromRank + dr;
+13371|                if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+13372|                    moves.push(String.fromCharCode(newFile + 97) + (newRank + 1));
+13373|                }
+13374|            }
+13375|            break;
+13376|    }
+13377|    
+13378|    return moves;
+13379|}
+13380|
+13381|/**
+13382| * v40.14 ABSOLUTE ZERO BLUNDER: TRIPLE-CHECK VERIFICATION
+13383| * Run the blunder check 3 times to ensure NO TACTICAL OVERSIGHTS
+13384| * If any check finds a blunder, REJECT the move
+13385| */
+13386|function v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) {
+13387|    if (!CONFIG.v40TripleCheckEnabled) return 0;
+13388|    
+13389|    let totalScore = 0;
+13390|    const passes = CONFIG.v40TripleCheckPasses || 3;

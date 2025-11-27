@@ -1,0 +1,125 @@
+The v40.14 functions have already been implemented. Let me analyze the latest game and deeply diagnose what's going wrong. Let me view the v40LookAheadBlunderCheck function:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13099|function v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) {
+13100|    if (!CONFIG.v40LookAheadBlunderCheckEnabled) return 0;
+13101|    
+13102|    let score = 0;
+13103|    const isWhite = activeColor === 'w';
+13104|    const enemyColor = isWhite ? 'b' : 'w';
+13105|    
+13106|    try {
+13107|        const fromSquare = move.substring(0, 2);
+13108|        const toSquare = move.substring(2, 4);
+13109|        const movingPiece = board.get(fromSquare);
+13110|        
+13111|        if (!movingPiece) return 0;
+13112|        
+13113|        const movingPieceType = movingPiece.toLowerCase();
+13114|        const movingPieceValue = getPieceValueSimple(movingPieceType);
+13115|        
+13116|        // Step 1: Simulate OUR move
+13117|        const afterOurMove = new Map(board);
+13118|        afterOurMove.delete(fromSquare);
+13119|        const capturedByUs = afterOurMove.get(toSquare);
+13120|        afterOurMove.set(toSquare, movingPiece);
+13121|        
+13122|        // Step 2: Find ALL possible opponent captures after our move
+13123|        const opponentCaptures = findAllCaptures(afterOurMove, enemyColor);
+13124|        
+13125|        // Step 3: Check each capture - is opponent capturing something for free?
+13126|        for (const capture of opponentCaptures) {
+13127|            const captureFrom = capture.from;
+13128|            const captureTo = capture.to;
+13129|            const capturingPiece = capture.piece;
+13130|            const capturedPiece = afterOurMove.get(captureTo);
+13131|            
+13132|            if (!capturedPiece) continue;
+13133|            
+13134|            const capturedType = capturedPiece.toLowerCase();
+13135|            const capturedValue = getPieceValueSimple(capturedType);
+13136|            const capturingType = capturingPiece.toLowerCase();
+13137|            const capturingValue = getPieceValueSimple(capturingType);
+13138|            
+13139|            // Is the captured piece OURS?
+13140|            const capturedIsWhite = capturedPiece === capturedPiece.toUpperCase();
+13141|            if (capturedIsWhite !== isWhite) continue; // Not our piece
+13142|            
+13143|            // Check if the capture square is defended after the capture
+13144|            const afterCapture = new Map(afterOurMove);
+13145|            afterCapture.delete(captureFrom);
+13146|            afterCapture.set(captureTo, capturingPiece);
+13147|            const isRecapturable = isSquareAttackedByColor(afterCapture, captureTo, activeColor);
+13148|            
+13149|            if (!isRecapturable) {
+13150|                // FREE CAPTURE - CATASTROPHIC BLUNDER!
+13151|                const penalty = capturedType === 'q' ? CONFIG.v40OpponentCapturesQueenPenalty :
+13152|                               capturedType === 'r' ? CONFIG.v40OpponentCapturesRookPenalty :
+13153|                               ['n', 'b'].includes(capturedType) ? CONFIG.v40OpponentCapturesMinorPenalty :
+13154|                               CONFIG.v40OpponentCapturesPawnPenalty;
+13155|                
+13156|                score += penalty || -5000000;
+13157|                debugLog("[V40.14_LOOKAHEAD]", `☠️☠️☠️ CATASTROPHIC BLUNDER: After ${move}, opponent plays ${captureFrom}${captureTo} capturing ${capturedType.toUpperCase()} for FREE!`);
+13158|                
+13159|                // SPECIFICALLY check if this is the piece we just moved
+13160|                if (captureTo === toSquare) {
+13161|                    // We just moved this piece and it gets captured FOR FREE!
+13162|                    score += CONFIG.v40PieceOnPawnAttackedSquarePenalty || -8000000;
+13163|                    debugLog("[V40.14_LOOKAHEAD]", `☠️☠️☠️☠️ ABSOLUTE DEATH: ${move} places ${movingPieceType.toUpperCase()} where it will be captured by ${capturingType.toUpperCase()}!`);
+13164|                }
+13165|            } else {
+13166|                // Check if it's a bad exchange (opponent captures with lower value)
+13167|                if (capturingValue < capturedValue) {
+13168|                    const materialLoss = capturedValue - capturingValue;
+13169|                    score += -materialLoss * 500000;
+13170|                    debugLog("[V40.14_LOOKAHEAD]", `⚠️ BAD EXCHANGE: After ${move}, opponent wins ${materialLoss} points of material`);
+13171|                }
+13172|            }
+13173|        }
+13174|        
+13175|        // Step 4: SPECIAL CHECK - Is our moved piece on a pawn-attacked square?
+13176|        // This is specifically for cases like Bd3 where the e-pawn takes
+13177|        const pawnAttacks = findPawnAttacksOnSquare(afterOurMove, toSquare, enemyColor);
+13178|        if (pawnAttacks.length > 0) {
+13179|            // Our piece is attacked by enemy pawn!
+13180|            const isDefended = isSquareDefendedByColor(afterOurMove, toSquare, activeColor);
+13181|            
+13182|            if (!isDefended) {
+13183|                // INSTANT DEATH - Piece on pawn-attacked undefended square
+13184|                score += CONFIG.v40PieceOnPawnAttackedSquarePenalty || -8000000;
+13185|                debugLog("[V40.14_LOOKAHEAD]", `☠️☠️☠️☠️ INSTANT DEATH: ${move} puts ${movingPieceType.toUpperCase()} on undefended pawn-attacked square!`);
+13186|                debugLog("[V40.14_LOOKAHEAD]", `   Attacked by pawn(s) on: ${pawnAttacks.join(', ')}`);
+13187|            } else if (movingPieceValue > 1) {
+13188|                // Even if defended, losing piece to pawn is terrible
+13189|                score += -movingPieceValue * 400000;
+13190|                debugLog("[V40.14_LOOKAHEAD]", `⚠️ DANGER: ${movingPieceType.toUpperCase()} on pawn-attacked square, even if defended this is risky!`);
+13191|            }
+13192|        }
+13193|        
+13194|    } catch (e) {
+13195|        debugLog("[V40.14_LOOKAHEAD]", `Error: ${e.message}`);
+13196|    }
+13197|    
+13198|    return score;
+13199|}
+13200|
+13201|/**
+13202| * v40.14 Helper: Find all pawn attacks on a specific square
+13203| * Returns array of squares where attacking pawns are
+13204| */
+13205|function findPawnAttacksOnSquare(board, targetSquare, attackingColor) {
+13206|    const attackingPawns = [];
+13207|    const isWhite = attackingColor === 'w';
+13208|    const pawnDirection = isWhite ? 1 : -1; // White pawns attack upward, black downward
+13209|    
+13210|    const targetFile = targetSquare.charCodeAt(0) - 97;
+13211|    const targetRank = parseInt(targetSquare[1]);
+13212|    
+13213|    // Check squares from which pawns could attack this target
+13214|    // For a pawn to attack targetSquare, it must be:
+13215|    // - On file +/- 1 from target
+13216|    // - On rank - pawnDirection (the rank "behind" from attacker's perspective)
+13217|    const pawnRank = targetRank - pawnDirection;
+13218|    
+13219|    if (pawnRank >= 1 && pawnRank <= 8) {
+13220|        // Check left-diagonal pawn position

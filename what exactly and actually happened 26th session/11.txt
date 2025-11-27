@@ -1,0 +1,59 @@
+Now let me add the v40.15 functions. Let me find where to add them:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+13495|        
+13496|        if (isAttacked && !isDefended && movingPieceValue > 0) {
+13497|            return {
+13498|                isBlunder: true,
+13499|                score: -movingPieceValue * 1000000,
+13500|                reason: `${movingPieceType.toUpperCase()} on ${toSquare} is undefended and attacked`
+13501|            };
+13502|        }
+13503|        
+13504|        // CHECK 3: Does our move leave another piece hanging?
+13505|        for (const [sq, piece] of simBoard) {
+13506|            if (!piece) continue;
+13507|            const pieceIsWhite = piece === piece.toUpperCase();
+13508|            if (pieceIsWhite !== isWhite) continue;
+13509|            if (sq === toSquare) continue;
+13510|            
+13511|            const pieceType = piece.toLowerCase();
+13512|            if (pieceType === 'k') continue;
+13513|            
+13514|            const wasDefended = isSquareDefendedByColor(board, sq, activeColor);
+13515|            const isNowDefended = isSquareDefendedByColor(simBoard, sq, activeColor);
+13516|            const isUnderAttack = isSquareAttackedByColor(simBoard, sq, enemyColor);
+13517|            
+13518|            if (wasDefended && !isNowDefended && isUnderAttack) {
+13519|                const pieceValue = getPieceValueSimple(pieceType);
+13520|                return {
+13521|                    isBlunder: true,
+13522|                    score: -pieceValue * 800000,
+13523|                    reason: `${move} leaves ${pieceType.toUpperCase()} on ${sq} hanging`
+13524|                };
+13525|            }
+13526|        }
+13527|        
+13528|        return { isBlunder: false, score: 0 };
+13529|        
+13530|    } catch (e) {
+13531|        debugLog("[V40.14_FAILSAFE]", `Error: ${e.message}`);
+13532|        return { isBlunder: false, score: 0 };
+13533|    }
+13534|}
+13535|
+13536|// ═══════════════════════════════════════════════════════════════════════════════
+13537|
+13538|/**
+13539| * v40.9 Helper: Find all attacked pieces for a color
+13540| */
+13541|function findAttackedPiecesV40_9(board, color) {
+13542|    const attacked = [];
+13543|    const isWhite = color === 'w';
+13544|    const enemyColor = isWhite ? 'b' : 'w';
+13545|    
+13546|    for (const [square, piece] of board) {
+13547|        if (!piece) continue;
+13548|        const pieceIsWhite = piece === piece.toUpperCase();
+13549|        if (pieceIsWhite !== isWhite) continue;
+13550|        
