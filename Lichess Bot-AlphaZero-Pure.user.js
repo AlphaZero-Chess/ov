@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.10 SUPERHUMAN BEAST GODLIKE
-// @description  TRUE AlphaZero Replica v40.10 GODLIKE - 100% v40 ABSOLUTE DOMINANCE - GREEK GIFT SACRIFICE DEFENSE - KING HUNT DETECTION - ABSOLUTE D4>D3 ENFORCEMENT - CRITICAL EXCHANGE EVALUATION - SACRIFICIAL ATTACK PATTERN RECOGNITION - MATING ATTACK AWARENESS - ATTACKED PIECE PRIORITY - PRE-MOVE THREAT SCAN - PIECE SAFETY ABSOLUTE - FORCED MOVE DETECTION - OPENING AGGRESSION (d4>d3) - EXCHANGE QUALITY - ACTIVE PIECE REQUIREMENT - COUNTERPLAY GENERATION - CENTRAL CONTROL SUPREME - RECAPTURE URGENCY - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
-// @author       AlphaZero TRUE REPLICA v40.10 SUPERHUMAN BEAST GODLIKE EDITION
-// @version      40.10.0-SUPERHUMAN-BEAST-GODLIKE
+// @name         Lichess Bot - TRUE ALPHAZERO v40.11 SUPERHUMAN BEAST TRANSCENDENT SUPREME
+// @description  TRUE AlphaZero Replica v40.11 TRANSCENDENT SUPREME - 100% v40 ABSOLUTE DOMINANCE - G-FILE ATTACK DETECTION - KINGSIDE ATTACK PATTERN RECOGNITION - PASSIVE QUEENSIDE MOVE PENALTY - BAD EXCHANGE FILE OPENING PREVENTION - PAWN STORM COUNTER - DEFEND KINGSIDE PRIORITY - KINGSIDE PAWN WEAKNESS DETECTION - GREEK GIFT SACRIFICE DEFENSE - KING HUNT DETECTION - ABSOLUTE D4>D3 ENFORCEMENT - 30-Pass Zero Blunder System - Perfect Positional Judgment - Alien Web-Weaving
+// @author       AlphaZero TRUE REPLICA v40.11 SUPERHUMAN BEAST TRANSCENDENT SUPREME EDITION
+// @version      40.11.0-SUPERHUMAN-BEAST-TRANSCENDENT-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -11,7 +11,7 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
- * v40.10.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — GODLIKE EDITION
+ * v40.11.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — TRANSCENDENT SUPREME EDITION
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 
  * ██████████████████████████████████████████████████████████████████████████████████████████
@@ -1361,6 +1361,75 @@ const CONFIG = {
     
     // v40.10: 100% GODLIKE DOMINANCE — v40 is now ABSOLUTELY GODLIKE
     v40GodlikeDominance: 1.0,               // 100% v40 dominance (up from 99%)
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN DETECTION
+    // From latest loss: Bot played Bxf6 opening g-file, allowed f5/f4 pawn storm,
+    // Queen infiltrated to g4/g3, rooks doubled on g-file - total kingside collapse!
+    // These fixes will make bot recognize and defend against coordinated attacks
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.11: G-FILE ATTACK DETECTION — Detect enemy rooks doubling on g-file
+    v40GFileAttackDetectionEnabled: true,
+    v40GFileDoubledRooksPenalty: -400000,   // Penalty when enemy rooks doubled on g-file
+    v40GFileQueenRookPenalty: -350000,      // Penalty for Q+R on g-file
+    v40OpenGFileTowardKingPenalty: -300000, // Penalty for moves that open g-file toward our king
+    
+    // v40.11: KINGSIDE ATTACK PATTERN RECOGNITION — Detect coordinated kingside attacks
+    v40KingsideAttackDetectionEnabled: true,
+    v40CoordinatedAttackPenalty: -500000,   // Penalty when Q+R+B all aimed at kingside
+    v40QueenOnGFilePenalty: -250000,        // Penalty for enemy queen on g-file
+    v40QueenInfiltrationG34Penalty: -350000, // Penalty for queen on g3/g4/h3/h4
+    v40PawnStormF5F4Penalty: -200000,       // Penalty when f5/f4 pawn storm detected
+    
+    // v40.11: PASSIVE QUEENSIDE MOVE PENALTY — Don't play a3/b3/c3 when under attack
+    v40PassiveQueensideMovePenalty: -300000, // Penalty for a3/b3/c3 when kingside under attack
+    v40ActiveDefenseBonus: 200000,          // Bonus for moves actively defending kingside
+    v40KingsidePriorityMultiplier: 3.0,     // Multiply kingside defense priority when under attack
+    
+    // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
+    v40BadExchangeFileOpeningEnabled: true,
+    v40OpenGFileByExchangePenalty: -350000, // Penalty for exchanges that open g-file
+    v40OpenHFileByExchangePenalty: -300000, // Penalty for exchanges that open h-file
+    v40OpenFileTowardKingPenalty: -250000,  // General penalty for opening files toward king
+    
+    // v40.11: QUEEN INFILTRATION ON KINGSIDE — Detect queen reaching dangerous squares
+    v40QueenKingsideInfiltrationEnabled: true,
+    v40QueenOnG3Penalty: -400000,           // Queen on g3 is extremely dangerous
+    v40QueenOnH3Penalty: -350000,           // Queen on h3 also dangerous
+    v40QueenOnG4Penalty: -300000,           // Queen on g4 attacking
+    v40QueenOnH4Penalty: -280000,           // Queen on h4 attacking
+    v40QueenAndRookOnGFilePenalty: -450000, // Q+R both on g-file = disaster
+    
+    // v40.11: PAWN STORM COUNTER — Detect and respond to f5/f4 pawn storms
+    v40PawnStormDetectionEnabled: true,
+    v40EnemyF4PawnPenalty: -150000,         // Enemy f4 pawn = attacking
+    v40EnemyF5PawnPenalty: -100000,         // Enemy f5 pawn = preparing storm
+    v40EnemyGPawnAdvancePenalty: -120000,   // Enemy g pawn advancing
+    v40EnemyHPawnAdvancePenalty: -100000,   // Enemy h pawn advancing
+    v40DefendAgainstPawnStormBonus: 180000, // Bonus for moves defending against storm
+    
+    // v40.11: DEFEND KINGSIDE PRIORITY — When under attack, prioritize defense
+    v40DefendKingsidePriorityEnabled: true,
+    v40MoveTowardKingBonus: 150000,         // Bonus for pieces moving to defend king
+    v40MoveAwayFromKingPenalty: -200000,    // Penalty for pieces moving away when under attack
+    v40BlockAttackingPieceBonus: 250000,    // Bonus for blocking attacking pieces
+    v40ExchangeAttackerBonus: 200000,       // Bonus for exchanging attacking pieces
+    
+    // v40.11: H-PAWN WEAKNESS DETECTION — h3/h6 pawn can become target
+    v40HPawnWeaknessEnabled: true,
+    v40WeakHPawnPenalty: -150000,           // Penalty for weak h3/h6 pawn
+    v40HPawnTargetedPenalty: -200000,       // Penalty when h-pawn is targeted
+    v40HPawnFallsScore: -300000,            // Score when h-pawn falls
+    
+    // v40.11: G-PAWN WEAKNESS DETECTION — g3/g6 pawn can become target  
+    v40GPawnWeaknessEnabled: true,
+    v40WeakGPawnPenalty: -180000,           // Penalty for weak g3/g6 pawn
+    v40GPawnTargetedPenalty: -220000,       // Penalty when g-pawn is targeted
+    v40GPawnFallsScore: -350000,            // Score when g-pawn falls
+    
+    // v40.11: 100% TRANSCENDENT SUPREME DOMINANCE
+    v40TranscendentSupremeDominance: 1.0,   // 100% v40 dominance
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -10882,6 +10951,659 @@ function canQueenAttackSquare(board, queenSquare, targetSquare) {
     }
     
     return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN DETECTION FUNCTIONS
+// From latest loss: Bxf6 opened g-file, f5/f4 pawn storm, Q to g4/g3 - total collapse!
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.11 TRANSCENDENT SUPREME: G-FILE ATTACK DETECTION
+ * Detects when enemy rooks are doubling on the g-file toward our king
+ * From French Defense loss: Rooks doubled on g-file, queen infiltrated - disaster!
+ */
+function v40GFileAttackDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40GFileAttackDetectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    const ourKingRank = isWhite ? '1' : '8';
+    const enemyRookChar = isWhite ? 'r' : 'R';
+    const enemyQueenChar = isWhite ? 'q' : 'Q';
+    
+    try {
+        // Find our king position
+        let ourKing = null;
+        for (const [sq, piece] of board) {
+            if (piece && piece.toLowerCase() === 'k') {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) {
+                    ourKing = sq;
+                    break;
+                }
+            }
+        }
+        
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 97; // 0-7
+        
+        // Check if king is on kingside (file e-h, or 4-7)
+        const kingOnKingside = kingFile >= 4;
+        
+        // Count enemy rooks and queen on g-file
+        let rooksOnGFile = 0;
+        let queenOnGFile = false;
+        let enemyRooksOnHFile = 0;
+        
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const file = sq[0];
+            
+            if (piece === enemyRookChar) {
+                if (file === 'g') rooksOnGFile++;
+                if (file === 'h') enemyRooksOnHFile++;
+            }
+            if (piece === enemyQueenChar && file === 'g') {
+                queenOnGFile = true;
+            }
+        }
+        
+        // PENALTY: Doubled rooks on g-file when king is castled kingside
+        if (rooksOnGFile >= 2 && kingOnKingside) {
+            score += CONFIG.v40GFileDoubledRooksPenalty || -400000;
+            debugLog("[V40.11_GFILE]", `🚨🚨 DOUBLED ROOKS ON G-FILE! King on ${ourKing}`);
+        }
+        
+        // PENALTY: Queen + Rook on g-file
+        if (queenOnGFile && rooksOnGFile >= 1 && kingOnKingside) {
+            score += CONFIG.v40GFileQueenRookPenalty || -350000;
+            debugLog("[V40.11_GFILE]", `🚨 Q+R on G-FILE attacking kingside!`);
+        }
+        
+        // PENALTY: Just queen on g-file near king
+        if (queenOnGFile && kingOnKingside) {
+            score += CONFIG.v40QueenOnGFilePenalty || -250000;
+            debugLog("[V40.11_GFILE]", `🚨 Enemy QUEEN on G-FILE!`);
+        }
+        
+        // CHECK IF THIS MOVE OPENS G-FILE TOWARD OUR KING
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        
+        // If we're moving a piece from g-file
+        if (fromSquare[0] === 'g' && kingOnKingside) {
+            const pawnOnG = board.get(`g${ourKingRank === '1' ? '2' : '7'}`);
+            const isGFilePawn = pawnOnG && pawnOnG.toLowerCase() === 'p';
+            
+            // If we're moving our g-pawn and it's an exchange (capture)
+            if (move.includes('x') || (board.has(toSquare) && board.get(toSquare))) {
+                // Check if this opens the g-file
+                score += CONFIG.v40OpenGFileTowardKingPenalty || -300000;
+                debugLog("[V40.11_GFILE]", `🚨 MOVE ${move} MAY OPEN G-FILE TOWARD KING!`);
+            }
+        }
+        
+        // BONUS: Moves that defend the g-file
+        if (toSquare[0] === 'g' && kingOnKingside) {
+            const movingPiece = board.get(fromSquare);
+            if (movingPiece && movingPiece.toLowerCase() === 'r') {
+                score += CONFIG.v40ActiveDefenseBonus || 200000;
+                debugLog("[V40.11_GFILE]", `✅ Rook to g-file for defense: ${move}`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.11_GFILE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN RECOGNITION
+ * Detects coordinated kingside attacks (Q+R+B or Q+2R aimed at king)
+ * From French Defense loss: Coordinated attack with Q on g4, R on g7/g8, B on f5
+ */
+function v40KingsideAttackPatternEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingsideAttackDetectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Find our king
+        let ourKing = null;
+        for (const [sq, piece] of board) {
+            if (piece && piece.toLowerCase() === 'k') {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) {
+                    ourKing = sq;
+                    break;
+                }
+            }
+        }
+        
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 97;
+        const kingRank = parseInt(ourKing[1]);
+        const kingOnKingside = kingFile >= 4;
+        
+        // Count attackers on kingside files (f, g, h)
+        let attackersOnFGH = 0;
+        let enemyQueenSquare = null;
+        let enemyBishopSquares = [];
+        let enemyRookSquares = [];
+        
+        const enemyPieces = isWhite ? ['q', 'r', 'b'] : ['Q', 'R', 'B'];
+        
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const file = sq[0];
+            const pieceIsWhite = piece === piece.toUpperCase();
+            
+            if (pieceIsWhite !== isWhite) { // Enemy piece
+                const pieceType = piece.toLowerCase();
+                
+                // Check if on kingside files (e, f, g, h)
+                if (['e', 'f', 'g', 'h'].includes(file)) {
+                    if (pieceType === 'q') {
+                        enemyQueenSquare = sq;
+                        attackersOnFGH++;
+                    } else if (pieceType === 'r') {
+                        enemyRookSquares.push(sq);
+                        attackersOnFGH++;
+                    } else if (pieceType === 'b') {
+                        enemyBishopSquares.push(sq);
+                        attackersOnFGH++;
+                    }
+                }
+            }
+        }
+        
+        // COORDINATED ATTACK: Q + R + B all on kingside
+        if (enemyQueenSquare && enemyRookSquares.length >= 1 && enemyBishopSquares.length >= 1 && kingOnKingside) {
+            score += CONFIG.v40CoordinatedAttackPenalty || -500000;
+            debugLog("[V40.11_KATTACK]", `🚨🚨🚨 COORDINATED KINGSIDE ATTACK: Q+R+B!`);
+        }
+        
+        // QUEEN INFILTRATION: Queen on g3, g4, h3, h4
+        if (enemyQueenSquare) {
+            const qFile = enemyQueenSquare[0];
+            const qRank = enemyQueenSquare[1];
+            
+            // Queen near our king on dangerous squares
+            if (enemyQueenSquare === 'g3' || enemyQueenSquare === 'g6') {
+                score += CONFIG.v40QueenOnG3Penalty || -400000;
+                debugLog("[V40.11_KATTACK]", `🚨🚨 QUEEN ON G3/G6 - CRITICAL DANGER!`);
+            }
+            if (enemyQueenSquare === 'h3' || enemyQueenSquare === 'h6') {
+                score += CONFIG.v40QueenOnH3Penalty || -350000;
+                debugLog("[V40.11_KATTACK]", `🚨 QUEEN ON H3/H6 - DANGER!`);
+            }
+            if (enemyQueenSquare === 'g4' || enemyQueenSquare === 'g5') {
+                score += CONFIG.v40QueenOnG4Penalty || -300000;
+                debugLog("[V40.11_KATTACK]", `🚨 QUEEN ON G4/G5 - ATTACKING!`);
+            }
+            if (enemyQueenSquare === 'h4' || enemyQueenSquare === 'h5') {
+                score += CONFIG.v40QueenOnH4Penalty || -280000;
+                debugLog("[V40.11_KATTACK]", `🚨 QUEEN ON H4/H5 - ATTACKING!`);
+            }
+        }
+        
+        // Queen + Rook both on g-file
+        if (enemyQueenSquare && enemyQueenSquare[0] === 'g') {
+            for (const rSq of enemyRookSquares) {
+                if (rSq[0] === 'g') {
+                    score += CONFIG.v40QueenAndRookOnGFilePenalty || -450000;
+                    debugLog("[V40.11_KATTACK]", `🚨🚨 Q+R BOTH ON G-FILE - DISASTER IMMINENT!`);
+                    break;
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.11_KATTACK]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.11 TRANSCENDENT SUPREME: PASSIVE QUEENSIDE MOVE PENALTY
+ * Don't play a3, b3, c3 when kingside is under attack!
+ * From French Defense loss: Bot played a3, b3, c3 while being attacked on kingside
+ */
+function v40PassiveQueensideMoveEval(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const pieceType = movingPiece.toLowerCase();
+        
+        // Check for passive pawn moves (a3, b3, c3 for white; a6, b6, c6 for black)
+        const passiveSquares = isWhite ? ['a3', 'b3', 'c3', 'a4'] : ['a6', 'b6', 'c6', 'a5'];
+        
+        if (pieceType === 'p' && passiveSquares.includes(toSquare)) {
+            // Check if kingside is under attack
+            const kingsideUnderAttack = isKingsideUnderAttack(board, activeColor);
+            
+            if (kingsideUnderAttack) {
+                score += CONFIG.v40PassiveQueensideMovePenalty || -300000;
+                debugLog("[V40.11_PASSIVE]", `🚨🚨 PASSIVE ${toSquare} WHILE KINGSIDE UNDER ATTACK!`);
+            }
+        }
+        
+        // Also penalize queenside piece moves when kingside attacked
+        if (['a', 'b', 'c'].includes(toSquare[0]) && pieceType !== 'k') {
+            const kingsideUnderAttack = isKingsideUnderAttack(board, activeColor);
+            
+            if (kingsideUnderAttack) {
+                const fromFile = fromSquare.charCodeAt(0) - 97;
+                const toFile = toSquare.charCodeAt(0) - 97;
+                
+                // Moving pieces AWAY from kingside while under attack
+                if (toFile < fromFile && ['n', 'b', 'q', 'r'].includes(pieceType)) {
+                    score += CONFIG.v40MoveAwayFromKingPenalty || -200000;
+                    debugLog("[V40.11_PASSIVE]", `🚨 Moving ${pieceType.toUpperCase()} AWAY from kingside during attack!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.11_PASSIVE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.11 TRANSCENDENT SUPREME: BAD EXCHANGE FILE OPENING DETECTION
+ * Don't make exchanges that open files toward your own king!
+ * From French Defense loss: Bxf6 gxf6 opened the g-file for Black's attack
+ */
+function v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40BadExchangeFileOpeningEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const targetPiece = board.get(toSquare);
+        
+        if (!movingPiece || !targetPiece) return 0;
+        
+        // Check if this is a capture
+        const movingType = movingPiece.toLowerCase();
+        const targetType = targetPiece.toLowerCase();
+        
+        // Find our king
+        let ourKing = null;
+        for (const [sq, piece] of board) {
+            if (piece && piece.toLowerCase() === 'k') {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) {
+                    ourKing = sq;
+                    break;
+                }
+            }
+        }
+        
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 97;
+        const captureFile = toSquare.charCodeAt(0) - 97;
+        
+        // If we're capturing a piece and opponent will recapture with pawn
+        // Check if this might open a file toward our king
+        if (['b', 'n'].includes(movingType) && targetType !== 'p') {
+            // Check for adjacent pawns that could recapture
+            const pawnRank = isWhite ? parseInt(toSquare[1]) + 1 : parseInt(toSquare[1]) - 1;
+            const possiblePawnFiles = [
+                String.fromCharCode(toSquare.charCodeAt(0) - 1) + pawnRank,
+                String.fromCharCode(toSquare.charCodeAt(0) + 1) + pawnRank
+            ];
+            
+            for (const pawnSq of possiblePawnFiles) {
+                if (pawnSq.length === 2 && pawnSq[0] >= 'a' && pawnSq[0] <= 'h') {
+                    const pawn = board.get(pawnSq);
+                    if (pawn && pawn.toLowerCase() === 'p') {
+                        // Recapture would be with pawn, opening a file
+                        const pawnFile = pawnSq.charCodeAt(0) - 97;
+                        
+                        // If the pawn's file opening is toward our king
+                        if (Math.abs(pawnFile - kingFile) <= 2 && pawnFile >= 4) {
+                            // Opening g or h file toward castled king
+                            if (pawnSq[0] === 'g' || pawnSq[0] === 'f') {
+                                score += CONFIG.v40OpenGFileByExchangePenalty || -350000;
+                                debugLog("[V40.11_EXCHANGE]", `🚨🚨 EXCHANGE ${move} OPENS G-FILE TOWARD KING!`);
+                            }
+                            if (pawnSq[0] === 'h') {
+                                score += CONFIG.v40OpenHFileByExchangePenalty || -300000;
+                                debugLog("[V40.11_EXCHANGE]", `🚨 EXCHANGE ${move} OPENS H-FILE TOWARD KING!`);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.11_EXCHANGE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.11 TRANSCENDENT SUPREME: PAWN STORM DETECTION
+ * Detect f5/f4 pawn storms and respond appropriately
+ * From French Defense loss: f5, f4, fxg3 pawn storm destroyed kingside
+ */
+function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnStormDetectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyPawnChar = isWhite ? 'p' : 'P';
+    
+    try {
+        // Find enemy pawns on f, g, h files
+        let enemyFPawn = null;
+        let enemyGPawn = null;
+        let enemyHPawn = null;
+        
+        for (const [sq, piece] of board) {
+            if (piece === enemyPawnChar) {
+                const file = sq[0];
+                const rank = parseInt(sq[1]);
+                
+                if (file === 'f') {
+                    if (!enemyFPawn || (isWhite ? rank < parseInt(enemyFPawn[1]) : rank > parseInt(enemyFPawn[1]))) {
+                        enemyFPawn = sq;
+                    }
+                }
+                if (file === 'g') {
+                    if (!enemyGPawn || (isWhite ? rank < parseInt(enemyGPawn[1]) : rank > parseInt(enemyGPawn[1]))) {
+                        enemyGPawn = sq;
+                    }
+                }
+                if (file === 'h') {
+                    if (!enemyHPawn || (isWhite ? rank < parseInt(enemyHPawn[1]) : rank > parseInt(enemyHPawn[1]))) {
+                        enemyHPawn = sq;
+                    }
+                }
+            }
+        }
+        
+        // PAWN STORM DETECTION
+        // For white: enemy pawns on f4/f5, g4/g5 = storm
+        // For black: enemy pawns on f3/f4, g3/g4 = storm
+        
+        const dangerousRanks = isWhite ? [3, 4, 5] : [4, 5, 6];
+        
+        if (enemyFPawn) {
+            const fRank = parseInt(enemyFPawn[1]);
+            if (isWhite && (fRank === 4 || fRank === 5)) {
+                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+                debugLog("[V40.11_STORM]", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+            }
+            if (!isWhite && (fRank === 3 || fRank === 4)) {
+                score += CONFIG.v40EnemyF4PawnPenalty || -150000;
+                debugLog("[V40.11_STORM]", `🚨 ENEMY F-PAWN ON ${enemyFPawn} - STORM!`);
+            }
+        }
+        
+        if (enemyGPawn) {
+            const gRank = parseInt(enemyGPawn[1]);
+            if (isWhite && (gRank === 4 || gRank === 5)) {
+                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+                debugLog("[V40.11_STORM]", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+            }
+            if (!isWhite && (gRank === 3 || gRank === 4)) {
+                score += CONFIG.v40EnemyGPawnAdvancePenalty || -120000;
+                debugLog("[V40.11_STORM]", `🚨 ENEMY G-PAWN ADVANCING: ${enemyGPawn}`);
+            }
+        }
+        
+        // BONUS for moves that defend against pawn storm
+        const toSquare = move.substring(2, 4);
+        if (['f', 'g', 'h'].includes(toSquare[0])) {
+            const movingPiece = board.get(move.substring(0, 2));
+            if (movingPiece && ['n', 'b', 'r'].includes(movingPiece.toLowerCase())) {
+                score += CONFIG.v40DefendAgainstPawnStormBonus || 180000;
+                debugLog("[V40.11_STORM]", `✅ Piece to ${toSquare} defending against storm!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.11_STORM]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.11 TRANSCENDENT SUPREME: DEFEND KINGSIDE PRIORITY
+ * When under attack, prioritize moves that defend the king
+ */
+function v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40DefendKingsidePriorityEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Find our king
+        let ourKing = null;
+        for (const [sq, piece] of board) {
+            if (piece && piece.toLowerCase() === 'k') {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) {
+                    ourKing = sq;
+                    break;
+                }
+            }
+        }
+        
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 97;
+        const kingRank = parseInt(ourKing[1]);
+        
+        // Check if kingside is under attack
+        const kingsideUnderAttack = isKingsideUnderAttack(board, activeColor);
+        
+        if (!kingsideUnderAttack) return 0;
+        
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const fromFile = fromSquare.charCodeAt(0) - 97;
+        const toFile = toSquare.charCodeAt(0) - 97;
+        const fromRank = parseInt(fromSquare[1]);
+        const toRank = parseInt(toSquare[1]);
+        
+        const pieceType = movingPiece.toLowerCase();
+        
+        // Calculate distance to king before and after
+        const distBefore = Math.abs(fromFile - kingFile) + Math.abs(fromRank - kingRank);
+        const distAfter = Math.abs(toFile - kingFile) + Math.abs(toRank - kingRank);
+        
+        // BONUS: Moving piece toward king when under attack
+        if (distAfter < distBefore && ['n', 'b', 'r', 'q'].includes(pieceType)) {
+            score += CONFIG.v40MoveTowardKingBonus || 150000;
+            debugLog("[V40.11_DEFEND]", `✅ ${pieceType.toUpperCase()} moving toward king for defense: ${move}`);
+        }
+        
+        // PENALTY: Moving defensive piece away from king
+        if (distAfter > distBefore && distBefore <= 3 && ['n', 'r'].includes(pieceType)) {
+            score += CONFIG.v40MoveAwayFromKingPenalty || -200000;
+            debugLog("[V40.11_DEFEND]", `🚨 ${pieceType.toUpperCase()} moving AWAY from king during attack!`);
+        }
+        
+        // BONUS: Exchanging an attacking piece
+        const targetPiece = board.get(toSquare);
+        if (targetPiece) {
+            const targetType = targetPiece.toLowerCase();
+            const targetFile = toFile;
+            
+            // If capturing a piece on kingside that's attacking
+            if (targetFile >= 4 && ['q', 'r', 'b', 'n'].includes(targetType)) {
+                score += CONFIG.v40ExchangeAttackerBonus || 200000;
+                debugLog("[V40.11_DEFEND]", `✅ Exchanging attacking ${targetType.toUpperCase()}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.11_DEFEND]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.11 TRANSCENDENT SUPREME: H-PAWN AND G-PAWN WEAKNESS DETECTION
+ * Detect when h3/g3 pawns are weak or under attack
+ */
+function v40KingsidePawnWeaknessEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40HPawnWeaknessEnabled && !CONFIG.v40GPawnWeaknessEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Find our kingside pawns
+        const hPawnSquare = isWhite ? 'h3' : 'h6';
+        const gPawnSquare = isWhite ? 'g3' : 'g6';
+        const hPawn2 = isWhite ? 'h2' : 'h7';
+        const gPawn2 = isWhite ? 'g2' : 'g7';
+        
+        // Check h-pawn
+        const hPawn = board.get(hPawnSquare) || board.get(hPawn2);
+        if (hPawn && hPawn.toLowerCase() === 'p') {
+            const hPawnSq = board.has(hPawnSquare) ? hPawnSquare : hPawn2;
+            
+            // Check if h-pawn is attacked
+            if (isSquareAttackedByColor(board, hPawnSq, enemyColor)) {
+                // Check if defended
+                const defended = isSquareDefendedByColor(board, hPawnSq, activeColor);
+                if (!defended) {
+                    score += CONFIG.v40HPawnTargetedPenalty || -200000;
+                    debugLog("[V40.11_PAWN]", `🚨 H-PAWN ON ${hPawnSq} IS UNDEFENDED AND ATTACKED!`);
+                }
+            }
+        }
+        
+        // Check g-pawn
+        const gPawn = board.get(gPawnSquare) || board.get(gPawn2);
+        if (gPawn && gPawn.toLowerCase() === 'p') {
+            const gPawnSq = board.has(gPawnSquare) ? gPawnSquare : gPawn2;
+            
+            // Check if g-pawn is attacked
+            if (isSquareAttackedByColor(board, gPawnSq, enemyColor)) {
+                const defended = isSquareDefendedByColor(board, gPawnSq, activeColor);
+                if (!defended) {
+                    score += CONFIG.v40GPawnTargetedPenalty || -220000;
+                    debugLog("[V40.11_PAWN]", `🚨 G-PAWN ON ${gPawnSq} IS UNDEFENDED AND ATTACKED!`);
+                }
+            }
+        }
+        
+        // Check if this move loses h or g pawn
+        const toSquare = move.substring(2, 4);
+        const capturedPiece = board.get(toSquare);
+        
+        // If enemy is capturing our h or g pawn
+        if (capturedPiece && capturedPiece.toLowerCase() === 'p') {
+            if (['h2', 'h3', 'h6', 'h7'].includes(toSquare)) {
+                score += CONFIG.v40HPawnFallsScore || -300000;
+                debugLog("[V40.11_PAWN]", `🚨🚨 H-PAWN IS FALLING!`);
+            }
+            if (['g2', 'g3', 'g6', 'g7'].includes(toSquare)) {
+                score += CONFIG.v40GPawnFallsScore || -350000;
+                debugLog("[V40.11_PAWN]", `🚨🚨 G-PAWN IS FALLING!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.11_PAWN]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.11 Helper: Check if kingside is under attack
+ */
+function isKingsideUnderAttack(board, activeColor) {
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Find our king
+    let ourKing = null;
+    for (const [sq, piece] of board) {
+        if (piece && piece.toLowerCase() === 'k') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                ourKing = sq;
+                break;
+            }
+        }
+    }
+    
+    if (!ourKing) return false;
+    
+    const kingFile = ourKing.charCodeAt(0) - 97;
+    
+    // King not on kingside
+    if (kingFile < 4) return false;
+    
+    // Count enemy pieces aimed at kingside
+    let attackingPieces = 0;
+    const enemyRookChar = isWhite ? 'r' : 'R';
+    const enemyQueenChar = isWhite ? 'q' : 'Q';
+    const enemyBishopChar = isWhite ? 'b' : 'B';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const file = sq[0];
+        
+        // Count enemy major pieces on f, g, h files
+        if (['f', 'g', 'h'].includes(file)) {
+            if (piece === enemyRookChar || piece === enemyQueenChar) {
+                attackingPieces += 2;
+            }
+            if (piece === enemyBishopChar) {
+                attackingPieces += 1;
+            }
+        }
+        
+        // Queen on e-file can also be attacking
+        if (file === 'e' && piece === enemyQueenChar) {
+            attackingPieces += 1;
+        }
+    }
+    
+    // Consider under attack if 2+ attacking pieces on kingside files
+    return attackingPieces >= 2;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -26109,8 +26831,36 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.10: MATING ATTACK AWARENESS — Detect impending mating attacks
                 const matingAttackScore = v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) * 2.5;
                 
-                // v40.10: COMBINED v40 SCORE — 100% GODLIKE DOMINANT INFLUENCE
-                // This makes v40 the ABSOLUTE GODLIKE factor in move selection
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN DETECTION
+                // From latest French Defense loss: Bxf6 opened g-file, f5/f4 pawn storm,
+                // Queen infiltrated to g4/g3, rooks doubled on g-file - total collapse!
+                // These fixes make bot recognize and defend against coordinated attacks
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.11: G-FILE ATTACK DETECTION — Detect enemy rooks doubling on g-file
+                const gFileAttackScore = v40GFileAttackDetectionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.11: KINGSIDE ATTACK PATTERN — Detect coordinated kingside attacks
+                const kingsideAttackPatternScore = v40KingsideAttackPatternEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.11: PASSIVE QUEENSIDE MOVE — Don't play a3/b3/c3 when under attack
+                const passiveQueensideScore = v40PassiveQueensideMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
+                const badExchangeFileScore = v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms
+                const pawnStormScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.11: DEFEND KINGSIDE PRIORITY — Prioritize kingside defense when attacked
+                const defendKingsideScore = v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.11: KINGSIDE PAWN WEAKNESS — Detect h3/g3 pawn weaknesses
+                const kingsidePawnWeaknessScore = v40KingsidePawnWeaknessEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.11: COMBINED v40 SCORE — 100% TRANSCENDENT SUPREME DOMINANT INFLUENCE
+                // This makes v40 the ABSOLUTE TRANSCENDENT SUPREME factor in move selection
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -26132,11 +26882,14 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                // v40.9 OMNISCIENT additions:
                                attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
                                // v40.10 GODLIKE additions:
-                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — GODLIKE PARADIGM SHIFT
+                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+                               // v40.11 TRANSCENDENT SUPREME additions:
+                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — TRANSCENDENT SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.10 GODLIKE EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.11 TRANSCENDENT SUPREME EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -26179,11 +26932,18 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   PreMoveThreat: ${preMoveThreatScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   PieceSafetyAbsolute: ${pieceSafetyAbsoluteScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ForcedMove: ${forcedMoveScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   👑 ABSOLUTE OPENING: ${absoluteOpeningScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   👑 GREEK GIFT DEFENSE: ${greekGiftScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   👑 KING HUNT: ${kingHuntScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   👑 CRITICAL EXCHANGE: ${criticalExchangeScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   👑 MATING ATTACK: ${matingAttackScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   AbsoluteOpening: ${absoluteOpeningScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   GreekGiftDefense: ${greekGiftScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   KingHunt: ${kingHuntScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   MatingAttack: ${matingAttackScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 G-FILE ATTACK: ${gFileAttackScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 KINGSIDE ATTACK PATTERN: ${kingsideAttackPatternScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 PASSIVE QUEENSIDE: ${passiveQueensideScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 BAD EXCHANGE FILE: ${badExchangeFileScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 PAWN STORM: ${pawnStormScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 DEFEND KINGSIDE: ${defendKingsideScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🆕 KINGSIDE PAWN WEAKNESS: ${kingsidePawnWeaknessScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
             } catch (e) {
