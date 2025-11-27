@@ -1,0 +1,39 @@
+The counterattack function exists but isn't integrated into computeCombinedScore. Let me add it:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+20895|            resolve(0);
+20896|        }, 3000);
+20897|        
+20898|        const scoreHandler = function(event) {
+20899|            output += event + "\n";
+20900|            
+20901|            if (event.includes("bestmove")) {
+20902|                clearTimeout(timeout);
+20903|                chessEngine.onmessage = originalHandler;
+20904|                
+20905|                // Parse score
+20906|                const scoreMatch = output.match(/score\s+cp\s+(-?\d+)/);
+20907|                const mateMatch = output.match(/score\s+mate\s+(-?\d+)/);
+20908|                
+20909|                let score = 0;
+20910|                if (mateMatch) {
+20911|                    const mateIn = parseInt(mateMatch[1]);
+20912|                    score = mateIn > 0 ? 10000 : -10000;
+20913|                } else if (scoreMatch) {
+20914|                    score = parseInt(scoreMatch[1]);
+20915|                }
+20916|                
+20917|                resolve(score);
+20918|            }
+20919|        };
+20920|        
+20921|        chessEngine.onmessage = scoreHandler;
+20922|        chessEngine.postMessage(`position fen ${fen}`);
+20923|        chessEngine.postMessage(`go depth ${depth}`);
+20924|    });
+20925|}
+20926|
+20927|/**
+20928| * NEW v17.0.0: Run positional rollouts for a move
+20929| * Simulates AlphaZero's self-play foresight
+20930| * Returns {avgEval, evalTrend, variance}

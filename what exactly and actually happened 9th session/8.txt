@@ -1,0 +1,179 @@
+Now let me insert the new helper functions after the v40CalculateCentralControl function:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "/**
+ * v40.3: Calculate central control
+ */
+function v40CalculateCentralControl(board, activeColor) {
+    let control = 0;
+    const centralSquares = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+    
+    for (const sq of centralSquares) {
+        const piece = board.get(sq);
+        if (piece) {
+            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+            if (isOurs) control += 2;
+        }
+    }
+    
+    return control;
+}
+
+/**
+ * v40.3: INITIATIVE PRESERVATION EVALUATION
+ */" --new-str "/**
+ * v40.3: Calculate central control
+ */
+function v40CalculateCentralControl(board, activeColor) {
+    let control = 0;
+    const centralSquares = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+    
+    for (const sq of centralSquares) {
+        const piece = board.get(sq);
+        if (piece) {
+            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+            if (isOurs) control += 2;
+        }
+    }
+    
+    return control;
+}
+
+/**
+ * v40.3: Calculate territory depth (how far our pieces penetrate)
+ */
+function v40CalculateTerritoryDepth(board, activeColor) {
+    let maxDepth = 0;
+    const isWhite = activeColor === 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isOurs = (piece === piece.toUpperCase()) === isWhite;
+        if (!isOurs) continue;
+        
+        const rank = parseInt(square[1]);
+        const depth = isWhite ? rank : (9 - rank);  // How far into enemy territory
+        
+        if (depth > maxDepth) maxDepth = depth;
+    }
+    
+    return maxDepth;
+}
+
+/**
+ * v40.3: Calculate open file control
+ * Critical for preventing invasions like the c-file problem in the lost game
+ */
+function v40CalculateOpenFileControl(board, activeColor) {
+    let control = 0;
+    const isWhite = activeColor === 'w';
+    const rookChar = isWhite ? 'R' : 'r';
+    const queenChar = isWhite ? 'Q' : 'q';
+    
+    // Check each file
+    for (let fileIdx = 0; fileIdx < 8; fileIdx++) {
+        const fileLetter = String.fromCharCode(97 + fileIdx);
+        let pawnsOnFile = 0;
+        let ourHeavyPieces = 0;
+        
+        // Count pawns and heavy pieces on this file
+        for (let rank = 1; rank <= 8; rank++) {
+            const sq = fileLetter + rank;
+            const piece = board.get(sq);
+            
+            if (piece && piece.toLowerCase() === 'p') {
+                pawnsOnFile++;
+            }
+            
+            if (piece && (piece === rookChar || piece === queenChar)) {
+                ourHeavyPieces++;
+            }
+        }
+        
+        // Open or semi-open file with our heavy pieces = control
+        if (pawnsOnFile <= 1 && ourHeavyPieces > 0) {
+            control += ourHeavyPieces * 2;
+            
+            // Extra credit for central files (c, d, e, f)
+            if (fileIdx >= 2 && fileIdx <= 5) {
+                control += ourHeavyPieces;
+            }
+        }
+    }
+    
+    return control;
+}
+
+/**
+ * v40.3: Count outpost squares controlled in enemy territory
+ */
+function v40CountOutpostSquares(board, activeColor) {
+    let outposts = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Outpost squares in enemy territory
+    const outpostRanks = isWhite ? [5, 6, 7] : [2, 3, 4];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const isOurs = (piece === piece.toUpperCase()) === isWhite;
+        if (!isOurs) continue;
+        
+        const rank = parseInt(square[1]);
+        const pieceType = piece.toLowerCase();
+        
+        // Minor pieces and rooks on outpost squares
+        if (outpostRanks.includes(rank) && (pieceType === 'n' || pieceType === 'b' || pieceType === 'r')) {
+            outposts++;
+            
+            // Knights on central outposts are especially valuable
+            const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            if (pieceType === 'n' && file >= 2 && file <= 5) {
+                outposts++;  // Extra credit
+            }
+        }
+    }
+    
+    return outposts;
+}
+
+/**
+ * v40.3: Evaluate pawn chain space contribution
+ */
+function v40EvaluatePawnChainSpace(board, activeColor) {
+    let chainAdvantage = 0;
+    const isWhite = activeColor === 'w';
+    const pawnChar = isWhite ? 'P' : 'p';
+    
+    let ourPawnRanks = [];
+    let enemyPawnRanks = [];
+    
+    for (const [square, piece] of board) {
+        if (piece && piece.toLowerCase() === 'p') {
+            const rank = parseInt(square[1]);
+            if (piece === pawnChar) {
+                ourPawnRanks.push(rank);
+            } else {
+                enemyPawnRanks.push(rank);
+            }
+        }
+    }
+    
+    // Average pawn advancement
+    const ourAvg = ourPawnRanks.length > 0 ? 
+        ourPawnRanks.reduce((a, b) => a + b, 0) / ourPawnRanks.length : 0;
+    const enemyAvg = enemyPawnRanks.length > 0 ? 
+        enemyPawnRanks.reduce((a, b) => a + b, 0) / enemyPawnRanks.length : 0;
+    
+    // For white, higher average is better; for black, lower is better
+    if (isWhite) {
+        chainAdvantage = ourAvg - (8 - enemyAvg);
+    } else {
+        chainAdvantage = (8 - ourAvg) - enemyAvg;
+    }
+    
+    return chainAdvantage;
+}
+
+/**
+ * v40.3: INITIATIVE PRESERVATION EVALUATION
+ */"
+Observation: Edit was successful.

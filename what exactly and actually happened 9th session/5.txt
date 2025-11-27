@@ -1,0 +1,98 @@
+Now let me view the CONFIG section around line 1040-1070 to see the v40.3 parameters:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1006|    // ═══════════════════════════════════════════════════════════════════════
+1007|    // v40.3.0: ULTIMATE SUPERHUMAN BEAST — NEW PARAMETERS
+1008|    // ═══════════════════════════════════════════════════════════════════════
+1009|    
+1010|    // v40.3: ANTI-PASSIVITY SYSTEM — Forces Active Play
+1011|    v40AntiPassivityEnabled: true,
+1012|    v40PassivityPenalty: -8000,             // Penalty for passive moves
+1013|    v40PieceActivityThreshold: 3,           // Minimum activity score
+1014|    v40ActivePiecesRequired: 4,             // Minimum active pieces
+1015|    v40PassiveQueenPenalty: -5000,          // Penalty for passive queen
+1016|    v40PassiveRookPenalty: -3000,           // Penalty for passive rook
+1017|    v40NoThreatPenalty: -2500,              // Penalty for creating no threats
+1018|    v40ImprovementRequired: true,           // Move must improve position
+1019|    
+1020|    // v40.3: DEEP HORIZON EVALUATION — True 30+ Move Planning
+1021|    v40DeepHorizonEnabled: true,
+1022|    v40DeepHorizonDepth: 60,                // 60 half-moves (30 full moves)
+1023|    v40HorizonEffectPrevention: true,       // Prevent horizon effect blindness
+1024|    v40StrategicProjection: 100,            // Project 100 moves for strategy
+1025|    v40TacticalHorizonBoost: 80,            // Extra tactical horizon
+1026|    v40PositionalTrajectory: true,          // Track positional trends
+1027|    
+1028|    // v40.3: ENHANCED MATING PATTERN LIBRARY
+1029|    v40MatingPatternEnabled: true,
+1030|    v40CornerMatePatterns: true,            // Corner mating patterns (Ra1#)
+1031|    v40BackRankPatterns: true,              // Back rank mate patterns
+1032|    v40SmotheredMatePatterns: true,         // Smothered mate recognition
+1033|    v40QueenRookMatePatterns: true,         // Q+R mating patterns
+1034|    v40TwoRookMatePatterns: true,           // Double rook mates
+1035|    v40KingHuntPatterns: true,              // King chase patterns
+1036|    v40StaircaseMatePatterns: true,         // Staircase mate patterns
+1037|    v40MatingNetEarlyWarning: 15,           // Warn 15 moves before mate threat
+1038|    
+1039|    // v40.3: COUNTERATTACK PRIORITY SYSTEM
+1040|    v40CounterattackEnabled: true,
+1041|    v40CounterattackBonus: 15000,           // Bonus for counterattack moves
+1042|    v40ActiveDefensePreference: 12000,      // Prefer active defense
+1043|    v40PassiveDefensePenalty: -6000,        // Penalty for passive defense
+1044|    v40CounterThreatValue: 8000,            // Value of creating counter-threats
+1045|    v40AttackBestDefense: true,             // Attack is best defense mode
+1046|    
+1047|    // v40.3: SPACE DOMINATION SYSTEM
+1048|    v40SpaceDominationEnabled: true,
+1049|    v40SpaceAdvantageBonus: 10000,          // Bonus for space advantage
+1050|    v40CentralDominationBonus: 8000,        // Central control bonus
+1051|    v40SpaceRestrictionValue: 6000,         // Value of restricting opponent
+1052|    v40ExpansionBonus: 4000,                // Bonus for space expansion
+1053|    v40SqueezeBonus: 12000,                 // Bonus for positional squeeze
+1054|    
+1055|    // v40.3: PIECE ACTIVITY SCORING
+1056|    v40PieceActivityEnabled: true,
+1057|    v40ActivePieceBonus: 3000,              // Per active piece
+1058|    v40IdlePiecePenalty: -4000,             // Per idle piece
+1059|    v40PieceHarmonyBonus: 5000,             // Coordinated pieces bonus
+1060|    v40UncoordinatedPenalty: -3000,         // Uncoordinated pieces penalty
+1061|    v40OptimalSquareBonus: 6000,            // Piece on optimal square
+1062|    
+1063|    // v40.3: INITIATIVE PRESERVATION
+1064|    v40InitiativePreservationEnabled: true,
+1065|    v40InitiativeLossPenalty: -10000,       // SEVERE penalty for losing initiative
+1066|    v40InitiativeGainBonus: 8000,           // Bonus for gaining initiative
+1067|    v40TempoChainBonus: 6000,               // Bonus for tempo chain
+1068|    v40MomentumBonus: 5000,                 // Bonus for maintaining momentum
+1069|    v40ForcingSequenceBonus: 7000,          // Bonus for forcing sequences
+1070|};
+1071|
+1072|// ═══════════════════════════════════════════════════════════════════════
+1073|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1074|// ═══════════════════════════════════════════════════════════════════════
+1075|
+1076|/**
+1077| * v37: TRUE MCTS Node structure for proper tree search
+1078| */
+1079|class MCTSNode {
+1080|    constructor(move, parent = null, prior = 1.0) {
+1081|        this.move = move;
+1082|        this.parent = parent;
+1083|        this.children = new Map();
+1084|        this.visits = 0;
+1085|        this.totalValue = 0;
+1086|        this.prior = prior;           // Policy prior (P)
+1087|        this.virtualLoss = 0;
+1088|        this.isExpanded = false;
+1089|        this.isTerminal = false;
+1090|        this.depth = parent ? parent.depth + 1 : 0;
+1091|    }
+1092|    
+1093|    get value() {
+1094|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1095|    }
+1096|    
+1097|    get ucb1Score() {
+1098|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1099|        
+1100|        const exploitation = this.value;

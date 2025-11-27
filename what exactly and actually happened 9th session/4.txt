@@ -1,0 +1,14 @@
+Now I need to enhance the Space Domination function to be more sophisticated - tracking true territorial control, pawn chains, and outpost creation. Let me view the CONFIG to see what parameters exist:
+Action: $ grep -n "v40SpaceDomination\|v40CentralDomination\|v40SqueezeBonus\|v40SpaceAdvantage" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 1048:    v40SpaceDominationEnabled: true,
+1049:    v40SpaceAdvantageBonus: 10000,          // Bonus for space advantage
+1050:    v40CentralDominationBonus: 8000,        // Central control bonus
+1053:    v40SqueezeBonus: 12000,                 // Bonus for positional squeeze
+5859:function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
+5860:    if (!CONFIG.v40SpaceDominationEnabled) return 0;
+5883:            score += CONFIG.v40SpaceAdvantageBonus || 10000;
+5886:            score += (CONFIG.v40SpaceAdvantageBonus || 10000) * 0.5;
+5894:            score += CONFIG.v40CentralDominationBonus || 8000;
+5899:            score += CONFIG.v40SqueezeBonus || 12000;
+20899:                const spaceDominationBonus = v40SpaceDominationEvaluation(fen, move, board, activeColor) * 0.5;
+Exit code: 0

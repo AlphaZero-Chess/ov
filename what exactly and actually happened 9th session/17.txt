@@ -1,0 +1,138 @@
+Now let me enhance the Deep Horizon Evaluation function to truly plan 30+ moves ahead with more sophisticated trajectory analysis:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+5266|    if ((kingFile === 0 || kingFile === 7) && (kingRank === 0 || kingRank === 7)) {
+5267|        safety -= 2;
+5268|    }
+5269|    
+5270|    return safety;
+5271|}
+5272|
+5273|/**
+5274| * v40.3: Check for horizon effect blindspots
+5275| */
+5276|function v40CheckHorizonEffect(fen, move, board, activeColor) {
+5277|    const result = { dangerous: false, penalty: 0, reason: '' };
+5278|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+5279|    
+5280|    // Check if move delays but doesn't prevent a threat
+5281|    // This is the classic horizon effect
+5282|    
+5283|    // Look for enemy passed pawns that are advancing
+5284|    for (const [square, piece] of board) {
+5285|        if (!piece) continue;
+5286|        const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+5287|        if (isEnemy && piece.toLowerCase() === 'p') {
+5288|            const pawnRank = parseInt(square[1]);
+5289|            const promotionRank = enemyColor === 'w' ? 8 : 1;
+5290|            const distance = Math.abs(pawnRank - promotionRank);
+5291|            
+5292|            if (distance <= 3) {
+5293|                // Enemy pawn close to promotion
+5294|                result.dangerous = true;
+5295|                result.penalty = -3000 * (4 - distance);
+5296|                result.reason = `Enemy pawn on ${square} close to promotion`;
+5297|            }
+5298|        }
+5299|    }
+5300|    
+5301|    return result;
+5302|}
+5303|
+5304|/**
+5305| * v40.3: Strategic projection 30+ moves ahead
+5306| */
+5307|function v40StrategicProjection(board, activeColor, moveNumber) {
+5308|    let projection = 0;
+5309|    
+5310|    // In opening/middlegame: development and control matter
+5311|    if (moveNumber < 30) {
+5312|        const development = v40CountActivePieces(board, activeColor);
+5313|        projection += development * 2;
+5314|        
+5315|        // Central control
+5316|        const centralPawns = v40CountCentralPawns(board, activeColor);
+5317|        projection += centralPawns * 3;
+5318|    }
+5319|    
+5320|    // In endgame: king activity and passed pawns matter
+5321|    if (moveNumber > 30) {
+5322|        const king = findKing(board, activeColor);
+5323|        if (king) {
+5324|            const kingFile = king.charCodeAt(0) - 'a'.charCodeAt(0);
+5325|            const kingRank = parseInt(king[1]) - 1;
+5326|            const centrality = 4 - Math.abs(kingFile - 3.5) - Math.abs(kingRank - 3.5);
+5327|            projection += centrality;
+5328|        }
+5329|    }
+5330|    
+5331|    return projection;
+5332|}
+5333|
+5334|/**
+5335| * v40.3: Count central pawns
+5336| */
+5337|function v40CountCentralPawns(board, activeColor) {
+5338|    let count = 0;
+5339|    const centralFiles = ['c', 'd', 'e', 'f'];
+5340|    const pawnChar = activeColor === 'w' ? 'P' : 'p';
+5341|    
+5342|    for (const file of centralFiles) {
+5343|        for (let rank = 3; rank <= 6; rank++) {
+5344|            const square = file + rank;
+5345|            if (board.get(square) === pawnChar) {
+5346|                count++;
+5347|            }
+5348|        }
+5349|    }
+5350|    return count;
+5351|}
+5352|
+5353|/**
+5354| * v40.3: Endgame trajectory evaluation
+5355| */
+5356|function v40EndgameTrajectory(board, activeColor) {
+5357|    let trajectory = 0;
+5358|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+5359|    
+5360|    // Count passed pawns
+5361|    let ourPassedPawns = 0;
+5362|    let enemyPassedPawns = 0;
+5363|    const ourPawnChar = activeColor === 'w' ? 'P' : 'p';
+5364|    const enemyPawnChar = activeColor === 'w' ? 'p' : 'P';
+5365|    
+5366|    for (const [square, piece] of board) {
+5367|        if (piece === ourPawnChar) {
+5368|            if (v40IsPassedPawn(square, board, activeColor)) {
+5369|                ourPassedPawns++;
+5370|            }
+5371|        } else if (piece === enemyPawnChar) {
+5372|            if (v40IsPassedPawn(square, board, enemyColor)) {
+5373|                enemyPassedPawns++;
+5374|            }
+5375|        }
+5376|    }
+5377|    
+5378|    trajectory += (ourPassedPawns - enemyPassedPawns) * 5;
+5379|    
+5380|    // King activity in endgame
+5381|    const ourKing = findKing(board, activeColor);
+5382|    const enemyKing = findKing(board, enemyColor);
+5383|    
+5384|    if (ourKing && enemyKing) {
+5385|        const ourKingActivity = v40KingEndgameActivity(ourKing);
+5386|        const enemyKingActivity = v40KingEndgameActivity(enemyKing);
+5387|        trajectory += (ourKingActivity - enemyKingActivity);
+5388|    }
+5389|    
+5390|    return trajectory;
+5391|}
+5392|
+5393|/**
+5394| * v40.3: Check if pawn is passed
+5395| */
+5396|function v40IsPassedPawn(square, board, color) {
+5397|    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+5398|    const rank = parseInt(square[1]);
+5399|    const enemyPawnChar = color === 'w' ? 'p' : 'P';
+5400|    const direction = color === 'w' ? 1 : -1;

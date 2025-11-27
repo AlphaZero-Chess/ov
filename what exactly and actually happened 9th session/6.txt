@@ -1,0 +1,146 @@
+The configuration is comprehensive. Now let me enhance the Space Domination function to make it more effective. Based on the game analysis, the bot needs better territory control tracking:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
+    if (!CONFIG.v40SpaceDominationEnabled) return 0;
+    
+    let score = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    
+    try {
+        // Simulate move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // Calculate space advantage
+        const ourSpace = v40CalculateSpaceAdvantage(simBoard, activeColor);
+        const enemySpace = v40CalculateSpaceAdvantage(simBoard, enemyColor);
+        const spaceAdvantage = ourSpace - enemySpace;
+        
+        if (spaceAdvantage > 10) {
+            score += CONFIG.v40SpaceAdvantageBonus || 10000;
+            debugLog(\"[V40_SPACE]\", `✅ SPACE DOMINATION: +${spaceAdvantage} squares`);
+        } else if (spaceAdvantage > 5) {
+            score += (CONFIG.v40SpaceAdvantageBonus || 10000) * 0.5;
+        }
+        
+        // Central domination
+        const centralControl = v40CalculateCentralControl(simBoard, activeColor);
+        const enemyCentralControl = v40CalculateCentralControl(simBoard, enemyColor);
+        
+        if (centralControl > enemyCentralControl) {
+            score += CONFIG.v40CentralDominationBonus || 8000;
+        }
+        
+        // Positional squeeze
+        if (spaceAdvantage > 15) {
+            score += CONFIG.v40SqueezeBonus || 12000;
+            debugLog(\"[V40_SPACE]\", `✅ POSITIONAL SQUEEZE ACTIVE`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_SPACE]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}" --new-str "function v40SpaceDominationEvaluation(fen, move, board, activeColor) {
+    if (!CONFIG.v40SpaceDominationEnabled) return 0;
+    
+    let score = 0;
+    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Simulate move
+        const simBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            simBoard.delete(fromSquare);
+            simBoard.set(toSquare, movingPiece);
+        }
+        
+        // v40.3: ENHANCED SPACE CALCULATION - True territorial control
+        const ourSpace = v40CalculateSpaceAdvantage(simBoard, activeColor);
+        const enemySpace = v40CalculateSpaceAdvantage(simBoard, enemyColor);
+        const spaceAdvantage = ourSpace - enemySpace;
+        
+        // v40.3: RANK-BASED TERRITORY CONTROL
+        const ourTerritoryRanks = v40CalculateTerritoryDepth(simBoard, activeColor);
+        const enemyTerritoryRanks = v40CalculateTerritoryDepth(simBoard, enemyColor);
+        const territoryAdvantage = ourTerritoryRanks - enemyTerritoryRanks;
+        
+        if (territoryAdvantage > 2) {
+            score += CONFIG.v40SpaceRestrictionValue || 6000;
+            debugLog(\"[V40_SPACE]\", `🏰 TERRITORIAL EXPANSION: +${territoryAdvantage} ranks`);
+        }
+        
+        if (spaceAdvantage > 10) {
+            score += CONFIG.v40SpaceAdvantageBonus || 10000;
+            debugLog(\"[V40_SPACE]\", `✅ SPACE DOMINATION: +${spaceAdvantage} squares`);
+        } else if (spaceAdvantage > 5) {
+            score += (CONFIG.v40SpaceAdvantageBonus || 10000) * 0.5;
+        }
+        
+        // v40.3: CENTRAL FILE CONTROL (d and e files especially)
+        const centralControl = v40CalculateCentralControl(simBoard, activeColor);
+        const enemyCentralControl = v40CalculateCentralControl(simBoard, enemyColor);
+        
+        if (centralControl > enemyCentralControl) {
+            score += CONFIG.v40CentralDominationBonus || 8000;
+        }
+        
+        // v40.3: OPEN FILE DOMINATION - Critical for the c-file invasion problem
+        const openFileControl = v40CalculateOpenFileControl(simBoard, activeColor);
+        const enemyOpenFileControl = v40CalculateOpenFileControl(simBoard, enemyColor);
+        
+        if (openFileControl > enemyOpenFileControl) {
+            score += (CONFIG.v40CentralDominationBonus || 8000) * 0.8;
+            debugLog(\"[V40_SPACE]\", `✅ OPEN FILE CONTROL: +${openFileControl - enemyOpenFileControl}`);
+        } else if (enemyOpenFileControl > openFileControl + 1) {
+            // v40.3: WARNING - Enemy controls open files!
+            score -= CONFIG.v40SpaceRestrictionValue || 6000;
+            debugLog(\"[V40_SPACE]\", `⚠️ ENEMY FILE CONTROL: -${enemyOpenFileControl - openFileControl}`);
+        }
+        
+        // v40.3: OUTPOST CONTROL - Squares we control in enemy territory
+        const ourOutposts = v40CountOutpostSquares(simBoard, activeColor);
+        const enemyOutposts = v40CountOutpostSquares(simBoard, enemyColor);
+        
+        if (ourOutposts > enemyOutposts) {
+            score += (CONFIG.v40ExpansionBonus || 4000) * (ourOutposts - enemyOutposts);
+        }
+        
+        // v40.3: PAWN CHAIN SPACE - Pawns determine territory
+        const pawnChainAdvantage = v40EvaluatePawnChainSpace(simBoard, activeColor);
+        score += pawnChainAdvantage * 500;
+        
+        // v40.3: Positional squeeze
+        if (spaceAdvantage > 15 && territoryAdvantage > 2) {
+            score += CONFIG.v40SqueezeBonus || 12000;
+            debugLog(\"[V40_SPACE]\", `✅ POSITIONAL SQUEEZE ACTIVE - ASPHYXIATION IMMINENT`);
+        } else if (spaceAdvantage > 12) {
+            score += (CONFIG.v40SqueezeBonus || 12000) * 0.6;
+        }
+        
+        // v40.3: EXPANSION POTENTIAL - Can we expand further?
+        const toRank = parseInt(toSquare[1]);
+        const isExpanding = isWhite ? (toRank >= 5) : (toRank <= 4);
+        if (isExpanding && movingPiece && movingPiece.toLowerCase() !== 'k') {
+            score += CONFIG.v40ExpansionBonus || 4000;
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40_SPACE]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}"
+Observation: Edit was successful.

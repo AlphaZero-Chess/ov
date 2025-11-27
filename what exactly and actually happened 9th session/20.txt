@@ -1,0 +1,23 @@
+The mating net detection is comprehensive. Let me now enhance it with additional pattern detection for the specific Ra1# pattern that happened in the lost game:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+4076|        // v40.2: CHECK 6 - Staircase/ladder mate pattern detection
+4077|        // Two rooks alternating ranks cutting off escape
+4078|        if (enemyRooks.length >= 2) {
+4079|            const rookRanks = enemyRooks.map(sq => parseInt(sq[1]) - 1).sort((a, b) => a - b);
+4080|            const rankSpread = rookRanks[rookRanks.length - 1] - rookRanks[0];
+4081|            
+4082|            if (rankSpread <= 3 && Math.abs(rookRanks[0] - kingRank) <= 2) {
+4083|                penalty -= 2000;  // Ladder mate forming
+4084|                debugLog("[V40_MATING_NET]", `🚨🚨 LADDER MATE PATTERN DETECTED!`);
+4085|            }
+4086|        }
+4087|        
+4088|    } catch (e) {
+4089|        debugLog("[V40_MATING_NET]", `Error: ${e.message}`);
+4090|    }
+4091|    
+4092|    return penalty;
+4093|}
+4094|
+4095|/**

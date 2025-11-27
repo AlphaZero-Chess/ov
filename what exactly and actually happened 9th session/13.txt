@@ -1,0 +1,6 @@
+Let me find the exact location of the integration in computeCombinedScore:
+Action: $ grep -n "spaceDominationBonus" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 21080:                const spaceDominationBonus = v40SpaceDominationEvaluation(fen, move, board, activeColor) * 0.5;
+21087:                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus;
+21103:                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+Exit code: 0

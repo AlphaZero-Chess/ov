@@ -1,0 +1,49 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+21070|                // v40.3: KING SAFETY CORRIDOR
+21071|                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.9;
+21072|                
+21073|                // v40.3 NEW: ANTI-PASSIVITY SYSTEM — Forces active play
+21074|                const antiPassivityBonus = v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+21075|                
+21076|                // v40.3 NEW: DEEP HORIZON EVALUATION — True 30+ move planning
+21077|                const deepHorizonBonus = v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+21078|                
+21079|                // v40.3 NEW: SPACE DOMINATION — Territory control
+21080|                const spaceDominationBonus = v40SpaceDominationEvaluation(fen, move, board, activeColor) * 0.5;
+21081|                
+21082|                // v40.3: COMBINED v40 SCORE — 75% ABSOLUTE DOMINANT INFLUENCE
+21083|                // This makes v40 the ULTIMATE factor in move selection
+21084|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+21085|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+21086|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+21087|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus;
+21088|                v40Bonus = v40DeepScore * 0.75;  // 75% influence — ULTIMATE PARADIGM SHIFT
+21089|                
+21090|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+21091|                debugLog("[V40_INTEGRATE]", `🦁 SUPERHUMAN BEAST v40.3 ULTIMATE EVALUATION`);
+21092|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+21093|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+21094|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+21095|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+21096|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+21097|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+21098|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+21099|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+21100|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+21101|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+21102|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+21103|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+21104|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 75% bonus=${v40Bonus.toFixed(1)}cp`);
+21105|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+21106|            } catch (e) {
+21107|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+21108|                v40Bonus = 0;
+21109|            }
+21110|        }
+21111|        
+21112|        // v40.3: TRUE ALPHAZERO weighted merge — v40 ULTIMATE DOMINANT (75%)
+21113|        // Engine provides baseline, but v40 superhuman evaluation is ABSOLUTE PRIMARY
+21114|        const combinedScore = (
+21115|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.25 +  // Engine reduced to 25%

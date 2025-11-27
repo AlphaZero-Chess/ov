@@ -1,0 +1,109 @@
+Now let me add the helper functions for the enhanced Space Domination:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+5995|    let control = 0;
+5996|    const centralSquares = ['d4', 'd5', 'e4', 'e5', 'c4', 'c5', 'f4', 'f5'];
+5997|    
+5998|    for (const sq of centralSquares) {
+5999|        const piece = board.get(sq);
+6000|        if (piece) {
+6001|            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+6002|            if (isOurs) control += 2;
+6003|        }
+6004|    }
+6005|    
+6006|    return control;
+6007|}
+6008|
+6009|/**
+6010| * v40.3: INITIATIVE PRESERVATION EVALUATION
+6011| */
+6012|function v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) {
+6013|    if (!CONFIG.v40InitiativePreservationEnabled) return 0;
+6014|    
+6015|    let score = 0;
+6016|    
+6017|    try {
+6018|        // Simulate move
+6019|        const simBoard = new Map(board);
+6020|        const fromSquare = move.substring(0, 2);
+6021|        const toSquare = move.substring(2, 4);
+6022|        const movingPiece = board.get(fromSquare);
+6023|        
+6024|        if (movingPiece) {
+6025|            simBoard.delete(fromSquare);
+6026|            simBoard.set(toSquare, movingPiece);
+6027|        }
+6028|        
+6029|        // Check if move maintains initiative
+6030|        const hadInitiative = v40HasInitiative(board, activeColor);
+6031|        const hasInitiativeAfter = v40HasInitiativeAfterMove(simBoard, activeColor, move);
+6032|        
+6033|        if (hadInitiative && !hasInitiativeAfter) {
+6034|            score += CONFIG.v40InitiativeLossPenalty || -10000;
+6035|            debugLog("[V40_INITIATIVE]", `🚨 INITIATIVE LOST with ${move}`);
+6036|        } else if (!hadInitiative && hasInitiativeAfter) {
+6037|            score += CONFIG.v40InitiativeGainBonus || 8000;
+6038|            debugLog("[V40_INITIATIVE]", `✅ INITIATIVE GAINED with ${move}`);
+6039|        } else if (hadInitiative && hasInitiativeAfter) {
+6040|            score += CONFIG.v40MomentumBonus || 5000;
+6041|        }
+6042|        
+6043|        // Forcing sequence bonus
+6044|        if (v40IsForcingMove(move, simBoard, activeColor)) {
+6045|            score += CONFIG.v40ForcingSequenceBonus || 7000;
+6046|        }
+6047|        
+6048|    } catch (e) {
+6049|        debugLog("[V40_INITIATIVE]", `Error: ${e.message}`);
+6050|    }
+6051|    
+6052|    return score;
+6053|}
+6054|
+6055|/**
+6056| * v40.3: Check if side has initiative
+6057| */
+6058|function v40HasInitiative(board, activeColor) {
+6059|    let threats = 0;
+6060|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+6061|    
+6062|    // Count active threats
+6063|    for (const [square, piece] of board) {
+6064|        if (!piece) continue;
+6065|        const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+6066|        if (!isOurs) continue;
+6067|        
+6068|        const pieceType = piece.toLowerCase();
+6069|        if (pieceType !== 'p' && pieceType !== 'k') {
+6070|            const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+6071|            const rank = parseInt(square[1]) - 1;
+6072|            
+6073|            // Piece in advanced/active position
+6074|            const isAdvanced = activeColor === 'w' ? rank >= 4 : rank <= 3;
+6075|            if (isAdvanced) threats++;
+6076|        }
+6077|    }
+6078|    
+6079|    return threats >= 3;
+6080|}
+6081|
+6082|/**
+6083| * v40.3: Check initiative after move
+6084| */
+6085|function v40HasInitiativeAfterMove(board, activeColor, move) {
+6086|    const baseInitiative = v40HasInitiative(board, activeColor);
+6087|    const createsNewThreat = v40MoveCreaetesThreat(move, board, activeColor);
+6088|    
+6089|    return baseInitiative || createsNewThreat;
+6090|}
+6091|
+6092|/**
+6093| * v40.3: Check if move is forcing
+6094| */
+6095|function v40IsForcingMove(move, board, activeColor) {
+6096|    // Check if move is a check, capture, or creates immediate threat
+6097|    const toSquare = move.substring(2, 4);
+6098|    const capturedPiece = board.get(toSquare);
+6099|    
+6100|    if (capturedPiece) return true;  // Capture

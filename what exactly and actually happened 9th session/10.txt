@@ -1,0 +1,130 @@
+Let me view the existing counterattack function:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+5724|function v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) {
+5725|    if (!CONFIG.v40CounterattackEnabled) return 0;
+5726|    
+5727|    let score = 0;
+5728|    
+5729|    try {
+5730|        // Simulate move
+5731|        const simBoard = new Map(board);
+5732|        const fromSquare = move.substring(0, 2);
+5733|        const toSquare = move.substring(2, 4);
+5734|        const movingPiece = board.get(fromSquare);
+5735|        
+5736|        if (movingPiece) {
+5737|            simBoard.delete(fromSquare);
+5738|            simBoard.set(toSquare, movingPiece);
+5739|        }
+5740|        
+5741|        // Check if we're under pressure
+5742|        const underPressure = v40IsUnderPressure(board, activeColor);
+5743|        
+5744|        if (underPressure) {
+5745|            // Does the move create a counter-threat?
+5746|            const createsCounterThreat = v40MoveCreaetesThreat(move, simBoard, activeColor);
+5747|            
+5748|            if (createsCounterThreat) {
+5749|                score += CONFIG.v40CounterattackBonus || 15000;
+5750|                debugLog("[V40_COUNTER]", `✅ COUNTERATTACK: ${move} creates threat while defending`);
+5751|                
+5752|                // Bonus for counter-threat against valuable pieces
+5753|                const threatValue = v40EvaluateThreatValue(move, simBoard, activeColor);
+5754|                score += threatValue * 2;
+5755|            } else {
+5756|                // Check if it's a passive defense
+5757|                const isPassiveDefense = v40IsPassiveDefenseMove(move, board, activeColor);
+5758|                if (isPassiveDefense) {
+5759|                    score += CONFIG.v40PassiveDefensePenalty || -6000;
+5760|                    debugLog("[V40_COUNTER]", `⚠️ PASSIVE DEFENSE: ${move} without counterplay`);
+5761|                }
+5762|            }
+5763|        }
+5764|        
+5765|        // Active defense bonus even when not under direct pressure
+5766|        if (v40IsActiveDefense(move, board, simBoard, activeColor)) {
+5767|            score += CONFIG.v40ActiveDefensePreference || 12000;
+5768|        }
+5769|        
+5770|    } catch (e) {
+5771|        debugLog("[V40_COUNTER]", `Error: ${e.message}`);
+5772|    }
+5773|    
+5774|    return score;
+5775|}
+5776|
+5777|/**
+5778| * v40.3: Check if under pressure
+5779| */
+5780|function v40IsUnderPressure(board, activeColor) {
+5781|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+5782|    let pressureCount = 0;
+5783|    
+5784|    // Count enemy pieces attacking our position
+5785|    for (const [square, piece] of board) {
+5786|        if (!piece) continue;
+5787|        const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+5788|        if (!isOurs) continue;
+5789|        
+5790|        const pieceValue = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 0 }[piece.toLowerCase()] || 0;
+5791|        if (pieceValue >= 3) {
+5792|            // Check if this piece is attacked by lesser value enemy piece
+5793|            // Simplified: count as pressure
+5794|            pressureCount++;
+5795|        }
+5796|    }
+5797|    
+5798|    return pressureCount > 2;
+5799|}
+5800|
+5801|/**
+5802| * v40.3: Evaluate threat value
+5803| */
+5804|function v40EvaluateThreatValue(move, board, activeColor) {
+5805|    const toSquare = move.substring(2, 4);
+5806|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+5807|    const toRank = parseInt(toSquare[1]) - 1;
+5808|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+5809|    const pieceValues = { 'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q': 900 };
+5810|    
+5811|    let maxThreatValue = 0;
+5812|    
+5813|    for (const [square, piece] of board) {
+5814|        if (!piece) continue;
+5815|        const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+5816|        if (!isEnemy) continue;
+5817|        
+5818|        const sqFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+5819|        const sqRank = parseInt(square[1]) - 1;
+5820|        
+5821|        if (Math.abs(sqFile - toFile) <= 2 && Math.abs(sqRank - toRank) <= 2) {
+5822|            const value = pieceValues[piece.toLowerCase()] || 0;
+5823|            maxThreatValue = Math.max(maxThreatValue, value);
+5824|        }
+5825|    }
+5826|    
+5827|    return maxThreatValue;
+5828|}
+5829|
+5830|/**
+5831| * v40.3: Check if passive defense move
+5832| */
+5833|function v40IsPassiveDefenseMove(move, board, activeColor) {
+5834|    const toSquare = move.substring(2, 4);
+5835|    const toRank = parseInt(toSquare[1]);
+5836|    const isWhite = activeColor === 'w';
+5837|    
+5838|    // Moving to back ranks without creating threats is passive
+5839|    if (isWhite && toRank <= 2) return true;
+5840|    if (!isWhite && toRank >= 7) return true;
+5841|    
+5842|    return false;
+5843|}
+5844|
+5845|/**
+5846| * v40.3: Check if active defense
+5847| */
+5848|function v40IsActiveDefense(move, oldBoard, newBoard, activeColor) {
+5849|    // Active defense: defends but also improves position or creates threats
+5850|    const improvesPosition = v40CalculatePositionImprovement(move, oldBoard, newBoard, activeColor) > 0;

@@ -1,0 +1,4 @@
+Now let me add the Counterattack Priority System. First, let me find where it should be added:
+Action: $ grep -n "function v40Counterattack" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 5724:function v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

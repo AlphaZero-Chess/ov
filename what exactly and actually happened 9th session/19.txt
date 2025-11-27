@@ -1,0 +1,204 @@
+The Deep Horizon function looks good. Now let me enhance the Mating Pattern Library to better detect corner mate patterns like Ra1#:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+3900|// Critical fixes for the game loss analysis:
+3901|// - Ra1# mating net blindness → Deep mating net detection
+3902|// - c-file invasion blindness → File control evaluation  
+3903|// - Qd1-Qd3-Qe4-Qd3 disaster → Queen movement penalty
+3904|// - Initiative collapse → Deep initiative tracking
+3905|// ═══════════════════════════════════════════════════════════════════════
+3906|
+3907|// Track queen moves for penalty calculation
+3908|let v40QueenMoveHistory = [];
+3909|let v40LastQueenMoveNumber = 0;
+3910|
+3911|/**
+3912| * v40.1: DEEP MATING NET DETECTION
+3913| * Prevents disasters like the Ra1# finish in the lost game
+3914| * Scans for king cornering patterns and back rank vulnerabilities
+3915| */
+3916|function v40DeepMatingNetDetection(fen, move, board, activeColor) {
+3917|    let penalty = 0;
+3918|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+3919|    
+3920|    try {
+3921|        // Simulate the move
+3922|        const simBoard = new Map(board);
+3923|        const fromSquare = move.substring(0, 2);
+3924|        const toSquare = move.substring(2, 4);
+3925|        const movingPiece = board.get(fromSquare);
+3926|        
+3927|        if (movingPiece) {
+3928|            simBoard.delete(fromSquare);
+3929|            simBoard.set(toSquare, movingPiece);
+3930|        }
+3931|        
+3932|        // Find our king position after move
+3933|        const ourKing = findKing(simBoard, activeColor);
+3934|        if (!ourKing) return 0;
+3935|        
+3936|        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+3937|        const kingRank = parseInt(ourKing[1]) - 1;
+3938|        
+3939|        // CHECK 1: King cornered (a1, h1, a8, h8 areas) — INCREASED PENALTY
+3940|        const isCornerArea = (kingFile <= 1 || kingFile >= 6) && (kingRank <= 1 || kingRank >= 6);
+3941|        const isExactCorner = (kingFile === 0 || kingFile === 7) && (kingRank === 0 || kingRank === 7);
+3942|        
+3943|        if (isExactCorner) {
+3944|            penalty -= 1500;  // SEVERE: Exact corner = mating patterns likely
+3945|            debugLog("[V40_MATING_NET]", `🚨🚨 King in EXACT CORNER ${ourKing} - MATING DANGER!`);
+3946|        } else if (isCornerArea) {
+3947|            penalty -= 800;  // King in corner area is dangerous
+3948|            debugLog("[V40_MATING_NET]", `⚠️ King in corner area ${ourKing}`);
+3949|        }
+3950|        
+3951|        // CHECK 2: Back rank vulnerability (king on 1st/8th with blocked escape) — STRONGER
+3952|        const backRank = activeColor === 'w' ? 0 : 7;
+3953|        if (kingRank === backRank) {
+3954|            // Count escape squares
+3955|            let escapeSquares = 0;
+3956|            let totalChecked = 0;
+3957|            for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+3958|                const escapeRank = activeColor === 'w' ? 1 : 6;
+3959|                const escapeSquare = String.fromCharCode(f + 97) + (escapeRank + 1);
+3960|                const pieceOnEscape = simBoard.get(escapeSquare);
+3961|                totalChecked++;
+3962|                
+3963|                // Check if escape square is blocked by our own pieces
+3964|                if (!pieceOnEscape) {
+3965|                    escapeSquares++;
+3966|                } else {
+3967|                    const isOurPiece = (pieceOnEscape === pieceOnEscape.toUpperCase()) === (activeColor === 'w');
+3968|                    if (!isOurPiece) escapeSquares++; // Enemy piece can be captured
+3969|                }
+3970|            }
+3971|            
+3972|            if (escapeSquares === 0) {
+3973|                penalty -= 4000;  // CRITICAL: No escape, back rank mate imminent
+3974|                debugLog("[V40_MATING_NET]", `🚨🚨🚨 BACK RANK DEATH TRAP - NO ESCAPE!`);
+3975|            } else if (escapeSquares === 1) {
+3976|                penalty -= 1500;  // Limited escape = very dangerous
+3977|                debugLog("[V40_MATING_NET]", `🚨🚨 Only 1 escape square from back rank`);
+3978|            } else if (escapeSquares === 2) {
+3979|                penalty -= 600;  // Still concerning
+3980|                debugLog("[V40_MATING_NET]", `⚠️ Limited escape from back rank (2 squares)`);
+3981|            }
+3982|        }
+3983|        
+3984|        // CHECK 3: Enemy rooks/queen on critical files near our king — STRONGER PENALTIES
+3985|        for (const [square, piece] of simBoard) {
+3986|            if (!piece) continue;
+3987|            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+3988|            if (!isEnemy) continue;
+3989|            
+3990|            const pieceType = piece.toLowerCase();
+3991|            if (pieceType === 'r' || pieceType === 'q') {
+3992|                const pieceFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+3993|                const pieceRank = parseInt(square[1]) - 1;
+3994|                
+3995|                // Enemy rook/queen on same file as our king
+3996|                if (pieceFile === kingFile) {
+3997|                    penalty -= 800;  // Increased from 400
+3998|                    debugLog("[V40_MATING_NET]", `🚨 Enemy ${pieceType} on king's file`);
+3999|                }
+4000|                
+4001|                // Adjacent file to king
+4002|                if (Math.abs(pieceFile - kingFile) === 1) {
+4003|                    penalty -= 400;  // NEW: Adjacent file threat
+4004|                    debugLog("[V40_MATING_NET]", `⚠️ Enemy ${pieceType} on adjacent file to king`);
+4005|                }
+4006|                
+4007|                // Enemy rook/queen on 2nd/7th rank (infiltration) — STRONGER
+4008|                const infiltrationRank = activeColor === 'w' ? 1 : 6;
+4009|                if (pieceRank === infiltrationRank) {
+4010|                    penalty -= 1200;  // Increased from 600
+4011|                    debugLog("[V40_MATING_NET]", `🚨🚨 Enemy ${pieceType} INFILTRATED to ${infiltrationRank + 1} rank!`);
+4012|                }
+4013|                
+4014|                // Double rooks on a file = CATASTROPHIC
+4015|                if (pieceType === 'r') {
+4016|                    for (const [sq2, p2] of simBoard) {
+4017|                        if (sq2 === square) continue;
+4018|                        if (p2 && p2.toLowerCase() === 'r') {
+4019|                            const isEnemy2 = (p2 === p2.toUpperCase()) === (enemyColor === 'w');
+4020|                            if (isEnemy2) {
+4021|                                const file2 = sq2.charCodeAt(0) - 'a'.charCodeAt(0);
+4022|                                if (file2 === pieceFile) {
+4023|                                    penalty -= 2000;  // Increased from 1000
+4024|                                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 DOUBLED ROOKS on ${String.fromCharCode(pieceFile + 97)}-file!`);
+4025|                                }
+4026|                            }
+4027|                        }
+4028|                    }
+4029|                }
+4030|            }
+4031|        }
+4032|        
+4033|        // CHECK 4: SPECIFIC MATING PATTERN: Rook + King coordination
+4034|        // Looking for patterns like Ra2+, Ra1# that happened in the game
+4035|        const enemyRooks = [];
+4036|        const enemyQueen = [];
+4037|        for (const [square, piece] of simBoard) {
+4038|            if (!piece) continue;
+4039|            const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+4040|            if (isEnemy && piece.toLowerCase() === 'r') {
+4041|                enemyRooks.push(square);
+4042|            }
+4043|            if (isEnemy && piece.toLowerCase() === 'q') {
+4044|                enemyQueen.push(square);
+4045|            }
+4046|        }
+4047|        
+4048|        // v40.2: ENHANCED CHECK - Multiple heavy pieces near cornered king
+4049|        if (isCornerArea) {
+4050|            const heavyPiecesNearby = enemyRooks.filter(rookSq => {
+4051|                const rookFile = rookSq.charCodeAt(0) - 'a'.charCodeAt(0);
+4052|                const rookRank = parseInt(rookSq[1]) - 1;
+4053|                return Math.abs(rookFile - kingFile) <= 2 && Math.abs(rookRank - kingRank) <= 2;
+4054|            }).length;
+4055|            
+4056|            if (heavyPiecesNearby >= 2) {
+4057|                penalty -= 3500;  // Two+ rooks converging = mate imminent
+4058|                debugLog("[V40_MATING_NET]", `🚨🚨🚨 MATING NET: ${heavyPiecesNearby} rooks converging on cornered king!`);
+4059|            } else if (heavyPiecesNearby === 1) {
+4060|                penalty -= 1800;
+4061|                debugLog("[V40_MATING_NET]", `🚨🚨 MATING NET FORMING: Rook near cornered king!`);
+4062|            }
+4063|        }
+4064|        
+4065|        // v40.2: CHECK 5 - King on a-file or h-file with rook on same rank
+4066|        if (kingFile === 0 || kingFile === 7) {  // a-file or h-file
+4067|            for (const rookSq of enemyRooks) {
+4068|                const rookRank = parseInt(rookSq[1]) - 1;
+4069|                if (rookRank === kingRank) {
+4070|                    penalty -= 2500;  // Rook giving check on edge = likely mate
+4071|                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 ROOK ON SAME RANK AS EDGE KING - MATE THREAT!`);
+4072|                }
+4073|            }
+4074|        }
+4075|        
+4076|        // v40.2: CHECK 6 - Staircase/ladder mate pattern detection
+4077|        // Two rooks alternating ranks cutting off escape
+4078|        if (enemyRooks.length >= 2) {
+4079|            const rookRanks = enemyRooks.map(sq => parseInt(sq[1]) - 1).sort((a, b) => a - b);
+4080|            const rankSpread = rookRanks[rookRanks.length - 1] - rookRanks[0];
+4081|            
+4082|            if (rankSpread <= 3 && Math.abs(rookRanks[0] - kingRank) <= 2) {
+4083|                penalty -= 2000;  // Ladder mate forming
+4084|                debugLog("[V40_MATING_NET]", `🚨🚨 LADDER MATE PATTERN DETECTED!`);
+4085|            }
+4086|        }
+4087|        
+4088|    } catch (e) {
+4089|        debugLog("[V40_MATING_NET]", `Error: ${e.message}`);
+4090|    }
+4091|    
+4092|    return penalty;
+4093|}
+4094|
+4095|/**
+4096| * v40.1: FILE CONTROL EVALUATION
+4097| * Prevents blindness to dangerous file invasions like the c-file in the lost game
+4098| * Evaluates open file control and file invasion threats
+4099| */
+4100|function v40FileControlEvaluation(fen, move, board, activeColor) {

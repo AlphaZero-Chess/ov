@@ -1,0 +1,8 @@
+The counterattack function exists. Now let me check if it's integrated into computeCombinedScore:
+Action: $ grep -n "v40Counterattack" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 1040:    v40CounterattackEnabled: true,
+1041:    v40CounterattackBonus: 15000,           // Bonus for counterattack moves
+5724:function v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) {
+5725:    if (!CONFIG.v40CounterattackEnabled) return 0;
+5749:                score += CONFIG.v40CounterattackBonus || 15000;
+Exit code: 0
