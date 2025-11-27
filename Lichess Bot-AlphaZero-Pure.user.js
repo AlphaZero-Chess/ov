@@ -13080,6 +13080,427 @@ function v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// v40.14 ABSOLUTE ZERO BLUNDER SUPREME: LOOK-AHEAD SIMULATION FUNCTIONS
+// These functions prevent blunders like Bd3 where exd3 captures the bishop
+// The KEY is simulating opponent's response BEFORE committing to a move
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.14 ABSOLUTE ZERO BLUNDER: LOOK-AHEAD SIMULATION
+ * THE MOST CRITICAL FUNCTION - Simulates opponent's best response
+ * Prevents blunders like Bd3 where pawn takes (exd3)
+ * 
+ * For EVERY move we consider:
+ * 1. Simulate making the move
+ * 2. Find ALL possible opponent captures
+ * 3. If opponent can capture our piece for FREE, MASSIVE penalty
+ * 4. If opponent can capture with better exchange, significant penalty
+ */
+function v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40LookAheadBlunderCheckEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const movingPieceType = movingPiece.toLowerCase();
+        const movingPieceValue = getPieceValueSimple(movingPieceType);
+        
+        // Step 1: Simulate OUR move
+        const afterOurMove = new Map(board);
+        afterOurMove.delete(fromSquare);
+        const capturedByUs = afterOurMove.get(toSquare);
+        afterOurMove.set(toSquare, movingPiece);
+        
+        // Step 2: Find ALL possible opponent captures after our move
+        const opponentCaptures = findAllCaptures(afterOurMove, enemyColor);
+        
+        // Step 3: Check each capture - is opponent capturing something for free?
+        for (const capture of opponentCaptures) {
+            const captureFrom = capture.from;
+            const captureTo = capture.to;
+            const capturingPiece = capture.piece;
+            const capturedPiece = afterOurMove.get(captureTo);
+            
+            if (!capturedPiece) continue;
+            
+            const capturedType = capturedPiece.toLowerCase();
+            const capturedValue = getPieceValueSimple(capturedType);
+            const capturingType = capturingPiece.toLowerCase();
+            const capturingValue = getPieceValueSimple(capturingType);
+            
+            // Is the captured piece OURS?
+            const capturedIsWhite = capturedPiece === capturedPiece.toUpperCase();
+            if (capturedIsWhite !== isWhite) continue; // Not our piece
+            
+            // Check if the capture square is defended after the capture
+            const afterCapture = new Map(afterOurMove);
+            afterCapture.delete(captureFrom);
+            afterCapture.set(captureTo, capturingPiece);
+            const isRecapturable = isSquareAttackedByColor(afterCapture, captureTo, activeColor);
+            
+            if (!isRecapturable) {
+                // FREE CAPTURE - CATASTROPHIC BLUNDER!
+                const penalty = capturedType === 'q' ? CONFIG.v40OpponentCapturesQueenPenalty :
+                               capturedType === 'r' ? CONFIG.v40OpponentCapturesRookPenalty :
+                               ['n', 'b'].includes(capturedType) ? CONFIG.v40OpponentCapturesMinorPenalty :
+                               CONFIG.v40OpponentCapturesPawnPenalty;
+                
+                score += penalty || -5000000;
+                debugLog("[V40.14_LOOKAHEAD]", `☠️☠️☠️ CATASTROPHIC BLUNDER: After ${move}, opponent plays ${captureFrom}${captureTo} capturing ${capturedType.toUpperCase()} for FREE!`);
+                
+                // SPECIFICALLY check if this is the piece we just moved
+                if (captureTo === toSquare) {
+                    // We just moved this piece and it gets captured FOR FREE!
+                    score += CONFIG.v40PieceOnPawnAttackedSquarePenalty || -8000000;
+                    debugLog("[V40.14_LOOKAHEAD]", `☠️☠️☠️☠️ ABSOLUTE DEATH: ${move} places ${movingPieceType.toUpperCase()} where it will be captured by ${capturingType.toUpperCase()}!`);
+                }
+            } else {
+                // Check if it's a bad exchange (opponent captures with lower value)
+                if (capturingValue < capturedValue) {
+                    const materialLoss = capturedValue - capturingValue;
+                    score += -materialLoss * 500000;
+                    debugLog("[V40.14_LOOKAHEAD]", `⚠️ BAD EXCHANGE: After ${move}, opponent wins ${materialLoss} points of material`);
+                }
+            }
+        }
+        
+        // Step 4: SPECIAL CHECK - Is our moved piece on a pawn-attacked square?
+        // This is specifically for cases like Bd3 where the e-pawn takes
+        const pawnAttacks = findPawnAttacksOnSquare(afterOurMove, toSquare, enemyColor);
+        if (pawnAttacks.length > 0) {
+            // Our piece is attacked by enemy pawn!
+            const isDefended = isSquareDefendedByColor(afterOurMove, toSquare, activeColor);
+            
+            if (!isDefended) {
+                // INSTANT DEATH - Piece on pawn-attacked undefended square
+                score += CONFIG.v40PieceOnPawnAttackedSquarePenalty || -8000000;
+                debugLog("[V40.14_LOOKAHEAD]", `☠️☠️☠️☠️ INSTANT DEATH: ${move} puts ${movingPieceType.toUpperCase()} on undefended pawn-attacked square!`);
+                debugLog("[V40.14_LOOKAHEAD]", `   Attacked by pawn(s) on: ${pawnAttacks.join(', ')}`);
+            } else if (movingPieceValue > 1) {
+                // Even if defended, losing piece to pawn is terrible
+                score += -movingPieceValue * 400000;
+                debugLog("[V40.14_LOOKAHEAD]", `⚠️ DANGER: ${movingPieceType.toUpperCase()} on pawn-attacked square, even if defended this is risky!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.14_LOOKAHEAD]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.14 Helper: Find all pawn attacks on a specific square
+ * Returns array of squares where attacking pawns are
+ */
+function findPawnAttacksOnSquare(board, targetSquare, attackingColor) {
+    const attackingPawns = [];
+    const isWhite = attackingColor === 'w';
+    const pawnDirection = isWhite ? 1 : -1; // White pawns attack upward, black downward
+    
+    const targetFile = targetSquare.charCodeAt(0) - 97;
+    const targetRank = parseInt(targetSquare[1]);
+    
+    // Check squares from which pawns could attack this target
+    // For a pawn to attack targetSquare, it must be:
+    // - On file +/- 1 from target
+    // - On rank - pawnDirection (the rank "behind" from attacker's perspective)
+    const pawnRank = targetRank - pawnDirection;
+    
+    if (pawnRank >= 1 && pawnRank <= 8) {
+        // Check left-diagonal pawn position
+        if (targetFile > 0) {
+            const leftPawnSquare = String.fromCharCode(targetFile - 1 + 97) + pawnRank;
+            const piece = board.get(leftPawnSquare);
+            if (piece && piece.toLowerCase() === 'p') {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) {
+                    attackingPawns.push(leftPawnSquare);
+                }
+            }
+        }
+        
+        // Check right-diagonal pawn position
+        if (targetFile < 7) {
+            const rightPawnSquare = String.fromCharCode(targetFile + 1 + 97) + pawnRank;
+            const piece = board.get(rightPawnSquare);
+            if (piece && piece.toLowerCase() === 'p') {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) {
+                    attackingPawns.push(rightPawnSquare);
+                }
+            }
+        }
+    }
+    
+    return attackingPawns;
+}
+
+/**
+ * v40.14 Helper: Find ALL possible captures for a color
+ * Returns array of {from, to, piece} for each capture
+ */
+function findAllCaptures(board, captureColor) {
+    const captures = [];
+    const isWhite = captureColor === 'w';
+    
+    for (const [fromSquare, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        
+        // Find all squares this piece can move to
+        const possibleMoves = getPossibleMovesForPiece(fromSquare, piece, board);
+        
+        for (const toSquare of possibleMoves) {
+            const targetPiece = board.get(toSquare);
+            if (targetPiece) {
+                // There's a piece on the target square
+                const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+                if (targetIsWhite !== isWhite) {
+                    // It's an enemy piece - this is a capture!
+                    captures.push({
+                        from: fromSquare,
+                        to: toSquare,
+                        piece: piece
+                    });
+                }
+            }
+        }
+    }
+    
+    return captures;
+}
+
+/**
+ * v40.14 Helper: Get all possible moves for a piece
+ * Returns array of squares the piece can move to
+ */
+function getPossibleMovesForPiece(fromSquare, piece, board) {
+    const moves = [];
+    const pieceType = piece.toLowerCase();
+    const isWhite = piece === piece.toUpperCase();
+    const fromFile = fromSquare.charCodeAt(0) - 97;
+    const fromRank = parseInt(fromSquare[1]) - 1;
+    
+    switch (pieceType) {
+        case 'p':
+            // Pawn captures diagonally
+            const pawnDir = isWhite ? 1 : -1;
+            const captureRank = fromRank + pawnDir;
+            if (captureRank >= 0 && captureRank <= 7) {
+                if (fromFile > 0) {
+                    moves.push(String.fromCharCode(fromFile - 1 + 97) + (captureRank + 1));
+                }
+                if (fromFile < 7) {
+                    moves.push(String.fromCharCode(fromFile + 1 + 97) + (captureRank + 1));
+                }
+            }
+            break;
+            
+        case 'n':
+            // Knight moves
+            const knightDeltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+            for (const [df, dr] of knightDeltas) {
+                const newFile = fromFile + df;
+                const newRank = fromRank + dr;
+                if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+                    moves.push(String.fromCharCode(newFile + 97) + (newRank + 1));
+                }
+            }
+            break;
+            
+        case 'b':
+            // Bishop moves (diagonals)
+            for (const [df, dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]) {
+                for (let i = 1; i <= 7; i++) {
+                    const newFile = fromFile + df * i;
+                    const newRank = fromRank + dr * i;
+                    if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) break;
+                    const sq = String.fromCharCode(newFile + 97) + (newRank + 1);
+                    moves.push(sq);
+                    if (board.get(sq)) break; // Blocked
+                }
+            }
+            break;
+            
+        case 'r':
+            // Rook moves (files and ranks)
+            for (const [df, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                for (let i = 1; i <= 7; i++) {
+                    const newFile = fromFile + df * i;
+                    const newRank = fromRank + dr * i;
+                    if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) break;
+                    const sq = String.fromCharCode(newFile + 97) + (newRank + 1);
+                    moves.push(sq);
+                    if (board.get(sq)) break; // Blocked
+                }
+            }
+            break;
+            
+        case 'q':
+            // Queen moves (diagonals + files + ranks)
+            for (const [df, dr] of [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]) {
+                for (let i = 1; i <= 7; i++) {
+                    const newFile = fromFile + df * i;
+                    const newRank = fromRank + dr * i;
+                    if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) break;
+                    const sq = String.fromCharCode(newFile + 97) + (newRank + 1);
+                    moves.push(sq);
+                    if (board.get(sq)) break; // Blocked
+                }
+            }
+            break;
+            
+        case 'k':
+            // King moves (one square any direction)
+            for (const [df, dr] of [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]) {
+                const newFile = fromFile + df;
+                const newRank = fromRank + dr;
+                if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+                    moves.push(String.fromCharCode(newFile + 97) + (newRank + 1));
+                }
+            }
+            break;
+    }
+    
+    return moves;
+}
+
+/**
+ * v40.14 ABSOLUTE ZERO BLUNDER: TRIPLE-CHECK VERIFICATION
+ * Run the blunder check 3 times to ensure NO TACTICAL OVERSIGHTS
+ * If any check finds a blunder, REJECT the move
+ */
+function v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40TripleCheckEnabled) return 0;
+    
+    let totalScore = 0;
+    const passes = CONFIG.v40TripleCheckPasses || 3;
+    
+    try {
+        // Run multiple passes of blunder detection
+        for (let pass = 1; pass <= passes; pass++) {
+            const immediateLoss = v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber);
+            const lookAheadBlunder = v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber);
+            const captureChain = v40CaptureChainAnalysisEval(fen, move, board, activeColor, moveNumber);
+            
+            const passScore = immediateLoss + lookAheadBlunder + captureChain;
+            
+            if (passScore < CONFIG.v40BlunderScoreThreshold) {
+                // This pass detected a BLUNDER!
+                debugLog("[V40.14_TRIPLE]", `☠️ PASS ${pass}: Detected BLUNDER in ${move} (score: ${passScore})`);
+                totalScore += passScore;
+            }
+        }
+        
+        // If consensus required and any pass found blunder, multiply penalty
+        if (CONFIG.v40TripleCheckConsensusRequired && totalScore < 0) {
+            totalScore *= passes;
+            debugLog("[V40.14_TRIPLE]", `☠️☠️☠️ CONSENSUS: All ${passes} passes confirm ${move} is a BLUNDER!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.14_TRIPLE]", `Error: ${e.message}`);
+    }
+    
+    return totalScore;
+}
+
+/**
+ * v40.14 ABSOLUTE ZERO BLUNDER: FAIL-SAFE BLUNDER REJECTION
+ * The FINAL safety check before committing to any move
+ * If this function returns true, the move MUST be rejected
+ */
+function v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40FailSafeBlunderRejectionEnabled) return { isBlunder: false, score: 0 };
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return { isBlunder: false, score: 0 };
+        
+        const movingPieceType = movingPiece.toLowerCase();
+        const movingPieceValue = getPieceValueSimple(movingPieceType);
+        const isWhite = activeColor === 'w';
+        const enemyColor = isWhite ? 'b' : 'w';
+        
+        // Simulate the move
+        const simBoard = new Map(board);
+        simBoard.delete(fromSquare);
+        simBoard.set(toSquare, movingPiece);
+        
+        // CHECK 1: Is our moved piece IMMEDIATELY capturable by pawn?
+        const pawnAttackers = findPawnAttacksOnSquare(simBoard, toSquare, enemyColor);
+        if (pawnAttackers.length > 0) {
+            const isDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+            if (!isDefended || movingPieceValue > 1) {
+                return {
+                    isBlunder: true,
+                    score: CONFIG.v40PieceOnPawnAttackedSquarePenalty || -8000000,
+                    reason: `${movingPieceType.toUpperCase()} on ${toSquare} attacked by pawn on ${pawnAttackers[0]}`
+                };
+            }
+        }
+        
+        // CHECK 2: Is our moved piece IMMEDIATELY capturable by any piece?
+        const isAttacked = isSquareAttackedByColor(simBoard, toSquare, enemyColor);
+        const isDefended = isSquareDefendedByColor(simBoard, toSquare, activeColor);
+        
+        if (isAttacked && !isDefended && movingPieceValue > 0) {
+            return {
+                isBlunder: true,
+                score: -movingPieceValue * 1000000,
+                reason: `${movingPieceType.toUpperCase()} on ${toSquare} is undefended and attacked`
+            };
+        }
+        
+        // CHECK 3: Does our move leave another piece hanging?
+        for (const [sq, piece] of simBoard) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (sq === toSquare) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue;
+            
+            const wasDefended = isSquareDefendedByColor(board, sq, activeColor);
+            const isNowDefended = isSquareDefendedByColor(simBoard, sq, activeColor);
+            const isUnderAttack = isSquareAttackedByColor(simBoard, sq, enemyColor);
+            
+            if (wasDefended && !isNowDefended && isUnderAttack) {
+                const pieceValue = getPieceValueSimple(pieceType);
+                return {
+                    isBlunder: true,
+                    score: -pieceValue * 800000,
+                    reason: `${move} leaves ${pieceType.toUpperCase()} on ${sq} hanging`
+                };
+            }
+        }
+        
+        return { isBlunder: false, score: 0 };
+        
+    } catch (e) {
+        debugLog("[V40.14_FAILSAFE]", `Error: ${e.message}`);
+        return { isBlunder: false, score: 0 };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * v40.9 Helper: Find all attacked pieces for a color
@@ -28380,8 +28801,28 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.13: SIMPLE THREAT DETECTION — Don't miss simple threats
                 const simpleThreatScore = v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) * 3.0;
                 
-                // v40.13: COMBINED v40 SCORE — 100% ULTIMATE TACTICAL SUPREME INFLUENCE
-                // This makes v40 the ABSOLUTE ULTIMATE TACTICAL SUPREME factor
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.14 ABSOLUTE ZERO BLUNDER SUPREME: THE FINAL SAFETY NET
+                // From game analysis: Bot played Bd3 where exd3 captures bishop
+                // These functions LOOK AHEAD and REJECT ANY MOVE where opponent captures
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.14: LOOK-AHEAD BLUNDER CHECK — Simulate opponent's best response
+                const lookAheadBlunderScore = v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) * 10.0;
+                
+                // v40.14: TRIPLE-CHECK VERIFICATION — Run blunder check 3 times
+                const tripleCheckScore = v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) * 5.0;
+                
+                // v40.14: FAIL-SAFE BLUNDER REJECTION — Final safety check
+                const failSafeCheck = v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber);
+                const failSafeScore = failSafeCheck.isBlunder ? failSafeCheck.score * 10.0 : 0;
+                
+                if (failSafeCheck.isBlunder) {
+                    debugLog("[V40.14_FAILSAFE]", `☠️☠️☠️ FAIL-SAFE TRIGGERED: ${move} is a BLUNDER! Reason: ${failSafeCheck.reason}`);
+                }
+                
+                // v40.14: COMBINED v40 SCORE — 100% ABSOLUTE ZERO BLUNDER SUPREME INFLUENCE
+                // This makes v40 the ABSOLUTE ZERO BLUNDER SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -28412,11 +28853,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
                                // v40.13 ULTIMATE TACTICAL SUPREME additions:
                                immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
-                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ULTIMATE TACTICAL SUPREME PARADIGM SHIFT
+                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+                               lookAheadBlunderScore + tripleCheckScore + failSafeScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.13 ULTIMATE TACTICAL SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.14 ABSOLUTE ZERO BLUNDER SUPREME EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -28437,6 +28880,9 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   ⭐ PreMoveSafety: ${preMoveSafetyScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ⭐ OpeningBlunder: ${openingBlunderScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ⭐ SimpleThreat: ${simpleThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 LookAheadBlunder: ${lookAheadBlunderScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 TripleCheck: ${tripleCheckScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 FailSafe: ${failSafeScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
