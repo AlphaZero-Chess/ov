@@ -1,0 +1,4 @@
+I can see the v40.11 functions are implemented. Now let me check if there's a `isKingsideUnderAttack` helper function:
+Action: $ cd /app && grep -n "function isKingsideUnderAttack" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 11556:function isKingsideUnderAttack(board, activeColor) {
+Exit code: 0

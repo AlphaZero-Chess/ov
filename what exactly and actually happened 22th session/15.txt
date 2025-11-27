@@ -1,0 +1,84 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1420|    v40HPawnWeaknessEnabled: true,
+1421|    v40WeakHPawnPenalty: -150000,           // Penalty for weak h3/h6 pawn
+1422|    v40HPawnTargetedPenalty: -200000,       // Penalty when h-pawn is targeted
+1423|    v40HPawnFallsScore: -300000,            // Score when h-pawn falls
+1424|    
+1425|    // v40.11: G-PAWN WEAKNESS DETECTION — g3/g6 pawn can become target  
+1426|    v40GPawnWeaknessEnabled: true,
+1427|    v40WeakGPawnPenalty: -180000,           // Penalty for weak g3/g6 pawn
+1428|    v40GPawnTargetedPenalty: -220000,       // Penalty when g-pawn is targeted
+1429|    v40GPawnFallsScore: -350000,            // Score when g-pawn falls
+1430|    
+1431|    // v40.11: 100% TRANSCENDENT SUPREME DOMINANCE
+1432|    v40TranscendentSupremeDominance: 1.0,   // 100% v40 dominance
+1433|};
+1434|
+1435|// ═══════════════════════════════════════════════════════════════════════
+1436|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1437|// ═══════════════════════════════════════════════════════════════════════
+1438|
+1439|/**
+1440| * v37: TRUE MCTS Node structure for proper tree search
+1441| */
+1442|class MCTSNode {
+1443|    constructor(move, parent = null, prior = 1.0) {
+1444|        this.move = move;
+1445|        this.parent = parent;
+1446|        this.children = new Map();
+1447|        this.visits = 0;
+1448|        this.totalValue = 0;
+1449|        this.prior = prior;           // Policy prior (P)
+1450|        this.virtualLoss = 0;
+1451|        this.isExpanded = false;
+1452|        this.isTerminal = false;
+1453|        this.depth = parent ? parent.depth + 1 : 0;
+1454|    }
+1455|    
+1456|    get value() {
+1457|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+1458|    }
+1459|    
+1460|    get ucb1Score() {
+1461|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1462|        
+1463|        const exploitation = this.value;
+1464|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+1465|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+1466|        
+1467|        return exploitation + exploration;
+1468|    }
+1469|    
+1470|    get puctScore() {
+1471|        if (!this.parent || this.parent.visits === 0) return Infinity;
+1472|        
+1473|        const Q = this.value;
+1474|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+1475|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+1476|        
+1477|        // Apply virtual loss for diversity
+1478|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);
+1479|        
+1480|        return Q + U - virtualLossAdjustment;
+1481|    }
+1482|    
+1483|    selectChild() {
+1484|        if (this.children.size === 0) return null;
+1485|        
+1486|        let bestChild = null;
+1487|        let bestScore = -Infinity;
+1488|        
+1489|        for (const [move, child] of this.children) {
+1490|            const score = child.puctScore;
+1491|            if (score > bestScore) {
+1492|                bestScore = score;
+1493|                bestChild = child;
+1494|            }
+1495|        }
+1496|        
+1497|        return bestChild;
+1498|    }
+1499|    
+1500|    expand(moves, priors = null) {

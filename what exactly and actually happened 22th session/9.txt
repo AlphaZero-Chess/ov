@@ -1,0 +1,84 @@
+Based on my analysis, the current v40.11 implementation detects attacks AFTER they're set up, but the bot needs to PREVENT them. Let me implement v40.12 with truly PROACTIVE attack prevention:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+11480|
+11481|/**
+11482| * v40.11 TRANSCENDENT SUPREME: H-PAWN AND G-PAWN WEAKNESS DETECTION
+11483| * Detect when h3/g3 pawns are weak or under attack
+11484| */
+11485|function v40KingsidePawnWeaknessEval(fen, move, board, activeColor, moveNumber) {
+11486|    if (!CONFIG.v40HPawnWeaknessEnabled && !CONFIG.v40GPawnWeaknessEnabled) return 0;
+11487|    
+11488|    let score = 0;
+11489|    const isWhite = activeColor === 'w';
+11490|    const enemyColor = isWhite ? 'b' : 'w';
+11491|    
+11492|    try {
+11493|        // Find our kingside pawns
+11494|        const hPawnSquare = isWhite ? 'h3' : 'h6';
+11495|        const gPawnSquare = isWhite ? 'g3' : 'g6';
+11496|        const hPawn2 = isWhite ? 'h2' : 'h7';
+11497|        const gPawn2 = isWhite ? 'g2' : 'g7';
+11498|        
+11499|        // Check h-pawn
+11500|        const hPawn = board.get(hPawnSquare) || board.get(hPawn2);
+11501|        if (hPawn && hPawn.toLowerCase() === 'p') {
+11502|            const hPawnSq = board.has(hPawnSquare) ? hPawnSquare : hPawn2;
+11503|            
+11504|            // Check if h-pawn is attacked
+11505|            if (isSquareAttackedByColor(board, hPawnSq, enemyColor)) {
+11506|                // Check if defended
+11507|                const defended = isSquareDefendedByColor(board, hPawnSq, activeColor);
+11508|                if (!defended) {
+11509|                    score += CONFIG.v40HPawnTargetedPenalty || -200000;
+11510|                    debugLog("[V40.11_PAWN]", `🚨 H-PAWN ON ${hPawnSq} IS UNDEFENDED AND ATTACKED!`);
+11511|                }
+11512|            }
+11513|        }
+11514|        
+11515|        // Check g-pawn
+11516|        const gPawn = board.get(gPawnSquare) || board.get(gPawn2);
+11517|        if (gPawn && gPawn.toLowerCase() === 'p') {
+11518|            const gPawnSq = board.has(gPawnSquare) ? gPawnSquare : gPawn2;
+11519|            
+11520|            // Check if g-pawn is attacked
+11521|            if (isSquareAttackedByColor(board, gPawnSq, enemyColor)) {
+11522|                const defended = isSquareDefendedByColor(board, gPawnSq, activeColor);
+11523|                if (!defended) {
+11524|                    score += CONFIG.v40GPawnTargetedPenalty || -220000;
+11525|                    debugLog("[V40.11_PAWN]", `🚨 G-PAWN ON ${gPawnSq} IS UNDEFENDED AND ATTACKED!`);
+11526|                }
+11527|            }
+11528|        }
+11529|        
+11530|        // Check if this move loses h or g pawn
+11531|        const toSquare = move.substring(2, 4);
+11532|        const capturedPiece = board.get(toSquare);
+11533|        
+11534|        // If enemy is capturing our h or g pawn
+11535|        if (capturedPiece && capturedPiece.toLowerCase() === 'p') {
+11536|            if (['h2', 'h3', 'h6', 'h7'].includes(toSquare)) {
+11537|                score += CONFIG.v40HPawnFallsScore || -300000;
+11538|                debugLog("[V40.11_PAWN]", `🚨🚨 H-PAWN IS FALLING!`);
+11539|            }
+11540|            if (['g2', 'g3', 'g6', 'g7'].includes(toSquare)) {
+11541|                score += CONFIG.v40GPawnFallsScore || -350000;
+11542|                debugLog("[V40.11_PAWN]", `🚨🚨 G-PAWN IS FALLING!`);
+11543|            }
+11544|        }
+11545|        
+11546|    } catch (e) {
+11547|        debugLog("[V40.11_PAWN]", `Error: ${e.message}`);
+11548|    }
+11549|    
+11550|    return score;
+11551|}
+11552|
+11553|/**
+11554| * v40.11 Helper: Check if kingside is under attack
+11555| */
+11556|function isKingsideUnderAttack(board, activeColor) {
+11557|    const isWhite = activeColor === 'w';
+11558|    const enemyColor = isWhite ? 'b' : 'w';
+11559|    
+11560|    // Find our king

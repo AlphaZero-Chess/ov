@@ -1,0 +1,70 @@
+Now let me add the v40.12 CONFIG values:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.11: G-PAWN WEAKNESS DETECTION — g3/g6 pawn can become target  
+    v40GPawnWeaknessEnabled: true,
+    v40WeakGPawnPenalty: -180000,           // Penalty for weak g3/g6 pawn
+    v40GPawnTargetedPenalty: -220000,       // Penalty when g-pawn is targeted
+    v40GPawnFallsScore: -350000,            // Score when g-pawn falls
+    
+    // v40.11: 100% TRANSCENDENT SUPREME DOMINANCE
+    v40TranscendentSupremeDominance: 1.0,   // 100% v40 dominance
+};" --new-str "    // v40.11: G-PAWN WEAKNESS DETECTION — g3/g6 pawn can become target  
+    v40GPawnWeaknessEnabled: true,
+    v40WeakGPawnPenalty: -180000,           // Penalty for weak g3/g6 pawn
+    v40GPawnTargetedPenalty: -220000,       // Penalty when g-pawn is targeted
+    v40GPawnFallsScore: -350000,            // Score when g-pawn falls
+    
+    // v40.11: 100% TRANSCENDENT SUPREME DOMINANCE
+    v40TranscendentSupremeDominance: 1.0,   // 100% v40 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // v40.12 PROACTIVE SUPREME: ATTACK PREVENTION CONFIG
+    // These are PROACTIVE functions that PREVENT attack setup
+    // Unlike v40.11 which was REACTIVE (detected attacks after setup)
+    // ═══════════════════════════════════════════════════════════════════
+    
+    // v40.12: PROPHYLACTIC EXCHANGE EVALUATION
+    // Don't make captures where opponent's recapture opens dangerous files
+    v40ProphylacticExchangeEnabled: true,
+    v40OpenGFileExchangePenalty: -600000,   // Huge penalty for Bxf6 gxf6 opening g-file
+    v40OpenHFileExchangePenalty: -500000,   // Penalty for exchanges opening h-file
+    v40OpenQueensideFilePenalty: -350000,   // Penalty for opening queenside files toward king
+    v40TradeKingsideDefenderPenalty: -300000, // Don't trade away kingside defenders
+    
+    // v40.12: PAWN STORM ANTICIPATION
+    // Detect pawn storms BEFORE they happen
+    v40PawnStormAnticipationEnabled: true,
+    v40PawnStormDetectedPenalty: -400000,   // Penalty when pawn storm in progress
+    v40EarlyStormWarningPenalty: -200000,   // Early warning penalty
+    v40CounterplayBonus: 250000,            // Bonus for central counterplay during storm
+    v40BlockStormBonus: 300000,             // Bonus for blocking pawn storm
+    
+    // v40.12: DON'T CREATE WEAKNESSES UNDER ATTACK
+    // Playing h3/g3 when queen is attacking is FATAL
+    v40DontCreateWeaknessesEnabled: true,
+    v40CreateWeaknessUnderAttackPenalty: -700000,  // MASSIVE penalty for creating weakness under attack
+    v40CreateWeaknessWithQueenNearbyPenalty: -400000, // Penalty with queen on kingside
+    v40CreateWeaknessWithRooksPenalty: -250000,   // Penalty per rook on kingside
+    
+    // v40.12: PRESERVE KING SHELTER PIECES
+    // Don't move or trade pieces defending the king
+    v40PreserveKingShelterEnabled: true,
+    v40MoveDefenderDuringAttackPenalty: -500000,  // Moving defender during attack
+    v40MoveKingShelterPiecePenalty: -150000,      // Moving piece near king
+    v40TradeFianchettoBishopPenalty: -450000,     // Trading Bg2/Bg7
+    
+    // v40.12: ATTACK TRAJECTORY PREDICTION
+    // See where pieces are AIMING, not just where they are
+    v40AttackTrajectoryEnabled: true,
+    v40DiagonalAimingPenalty: -180000,      // Penalty for enemy B/Q aiming at king zone
+    v40FileRankAimingPenalty: -150000,      // Penalty for enemy R/Q aiming at king zone
+    
+    // v40.12: QUEEN TRAP PREVENTION
+    // Drive away enemy queen from attacking squares
+    v40QueenTrapPreventionEnabled: true,
+    v40DriveAwayQueenBonus: 450000,         // Bonus for attacking enemy queen on dangerous square
+    v40IgnoreQueenThreatPenalty: -400000,   // Penalty for passive moves while queen attacks
+    
+    // v40.12: 100% PROACTIVE SUPREME DOMINANCE
+    v40ProactiveSupremeDominance: 1.0,      // 100% v40.12 dominance
+};"
+Observation: Edit was successful.

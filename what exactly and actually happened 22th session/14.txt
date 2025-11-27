@@ -1,0 +1,6 @@
+
+Action: $ cd /app && grep -n "v40HPawnWeaknessEnabled\|v40GPawnWeaknessEnabled" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 1420:    v40HPawnWeaknessEnabled: true,
+1426:    v40GPawnWeaknessEnabled: true,
+11486:    if (!CONFIG.v40HPawnWeaknessEnabled && !CONFIG.v40GPawnWeaknessEnabled) return 0;
+Exit code: 0

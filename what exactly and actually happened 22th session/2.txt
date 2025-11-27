@@ -1,0 +1,17 @@
+
+Action: $ cd /app && grep -n "v40GFileAttackDetectionEval\|v40KingsideAttackPatternEval\|v40PassiveQueensideMoveEval\|v40BadExchangeFileOpeningEval\|v40PawnStormDetectionEval\|v40DefendKingsidePriorityEval\|v40KingsidePawnWeaknessEval" "Lichess Bot-AlphaZero-Pure.user.js" | head -50
+Observation: 10966:function v40GFileAttackDetectionEval(fen, move, board, activeColor, moveNumber) {
+11070:function v40KingsideAttackPatternEval(fen, move, board, activeColor, moveNumber) {
+11181:function v40PassiveQueensideMoveEval(fen, move, board, activeColor, moveNumber) {
+11235:function v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) {
+11316:function v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) {
+11403:function v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) {
+11485:function v40KingsidePawnWeaknessEval(fen, move, board, activeColor, moveNumber) {
+26842:                const gFileAttackScore = v40GFileAttackDetectionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26845:                const kingsideAttackPatternScore = v40KingsideAttackPatternEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26848:                const passiveQueensideScore = v40PassiveQueensideMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+26851:                const badExchangeFileScore = v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) * 2.5;
+26854:                const pawnStormScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 2.0;
+26857:                const defendKingsideScore = v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+26860:                const kingsidePawnWeaknessScore = v40KingsidePawnWeaknessEval(fen, move, board, activeColor, moveNumber) * 2.0;
+Exit code: 0

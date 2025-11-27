@@ -1,0 +1,154 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+11100|        let enemyRookSquares = [];
+11101|        
+11102|        const enemyPieces = isWhite ? ['q', 'r', 'b'] : ['Q', 'R', 'B'];
+11103|        
+11104|        for (const [sq, piece] of board) {
+11105|            if (!piece) continue;
+11106|            const file = sq[0];
+11107|            const pieceIsWhite = piece === piece.toUpperCase();
+11108|            
+11109|            if (pieceIsWhite !== isWhite) { // Enemy piece
+11110|                const pieceType = piece.toLowerCase();
+11111|                
+11112|                // Check if on kingside files (e, f, g, h)
+11113|                if (['e', 'f', 'g', 'h'].includes(file)) {
+11114|                    if (pieceType === 'q') {
+11115|                        enemyQueenSquare = sq;
+11116|                        attackersOnFGH++;
+11117|                    } else if (pieceType === 'r') {
+11118|                        enemyRookSquares.push(sq);
+11119|                        attackersOnFGH++;
+11120|                    } else if (pieceType === 'b') {
+11121|                        enemyBishopSquares.push(sq);
+11122|                        attackersOnFGH++;
+11123|                    }
+11124|                }
+11125|            }
+11126|        }
+11127|        
+11128|        // COORDINATED ATTACK: Q + R + B all on kingside
+11129|        if (enemyQueenSquare && enemyRookSquares.length >= 1 && enemyBishopSquares.length >= 1 && kingOnKingside) {
+11130|            score += CONFIG.v40CoordinatedAttackPenalty || -500000;
+11131|            debugLog("[V40.11_KATTACK]", `🚨🚨🚨 COORDINATED KINGSIDE ATTACK: Q+R+B!`);
+11132|        }
+11133|        
+11134|        // QUEEN INFILTRATION: Queen on g3, g4, h3, h4
+11135|        if (enemyQueenSquare) {
+11136|            const qFile = enemyQueenSquare[0];
+11137|            const qRank = enemyQueenSquare[1];
+11138|            
+11139|            // Queen near our king on dangerous squares
+11140|            if (enemyQueenSquare === 'g3' || enemyQueenSquare === 'g6') {
+11141|                score += CONFIG.v40QueenOnG3Penalty || -400000;
+11142|                debugLog("[V40.11_KATTACK]", `🚨🚨 QUEEN ON G3/G6 - CRITICAL DANGER!`);
+11143|            }
+11144|            if (enemyQueenSquare === 'h3' || enemyQueenSquare === 'h6') {
+11145|                score += CONFIG.v40QueenOnH3Penalty || -350000;
+11146|                debugLog("[V40.11_KATTACK]", `🚨 QUEEN ON H3/H6 - DANGER!`);
+11147|            }
+11148|            if (enemyQueenSquare === 'g4' || enemyQueenSquare === 'g5') {
+11149|                score += CONFIG.v40QueenOnG4Penalty || -300000;
+11150|                debugLog("[V40.11_KATTACK]", `🚨 QUEEN ON G4/G5 - ATTACKING!`);
+11151|            }
+11152|            if (enemyQueenSquare === 'h4' || enemyQueenSquare === 'h5') {
+11153|                score += CONFIG.v40QueenOnH4Penalty || -280000;
+11154|                debugLog("[V40.11_KATTACK]", `🚨 QUEEN ON H4/H5 - ATTACKING!`);
+11155|            }
+11156|        }
+11157|        
+11158|        // Queen + Rook both on g-file
+11159|        if (enemyQueenSquare && enemyQueenSquare[0] === 'g') {
+11160|            for (const rSq of enemyRookSquares) {
+11161|                if (rSq[0] === 'g') {
+11162|                    score += CONFIG.v40QueenAndRookOnGFilePenalty || -450000;
+11163|                    debugLog("[V40.11_KATTACK]", `🚨🚨 Q+R BOTH ON G-FILE - DISASTER IMMINENT!`);
+11164|                    break;
+11165|                }
+11166|            }
+11167|        }
+11168|        
+11169|    } catch (e) {
+11170|        debugLog("[V40.11_KATTACK]", `Error: ${e.message}`);
+11171|    }
+11172|    
+11173|    return score;
+11174|}
+11175|
+11176|/**
+11177| * v40.11 TRANSCENDENT SUPREME: PASSIVE QUEENSIDE MOVE PENALTY
+11178| * Don't play a3, b3, c3 when kingside is under attack!
+11179| * From French Defense loss: Bot played a3, b3, c3 while being attacked on kingside
+11180| */
+11181|function v40PassiveQueensideMoveEval(fen, move, board, activeColor, moveNumber) {
+11182|    let score = 0;
+11183|    const isWhite = activeColor === 'w';
+11184|    
+11185|    try {
+11186|        const fromSquare = move.substring(0, 2);
+11187|        const toSquare = move.substring(2, 4);
+11188|        const movingPiece = board.get(fromSquare);
+11189|        
+11190|        if (!movingPiece) return 0;
+11191|        
+11192|        const pieceType = movingPiece.toLowerCase();
+11193|        
+11194|        // Check for passive pawn moves (a3, b3, c3 for white; a6, b6, c6 for black)
+11195|        const passiveSquares = isWhite ? ['a3', 'b3', 'c3', 'a4'] : ['a6', 'b6', 'c6', 'a5'];
+11196|        
+11197|        if (pieceType === 'p' && passiveSquares.includes(toSquare)) {
+11198|            // Check if kingside is under attack
+11199|            const kingsideUnderAttack = isKingsideUnderAttack(board, activeColor);
+11200|            
+11201|            if (kingsideUnderAttack) {
+11202|                score += CONFIG.v40PassiveQueensideMovePenalty || -300000;
+11203|                debugLog("[V40.11_PASSIVE]", `🚨🚨 PASSIVE ${toSquare} WHILE KINGSIDE UNDER ATTACK!`);
+11204|            }
+11205|        }
+11206|        
+11207|        // Also penalize queenside piece moves when kingside attacked
+11208|        if (['a', 'b', 'c'].includes(toSquare[0]) && pieceType !== 'k') {
+11209|            const kingsideUnderAttack = isKingsideUnderAttack(board, activeColor);
+11210|            
+11211|            if (kingsideUnderAttack) {
+11212|                const fromFile = fromSquare.charCodeAt(0) - 97;
+11213|                const toFile = toSquare.charCodeAt(0) - 97;
+11214|                
+11215|                // Moving pieces AWAY from kingside while under attack
+11216|                if (toFile < fromFile && ['n', 'b', 'q', 'r'].includes(pieceType)) {
+11217|                    score += CONFIG.v40MoveAwayFromKingPenalty || -200000;
+11218|                    debugLog("[V40.11_PASSIVE]", `🚨 Moving ${pieceType.toUpperCase()} AWAY from kingside during attack!`);
+11219|                }
+11220|            }
+11221|        }
+11222|        
+11223|    } catch (e) {
+11224|        debugLog("[V40.11_PASSIVE]", `Error: ${e.message}`);
+11225|    }
+11226|    
+11227|    return score;
+11228|}
+11229|
+11230|/**
+11231| * v40.11 TRANSCENDENT SUPREME: BAD EXCHANGE FILE OPENING DETECTION
+11232| * Don't make exchanges that open files toward your own king!
+11233| * From French Defense loss: Bxf6 gxf6 opened the g-file for Black's attack
+11234| */
+11235|function v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) {
+11236|    if (!CONFIG.v40BadExchangeFileOpeningEnabled) return 0;
+11237|    
+11238|    let score = 0;
+11239|    const isWhite = activeColor === 'w';
+11240|    
+11241|    try {
+11242|        const fromSquare = move.substring(0, 2);
+11243|        const toSquare = move.substring(2, 4);
+11244|        const movingPiece = board.get(fromSquare);
+11245|        const targetPiece = board.get(toSquare);
+11246|        
+11247|        if (!movingPiece || !targetPiece) return 0;
+11248|        
+11249|        // Check if this is a capture
+11250|        const movingType = movingPiece.toLowerCase();

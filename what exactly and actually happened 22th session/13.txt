@@ -1,0 +1,3 @@
+Now I need to add the CONFIG values for v40.12 and integrate the functions into the evaluation:
+Action: $ cd /app && grep -n "v40KingsidePawnWeaknessEnabled" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: Exit code: 0

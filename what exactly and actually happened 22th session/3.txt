@@ -1,0 +1,138 @@
+Good, the v40.11 functions exist. Let me view one of them to understand the implementation quality:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+10966|function v40GFileAttackDetectionEval(fen, move, board, activeColor, moveNumber) {
+10967|    if (!CONFIG.v40GFileAttackDetectionEnabled) return 0;
+10968|    
+10969|    let score = 0;
+10970|    const isWhite = activeColor === 'w';
+10971|    const enemyColor = isWhite ? 'b' : 'w';
+10972|    const ourKingRank = isWhite ? '1' : '8';
+10973|    const enemyRookChar = isWhite ? 'r' : 'R';
+10974|    const enemyQueenChar = isWhite ? 'q' : 'Q';
+10975|    
+10976|    try {
+10977|        // Find our king position
+10978|        let ourKing = null;
+10979|        for (const [sq, piece] of board) {
+10980|            if (piece && piece.toLowerCase() === 'k') {
+10981|                const pieceIsWhite = piece === piece.toUpperCase();
+10982|                if (pieceIsWhite === isWhite) {
+10983|                    ourKing = sq;
+10984|                    break;
+10985|                }
+10986|            }
+10987|        }
+10988|        
+10989|        if (!ourKing) return 0;
+10990|        
+10991|        const kingFile = ourKing.charCodeAt(0) - 97; // 0-7
+10992|        
+10993|        // Check if king is on kingside (file e-h, or 4-7)
+10994|        const kingOnKingside = kingFile >= 4;
+10995|        
+10996|        // Count enemy rooks and queen on g-file
+10997|        let rooksOnGFile = 0;
+10998|        let queenOnGFile = false;
+10999|        let enemyRooksOnHFile = 0;
+11000|        
+11001|        for (const [sq, piece] of board) {
+11002|            if (!piece) continue;
+11003|            const file = sq[0];
+11004|            
+11005|            if (piece === enemyRookChar) {
+11006|                if (file === 'g') rooksOnGFile++;
+11007|                if (file === 'h') enemyRooksOnHFile++;
+11008|            }
+11009|            if (piece === enemyQueenChar && file === 'g') {
+11010|                queenOnGFile = true;
+11011|            }
+11012|        }
+11013|        
+11014|        // PENALTY: Doubled rooks on g-file when king is castled kingside
+11015|        if (rooksOnGFile >= 2 && kingOnKingside) {
+11016|            score += CONFIG.v40GFileDoubledRooksPenalty || -400000;
+11017|            debugLog("[V40.11_GFILE]", `🚨🚨 DOUBLED ROOKS ON G-FILE! King on ${ourKing}`);
+11018|        }
+11019|        
+11020|        // PENALTY: Queen + Rook on g-file
+11021|        if (queenOnGFile && rooksOnGFile >= 1 && kingOnKingside) {
+11022|            score += CONFIG.v40GFileQueenRookPenalty || -350000;
+11023|            debugLog("[V40.11_GFILE]", `🚨 Q+R on G-FILE attacking kingside!`);
+11024|        }
+11025|        
+11026|        // PENALTY: Just queen on g-file near king
+11027|        if (queenOnGFile && kingOnKingside) {
+11028|            score += CONFIG.v40QueenOnGFilePenalty || -250000;
+11029|            debugLog("[V40.11_GFILE]", `🚨 Enemy QUEEN on G-FILE!`);
+11030|        }
+11031|        
+11032|        // CHECK IF THIS MOVE OPENS G-FILE TOWARD OUR KING
+11033|        const fromSquare = move.substring(0, 2);
+11034|        const toSquare = move.substring(2, 4);
+11035|        
+11036|        // If we're moving a piece from g-file
+11037|        if (fromSquare[0] === 'g' && kingOnKingside) {
+11038|            const pawnOnG = board.get(`g${ourKingRank === '1' ? '2' : '7'}`);
+11039|            const isGFilePawn = pawnOnG && pawnOnG.toLowerCase() === 'p';
+11040|            
+11041|            // If we're moving our g-pawn and it's an exchange (capture)
+11042|            if (move.includes('x') || (board.has(toSquare) && board.get(toSquare))) {
+11043|                // Check if this opens the g-file
+11044|                score += CONFIG.v40OpenGFileTowardKingPenalty || -300000;
+11045|                debugLog("[V40.11_GFILE]", `🚨 MOVE ${move} MAY OPEN G-FILE TOWARD KING!`);
+11046|            }
+11047|        }
+11048|        
+11049|        // BONUS: Moves that defend the g-file
+11050|        if (toSquare[0] === 'g' && kingOnKingside) {
+11051|            const movingPiece = board.get(fromSquare);
+11052|            if (movingPiece && movingPiece.toLowerCase() === 'r') {
+11053|                score += CONFIG.v40ActiveDefenseBonus || 200000;
+11054|                debugLog("[V40.11_GFILE]", `✅ Rook to g-file for defense: ${move}`);
+11055|            }
+11056|        }
+11057|        
+11058|    } catch (e) {
+11059|        debugLog("[V40.11_GFILE]", `Error: ${e.message}`);
+11060|    }
+11061|    
+11062|    return score;
+11063|}
+11064|
+11065|/**
+11066| * v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN RECOGNITION
+11067| * Detects coordinated kingside attacks (Q+R+B or Q+2R aimed at king)
+11068| * From French Defense loss: Coordinated attack with Q on g4, R on g7/g8, B on f5
+11069| */
+11070|function v40KingsideAttackPatternEval(fen, move, board, activeColor, moveNumber) {
+11071|    if (!CONFIG.v40KingsideAttackDetectionEnabled) return 0;
+11072|    
+11073|    let score = 0;
+11074|    const isWhite = activeColor === 'w';
+11075|    const enemyColor = isWhite ? 'b' : 'w';
+11076|    
+11077|    try {
+11078|        // Find our king
+11079|        let ourKing = null;
+11080|        for (const [sq, piece] of board) {
+11081|            if (piece && piece.toLowerCase() === 'k') {
+11082|                const pieceIsWhite = piece === piece.toUpperCase();
+11083|                if (pieceIsWhite === isWhite) {
+11084|                    ourKing = sq;
+11085|                    break;
+11086|                }
+11087|            }
+11088|        }
+11089|        
+11090|        if (!ourKing) return 0;
+11091|        
+11092|        const kingFile = ourKing.charCodeAt(0) - 97;
+11093|        const kingRank = parseInt(ourKing[1]);
+11094|        const kingOnKingside = kingFile >= 4;
+11095|        
+11096|        // Count attackers on kingside files (f, g, h)
+11097|        let attackersOnFGH = 0;
+11098|        let enemyQueenSquare = null;
+11099|        let enemyBishopSquares = [];
+11100|        let enemyRookSquares = [];
