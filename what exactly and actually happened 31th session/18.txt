@@ -1,0 +1,29 @@
+Syntax is correct. Now let me integrate v40.21 functions into the main evaluation:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+32015|                }
+32016|            }
+32017|        }
+32018|        
+32019|        // SAFETY GATE: Penalize if immediate eval drop > threshold
+32020|        if (engineEval !== undefined && alternatives && alternatives.length > 0) {
+32021|            const bestEval = alternatives[0].score;
+32022|            const moveEval = alternatives.find(m => m.move === move)?.score || engineEval;
+32023|            const evalDrop = bestEval - moveEval;
+32024|            
+32025|            if (evalDrop > ALPHAZERO_ESSENCE.safetyGateEvalDrop) {
+32026|                // Severe penalty for unsafe moves
+32027|                eleganceScore = Math.max(0, eleganceScore - 0.5);
+32028|                debugLog("[ELEGANCE]", `⚠️ Move ${move} penalized for eval drop ${evalDrop}cp`);
+32029|            }
+32030|        }
+32031|        
+32032|        // Normalize to 0..1
+32033|        eleganceScore = Math.min(Math.max(eleganceScore, 0), 1);
+32034|        
+32035|        if (eleganceScore > 0.7) {
+32036|            debugLog("[ELEGANCE]", `✨ Move ${move} highly elegant: ${eleganceScore.toFixed(2)}`);
+32037|        }
+32038|        
+32039|        return eleganceScore;
+32040|    } catch (e) {

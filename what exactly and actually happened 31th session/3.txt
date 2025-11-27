@@ -1,0 +1,64 @@
+The v40.20 functions are already added. Now let me integrate them into the main evaluation loop. First, let me check the current state of the integration area:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+31940|                
+31941|                // ═══════════════════════════════════════════════════════════════════
+31942|                // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME: NEVER ALLOW KINGSIDE DESTRUCTION
+31943|                // From game analysis: Bot played Bxf6 gxf6 opening g-file toward castled king!
+31944|                // Then allowed f5-f4-fxg3 pawn storm destroying entire kingside!
+31945|                // ═══════════════════════════════════════════════════════════════════
+31946|                
+31947|                // v40.16: FILE OPENING TOWARD KING — NEVER open files toward castled king!
+31948|                const fileOpeningTowardKingScore = v40FileOpeningTowardKingEval(fen, move, board, activeColor, moveNumber) * 15.0;
+31949|                
+31950|                // v40.16: PAWN STORM DETECTION — See storms BEFORE they destroy you
+31951|                const pawnStormDetectionScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 10.0;
+31952|                
+31953|                // v40.16: QUEEN INFILTRATION PATH — Detect Qg4-Qxg3-Qh3 sequences
+31954|                const queenInfiltrationPathScore = v40QueenInfiltrationPathEval(fen, move, board, activeColor, moveNumber) * 8.0;
+31955|                
+31956|                // v40.16: 3-PLY DEEP LOOK-AHEAD — Simulate forcing sequences
+31957|                const deepLookAheadScore = v40DeepLookAheadEval(fen, move, board, activeColor, moveNumber) * 12.0;
+31958|                
+31959|                // v40.16: KINGSIDE PAWN SHELTER — Never allow shelter destruction
+31960|                const kingsidePawnShelterScore = v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) * 5.0;
+31961|                
+31962|                // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
+31963|                const forcingLineRejectionScore = v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) * 15.0;
+31964|                
+31965|                // v40.17: ABSOLUTE RECAPTURE — NEVER leave free pieces on the board
+31966|                const absoluteRecaptureScore = v40AbsoluteRecaptureEval(fen, move, board, activeColor, moveNumber, null) * 20.0;
+31967|                
+31968|                // v40.17: IMMEDIATE CAPTURE DETECTION — Don't allow opponent free captures
+31969|                const immediateCaptureDetectionScore = v40ImmediateCaptureDetectionEval(fen, move, board, activeColor, moveNumber) * 18.0;
+31970|                
+31971|                // v40.17: MATERIAL AWARENESS — Material is KING
+31972|                const materialAwarenessScore = v40MaterialAwarenessEval(fen, move, board, activeColor, moveNumber) * 15.0;
+31973|                
+31974|                // v40.17: ANTI-PAWN-GRAB DEFENSE — Don't let pawns be taken for free
+31975|                const antiPawnGrabScore = v40AntiPawnGrabDefenseEval(fen, move, board, activeColor, moveNumber) * 12.0;
+31976|                
+31977|                // v40.18: KING ESCAPE ROUTE — Ensure king always has escape squares
+31978|                const kingEscapeRouteScore = v40KingEscapeRouteEval(fen, move, board, activeColor, moveNumber) * 25.0;
+31979|                
+31980|                // v40.18: ROOK INVASION DETECTION — Detect enemy rooks on 2nd/7th rank
+31981|                const rookInvasionDetectionScore = v40RookInvasionDetectionEval(fen, move, board, activeColor, moveNumber) * 20.0;
+31982|                
+31983|                // v40.18: BACK RANK WEAKNESS — Detect back rank mate threats
+31984|                const backRankWeaknessScore = v40BackRankWeaknessEval(fen, move, board, activeColor, moveNumber) * 30.0;
+31985|                
+31986|                // v40.18: DISCOVERED ATTACK DETECTION — Don't allow discovered attacks
+31987|                const discoveredAttackDetectionScore = v40DiscoveredAttackDetectionEval(fen, move, board, activeColor, moveNumber) * 25.0;
+31988|                
+31989|                // v40.19: MATING PATTERN RECOGNITION — Detect Rook+Queen mating patterns
+31990|                const matingPatternScore = v40MatingPatternRecognitionEval(fen, move, board, activeColor, moveNumber) * 30.0;
+31991|                
+31992|                // v40.19: KING CORRIDOR DEFENSE — Protect king corridor squares
+31993|                const kingCorridorDefenseScore = v40KingCorridorDefenseEval(fen, move, board, activeColor, moveNumber) * 20.0;
+31994|                
+31995|                // v40.19: LUFT CREATION — Ensure king has escape squares
+31996|                const luftCreationScore = v40LuftCreationEval(fen, move, board, activeColor, moveNumber) * 25.0;
+31997|                
+31998|                // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+31999|                const winningPositionScore = v40WinningPositionManagementEval(fen, move, board, activeColor, moveNumber) * 15.0;
+32000|                

@@ -1,0 +1,8 @@
+
+Action: $ cd /app && grep -n "function v40PromotionThreatEval\|function v40ForcingSequenceEval\|function v40KingWeakeningPenaltyEval\|function v40PieceSafetyAbsoluteEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 10352:function v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) {
+16049:function v40PromotionThreatEval(fen, move, board, activeColor, moveNumber) {
+16247:function v40ForcingSequenceEval(fen, move, board, activeColor, moveNumber) {
+16399:function v40KingWeakeningPenaltyEval(fen, move, board, activeColor, moveNumber) {
+16537:function v40PieceSafetyAbsoluteEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

@@ -1,0 +1,4 @@
+Now let me find the location to add v40.21 functions (after v40.20):
+Action: $ cd /app && grep -n "function v40PieceSafetyAbsoluteEval" "Lichess Bot-AlphaZero-Pure.user.js" | tail -1
+Observation: 16567:function v40PieceSafetyAbsoluteEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0
