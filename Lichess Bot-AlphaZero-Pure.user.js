@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME
-// @description  TRUE AlphaZero Replica v40.20 - PAWN PROMOTION THREAT DETECTION - FORCING SEQUENCE CALCULATOR - KING WEAKENING PENALTY - PIECE SAFETY ABSOLUTE - NEVER MISS PROMOTIONS AGAIN
-// @author       AlphaZero TRUE REPLICA v40.20 PAWN PROMOTION SUPREME EDITION
-// @version      40.20.0-PAWN-PROMOTION-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME
+// @description  TRUE AlphaZero Replica v40.21 - DEEP PAWN CHAIN CALCULATION - FORCING LINE DETECTION - QUIET MOVE DANGER - ABSOLUTE PROMOTION AWARENESS - FORCING SEQUENCE MASTERY
+// @author       AlphaZero TRUE REPLICA v40.21 DEEP PAWN CHAIN SUPREME EDITION
+// @version      40.21.0-DEEP-PAWN-CHAIN-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -1794,6 +1794,36 @@ const CONFIG = {
     v40QuietMoveEnabled: true,
     v40QuietMoveAllowsTacticPenalty: -600000000,    // Quiet move allows tactic
     v40QuietMoveNoDefensePenalty: -400000000,       // Quiet move when we need defense
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.22: KNIGHT INFILTRATION & CHECK SEQUENCE DETECTION SUPREME
+    // From game analysis: Bot played a3 ignoring Nxg2 knight check leading to mate!
+    // The knight infiltration pattern Nh4-Nxg2-Nf3+-Ne1+-Nf3+ was COMPLETELY MISSED!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    v40KnightInfiltrationEnabled: true,
+    v40KnightCheckSequencePenalty: -2000000000,     // Knight check sequence (perpetual/mate)
+    v40KnightOnKingsidePenalty: -500000000,         // Enemy knight near our king
+    v40KnightOn4thRankKingsidePenalty: -800000000,  // Knight on h4/h5 (or a4/a5 for black)
+    v40KnightForkThreatPenalty: -600000000,         // Knight threatens fork
+    v40AllowKnightNearKingPenalty: -700000000,      // Move allows knight to approach king
+    
+    // v40.22: PERPETUAL CHECK DETECTION — Detect perpetual/mating check patterns
+    v40PerpetualCheckEnabled: true,
+    v40PerpetualCheckThreatPenalty: -1500000000,    // Opponent threatens perpetual
+    v40MatingCheckSequencePenalty: -3000000000,     // Check sequence leads to mate
+    v40AllowCheckSequencePenalty: -800000000,       // Move allows opponent check sequence
+    
+    // v40.22: PIECE INFILTRATION GENERAL — Any piece infiltrating our camp
+    v40PieceInfiltrationEnabled: true,
+    v40PieceOn2ndRankPenalty: -600000000,           // Enemy piece on our 2nd rank
+    v40PieceNearKingPenalty: -400000000,            // Enemy piece within 2 squares of king
+    v40MultipleInfiltratorsPenalty: -900000000,     // Multiple enemy pieces infiltrating
+    
+    // v40.22: MUST RESPOND TO THREAT — Don't ignore immediate threats!
+    v40MustRespondEnabled: true,
+    v40IgnoreThreatPenalty: -1200000000,            // Ignored a serious threat
+    v40GreedyWhileUnderAttackPenalty: -800000000,   // Grabbed material while under attack
+    v40PassiveMoveUnderAttackPenalty: -600000000,   // Passive move when being attacked
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -17160,6 +17190,631 @@ function v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) {
     }
     
     return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE DETECTION SUPREME
+// From game analysis: Bot played a3 ignoring Nxg2 knight check leading to mate!
+// The knight infiltration pattern Nh4-Nxg2-Nf3+-Ne1+-Nf3+ was COMPLETELY MISSED!
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.22 KNIGHT INFILTRATION DETECTION: Detect knight infiltration patterns near king
+ * CRITICAL: Catches Nh4-Nxg2-Nf3+ type patterns that lead to mate
+ */
+function v40KnightInfiltrationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KnightInfiltrationEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        const ourKing = findKing(afterMove, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]);
+        
+        // Find all enemy knights
+        const enemyKnightChar = enemyColor === 'w' ? 'N' : 'n';
+        const enemyKnights = [];
+        
+        for (const [sq, piece] of afterMove) {
+            if (piece === enemyKnightChar) {
+                enemyKnights.push(sq);
+            }
+        }
+        
+        // CHECK 1: Is there a knight that can give check on this or next move?
+        for (const knightSq of enemyKnights) {
+            const knFile = knightSq.charCodeAt(0) - 'a'.charCodeAt(0);
+            const knRank = parseInt(knightSq[1]);
+            
+            // Distance to king
+            const distToKing = Math.abs(knFile - kingFile) + Math.abs(knRank - kingRank);
+            
+            // Knight near kingside (within 3 squares)?
+            if (distToKing <= 4) {
+                score += CONFIG.v40KnightOnKingsidePenalty;
+                debugLog("[V40.22_KNIGHT]", `⚠️ Enemy knight on ${knightSq} is near our king on ${ourKing}!`);
+                
+                // Is knight on h4/h5/g4/g5 (attacking squares)?
+                if ((knightSq[0] === 'h' || knightSq[0] === 'g') && 
+                    (knightSq[1] === '4' || knightSq[1] === '5')) {
+                    score += CONFIG.v40KnightOn4thRankKingsidePenalty;
+                    debugLog("[V40.22_KNIGHT]", `☠️ Enemy knight on ${knightSq} is on KINGSIDE ATTACK SQUARE!`);
+                }
+            }
+            
+            // Can knight give check immediately?
+            const knightMoves = getKnightMovesV40_22(knightSq);
+            for (const nm of knightMoves) {
+                if (nm === ourKing) {
+                    // Knight can check our king!
+                    score += CONFIG.v40KnightCheckSequencePenalty;
+                    debugLog("[V40.22_KNIGHT]", `☠️☠️☠️ Enemy knight on ${knightSq} can CHECK our king with ${knightSq}${nm}!`);
+                }
+            }
+            
+            // Can knight reach a checking square in ONE move?
+            for (const nm of knightMoves) {
+                const piece = afterMove.get(nm);
+                // Can move there (empty or capture our piece)?
+                if (!piece || (piece.toUpperCase() === piece) === isWhite) {
+                    // From this new square, can it check?
+                    const futureKnightMoves = getKnightMovesV40_22(nm);
+                    if (futureKnightMoves.includes(ourKing)) {
+                        score += CONFIG.v40KnightCheckSequencePenalty / 2;
+                        debugLog("[V40.22_KNIGHT]", `☠️☠️ Enemy knight can reach checking square via ${knightSq}-${nm}-${ourKing}!`);
+                    }
+                }
+            }
+        }
+        
+        // CHECK 2: Does our move ALLOW a knight to infiltrate?
+        // Look for knights that could move closer to our king
+        for (const knightSq of enemyKnights) {
+            const knightMoves = getKnightMovesV40_22(knightSq);
+            
+            for (const nm of knightMoves) {
+                // Was this square blocked before our move but now open?
+                const wasBlocked = board.get(nm) !== undefined;
+                const isBlockedAfter = afterMove.get(nm) !== undefined;
+                
+                if (wasBlocked && !isBlockedAfter) {
+                    // We unblocked a knight infiltration square!
+                    const nmFile = nm.charCodeAt(0) - 'a'.charCodeAt(0);
+                    const nmRank = parseInt(nm[1]);
+                    const newDistToKing = Math.abs(nmFile - kingFile) + Math.abs(nmRank - kingRank);
+                    
+                    if (newDistToKing <= 3) {
+                        score += CONFIG.v40AllowKnightNearKingPenalty;
+                        debugLog("[V40.22_KNIGHT]", `☠️ ${move} allows knight to infiltrate to ${nm} near king!`);
+                    }
+                }
+            }
+        }
+        
+        // CHECK 3: Knight fork threats
+        for (const knightSq of enemyKnights) {
+            const forkTargets = findKnightForkTargetsV40_22(afterMove, knightSq, isWhite);
+            if (forkTargets.length >= 2) {
+                const targetValues = forkTargets.map(t => getPieceValueSimple(t.piece.toLowerCase()));
+                if (Math.max(...targetValues) >= 5) { // Forks queen or rook
+                    score += CONFIG.v40KnightForkThreatPenalty;
+                    debugLog("[V40.22_KNIGHT]", `☠️ Knight on ${knightSq} threatens fork!`);
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.22_KNIGHT]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.22 Helper: Get all knight move squares
+ */
+function getKnightMovesV40_22(square) {
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]);
+    
+    const knightOffsets = [
+        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+        [1, -2], [1, 2], [2, -1], [2, 1]
+    ];
+    
+    const moves = [];
+    for (const [df, dr] of knightOffsets) {
+        const newFile = file + df;
+        const newRank = rank + dr;
+        
+        if (newFile >= 0 && newFile <= 7 && newRank >= 1 && newRank <= 8) {
+            moves.push(String.fromCharCode(newFile + 'a'.charCodeAt(0)) + newRank);
+        }
+    }
+    
+    return moves;
+}
+
+/**
+ * v40.22 Helper: Find knight fork targets
+ */
+function findKnightForkTargetsV40_22(board, knightSquare, ourColor) {
+    const knightMoves = getKnightMovesV40_22(knightSquare);
+    const targets = [];
+    
+    for (const nm of knightMoves) {
+        // Check each square the knight can reach from here
+        const futureMoves = getKnightMovesV40_22(nm);
+        const attackedPieces = [];
+        
+        for (const fm of futureMoves) {
+            const piece = board.get(fm);
+            if (piece) {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                // Our piece?
+                if (pieceIsWhite === ourColor) {
+                    attackedPieces.push({ square: fm, piece });
+                }
+            }
+        }
+        
+        // Is this a fork (attacks 2+ valuable pieces)?
+        if (attackedPieces.length >= 2) {
+            return attackedPieces;
+        }
+    }
+    
+    return targets;
+}
+
+/**
+ * v40.22 CHECK SEQUENCE DETECTION: Detect perpetual/mating check patterns
+ */
+function v40CheckSequenceDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PerpetualCheckEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        const ourKing = findKing(afterMove, activeColor);
+        if (!ourKing) return 0;
+        
+        // Count how many enemy pieces can give check
+        let checkingPieces = 0;
+        let checkSequencePossible = false;
+        
+        for (const [sq, piece] of afterMove) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue; // Skip our pieces
+            
+            const pieceType = piece.toLowerCase();
+            
+            // Can this piece give check?
+            const canCheck = canPieceAttackSquareV40_22(sq, piece, ourKing, afterMove);
+            if (canCheck) {
+                checkingPieces++;
+                debugLog("[V40.22_CHECK]", `⚠️ Enemy ${piece} on ${sq} can check our king!`);
+            }
+            
+            // Can this piece reach a checking square in 1 move?
+            if (pieceType === 'q' || pieceType === 'r' || pieceType === 'b') {
+                const checkingSquares = getCheckingSquaresForPieceV40_22(afterMove, sq, piece, ourKing);
+                if (checkingSquares.length > 0) {
+                    score += CONFIG.v40AllowCheckSequencePenalty / 2;
+                    debugLog("[V40.22_CHECK]", `⚠️ Enemy ${piece} on ${sq} can reach checking square!`);
+                }
+            }
+        }
+        
+        // If multiple pieces can check or check in sequence, it's dangerous
+        if (checkingPieces >= 1) {
+            score += CONFIG.v40PerpetualCheckThreatPenalty;
+            debugLog("[V40.22_CHECK]", `☠️ After ${move}, ${checkingPieces} enemy pieces threaten check!`);
+        }
+        
+        // Check for forced mate patterns
+        const mateIn = detectMateInV40_22(afterMove, enemyColor, 3);
+        if (mateIn.found) {
+            score += CONFIG.v40MatingCheckSequencePenalty;
+            debugLog("[V40.22_CHECK]", `☠️☠️☠️ After ${move}, opponent has MATE IN ${mateIn.depth}!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.22_CHECK]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.22 Helper: Can a piece attack a square?
+ */
+function canPieceAttackSquareV40_22(fromSquare, piece, targetSquare, board) {
+    const pieceType = piece.toLowerCase();
+    const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(fromSquare[1]);
+    const toFile = targetSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(targetSquare[1]);
+    
+    const df = toFile - fromFile;
+    const dr = toRank - fromRank;
+    
+    switch (pieceType) {
+        case 'n':
+            return (Math.abs(df) === 2 && Math.abs(dr) === 1) || 
+                   (Math.abs(df) === 1 && Math.abs(dr) === 2);
+        case 'b':
+            if (Math.abs(df) !== Math.abs(dr)) return false;
+            return isPathClearV40_22(fromFile, fromRank, toFile, toRank, board);
+        case 'r':
+            if (df !== 0 && dr !== 0) return false;
+            return isPathClearV40_22(fromFile, fromRank, toFile, toRank, board);
+        case 'q':
+            if (df !== 0 && dr !== 0 && Math.abs(df) !== Math.abs(dr)) return false;
+            return isPathClearV40_22(fromFile, fromRank, toFile, toRank, board);
+        case 'k':
+            return Math.abs(df) <= 1 && Math.abs(dr) <= 1;
+        case 'p':
+            const pawnDir = piece === 'P' ? 1 : -1;
+            return Math.abs(df) === 1 && dr === pawnDir;
+        default:
+            return false;
+    }
+}
+
+/**
+ * v40.22 Helper: Is path clear between two squares?
+ */
+function isPathClearV40_22(fromFile, fromRank, toFile, toRank, board) {
+    const df = Math.sign(toFile - fromFile);
+    const dr = Math.sign(toRank - fromRank);
+    
+    let f = fromFile + df;
+    let r = fromRank + dr;
+    
+    while (f !== toFile || r !== toRank) {
+        const sq = String.fromCharCode(f + 'a'.charCodeAt(0)) + r;
+        if (board.get(sq)) return false;
+        f += df;
+        r += dr;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.22 Helper: Get squares from which a piece could check the king
+ */
+function getCheckingSquaresForPieceV40_22(board, pieceSquare, piece, kingSquare) {
+    // For simplicity, return squares the piece can move to that would check the king
+    const checkingSquares = [];
+    const pieceType = piece.toLowerCase();
+    
+    // This is a simplified check - would need full move generation for accuracy
+    // Just check if piece is on same file/rank/diagonal as king
+    
+    return checkingSquares;
+}
+
+/**
+ * v40.22 Helper: Detect mate in N moves (simplified)
+ */
+function detectMateInV40_22(board, attackingColor, maxDepth) {
+    // Simplified mate detection - just check if king is in check with no escape
+    const defendingColor = attackingColor === 'w' ? 'b' : 'w';
+    const defendingKing = findKing(board, defendingColor);
+    
+    if (!defendingKing) return { found: false };
+    
+    // Is king in check?
+    if (!isSquareAttackedByColor(board, defendingKing, attackingColor)) {
+        return { found: false };
+    }
+    
+    // Can king escape?
+    const kingFile = defendingKing.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(defendingKing[1]);
+    let hasEscape = false;
+    
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            if (df === 0 && dr === 0) continue;
+            
+            const newFile = kingFile + df;
+            const newRank = kingRank + dr;
+            
+            if (newFile < 0 || newFile > 7 || newRank < 1 || newRank > 8) continue;
+            
+            const escapeSquare = String.fromCharCode(newFile + 'a'.charCodeAt(0)) + newRank;
+            const pieceOnSquare = board.get(escapeSquare);
+            
+            // Can't move to square with own piece
+            if (pieceOnSquare) {
+                const isOwnPiece = (pieceOnSquare === pieceOnSquare.toUpperCase()) === (defendingColor === 'w');
+                if (isOwnPiece) continue;
+            }
+            
+            // Is escape square safe?
+            if (!isSquareAttackedByColor(board, escapeSquare, attackingColor)) {
+                hasEscape = true;
+                break;
+            }
+        }
+        if (hasEscape) break;
+    }
+    
+    if (!hasEscape) {
+        return { found: true, depth: 1 };
+    }
+    
+    return { found: false };
+}
+
+/**
+ * v40.22 MUST RESPOND TO THREAT: Don't ignore immediate threats!
+ */
+function v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40MustRespondEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Find our king
+        const ourKing = findKing(board, activeColor);
+        if (!ourKing) return 0;
+        
+        // Are we under attack? (king in check)
+        const isInCheck = isSquareAttackedByColor(board, ourKing, enemyColor);
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        const capturedPiece = afterMove.get(toSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // CHECK 1: If we're in check, this move MUST address it
+        if (isInCheck) {
+            const stillInCheck = isSquareAttackedByColor(afterMove, ourKing, enemyColor);
+            if (stillInCheck) {
+                // ILLEGAL MOVE - but also penalize heavily
+                score += CONFIG.v40IgnoreThreatPenalty * 5;
+                debugLog("[V40.22_RESPOND]", `☠️☠️☠️☠️☠️ ${move} DOES NOT ESCAPE CHECK! ILLEGAL!`);
+            }
+        }
+        
+        // CHECK 2: Are we grabbing material while under attack?
+        const ourKingAfter = findKing(afterMove, activeColor);
+        const attackersOnKing = countAttackersOnSquare(afterMove, ourKingAfter, enemyColor);
+        
+        if (capturedPiece && attackersOnKing > 0) {
+            // We captured something but our king is under pressure
+            const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+            if (capturedValue < 5) { // Captured something less valuable than rook
+                score += CONFIG.v40GreedyWhileUnderAttackPenalty;
+                debugLog("[V40.22_RESPOND]", `☠️ ${move} grabs ${capturedPiece} while king is under attack!`);
+            }
+        }
+        
+        // CHECK 3: Is this a passive move while we have hanging pieces?
+        const hangingPieces = findHangingPiecesV40_22(board, activeColor);
+        if (hangingPieces.length > 0 && !capturedPiece) {
+            // We have hanging pieces but aren't capturing or defending
+            const isDefending = isDefendingHangingPieceV40_22(move, hangingPieces, afterMove, activeColor);
+            if (!isDefending) {
+                const totalHangingValue = hangingPieces.reduce((sum, p) => sum + p.value, 0);
+                if (totalHangingValue >= 3) {
+                    score += CONFIG.v40PassiveMoveUnderAttackPenalty;
+                    debugLog("[V40.22_RESPOND]", `⚠️ ${move} ignores ${hangingPieces.length} hanging pieces worth ${totalHangingValue}pts!`);
+                }
+            }
+        }
+        
+        // CHECK 4: Is there an immediate threat we're ignoring?
+        // Look for opponent pieces that can capture our valuable pieces
+        const immediateThreats = findImmediateThreatsV40_22(board, activeColor);
+        if (immediateThreats.length > 0) {
+            const isAddressingThreat = isAddressingThreatV40_22(move, afterMove, immediateThreats, activeColor);
+            if (!isAddressingThreat) {
+                for (const threat of immediateThreats) {
+                    if (threat.severity >= 5) { // Threatening queen or rook
+                        score += CONFIG.v40IgnoreThreatPenalty;
+                        debugLog("[V40.22_RESPOND]", `☠️ ${move} IGNORES threat to ${threat.piece} on ${threat.square}!`);
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.22_RESPOND]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.22 Helper: Count attackers on a square
+ */
+function countAttackersOnSquare(board, square, attackingColor) {
+    if (!square) return 0;
+    
+    let count = 0;
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if ((pieceIsWhite && attackingColor !== 'w') || (!pieceIsWhite && attackingColor !== 'b')) continue;
+        
+        if (canPieceAttackSquareV40_22(sq, piece, square, board)) {
+            count++;
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * v40.22 Helper: Find hanging pieces
+ */
+function findHangingPiecesV40_22(board, color) {
+    const hanging = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (piece.toLowerCase() === 'k') continue;
+        
+        // Is this piece attacked?
+        if (isSquareAttackedByColor(board, sq, enemyColor)) {
+            // Is it defended?
+            if (!isSquareDefendedByColor(board, sq, color)) {
+                hanging.push({
+                    square: sq,
+                    piece,
+                    value: getPieceValueSimple(piece.toLowerCase())
+                });
+            }
+        }
+    }
+    
+    return hanging;
+}
+
+/**
+ * v40.22 Helper: Is move defending a hanging piece?
+ */
+function isDefendingHangingPieceV40_22(move, hangingPieces, afterBoard, color) {
+    const toSquare = move.substring(2, 4);
+    
+    for (const hp of hangingPieces) {
+        // Did we move the hanging piece?
+        if (move.substring(0, 2) === hp.square) return true;
+        
+        // Are we now defending the hanging piece?
+        if (isSquareDefendedByColor(afterBoard, hp.square, color)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.22 Helper: Find immediate threats
+ */
+function findImmediateThreatsV40_22(board, color) {
+    const threats = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (piece.toLowerCase() === 'k') continue;
+        
+        // Is this piece under attack by something of lower or equal value?
+        if (isSquareAttackedByColor(board, sq, enemyColor)) {
+            const ourValue = getPieceValueSimple(piece.toLowerCase());
+            
+            // Find lowest value attacker
+            let lowestAttackerValue = Infinity;
+            for (const [attackerSq, attackerPiece] of board) {
+                if (!attackerPiece) continue;
+                const attackerIsWhite = attackerPiece === attackerPiece.toUpperCase();
+                if (attackerIsWhite === isWhite) continue;
+                
+                if (canPieceAttackSquareV40_22(attackerSq, attackerPiece, sq, board)) {
+                    const attackerValue = getPieceValueSimple(attackerPiece.toLowerCase());
+                    lowestAttackerValue = Math.min(lowestAttackerValue, attackerValue);
+                }
+            }
+            
+            // If attacked by something of lower/equal value, it's a threat
+            if (lowestAttackerValue <= ourValue) {
+                threats.push({
+                    square: sq,
+                    piece,
+                    severity: ourValue
+                });
+            }
+        }
+    }
+    
+    return threats;
+}
+
+/**
+ * v40.22 Helper: Is move addressing a threat?
+ */
+function isAddressingThreatV40_22(move, afterBoard, threats, color) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const enemyColor = color === 'w' ? 'b' : 'w';
+    
+    for (const threat of threats) {
+        // Did we move the threatened piece?
+        if (fromSquare === threat.square) {
+            // Is it still threatened in new position?
+            if (!isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+                return true;
+            }
+        }
+        
+        // Did we capture the attacker?
+        // (Need to track which piece was attacking)
+        
+        // Did we block the attack?
+        // (Complex to check)
+        
+        // Did we defend the threatened piece?
+        if (isSquareDefendedByColor(afterBoard, threat.square, color)) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -32589,7 +33244,21 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.21: QUIET MOVE DANGER — Innocent moves that lose
                 const quietMoveDangerScore = v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) * 35.0;
                 
-                // v40.21: COMBINED v40 SCORE — 100% ABSOLUTE KING SAFETY SUPREME INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME
+                // From game: Bot played a3 ignoring Nh4-Nxg2-Nf3+ mating attack!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.22: KNIGHT INFILTRATION — Detect knight attacks near king
+                const knightInfiltrationScore = v40KnightInfiltrationEval(fen, move, board, activeColor, moveNumber) * 60.0;
+                
+                // v40.22: CHECK SEQUENCE DETECTION — Detect perpetual/mating checks
+                const checkSequenceDetectionScore = v40CheckSequenceDetectionEval(fen, move, board, activeColor, moveNumber) * 55.0;
+                
+                // v40.22: MUST RESPOND TO THREAT — Don't ignore threats!
+                const mustRespondScore = v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) * 50.0;
+                
+                // v40.22: COMBINED v40 SCORE — 100% ABSOLUTE KING SAFETY SUPREME INFLUENCE
                 // This makes v40 the ABSOLUTE CATASTROPHIC KINGSIDE DEFENSE SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -32638,11 +33307,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
                                promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
                                // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
-                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore;
+                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore;
                 v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -32691,6 +33362,12 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   ♟️♟️ ForcingSequence: ${forcingSequenceScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ♟️♟️ KingWeakening: ${kingWeakeningScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ♟️♟️ PieceSafetyV40: ${pieceSafetyV40Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴🐴 DeepPawnChain: ${deepPawnChainScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴🐴 ForcingLine: ${forcingLineScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴🐴 QuietMoveDanger: ${quietMoveDangerScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏇🏇 KnightInfiltration: ${knightInfiltrationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏇🏇 CheckSequenceDetection: ${checkSequenceDetectionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏇🏇 MustRespond: ${mustRespondScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
