@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME
-// @description  TRUE AlphaZero Replica v40.35 - MATERIAL LOSS DETECTION - PASSIVE PAWN PROHIBITION (a3/h3) - TACTICAL VERIFICATION - ZERO BLUNDERS!
-// @author       AlphaZero TRUE REPLICA v40.35 MATERIAL SAFETY PASSIVE PROHIBITION EDITION
-// @version      40.35.0-MATERIAL-SAFETY-PASSIVE-PROHIBITION-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
+// @description  TRUE AlphaZero Replica v40.36 - NO Qxd4 EVER - NO CASTLING INTO DANGER - NO KNIGHT SACRIFICE - ABSOLUTE ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.36 QUEEN CAPTURE & CASTLING DIRECTION SUPREME EDITION
+// @version      40.36.0-QUEEN-CAPTURE-PROHIBITION-CASTLING-DIRECTION-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2357,6 +2357,43 @@ const CONFIG = {
     v40PieceCoordinationEnabled: true,
     v40UncoordinatedAttackPenalty: -3000000000000,  // 3 trillion for uncoordinated play
     v40PieceHarmonyBonus: 1000000000000,            // 1 trillion for coordinated pieces
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.36.0: QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: From Sicilian game analysis:
+    // 1. Move 5: Qxd4 - Queen captured pawn too early, became target
+    // 2. Move 6: Nxe5 dxe5 - Knight sacrifice for nothing
+    // 3. Move 11: O-O-O - Castled into danger when queenside was under attack
+    // 4. Move 14: Bxd4 - Bad exchange when position was already compromised
+    // FIX: Absolute queen capture prohibition + castling direction analysis
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.36: QUEEN CAPTURE PROHIBITION - Never capture with queen early
+    v40QueenCaptureProhibitionEnabled: true,
+    v40QueenCaptureMoveLimit: 15,                   // Prohibit until move 15
+    v40QueenCapturePenalty: -20000000000000,        // 20 trillion penalty
+    v40QueenCaptureQxd4Penalty: -50000000000000,    // 50 trillion for Qxd4 specifically
+    
+    // v40.36: KNIGHT SACRIFICE PREVENTION - Don't sacrifice knight for pawn
+    v40KnightSacrificePreventionEnabled: true,
+    v40KnightForPawnPenalty: -30000000000000,       // 30 trillion for knight sacrifice
+    
+    // v40.36: CASTLING DIRECTION ANALYSIS - Don't castle into danger
+    v40CastlingDirectionEnabled: true,
+    v40CastleIntoDangerPenalty: -40000000000000,    // 40 trillion for castling into danger
+    v40QueensideCastleDangerThreshold: 2,          // If 2+ pieces attacking queenside, don't O-O-O
+    v40KingsideCastleDangerThreshold: 2,           // If 2+ pieces attacking kingside, don't O-O
+    
+    // v40.36: EXCHANGE QUALITY VERIFICATION - Don't trade in bad positions
+    v40ExchangeQualityEnabled: true,
+    v40BadExchangePenalty: -15000000000000,         // 15 trillion for bad exchange
+    v40ExchangeWhenLosingPenalty: -25000000000000,  // 25 trillion for trading when losing
+    
+    // v40.36: PIECE ACTIVITY REQUIREMENT - Must develop before passive moves
+    v40PieceActivityEnabled: true,
+    v40UndevelopedPiecePenalty: -5000000000000,     // 5 trillion for passive when undeveloped
+    v40DevelopmentRequirement: 3,                  // Must have 3+ pieces developed
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -25971,6 +26008,307 @@ function getSquareBeyond(square, direction) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.36: QUEEN CAPTURE PROHIBITION — Never capture with queen early
+ * Critical fix from Sicilian game: Qxd4 was TERRIBLE move
+ */
+function v40QueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40QueenCaptureProhibitionEnabled) return 0;
+    
+    let score = 0;
+    const maxMoves = CONFIG.v40QueenCaptureMoveLimit || 15;
+    
+    if (moveNumber > maxMoves) return 0;
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Check if queen is capturing
+    if (movingPiece && movingPiece.toLowerCase() === 'q' && capturedPiece) {
+        debugLog("[V40.36_QUEEN]", `🚫🚫🚫 QUEEN CAPTURE PROHIBITION: Queen capturing ${capturedPiece} on ${toSquare}!`);
+        score += CONFIG.v40QueenCapturePenalty || -20000000000000;
+        
+        // ABSOLUTE PROHIBITION for Qxd4 or Qxd5 (center pawn capture)
+        if (toSquare === 'd4' || toSquare === 'd5' || toSquare === 'e4' || toSquare === 'e5') {
+            debugLog("[V40.36_QUEEN]", `🚫🚫🚫 CRITICAL: Qxd4/Qxd5/Qxe4/Qxe5 is CATASTROPHIC!`);
+            score += CONFIG.v40QueenCaptureQxd4Penalty || -50000000000000;
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.36: KNIGHT SACRIFICE PREVENTION — Don't sacrifice knight for pawn
+ * Critical fix from Sicilian game: Nxe5 dxe5 was TERRIBLE
+ */
+function v40KnightSacrificePreventionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KnightSacrificePreventionEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Check if knight is capturing a pawn
+    if (movingPiece && movingPiece.toLowerCase() === 'n' && 
+        capturedPiece && capturedPiece.toLowerCase() === 'p') {
+        
+        // Check if the knight would be recaptured
+        const afterBoard = simulateMoveOnBoard(board, move);
+        const isWhite = activeColor === 'w';
+        const enemyColor = isWhite ? 'b' : 'w';
+        
+        if (isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+            // Knight will be recaptured - check if it's defended enough
+            const ourDefenders = countDefendersOfSquare(afterBoard, toSquare, activeColor);
+            const theirAttackers = countAttackersOfSquare(afterBoard, toSquare, enemyColor);
+            
+            if (theirAttackers > ourDefenders) {
+                debugLog("[V40.36_KNIGHT]", `🚫🚫🚫 KNIGHT SACRIFICE PREVENTION: Nxp will lose knight!`);
+                score += CONFIG.v40KnightForPawnPenalty || -30000000000000;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.36: CASTLING DIRECTION ANALYSIS — Don't castle into danger
+ * Critical fix from Sicilian game: O-O-O was TERRIBLE when queenside was under attack
+ */
+function v40CastlingDirectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40CastlingDirectionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Check if this is a castling move
+    const isKingsideCastle = (move === 'e1g1' || move === 'e8g8');
+    const isQueensideCastle = (move === 'e1c1' || move === 'e8c8');
+    
+    if (!isKingsideCastle && !isQueensideCastle) return 0;
+    
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    if (isQueensideCastle) {
+        // Count enemy pieces that can attack queenside
+        const queenSideAttackers = v40CountSideAttackers(board, enemyColor, 'queenside');
+        const dangerThreshold = CONFIG.v40QueensideCastleDangerThreshold || 2;
+        
+        if (queenSideAttackers >= dangerThreshold) {
+            debugLog("[V40.36_CASTLE]", `🚫🚫🚫 CASTLING DANGER: O-O-O with ${queenSideAttackers} pieces attacking queenside!`);
+            score += CONFIG.v40CastleIntoDangerPenalty || -40000000000000;
+        }
+        
+        // Also check if enemy rooks/queen are on a/b/c files
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            const file = square[0];
+            
+            if ((pieceType === 'r' || pieceType === 'q') && ['a', 'b', 'c'].includes(file)) {
+                debugLog("[V40.36_CASTLE]", `🚫🚫🚫 DANGER: Enemy ${pieceType} on ${square} attacks queenside!`);
+                score += (CONFIG.v40CastleIntoDangerPenalty || -40000000000000) / 2;
+            }
+        }
+    }
+    
+    if (isKingsideCastle) {
+        // Count enemy pieces that can attack kingside
+        const kingSideAttackers = v40CountSideAttackers(board, enemyColor, 'kingside');
+        const dangerThreshold = CONFIG.v40KingsideCastleDangerThreshold || 2;
+        
+        if (kingSideAttackers >= dangerThreshold) {
+            debugLog("[V40.36_CASTLE]", `🚫🚫🚫 CASTLING DANGER: O-O with ${kingSideAttackers} pieces attacking kingside!`);
+            score += CONFIG.v40CastleIntoDangerPenalty || -40000000000000;
+        }
+        
+        // Also check if enemy rooks/queen are on f/g/h files
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            const file = square[0];
+            
+            if ((pieceType === 'r' || pieceType === 'q') && ['f', 'g', 'h'].includes(file)) {
+                debugLog("[V40.36_CASTLE]", `🚫🚫🚫 DANGER: Enemy ${pieceType} on ${square} attacks kingside!`);
+                score += (CONFIG.v40CastleIntoDangerPenalty || -40000000000000) / 2;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.36 Helper: Count attackers on a side of the board
+ */
+function v40CountSideAttackers(board, color, side) {
+    let count = 0;
+    const isWhite = color === 'w';
+    
+    const queenSideSquares = ['a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'd1', 'd2', 'd3',
+                              'a8', 'a7', 'a6', 'b8', 'b7', 'b6', 'c8', 'c7', 'c6', 'd8', 'd7', 'd6'];
+    const kingSideSquares = ['e1', 'e2', 'e3', 'f1', 'f2', 'f3', 'g1', 'g2', 'g3', 'h1', 'h2', 'h3',
+                             'e8', 'e7', 'e6', 'f8', 'f7', 'f6', 'g8', 'g7', 'g6', 'h8', 'h7', 'h6'];
+    
+    const targetSquares = side === 'queenside' ? queenSideSquares : kingSideSquares;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'p' || pieceType === 'k') continue;
+        
+        // Check if this piece attacks any square on the target side
+        for (const targetSq of targetSquares) {
+            if (v40DoesAttackSquare(board, square, targetSq, piece)) {
+                count++;
+                break; // Count each piece only once
+            }
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * v40.36: EXCHANGE QUALITY VERIFICATION — Don't trade in bad positions
+ */
+function v40ExchangeQualityEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ExchangeQualityEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Only evaluate captures
+    if (!capturedPiece) return 0;
+    
+    const isWhite = activeColor === 'w';
+    const ourMaterial = v40CalculateMaterial(board, isWhite);
+    const theirMaterial = v40CalculateMaterial(board, !isWhite);
+    
+    // Check if we're behind in material
+    if (ourMaterial < theirMaterial - 100) {
+        // When behind, avoid simplifying trades
+        if (movingPiece && capturedPiece) {
+            const movingValue = getPieceValueSimple(movingPiece.toLowerCase());
+            const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+            
+            // Equal or losing trade when behind
+            if (Math.abs(movingValue - capturedValue) <= 100) {
+                debugLog("[V40.36_EXCHANGE]", `⚠️ BAD EXCHANGE: Trading when behind! Material: ${ourMaterial} vs ${theirMaterial}`);
+                score += CONFIG.v40ExchangeWhenLosingPenalty || -25000000000000;
+            }
+        }
+    }
+    
+    // Check if this trade loses material
+    const afterBoard = simulateMoveOnBoard(board, move);
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    if (movingPiece && isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+        const defenders = countDefendersOfSquare(afterBoard, toSquare, activeColor);
+        const attackers = countAttackersOfSquare(afterBoard, toSquare, enemyColor);
+        
+        if (attackers > defenders) {
+            const movingValue = getPieceValueSimple(movingPiece.toLowerCase());
+            const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+            
+            if (movingValue > capturedValue) {
+                debugLog("[V40.36_EXCHANGE]", `🚫🚫🚫 BAD EXCHANGE: Losing ${movingPiece} for ${capturedPiece}!`);
+                score += CONFIG.v40BadExchangePenalty || -15000000000000;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.36: PIECE ACTIVITY REQUIREMENT — Must develop before passive moves
+ */
+function v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PieceActivityEnabled) return 0;
+    if (moveNumber > 20) return 0; // Only apply in opening
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const developmentLevel = v40CountDevelopedPieces(board, isWhite);
+    const requiredDevelopment = CONFIG.v40DevelopmentRequirement || 3;
+    
+    // Check if this is a passive move
+    const fromSquare = move.substring(0, 2);
+    const movingPiece = board.get(fromSquare);
+    
+    // Pawn moves to a3/h3/b3/g3 type squares
+    const passivePawnMoves = ['a2a3', 'h2h3', 'a7a6', 'h7h6', 'b2b3', 'g2g3', 'a2a4', 'h2h4', 'a7a5', 'h7h5'];
+    
+    if (passivePawnMoves.includes(move) && developmentLevel < requiredDevelopment) {
+        debugLog("[V40.36_ACTIVITY]", `🚫🚫🚫 UNDEVELOPED: Playing ${move} with only ${developmentLevel} pieces developed!`);
+        score += CONFIG.v40UndevelopedPiecePenalty || -5000000000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.36 Helper: Count developed pieces
+ */
+function v40CountDevelopedPieces(board, isWhite) {
+    let count = 0;
+    
+    // Starting squares for pieces
+    const whiteStartingSquares = {
+        'b1': 'n', 'g1': 'n', 'c1': 'b', 'f1': 'b'
+    };
+    const blackStartingSquares = {
+        'b8': 'n', 'g8': 'n', 'c8': 'b', 'f8': 'b'
+    };
+    
+    const startingSquares = isWhite ? whiteStartingSquares : blackStartingSquares;
+    
+    // Count pieces that have moved from starting squares
+    for (const [startSq, pieceType] of Object.entries(startingSquares)) {
+        const piece = board.get(startSq);
+        const expectedPiece = isWhite ? pieceType.toUpperCase() : pieceType;
+        
+        // If the expected piece is NOT on its starting square, it's developed
+        if (!piece || piece !== expectedPiece) {
+            count++;
+        }
+    }
+    
+    // Also check if castled (king moved)
+    const kingStartSq = isWhite ? 'e1' : 'e8';
+    const kingPiece = board.get(kingStartSq);
+    const expectedKing = isWhite ? 'K' : 'k';
+    if (!kingPiece || kingPiece !== expectedKing) {
+        count++; // Castled or king moved
+    }
+    
+    return count;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 function findAttackedPiecesV40_9(board, color) {
     const attacked = [];
     const isWhite = color === 'w';
@@ -41629,7 +41967,27 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.35: PIECE COORDINATION SUPREME — All pieces must work together
                 const pieceCoordinationSupremeScore = v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
                 
-                // v40.35: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
+                // From Sicilian game analysis: Qxd4, Nxe5, O-O-O were TERRIBLE
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.36: QUEEN CAPTURE PROHIBITION — Never capture with queen early
+                const queenCaptureProhibitionScore = v40QueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) * 1000.0;
+                
+                // v40.36: KNIGHT SACRIFICE PREVENTION — Don't sacrifice knight for pawn
+                const knightSacrificePreventionScore = v40KnightSacrificePreventionEval(fen, move, board, activeColor, moveNumber) * 800.0;
+                
+                // v40.36: CASTLING DIRECTION ANALYSIS — Don't castle into danger
+                const castlingDirectionScore = v40CastlingDirectionEval(fen, move, board, activeColor, moveNumber) * 900.0;
+                
+                // v40.36: EXCHANGE QUALITY VERIFICATION — Don't trade in bad positions
+                const exchangeQualityVerificationScore = v40ExchangeQualityEval(fen, move, board, activeColor, moveNumber) * 600.0;
+                
+                // v40.36: PIECE ACTIVITY REQUIREMENT — Must develop before passive moves
+                const pieceActivityRequirementScore = v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // v40.36: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
                 // This makes v40 the ABSOLUTE D3 PROHIBITION factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -41707,8 +42065,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                pieceSafetySupremeScore + initiativeMaintenanceScore +
                                // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
                                passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
-                               centralControlPriorityScore + pieceCoordinationSupremeScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.35 MATERIAL SAFETY PARADIGM SHIFT
+                               centralControlPriorityScore + pieceCoordinationSupremeScore +
+                               // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME additions!
+                               queenCaptureProhibitionScore + knightSacrificePreventionScore + castlingDirectionScore +
+                               exchangeQualityVerificationScore + pieceActivityRequirementScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.36 QUEEN CAPTURE & CASTLING PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -41761,6 +42122,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🔍🔍 TACTICAL VERIFICATION: ${tacticalVerificationScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏛️⚔️ CENTRAL CONTROL PRIORITY: ${centralControlPriorityScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🎵🎵 PIECE COORDINATION SUPREME: ${pieceCoordinationSupremeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸🚫 QUEEN CAPTURE PROHIBITION: ${queenCaptureProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴🚫 KNIGHT SACRIFICE PREVENTION: ${knightSacrificePreventionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🚫 CASTLING DIRECTION: ${castlingDirectionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔄🚫 EXCHANGE QUALITY VERIFICATION: ${exchangeQualityVerificationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   📍🚫 PIECE ACTIVITY REQUIREMENT: ${pieceActivityRequirementScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
