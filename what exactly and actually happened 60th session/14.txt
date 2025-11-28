@@ -1,0 +1,7 @@
+Syntax is good. Now let me find where to integrate the v40.40 functions into computeCombinedScore:
+Action: $ grep -n "v40.39.*COMBINED\|pawnForkDetectionScore" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 43924:                const pawnForkDetectionScore = v40PawnForkDetectionEval(fen, move, board, activeColor, moveNumber) * 2400.0;
+43926:                // v40.39: COMBINED v40 SCORE — 100% PAWN CAPTURE CHAIN SUPREME INFLUENCE
+44016:                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore;
+44091:                debugLog("[V40_INTEGRATE]", `   ♟️🍴 PAWN FORK DETECTION: ${pawnForkDetectionScore.toFixed(1)}`);
+Exit code: 0

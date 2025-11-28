@@ -1,0 +1,16 @@
+I see the issue! Line 27613-27617 has orphaned code (a function body without a function declaration). It looks like the function name `findAttackedPiecesV40_9` was removed during a bad edit. Let me check more context:
+Action: $ sed -n '27608,27620p' "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation:         }
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+    const attacked = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+Exit code: 0

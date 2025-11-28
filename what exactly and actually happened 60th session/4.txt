@@ -1,0 +1,64 @@
+That looks fine. Let me check around line 27655 more carefully:
+Action: $ sed -n '27600,27660p' "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation:             // If pawn advance creates a fork of two pieces
+            if (forkTargets.length >= 2) {
+                const totalValue = forkTargets.reduce((sum, t) => sum + t.value, 0);
+                if (totalValue >= 600) {  // At least two knights or equivalent
+                    debugLog("[V40.39_FORK]", `☠️ PAWN FORK THREAT: ${square} can advance to ${advanceSquare} forking ${forkTargets.map(t => t.piece + '@' + t.square).join(' and ')}!`);
+                    score += CONFIG.v40PawnForkDetectionPenalty || -240000000000000;
+                }
+            }
+        }
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+    const attacked = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;  // King attacks handled separately
+        
+        // Check if this square is attacked by enemy
+        if (isSquareAttackedByColor(board, square, enemyColor)) {
+            // Check if it's adequately defended
+            const isDefended = isSquareDefendedByColor(board, square, color);
+            
+            // If attacked by something of lower value, still need to consider
+            const attackers = findAttackersOfSquare(board, square, enemyColor);
+            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+            const ourPieceValue = getPieceValueSimple(pieceType);
+            
+            // Consider it under attack if:
+            // 1. Not defended at all, or
+            // 2. Attacker is of lower value than our piece
+            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+                attacked.push({
+                    square,
+                    piece,
+                    value: ourPieceValue,
+                    lowestAttackerValue
+                });
+            }
+        }
+    }
+    
+    // Sort by piece value (highest first - queen, then rook, etc.)
+    attacked.sort((a, b) => b.value - a.value);
+    
+    return attacked;
+}
+
+/**
+ * v40.9 Helper: Find all hanging pieces (attacked and not defended)
+ */
+function findHangingPiecesV40_9(board, color) {
+Exit code: 0

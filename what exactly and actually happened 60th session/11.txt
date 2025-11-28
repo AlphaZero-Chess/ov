@@ -1,0 +1,44 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+27620|            
+27621|            if (rightTarget) {
+27622|                const rightPiece = testBoard.get(rightTarget);
+27623|                if (rightPiece) {
+27624|                    const rightIsWhite = rightPiece === rightPiece.toUpperCase();
+27625|                    if (rightIsWhite === isWhite && rightPiece.toLowerCase() !== 'p') {
+27626|                        forkTargets.push({ square: rightTarget, piece: rightPiece, value: getPieceValueSimple(rightPiece.toLowerCase()) });
+27627|                    }
+27628|                }
+27629|            }
+27630|            
+27631|            // If pawn advance creates a fork of two pieces
+27632|            if (forkTargets.length >= 2) {
+27633|                const totalValue = forkTargets.reduce((sum, t) => sum + t.value, 0);
+27634|                if (totalValue >= 600) {  // At least two knights or equivalent
+27635|                    debugLog("[V40.39_FORK]", `☠️ PAWN FORK THREAT: ${square} can advance to ${advanceSquare} forking ${forkTargets.map(t => t.piece + '@' + t.square).join(' and ')}!`);
+27636|                    score += CONFIG.v40PawnForkDetectionPenalty || -240000000000000;
+27637|                }
+27638|            }
+27639|        }
+27640|    }
+27641|    
+27642|    return score;
+27643|}
+27644|
+27645|// ═══════════════════════════════════════════════════════════════════════════════
+27646|function findAttackedPiecesV40_9(board, color) {
+27647|    const attacked = [];
+27648|    const isWhite = color === 'w';
+27649|    const enemyColor = isWhite ? 'b' : 'w';
+27650|    
+27651|    for (const [square, piece] of board) {
+27652|        if (!piece) continue;
+27653|        const pieceIsWhite = piece === piece.toUpperCase();
+27654|        if (pieceIsWhite !== isWhite) continue;
+27655|        
+27656|        const pieceType = piece.toLowerCase();
+27657|        if (pieceType === 'k') continue;  // King attacks handled separately
+27658|        
+27659|        // Check if this square is attacked by enemy
+27660|        if (isSquareAttackedByColor(board, square, enemyColor)) {

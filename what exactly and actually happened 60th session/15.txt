@@ -1,0 +1,114 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+43920|                // v40.39: PIECE UNDER PAWN DANGER — Don't put pieces under pawn attack!
+43921|                const pieceUnderPawnDangerScore = v40PieceUnderPawnDangerEval(fen, move, board, activeColor, moveNumber) * 2200.0;
+43922|                
+43923|                // v40.39: PAWN FORK DETECTION — See pawn fork threats!
+43924|                const pawnForkDetectionScore = v40PawnForkDetectionEval(fen, move, board, activeColor, moveNumber) * 2400.0;
+43925|                
+43926|                // v40.39: COMBINED v40 SCORE — 100% PAWN CAPTURE CHAIN SUPREME INFLUENCE
+43927|                // This makes v40 the ABSOLUTE TACTICAL SUPREME factor
+43928|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+43929|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+43930|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+43931|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+43932|                               counterattackBonus + initiativePreservationBonus +
+43933|                               // v40.4 additions:
+43934|                               openingPrinciplesScore + discoveredAttackPenalty + 
+43935|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+43936|                               // v40.5 additions:
+43937|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+43938|                               // v40.6 ULTIMATE additions:
+43939|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+43940|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+43941|                               // v40.7 DIVINE additions:
+43942|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+43943|                               // v40.8 TRANSCENDENT additions:
+43944|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+43945|                               counterplayGenScore + centralControlSupremeScore +
+43946|                               // v40.9 OMNISCIENT additions:
+43947|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+43948|                               // v40.10 GODLIKE additions:
+43949|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+43950|                               // v40.11 TRANSCENDENT SUPREME additions:
+43951|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+43952|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+43953|                               // v40.12 PROACTIVE SUPREME additions:
+43954|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+43955|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+43956|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+43957|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+43958|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+43959|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+43960|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+43961|                               // v40.15 PIECE PRESERVATION SUPREME additions:
+43962|                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+43963|                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+43964|                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+43965|                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+43966|                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+43967|                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+43968|                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+43969|                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+43970|                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+43971|                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore +
+43972|                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+43973|                               promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
+43974|                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+43975|                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+43976|                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+43977|                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+43978|                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+43979|                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+43980|                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+43981|                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+43982|                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+43983|                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score +
+43984|                               // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
+43985|                               kingsidePawnProhibitionScore + bishopSacrificeScore + forcedDefenseModeScore + 
+43986|                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore +
+43987|                               // v40.27 ABSOLUTE TACTICAL SUPREMACY additions:
+43988|                               forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore +
+43989|                               // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
+43990|                               absoluteSacrificeVerificationScore + attackCoordinationScore + deepForcingCalcScore +
+43991|                               pieceSacrificeAnalysisScore + attackProgressScore +
+43992|                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+43993|                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+43994|                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+43995|                               pieceCoordinationCheckScore + threatAnticipationScore +
+43996|                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+43997|                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+43998|                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore +
+43999|                               // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
+44000|                               absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
+44001|                               pieceSafetySupremeScore + initiativeMaintenanceScore +
+44002|                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+44003|                               passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
+44004|                               centralControlPriorityScore + pieceCoordinationSupremeScore +
+44005|                               // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME additions!
+44006|                               queenCaptureProhibitionScore + knightSacrificePreventionScore + castlingDirectionScore +
+44007|                               exchangeQualityVerificationScore + pieceActivityRequirementScore +
+44008|                               // v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME additions!
+44009|                               rookPassiveProhibitionScore + kingCornerRetreatScore + desperationSacrificeScore +
+44010|                               ultraQueenCaptureScore + passiveUnderAttackScore +
+44011|                               // v40.38 GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME additions!
+44012|                               gxf3ProhibitionScore + kingDangerWalkScore + forcedMateDefenseScore +
+44013|                               pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore +
+44014|                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+44015|                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+44016|                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore;
+44017|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.39 PAWN CAPTURE CHAIN SUPREME PARADIGM SHIFT
+44018|                
+44019|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+44020|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+44021|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+44022|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+44023|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+44024|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+44025|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+44026|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+44027|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+44028|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+44029|                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+44030|                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);

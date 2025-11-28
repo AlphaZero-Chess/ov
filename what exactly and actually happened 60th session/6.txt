@@ -1,0 +1,42 @@
+The function `findAttackedPiecesV40_9` is missing its declaration. Let me fix this:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+    const attacked = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;  // King attacks handled separately
+        
+        // Check if this square is attacked by enemy
+        if (isSquareAttackedByColor(board, square, enemyColor)) {
+            // Check if it's adequately defended
+            const isDefended = isSquareDefendedByColor(board, square, color);" --new-str "    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {
+    const attacked = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;  // King attacks handled separately
+        
+        // Check if this square is attacked by enemy
+        if (isSquareAttackedByColor(board, square, enemyColor)) {
+            // Check if it's adequately defended
+            const isDefended = isSquareDefendedByColor(board, square, color);"
+Observation: Edit was successful.

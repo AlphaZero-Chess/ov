@@ -1,0 +1,54 @@
+Syntax is now valid. Now let me analyze the latest game and implement v40.40 to fix the critical issues. The problem is that the bot played e5 instead of recapturing with Nxd4 when the d4 pawn was attacking Nc3:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2460|    
+2461|    // v40.38: BISHOP USELESS SQUARE PROHIBITION - No Bh6/Ba3 type useless moves
+2462|    v40BishopUselessSquareEnabled: true,
+2463|    v40BishopUselessSquarePenalty: -50000000000000, // 50 trillion for useless bishop
+2464|    v40BishopUselessSquares: ['h6', 'a6', 'h3', 'a3'],
+2465|    
+2466|    // ═══════════════════════════════════════════════════════════════════════════════
+2467|    // v40.39: PAWN CAPTURE CHAIN SUPREME - See 3+ move pawn capture chains!
+2468|    // From game: d4 was taken by cxd4, then dxc3 attacked Bb5 AND threatened b2!
+2469|    // THE BOT MUST SEE PAWN ATTACK CHAINS AND RESPOND PROPERLY!
+2470|    // ═══════════════════════════════════════════════════════════════════════════════
+2471|    
+2472|    // v40.39: PAWN CAPTURE CHAIN DETECTION - See when pawn captures lead to more captures
+2473|    v40PawnCaptureChainEnabled: true,
+2474|    v40PawnCaptureChainPenalty: -250000000000000, // 250 trillion for missing pawn chain
+2475|    
+2476|    // v40.39: PIECE UNDER PAWN ATTACK - Must respond when piece attacked by pawn
+2477|    v40PieceUnderPawnAttackEnabled: true,
+2478|    v40PieceUnderPawnAttackPenalty: -200000000000000, // 200 trillion for ignoring pawn attack
+2479|    
+2480|    // v40.39: PROMOTION THREAT DETECTION - See when enemy pawn threatens promotion
+2481|    v40PromotionThreatEnabled: true,
+2482|    v40PromotionThreatPenalty: -300000000000000, // 300 trillion for ignoring promotion threat
+2483|    
+2484|    // v40.39: RECAPTURE CHAIN AWARENESS - When we take, see if they take back creating chain
+2485|    v40RecaptureChainEnabled: true,
+2486|    v40RecaptureChainPenalty: -180000000000000, // 180 trillion for missing recapture chain
+2487|    
+2488|    // v40.39: KNIGHT/BISHOP UNDER PAWN DANGER - Must move when piece under pawn attack
+2489|    v40PieceUnderPawnDangerEnabled: true,
+2490|    v40PieceUnderPawnDangerPenalty: -220000000000000, // 220 trillion for piece under pawn attack
+2491|    
+2492|    // v40.39: PAWN FORK DETECTION - See when enemy pawn can fork pieces
+2493|    v40PawnForkDetectionEnabled: true,
+2494|    v40PawnForkDetectionPenalty: -240000000000000, // 240 trillion for missing pawn fork
+2495|};
+2496|
+2497|// ═══════════════════════════════════════════════════════════════════════
+2498|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2499|// ═══════════════════════════════════════════════════════════════════════
+2500|
+2501|/**
+2502| * v37: TRUE MCTS Node structure for proper tree search
+2503| */
+2504|class MCTSNode {
+2505|    constructor(move, parent = null, prior = 1.0) {
+2506|        this.move = move;
+2507|        this.parent = parent;
+2508|        this.children = new Map();
+2509|        this.visits = 0;
+2510|        this.totalValue = 0;

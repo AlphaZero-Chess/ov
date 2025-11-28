@@ -1,0 +1,12 @@
+Now update the combined score calculation to include v40.40 scores:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.39 PAWN CAPTURE CHAIN SUPREME PARADIGM SHIFT" --new-str "                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.40 MANDATORY RECAPTURE SUPREME PARADIGM SHIFT"
+Observation: Edit was successful.

@@ -1,0 +1,44 @@
+There's a syntax error. Let me find and fix it:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+27640|            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+27641|                attacked.push({
+27642|                    square,
+27643|                    piece,
+27644|                    value: ourPieceValue,
+27645|                    lowestAttackerValue
+27646|                });
+27647|            }
+27648|        }
+27649|    }
+27650|    
+27651|    // Sort by piece value (highest first - queen, then rook, etc.)
+27652|    attacked.sort((a, b) => b.value - a.value);
+27653|    
+27654|    return attacked;
+27655|}
+27656|
+27657|/**
+27658| * v40.9 Helper: Find all hanging pieces (attacked and not defended)
+27659| */
+27660|function findHangingPiecesV40_9(board, color) {
+27661|    const hanging = [];
+27662|    const isWhite = color === 'w';
+27663|    const enemyColor = isWhite ? 'b' : 'w';
+27664|    
+27665|    for (const [square, piece] of board) {
+27666|        if (!piece) continue;
+27667|        const pieceIsWhite = piece === piece.toUpperCase();
+27668|        if (pieceIsWhite !== isWhite) continue;
+27669|        
+27670|        const pieceType = piece.toLowerCase();
+27671|        if (pieceType === 'k') continue;
+27672|        
+27673|        const isAttacked = isSquareAttackedByColor(board, square, enemyColor);
+27674|        const isDefended = isSquareDefendedByColor(board, square, color);
+27675|        
+27676|        if (isAttacked && !isDefended) {
+27677|            hanging.push({ square, piece, value: getPieceValueSimple(pieceType) });
+27678|        }
+27679|    }
+27680|    

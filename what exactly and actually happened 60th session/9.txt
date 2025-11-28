@@ -1,0 +1,40 @@
+Now let me add v40.40 CONFIG options and functions. The issue is that the bot needs MANDATORY RECAPTURE when a pawn captures near our pieces. Let me find where to add the config:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.39: PAWN FORK DETECTION - See when enemy pawn can fork pieces
+    v40PawnForkDetectionEnabled: true,
+    v40PawnForkDetectionPenalty: -240000000000000, // 240 trillion for missing pawn fork
+};" --new-str "    // v40.39: PAWN FORK DETECTION - See when enemy pawn can fork pieces
+    v40PawnForkDetectionEnabled: true,
+    v40PawnForkDetectionPenalty: -240000000000000, // 240 trillion for missing pawn fork
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.40: MANDATORY RECAPTURE SUPREME - THE ULTIMATE FIX FOR PAWN CAPTURE BLINDNESS!
+    // From game: After cxd4, bot played e5 instead of recapturing! Lost knight immediately!
+    // After dxc3, bot played exf6 instead of saving bishop! Lost everything!
+    // THE BOT MUST RECAPTURE WHEN ENEMY PAWN TAKES NEAR OUR PIECES!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.40: MANDATORY RECAPTURE - When enemy pawn takes, MUST recapture or save piece
+    v40MandatoryRecaptureEnabled: true,
+    v40MandatoryRecapturePenalty: -500000000000000, // 500 trillion - HIGHEST priority!
+    
+    // v40.40: PAWN NEAR PIECE DANGER - Enemy pawn that can capture our piece next move
+    v40PawnNearPieceDangerEnabled: true,
+    v40PawnNearPieceDangerPenalty: -400000000000000, // 400 trillion for ignoring pawn threat
+    
+    // v40.40: IMMEDIATE PAWN THREAT - Pawn that currently attacks our piece
+    v40ImmediatePawnThreatEnabled: true,
+    v40ImmediatePawnThreatPenalty: -450000000000000, // 450 trillion for ignoring immediate threat
+    
+    // v40.40: PAWN CHAIN PROMOTION THREAT - Pawn that after capture threatens promotion
+    v40PawnChainPromotionEnabled: true,
+    v40PawnChainPromotionPenalty: -350000000000000, // 350 trillion for missing promotion chain
+    
+    // v40.40: MULTI-THREAT PAWN - Pawn that attacks our piece AND threatens something else
+    v40MultiThreatPawnEnabled: true,
+    v40MultiThreatPawnPenalty: -550000000000000, // 550 trillion for multi-threat pawn
+    
+    // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
+    v40CaptureThenAttackEnabled: true,
+    v40CaptureThenAttackPenalty: -480000000000000, // 480 trillion for missing capture then attack
+};"
+Observation: Edit was successful.

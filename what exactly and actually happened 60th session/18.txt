@@ -1,0 +1,4 @@
+Now let me add debug logging for v40.40 scores:
+Action: $ grep -n "PAWN FORK DETECTION:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -3
+Observation: 44118:                debugLog("[V40_INTEGRATE]", `   ♟️🍴 PAWN FORK DETECTION: ${pawnForkDetectionScore.toFixed(1)}`);
+Exit code: 0
