@@ -2020,6 +2020,30 @@ const CONFIG = {
     
     // v40.26: 100% ABSOLUTE KINGSIDE FORTRESS SUPREME DOMINANCE
     v40AbsoluteKingsideFortressDominance: 1.0,      // 100% v40.26 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.27.0: ABSOLUTE TACTICAL SUPREMACY — Never lose to tactics
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.27: FORCED EXCHANGE SEQUENCE CALCULATION — See 3-4 moves into exchanges
+    v40ForcedExchangeSequenceEnabled: true,
+    v40ExchangeSequenceDepth: 4,                    // Calculate 4 moves into exchanges
+    v40MaterialLossInExchangePenalty: -10000,       // Per centipawn lost in exchange
+    v40LoosePieceAfterMovePenalty: -5000,           // Per value point of loose piece
+    
+    // v40.27: ABSOLUTE KNIGHT FORK SHIELD — Protect critical fork squares
+    v40KnightForkShieldEnabled: true,
+    v40KnightForkThreatPenalty: -500000000,         // Knight fork threatens King+Queen
+    v40KnightForkRookPenalty: -300000000,           // Knight fork threatens King+Rook
+    v40ForkSquareDefenseBonus: 50000,               // Bonus for defending fork square
+    
+    // v40.27: KING EXPOSURE INDEX — Calculate king safety after moves
+    v40KingExposureIndexEnabled: true,
+    v40KingExposureIncreasePenalty: -100000,        // Per exposure point increase
+    v40LowKingDefendersPenalty: -200000,            // Per missing defender below 2
+    
+    // v40.27: 100% ABSOLUTE TACTICAL SUPREMACY DOMINANCE
+    v40AbsoluteTacticalSupremacyDominance: 1.0,     // 100% v40.27 dominance
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -21175,6 +21199,478 @@ function v40CreatesKingsideWeakness(move, boardBefore, boardAfter, ourColor) {
     }
     
     return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.27: ABSOLUTE TACTICAL SUPREMACY - FORCED EXCHANGE SEQUENCE CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.27: FORCED EXCHANGE SEQUENCE CALCULATOR
+ * Calculate what happens 3-4 moves into forced exchange sequences
+ * Critical for seeing Rxd4 > Rxd3 > Nxf2 type sequences
+ */
+function v40ForcedExchangeSequenceEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ForcedExchangeSequenceEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        // If we're capturing, calculate the exchange sequence
+        if (capturedPiece) {
+            const exchangeResult = v40CalculateExchangeSequence(afterBoard, toSquare, activeColor, 4);
+            
+            // If we lose material in the exchange, MASSIVE penalty
+            if (exchangeResult.materialChange < -100) {
+                score += exchangeResult.materialChange * 10000;
+                debugLog("[V40.27_EXCHANGE]", `☠️☠️☠️ ${move} loses material in exchange: ${exchangeResult.materialChange}cp`);
+            }
+        }
+        
+        // Check if ANY of our pieces become loose after this move
+        const looseAfter = v40FindLoosePiecesAfterMove(afterBoard, activeColor);
+        for (const loose of looseAfter) {
+            const pieceValue = getPieceValueSimple(loose.piece.toLowerCase());
+            if (pieceValue >= 300) {  // Knight or higher
+                score -= pieceValue * 5000;
+                debugLog("[V40.27_EXCHANGE]", `⚠️ ${move} leaves ${loose.piece} on ${loose.square} loose!`);
+            }
+        }
+        
+        // Check if enemy can create a forcing sequence after our move
+        const enemyForcingThreat = v40DetectEnemyForcingSequence(afterBoard, enemyColor, activeColor);
+        if (enemyForcingThreat.exists) {
+            score += enemyForcingThreat.penalty;
+            debugLog("[V40.27_EXCHANGE]", `🚨 Enemy has forcing sequence after ${move}: ${enemyForcingThreat.description}`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.27_EXCHANGE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.27: Calculate exchange sequence result
+ */
+function v40CalculateExchangeSequence(board, square, startColor, depth) {
+    let materialChange = 0;
+    let currentBoard = new Map(board);
+    let currentColor = startColor === 'w' ? 'b' : 'w';  // Enemy moves first in exchange
+    
+    for (let d = 0; d < depth; d++) {
+        // Find attackers and defenders of the square
+        const attackers = findAttackersOfSquare(currentBoard, square, currentColor);
+        
+        if (attackers.length === 0) break;  // No more attackers
+        
+        // Use lowest value attacker
+        attackers.sort((a, b) => getPieceValueSimple(a.piece.toLowerCase()) - getPieceValueSimple(b.piece.toLowerCase()));
+        const attacker = attackers[0];
+        
+        // Get the piece being captured
+        const capturedPiece = currentBoard.get(square);
+        if (!capturedPiece) break;
+        
+        const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+        const attackerValue = getPieceValueSimple(attacker.piece.toLowerCase());
+        
+        // Calculate material change from perspective of startColor
+        if (currentColor === startColor) {
+            materialChange += capturedValue;  // We capture
+        } else {
+            materialChange -= capturedValue;  // We lose
+        }
+        
+        // Execute capture
+        currentBoard.delete(attacker.square);
+        currentBoard.set(square, attacker.piece);
+        
+        // Switch colors
+        currentColor = currentColor === 'w' ? 'b' : 'w';
+    }
+    
+    return { materialChange };
+}
+
+/**
+ * v40.27: Find loose pieces after a move
+ */
+function v40FindLoosePiecesAfterMove(board, color) {
+    const loose = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (piece.toLowerCase() === 'k') continue;
+        
+        const isAttacked = isSquareAttackedByColor(board, square, enemyColor);
+        const isDefended = isSquareDefendedByColor(board, square, color);
+        
+        if (isAttacked && !isDefended) {
+            loose.push({ square, piece });
+        }
+    }
+    
+    return loose;
+}
+
+/**
+ * v40.27: Detect enemy forcing sequence threats
+ */
+function v40DetectEnemyForcingSequence(board, enemyColor, ourColor) {
+    const isEnemyWhite = enemyColor === 'w';
+    
+    // Look for knight fork threats on critical squares
+    const criticalForkSquares = ['f2', 'f7', 'e2', 'e7', 'c2', 'c7', 'd2', 'd7', 'b3', 'b6', 'g3', 'g6'];
+    
+    for (const forkSquare of criticalForkSquares) {
+        // Check if enemy knight can reach this square
+        const enemyKnights = [];
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            if (piece.toLowerCase() !== 'n') continue;
+            const isEnemy = (piece === piece.toUpperCase()) === isEnemyWhite;
+            if (!isEnemy) continue;
+            enemyKnights.push(sq);
+        }
+        
+        for (const knightSq of enemyKnights) {
+            if (canKnightReach(knightSq, forkSquare, 1)) {
+                // Check what pieces would be attacked from the fork square
+                const forkedPieces = v40GetPiecesAttackedFromSquare(board, forkSquare, 'n', ourColor);
+                
+                // If king and queen, or king and rook are forked - CATASTROPHIC
+                const hasKing = forkedPieces.some(p => p.piece.toLowerCase() === 'k');
+                const hasQueen = forkedPieces.some(p => p.piece.toLowerCase() === 'q');
+                const hasRook = forkedPieces.some(p => p.piece.toLowerCase() === 'r');
+                
+                if (hasKing && hasQueen) {
+                    return {
+                        exists: true,
+                        penalty: -500000000,
+                        description: `Knight fork on ${forkSquare} hits King+Queen!`
+                    };
+                }
+                if (hasKing && hasRook) {
+                    return {
+                        exists: true,
+                        penalty: -300000000,
+                        description: `Knight fork on ${forkSquare} hits King+Rook!`
+                    };
+                }
+            }
+        }
+    }
+    
+    return { exists: false, penalty: 0 };
+}
+
+/**
+ * v40.27: ABSOLUTE KNIGHT FORK SHIELD
+ * Preemptively protect critical fork squares
+ */
+function v40AbsoluteKnightForkShieldEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KnightForkShieldEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Simulate our move
+        const afterBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            afterBoard.delete(fromSquare);
+            afterBoard.set(toSquare, movingPiece);
+        }
+        
+        // Critical fork squares for each color
+        const ourCriticalSquares = isWhite ? ['f2', 'e2', 'c2', 'd2', 'b3', 'g3'] : ['f7', 'e7', 'c7', 'd7', 'b6', 'g6'];
+        
+        for (const forkSq of ourCriticalSquares) {
+            // Check if enemy knight can reach this square in 1 move
+            const knightCanReach = v40EnemyKnightCanReach(afterBoard, enemyColor, forkSq);
+            
+            if (knightCanReach) {
+                // Check what OUR pieces would be hit
+                const threatenedPieces = v40GetPiecesAttackedFromSquare(afterBoard, forkSq, 'n', activeColor);
+                
+                const hitsPieces = threatenedPieces.filter(p => p.piece.toLowerCase() !== 'p');
+                
+                if (hitsPieces.length >= 2) {
+                    // FORK THREAT! Check if our move defends against it
+                    const moveDefendsFork = v40MoveDefendsForkSquare(move, forkSq, afterBoard, activeColor);
+                    
+                    if (!moveDefendsFork) {
+                        const forkValue = hitsPieces.reduce((sum, p) => sum + getPieceValueSimple(p.piece.toLowerCase()), 0);
+                        score -= forkValue * 2000;
+                        debugLog("[V40.27_FORK]", `⚠️ ${move} ignores fork threat on ${forkSq}! Value at risk: ${forkValue}`);
+                    } else {
+                        score += 50000;  // Bonus for defending the fork
+                        debugLog("[V40.27_FORK]", `✅ ${move} defends fork square ${forkSq}`);
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.27_FORK]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.27: Check if enemy knight can reach a square
+ */
+function v40EnemyKnightCanReach(board, enemyColor, targetSquare) {
+    const isEnemyWhite = enemyColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        if (piece.toLowerCase() !== 'n') continue;
+        const isEnemy = (piece === piece.toUpperCase()) === isEnemyWhite;
+        if (!isEnemy) continue;
+        
+        if (canKnightReach(sq, targetSquare, 1)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.27: Check if move defends a fork square
+ */
+function v40MoveDefendsForkSquare(move, forkSquare, board, ourColor) {
+    const toSquare = move.substring(2, 4);
+    
+    // If we move TO the fork square, we're controlling it
+    if (toSquare === forkSquare) return true;
+    
+    // If our piece attacks the fork square after the move
+    const movingPiece = board.get(toSquare);
+    if (movingPiece) {
+        const attacks = getSquaresAttackedByPiece(toSquare, movingPiece, board);
+        if (attacks.includes(forkSquare)) return true;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.27: Get pieces attacked from a square by a piece type
+ */
+function v40GetPiecesAttackedFromSquare(board, fromSquare, pieceType, targetColor) {
+    const attacked = [];
+    const isTargetWhite = targetColor === 'w';
+    
+    const attackedSquares = getKnightAttacks(fromSquare);  // For knight
+    
+    for (const sq of attackedSquares) {
+        const piece = board.get(sq);
+        if (!piece) continue;
+        const isTarget = (piece === piece.toUpperCase()) === isTargetWhite;
+        if (!isTarget) continue;
+        
+        attacked.push({ square: sq, piece });
+    }
+    
+    return attacked;
+}
+
+/**
+ * v40.27: Get knight attack squares
+ */
+function getKnightAttacks(square) {
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    const attacks = [];
+    
+    const knightMoves = [
+        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+        [1, -2], [1, 2], [2, -1], [2, 1]
+    ];
+    
+    for (const [df, dr] of knightMoves) {
+        const newFile = file + df;
+        const newRank = rank + dr;
+        
+        if (newFile >= 0 && newFile <= 7 && newRank >= 0 && newRank <= 7) {
+            attacks.push(String.fromCharCode('a'.charCodeAt(0) + newFile) + (newRank + 1));
+        }
+    }
+    
+    return attacks;
+}
+
+/**
+ * v40.27: Check if knight can reach target in N moves
+ */
+function canKnightReach(fromSquare, toSquare, maxMoves) {
+    if (maxMoves === 0) return fromSquare === toSquare;
+    if (maxMoves === 1) {
+        const attacks = getKnightAttacks(fromSquare);
+        return attacks.includes(toSquare);
+    }
+    return false;  // Simplify for performance
+}
+
+/**
+ * v40.27: KING EXPOSURE INDEX
+ * Calculate how exposed the king becomes after piece exchanges
+ */
+function v40KingExposureIndexEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingExposureIndexEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Simulate our move
+        const afterBoard = new Map(board);
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            afterBoard.delete(fromSquare);
+            afterBoard.set(toSquare, movingPiece);
+        }
+        
+        // Find our king
+        const ourKing = findKing(afterBoard, activeColor);
+        if (!ourKing) return 0;
+        
+        // Calculate exposure index
+        const exposureBefore = v40CalculateKingExposure(board, ourKing, activeColor);
+        const exposureAfter = v40CalculateKingExposure(afterBoard, ourKing, activeColor);
+        
+        const exposureIncrease = exposureAfter - exposureBefore;
+        
+        if (exposureIncrease > 2) {
+            score -= exposureIncrease * 100000;
+            debugLog("[V40.27_EXPOSE]", `⚠️ ${move} increases king exposure by ${exposureIncrease}!`);
+        }
+        
+        // Critical: If king has fewer than 2 defenders, MASSIVE penalty
+        const kingDefenders = v40CountKingDefenders(afterBoard, ourKing, activeColor);
+        if (kingDefenders < 2 && moveNumber > 10) {
+            score -= (2 - kingDefenders) * 200000;
+            debugLog("[V40.27_EXPOSE]", `🚨 King has only ${kingDefenders} defenders!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.27_EXPOSE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.27: Calculate king exposure score
+ */
+function v40CalculateKingExposure(board, kingSquare, ourColor) {
+    const enemyColor = ourColor === 'w' ? 'b' : 'w';
+    let exposure = 0;
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]) - 1;
+    
+    // Count open lines toward king
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            if (df === 0 && dr === 0) continue;
+            
+            let f = kingFile + df;
+            let r = kingRank + dr;
+            let openSquares = 0;
+            
+            while (f >= 0 && f <= 7 && r >= 0 && r <= 7) {
+                const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+                const piece = board.get(sq);
+                
+                if (piece) {
+                    // Check if enemy sliding piece on this line
+                    const isEnemy = (piece === piece.toUpperCase()) === (enemyColor === 'w');
+                    if (isEnemy) {
+                        const pt = piece.toLowerCase();
+                        if ((pt === 'r' && (df === 0 || dr === 0)) ||
+                            (pt === 'b' && df !== 0 && dr !== 0) ||
+                            pt === 'q') {
+                            exposure += 3 + openSquares;  // More dangerous if line is clear
+                        }
+                    }
+                    break;
+                }
+                
+                openSquares++;
+                f += df;
+                r += dr;
+            }
+        }
+    }
+    
+    return exposure;
+}
+
+/**
+ * v40.27: Count defenders around king
+ */
+function v40CountKingDefenders(board, kingSquare, ourColor) {
+    const isWhite = ourColor === 'w';
+    let defenders = 0;
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]) - 1;
+    
+    // Check squares around king
+    for (let df = -2; df <= 2; df++) {
+        for (let dr = -2; dr <= 2; dr++) {
+            if (df === 0 && dr === 0) continue;
+            
+            const f = kingFile + df;
+            const r = kingRank + dr;
+            
+            if (f < 0 || f > 7 || r < 0 || r > 7) continue;
+            
+            const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+            const piece = board.get(sq);
+            
+            if (piece) {
+                const isOurs = (piece === piece.toUpperCase()) === isWhite;
+                if (isOurs && piece.toLowerCase() !== 'k') {
+                    defenders++;
+                }
+            }
+        }
+    }
+    
+    return defenders;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
