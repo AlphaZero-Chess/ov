@@ -1,0 +1,16 @@
+Let me check the OPENING_BLACKLIST to see if d3 is included:
+Action: $ grep -n "OPENING_BLACKLIST\|d2d3.*reason\|d3.*BLACKLIST" "/app/Lichess Bot-AlphaZero-Pure.user.js" -A2 | head -50
+Observation: 34874:const OPENING_BLACKLIST = {
+34875-    // ═══════════════════════════════════════════════════════════════════════
+34876-    // v25.0.0 CRITICAL: COMPREHENSIVE OPENING BLACKLIST
+--
+36352:        ...OPENING_BLACKLIST.earlyQueenMoves,
+36353:        ...OPENING_BLACKLIST.dangerousQueenMoves,
+36354:        ...OPENING_BLACKLIST.terribleKnightMoves,
+36355:        ...OPENING_BLACKLIST.timeWasting,
+36356:        ...OPENING_BLACKLIST.weakening,
+36357:        ...OPENING_BLACKLIST.earlyQueenCaptures,    // v26.0.0 NEW
+36358:        ...OPENING_BLACKLIST.doubleKnightMoves,     // v26.0.0 NEW - Nc3-Nd5 disaster
+36359-    ];
+36360-
+Exit code: 0

@@ -1,0 +1,29 @@
+I notice that d2d3 is NOT in the blacklist! This is a critical oversight. Let me add it to the weakening category:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v26.0.0: WEAKENING PAWN MOVES - f4/g3 from lost game killed the king
+    weakening: [
+        { move: /^f2f3/, beforeMove: 15, reason: \"f3 - weakens king badly (unless forcing)\" },
+        { move: /^f7f6/, beforeMove: 15, reason: \"f6 - weakens king badly\" },
+        { move: /^f2f4/, beforeMove: 20, reason: \"f4 - weakens e3/g3 squares (lost game move 19)\" },
+        { move: /^f7f5/, beforeMove: 20, reason: \"f5 - weakens e6/g6 squares\" },
+        { move: /^g2g3/, beforeMove: 20, reason: \"g3 - weakens dark squares\" },
+        { move: /^g7g6/, beforeMove: 10, reason: \"g6 - only in Modern/Pirc/KID\" },
+        { move: /^g2g4/, beforeMove: 20, reason: \"g4 - premature pawn storm\" },
+        { move: /^g7g5/, beforeMove: 20, reason: \"g5 - premature pawn storm\" },
+        { move: /^h2h4/, beforeMove: 15, reason: \"h4 - weakening unless attacking\" },
+        { move: /^h7h5/, beforeMove: 15, reason: \"h5 - weakening unless attacking\" },
+    ]," --new-str "    // v26.0.0: WEAKENING PAWN MOVES - f4/g3 from lost game killed the king
+    weakening: [
+        { move: /^d2d3/, beforeMove: 40, reason: \"d3 - ABSOLUTELY FORBIDDEN PASSIVE MOVE (v40.34)\" },
+        { move: /^e2e3/, beforeMove: 15, reason: \"e3 - passive when e4 is better\" },
+        { move: /^f2f3/, beforeMove: 15, reason: \"f3 - weakens king badly (unless forcing)\" },
+        { move: /^f7f6/, beforeMove: 15, reason: \"f6 - weakens king badly\" },
+        { move: /^f2f4/, beforeMove: 20, reason: \"f4 - weakens e3/g3 squares (lost game move 19)\" },
+        { move: /^f7f5/, beforeMove: 20, reason: \"f5 - weakens e6/g6 squares\" },
+        { move: /^g2g3/, beforeMove: 20, reason: \"g3 - weakens dark squares\" },
+        { move: /^g7g6/, beforeMove: 10, reason: \"g6 - only in Modern/Pirc/KID\" },
+        { move: /^g2g4/, beforeMove: 20, reason: \"g4 - premature pawn storm\" },
+        { move: /^g7g5/, beforeMove: 20, reason: \"g5 - premature pawn storm\" },
+        { move: /^h2h4/, beforeMove: 15, reason: \"h4 - weakening unless attacking\" },
+        { move: /^h7h5/, beforeMove: 15, reason: \"h5 - weakening unless attacking\" },
+    ],"
+Observation: Edit was successful.

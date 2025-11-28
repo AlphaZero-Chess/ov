@@ -1,0 +1,11 @@
+The d3 prohibition has a penalty of -10 trillion. Let me check the CONFIG to ensure these are enabled:
+Action: $ grep -n "v40AbsoluteD3ProhibitionEnabled\|v40D3ProhibitionPenalty\|v40SicilianMasteryEnabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2291:    v40AbsoluteD3ProhibitionEnabled: true,
+2293:    v40D3ProhibitionPenalty: -10000000000000,       // 10 trillion penalty for d3
+2297:    v40SicilianMasteryEnabled: true,
+25056:    if (!CONFIG.v40AbsoluteD3ProhibitionEnabled) return 0;
+25077:            score += CONFIG.v40D3ProhibitionPenalty || -10000000000000;
+25087:                score += (CONFIG.v40D3ProhibitionPenalty || -10000000000000) / 100;
+25098:                score += (CONFIG.v40D3ProhibitionPenalty || -10000000000000) / 2;
+25110:    if (!CONFIG.v40SicilianMasteryEnabled) return 0;
+Exit code: 0

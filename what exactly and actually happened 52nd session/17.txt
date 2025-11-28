@@ -1,0 +1,77 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36347|function isBlacklistedMove(move, moveNumber) {
+36348|    if (!move || !moveNumber) return false;
+36349|    
+36350|    // v26.0.0: Check ALL blacklist categories including new ones
+36351|    const allBlacklists = [
+36352|        ...OPENING_BLACKLIST.earlyQueenMoves,
+36353|        ...OPENING_BLACKLIST.dangerousQueenMoves,
+36354|        ...OPENING_BLACKLIST.terribleKnightMoves,
+36355|        ...OPENING_BLACKLIST.timeWasting,
+36356|        ...OPENING_BLACKLIST.weakening,
+36357|        ...OPENING_BLACKLIST.earlyQueenCaptures,    // v26.0.0 NEW
+36358|        ...OPENING_BLACKLIST.doubleKnightMoves,     // v26.0.0 NEW - Nc3-Nd5 disaster
+36359|    ];
+36360|    
+36361|    for (const blacklist of allBlacklists) {
+36362|        if (moveNumber < blacklist.beforeMove && blacklist.move.test(move)) {
+36363|            debugLog("[BLACKLIST]", `🚫 BLOCKED: ${move} on move ${moveNumber} - ${blacklist.reason}`);
+36364|            return true;
+36365|        }
+36366|    }
+36367|    
+36368|    // v24.0.0: Special check for Queen to b7 (lost game trap)
+36369|    if (move.includes('b7') || move.includes('b2')) {
+36370|        const piece = move[0];
+36371|        // Check if it's likely a Queen move (from d-file or already active Queen)
+36372|        if (move.startsWith('d') || move.startsWith('c') || move.startsWith('e') ||
+36373|            move.startsWith('a') || move.startsWith('b')) {
+36374|            // Potential Queen to dangerous square
+36375|            if (moveNumber < 15) {
+36376|                debugLog("[BLACKLIST]", `⚠️ WARNING: Move to ${move.substring(2,4)} - potential Queen trap zone`);
+36377|            }
+36378|        }
+36379|    }
+36380|    
+36381|    // v26.0.0: Check for early Queen recaptures (Qxd4 pattern from lost game)
+36382|    if (moveNumber <= 10 && move.length >= 4) {
+36383|        const toSquare = move.substring(2, 4);
+36384|        // Queen moves to central square early are suspicious
+36385|        if ((move.startsWith('d1') || move.startsWith('d8')) && 
+36386|            ['d4', 'd5', 'e4', 'e5'].includes(toSquare)) {
+36387|            debugLog("[BLACKLIST]", `⚠️ WARNING: Early Queen to center ${toSquare} - potential tempo loss`);
+36388|        }
+36389|    }
+36390|    
+36391|    return false;
+36392|}
+36393|
+36394|/**
+36395| * v23.0.0: Opening Principles Validator - ENFORCE GOOD DEVELOPMENT
+36396| */
+36397|function validateOpeningPrinciples(fen, move, moveNumber) {
+36398|    if (moveNumber > 15) return true; // Only enforce in opening
+36399|    
+36400|    const position = fen.split(' ')[0];
+36401|    const activeColor = fen.split(' ')[1];
+36402|    
+36403|    // Rule 1: MUST castle by move 12 (unless already castled or tactical reason)
+36404|    if (moveNumber >= 10 && moveNumber <= 12) {
+36405|        const hasCastled = (activeColor === 'w') ? 
+36406|            !fen.includes('K') : // White king moved (castled or lost rights)
+36407|            !fen.includes('k');  // Black king moved
+36408|        
+36409|        if (!hasCastled && !move.includes('O-O') && !move.includes('e1g1') && !move.includes('e8g8')) {
+36410|            // Check if castling is available
+36411|            const castlingRights = fen.split(' ')[2];
+36412|            const canCastle = (activeColor === 'w') ? 
+36413|                (castlingRights.includes('K') || castlingRights.includes('Q')) :
+36414|                (castlingRights.includes('k') || castlingRights.includes('q'));
+36415|            
+36416|            if (canCastle) {
+36417|                debugLog("[OPENING]", `⚠️ WARNING: Should prioritize castling on move ${moveNumber}`);
+36418|                // Don't block, but penalize heavily in evaluation
+36419|            }
+36420|        }

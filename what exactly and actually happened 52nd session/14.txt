@@ -1,0 +1,33 @@
+Good, it's enabled. Now let me check what happens when the engine selects moves (not just book moves). The problem might be that the engine is still selecting d3 after the book phase. Let me find where move selection happens after engine evaluation:
+Action: $ grep -n "sendMove\|bestmove\|selectedMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 40194:                if (event.includes("bestmove")) {
+40333:            if (event.includes("bestmove")) {
+40390:                if (event.includes("bestmove")) {
+41395:function logLearningExample(position, selectedMove, engineTopMove, outcomeEvalChange) {
+41400:            essenceMove: selectedMove,
+41757:            const selectedMove = selectedCandidate.move;
+41759:            debugLog("[TRUE_AZ]", `🎯 Selected top Q+Policy: ${selectedMove}`);
+41763:            const safetyPassed = checkAbsoluteSafety(engineTopScore, selectedCandidate.combinedScore, selectedMove);
+41772:                    attempted: selectedMove,
+41786:                debugLog("[SACRIFICE_V3]", `🎯 Sacrifice detected: ${selectedMove}`);
+41804:                        sacrifice: selectedMove,
+41819:            if (validateMoveSafety(selectedMove, alternatives, currentEval)) {
+41820:                const safetyCheck = detectHangingPieces(selectedMove, alternatives);
+41825:                    debugLog("[TRUE_AZ]", `✅ TRUE ALPHAZERO move accepted: ${selectedMove} (rate: ${acceptRate}%)`);
+41829:                        selected: selectedMove,
+41835:                    return selectedMove;
+41838:                    debugLog("[TRUE_AZ]", `❌ Move ${selectedMove} failed hanging check: ${safetyCheck.hangingPiece}`);
+41843:                debugLog("[TRUE_AZ]", `❌ Move ${selectedMove} failed safety validation`);
+42862:                            sendMove(alternativeMove, 0);
+43031:            sendMove(bookMove);
+43090:                sendMove(emergencyMove);
+43191:function sendMove(move, retryCount = 0) {
+43192:    debugLog("[SEND]", `sendMove() called: ${move}, retry: ${retryCount}`);
+43214:            sendMove(nextMove, 0);
+43287:            setTimeout(() => sendMove(move, retryCount + 1), 300);
+43403:                                sendMove(alternativeMove, 0);
+43432:                setTimeout(() => sendMove(move, 1), 500);
+43446:        if (event.includes("bestmove") || event.includes("multipv")) {
+43466:        if (event && event.includes("bestmove")) {
+43548:            // CRITICAL: Check if bestmove loses material without compensation
+Exit code: 0

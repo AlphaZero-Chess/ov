@@ -1,0 +1,15 @@
+Now let me also check that the queen shuffling issue (Qd2-Qd1) is properly penalized. Let me search for queen shuffling detection:
+Action: $ grep -n "Queen shuffle\|queen shuffle\|QueenShuffling\|queenHistory\|QUEEN.*retreat" "/app/Lichess Bot-AlphaZero-Pure.user.js" -i | head -20
+Observation: 2226:    v40RejectQueenRetreatEarly: true,               // HARD REJECT queen retreat before move 10
+2231:    v40QueenRetreatPenalty: -800000000000,          // 800 billion for queen retreat
+5771:            // v40.2: Queen retreat penalty TRIPLED
+5779:                penalty -= 1200;  // Tripled from 400 - queen retreat is TERRIBLE
+5780:                debugLog("[V40_QUEEN]", `🚨 Queen RETREATING from ${fromSquare} to ${toSquare} - TEMPO LOSS!`);
+5797:            // But if voluntary queen shuffle, maximum penalty
+6320:            if (v40IsQueenShuffling(move, board, activeColor)) {
+6459:function v40IsQueenShuffling(move, board, activeColor) {
+41652:            // RULE 3: REJECT queen retreat in first 10 moves (Qd2-Qd1, etc.)
+41653:            if (CONFIG.v40RejectQueenRetreatEarly && moveCount <= 10) {
+41654:                // Common queen retreats
+41659:                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: Queen retreat ${move} is FORBIDDEN!`);
+Exit code: 0

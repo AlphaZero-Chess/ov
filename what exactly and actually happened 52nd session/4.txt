@@ -1,0 +1,14 @@
+I see a critical issue! The v40.33 scores (`absoluteD3ProhibitionScore`, `sicilianMasteryScore`, etc.) are being **declared** but they are **NOT** included in the `v40DeepScore` calculation at line 41072-41142! They are computed but never added to the final score.
+
+Let me fix this:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.30 ABSOLUTE OPENING MASTERY PARADIGM SHIFT" --new-str "                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore +
+                               // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
+                               absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
+                               pieceSafetySupremeScore + initiativeMaintenanceScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.33 ABSOLUTE D3 PROHIBITION PARADIGM SHIFT"
+Observation: Edit was successful.

@@ -1,0 +1,100 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+34874|const OPENING_BLACKLIST = {
+34875|    // ═══════════════════════════════════════════════════════════════════════
+34876|    // v25.0.0 CRITICAL: COMPREHENSIVE OPENING BLACKLIST
+34877|    // Patterns from BOTH lost games analyzed
+34878|    // ═══════════════════════════════════════════════════════════════════════
+34879|    
+34880|    // Early Queen moves - ABSOLUTELY FORBIDDEN before move 10
+34881|    earlyQueenMoves: [
+34882|        // White Queen disasters
+34883|        { move: /^d1e2/, beforeMove: 8, reason: "Qe2 - DISASTER opening (lost game)" },
+34884|        { move: /^d1f3/, beforeMove: 10, reason: "Napoleon Attack (Qf3) - terrible" },
+34885|        { move: /^d1g4/, beforeMove: 10, reason: "Early Queen sortie (Qg4) - wastes time" },
+34886|        { move: /^d1h5/, beforeMove: 10, reason: "Early Queen attack (Qh5) - easily defended" },
+34887|        { move: /^d1d3/, beforeMove: 8, reason: "Qd3 - terrible early Queen development" },
+34888|        { move: /^d1c4/, beforeMove: 8, reason: "Qc4 - premature Queen activation" },
+34889|        { move: /^d1b3/, beforeMove: 8, reason: "Qb3 - terrible early Queen move (lost game)" },
+34890|        { move: /^d1a4/, beforeMove: 10, reason: "Qa4 - exposed Queen, no support" },
+34891|        
+34892|        // Black Queen disasters  
+34893|        { move: /^d8e7/, beforeMove: 8, reason: "Qe7 - blocks bishop development" },
+34894|        { move: /^d8f6/, beforeMove: 10, reason: "Qf6 - terrible early Queen" },
+34895|        { move: /^d8g5/, beforeMove: 10, reason: "Qg5 - easily attacked" },
+34896|        { move: /^d8d6/, beforeMove: 8, reason: "Qd6 - blocks d-pawn" },
+34897|        { move: /^d8b6/, beforeMove: 8, reason: "Qb6 - premature Queen sortie" },
+34898|        { move: /^d8a5/, beforeMove: 10, reason: "Qa5 - exposed Queen" },
+34899|    ],
+34900|    
+34901|    // v25.0.0: DANGEROUS QUEEN EXCURSIONS - Moves that lead to Queen traps
+34902|    dangerousQueenMoves: [
+34903|        // These are pawn grabs that often trap the Queen
+34904|        { move: /^.1b7/, beforeMove: 20, reason: "Queen to b7 - TRAP DANGER (lost game)" },
+34905|        { move: /^.8b2/, beforeMove: 20, reason: "Queen to b2 - TRAP DANGER" },
+34906|        { move: /^.1a8/, beforeMove: 25, reason: "Queen to a8 - EXTREME trap danger" },
+34907|        { move: /^.8a1/, beforeMove: 25, reason: "Queen to a1 - EXTREME trap danger" },
+34908|        { move: /^.1h8/, beforeMove: 25, reason: "Queen to h8 - corner trap danger" },
+34909|        { move: /^.8h1/, beforeMove: 25, reason: "Queen to h1 - corner trap danger" },
+34910|    ],
+34911|    
+34912|    // Terrible Knight development - FORBIDDEN before move 8
+34913|    terribleKnightMoves: [
+34914|        { move: /^g1h3/, beforeMove: 8, reason: "Nh3 - terrible knight placement" },
+34915|        { move: /^g8h6/, beforeMove: 8, reason: "Nh6 - terrible knight placement" },
+34916|        { move: /^b1a3/, beforeMove: 8, reason: "Na3 - knight on rim is dim" },
+34917|        { move: /^b8a6/, beforeMove: 8, reason: "Na6 - knight on rim is dim" },
+34918|    ],
+34919|    
+34920|    // v25.0.0: TIME-WASTING MOVES - CRITICAL FROM LOST GAME
+34921|    // The bot played b3, a3, a4 - complete waste of time
+34922|    timeWasting: [
+34923|        { move: /^a2a3/, beforeMove: 15, reason: "a3 - wastes time (lost game pattern)" },
+34924|        { move: /^h2h3/, beforeMove: 15, reason: "h3 - wastes time without purpose" },
+34925|        { move: /^a7a6/, beforeMove: 15, reason: "a6 - wastes time without purpose" },
+34926|        { move: /^h7h6/, beforeMove: 15, reason: "h6 - wastes time without purpose" },
+34927|        { move: /^b2b3/, beforeMove: 12, reason: "b3 - wastes time (lost game move 9)" },
+34928|        { move: /^b7b6/, beforeMove: 12, reason: "b6 - often wastes time" },
+34929|        { move: /^b2b4/, beforeMove: 15, reason: "b4 - premature wing attack" },
+34930|        { move: /^b7b5/, beforeMove: 15, reason: "b5 - premature wing attack" },
+34931|        { move: /^a2a4/, beforeMove: 15, reason: "a4 - wastes time (lost game move 15)" },
+34932|        { move: /^a7a5/, beforeMove: 15, reason: "a5 - wastes time" },
+34933|    ],
+34934|    
+34935|    // v26.0.0: WEAKENING PAWN MOVES - f4/g3 from lost game killed the king
+34936|    weakening: [
+34937|        { move: /^f2f3/, beforeMove: 15, reason: "f3 - weakens king badly (unless forcing)" },
+34938|        { move: /^f7f6/, beforeMove: 15, reason: "f6 - weakens king badly" },
+34939|        { move: /^f2f4/, beforeMove: 20, reason: "f4 - weakens e3/g3 squares (lost game move 19)" },
+34940|        { move: /^f7f5/, beforeMove: 20, reason: "f5 - weakens e6/g6 squares" },
+34941|        { move: /^g2g3/, beforeMove: 20, reason: "g3 - weakens dark squares" },
+34942|        { move: /^g7g6/, beforeMove: 10, reason: "g6 - only in Modern/Pirc/KID" },
+34943|        { move: /^g2g4/, beforeMove: 20, reason: "g4 - premature pawn storm" },
+34944|        { move: /^g7g5/, beforeMove: 20, reason: "g5 - premature pawn storm" },
+34945|        { move: /^h2h4/, beforeMove: 15, reason: "h4 - weakening unless attacking" },
+34946|        { move: /^h7h5/, beforeMove: 15, reason: "h5 - weakening unless attacking" },
+34947|    ],
+34948|    
+34949|    // v26.0.0: EARLY QUEEN CAPTURES - Often waste tempo
+34950|    earlyQueenCaptures: [
+34951|        { move: /^d1.d4/, beforeMove: 10, reason: "Qxd4 - Queen capture too early (lost game move 7)" },
+34952|        { move: /^d8.d5/, beforeMove: 10, reason: "Qxd5 - Queen capture too early" },
+34953|        { move: /^d1.d5/, beforeMove: 10, reason: "Qxd5 - Queen capture too early" },
+34954|        { move: /^d8.d4/, beforeMove: 10, reason: "Qxd4 - Queen capture too early" },
+34955|        { move: /^d1.e5/, beforeMove: 10, reason: "Qxe5 - Queen capture central pawn too early" },
+34956|        { move: /^d8.e4/, beforeMove: 10, reason: "Qxe4 - Queen capture central pawn too early" },
+34957|    ],
+34958|    
+34959|    // v26.0.0: DOUBLE KNIGHT MOVES - Critical from lost game (Nc3-Nd5)
+34960|    doubleKnightMoves: [
+34961|        { move: /^c3d5/, beforeMove: 8, reason: "Nd5 - Knight moving twice (Nc3-Nd5 disaster)" },
+34962|        { move: /^c6d4/, beforeMove: 8, reason: "Nd4 - Knight moving twice" },
+34963|        { move: /^f3d4/, beforeMove: 8, reason: "Nxd4 - unless winning material" },
+34964|        { move: /^f6d5/, beforeMove: 8, reason: "Nxd5 - unless winning material" },
+34965|        { move: /^c3b5/, beforeMove: 8, reason: "Nb5 - Knight moving twice" },
+34966|        { move: /^c6b4/, beforeMove: 8, reason: "Nb4 - Knight moving twice" },
+34967|        { move: /^c3a4/, beforeMove: 8, reason: "Na4 - Knight to edge twice" },
+34968|        { move: /^c6a5/, beforeMove: 8, reason: "Na5 - Knight to edge twice" },
+34969|    ],
+34970|    

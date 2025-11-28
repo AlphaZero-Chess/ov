@@ -1,0 +1,73 @@
+Let me check the sendMove function to see if there's a final hard filter there:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+43191|function sendMove(move, retryCount = 0) {
+43192|    debugLog("[SEND]", `sendMove() called: ${move}, retry: ${retryCount}`);
+43193|    
+43194|    // Validate move format
+43195|    if (!move || typeof move !== 'string' || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move)) {
+43196|        debugLog("[SEND]", "❌ Invalid move format:", move);
+43197|        return;
+43198|    }
+43199|    
+43200|    // v23.0.0: CHECK BLACKLIST - PREVENT DISASTERS
+43201|    if (isBlacklistedMove(move, moveCount)) {
+43202|        debugLog("[SEND]", `🚫 BLACKLISTED MOVE BLOCKED: ${move}`);
+43203|        debugLog("[SEND]", "   This move is forbidden in the opening - requesting alternative");
+43204|        
+43205|        // Force engine to find different move
+43206|        lastRejectedMove = move;
+43207|        rejectionCount++;
+43208|        
+43209|        // Request recalculation with this move excluded
+43210|        if (multiPVLines.length > 1) {
+43211|            // Try next best move
+43212|            const nextMove = multiPVLines[1].move;
+43213|            debugLog("[SEND]", `   Trying alternative: ${nextMove}`);
+43214|            sendMove(nextMove, 0);
+43215|        } else {
+43216|            // Need to recalculate with different parameters
+43217|            debugLog("[SEND]", "   Forcing recalculation");
+43218|            setTimeout(() => {
+43219|                forceUnlockAndReset("blacklisted move");
+43220|                calculateMove();
+43221|            }, 500);
+43222|        }
+43223|        return;
+43224|    }
+43225|    
+43226|    // v23.0.0: VALIDATE OPENING PRINCIPLES
+43227|    if (moveCount <= 15 && !validateOpeningPrinciples(currentFen, move, moveCount)) {
+43228|        debugLog("[SEND]", `⚠️ Opening principles violated: ${move}`);
+43229|        // Don't block, but warning is logged
+43230|    }
+43231|    
+43232|    // CRITICAL FIX: Check if this is the same move that was just rejected
+43233|    if (move === lastRejectedMove && retryCount === 0 && rejectionCount > 0) {
+43234|        debugLog("[SEND]", `🚫 PREVENTED: Trying to send recently rejected move '${move}' again!`);
+43235|        debugLog("[SEND]", `   Rejection count: ${rejectionCount}`);
+43236|        debugLog("[SEND]", `   This indicates an infinite loop - skipping this move`);
+43237|        
+43238|        // Don't send the same rejected move - let the timeout handler find alternative
+43239|        return;
+43240|    }
+43241|    
+43242|    // Validate move matches current position
+43243|    if (!validateMoveForPosition(move, currentFen)) {
+43244|        debugLog("[SEND]", "❌ Move validation failed - move doesn't match position!");
+43245|        debugLog("[SEND]", `   Attempted move: ${move}`);
+43246|        debugLog("[SEND]", `   Current FEN: ${currentFen}`);
+43247|        
+43248|        // CRITICAL FIX: Wrong color calculated - force reset and recalculate
+43249|        debugLog("[SEND]", "🔄 Wrong color detected - forcing recalculation");
+43250|        
+43251|        // Force complete reset
+43252|        forceUnlockAndReset("wrong color move");
+43253|        
+43254|        // Restore position ready for correct color
+43255|        if (currentFen) {
+43256|            const fenColor = getActiveColorFromFen(currentFen);
+43257|            if (fenColor) {
+43258|                const now = Date.now();
+43259|                if (fenColor === 'w') {
+43260|                    whitePositionReady = true;

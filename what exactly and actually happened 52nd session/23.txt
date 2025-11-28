@@ -1,0 +1,54 @@
+Good, there's queen retreat detection. Let me check that it's properly implemented in the hard filter:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+41650|            }
+41651|            
+41652|            // RULE 3: REJECT queen retreat in first 10 moves (Qd2-Qd1, etc.)
+41653|            if (CONFIG.v40RejectQueenRetreatEarly && moveCount <= 10) {
+41654|                // Common queen retreats
+41655|                if ((fromSquare === 'd2' && toSquare === 'd1') ||
+41656|                    (fromSquare === 'e2' && toSquare === 'e1') ||
+41657|                    (fromSquare === 'f3' && toSquare === 'd1') ||
+41658|                    (fromSquare === 'e3' && toSquare === 'd1')) {
+41659|                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: Queen retreat ${move} is FORBIDDEN!`);
+41660|                    return true;
+41661|                }
+41662|            }
+41663|            
+41664|            return false;
+41665|        };
+41666|        
+41667|        // Check if bestMove should be rejected
+41668|        if (shouldRejectMove(bestMove)) {
+41669|            debugLog("[V40.31_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+41670|            
+41671|            // Find first alternative that passes the filter
+41672|            for (let i = 1; i < alternatives.length; i++) {
+41673|                const altMove = alternatives[i].move;
+41674|                if (!shouldRejectMove(altMove)) {
+41675|                    debugLog("[V40.31_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+41676|                    bestMove = altMove;
+41677|                    break;
+41678|                }
+41679|            }
+41680|        }
+41681|        
+41682|        // Also filter ALL alternatives to remove bad moves from consideration
+41683|        alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+41684|        
+41685|        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+41686|    }
+41687|    
+41688|    // Don't be creative if we only have one option
+41689|    if (alternatives.length < 2) {
+41690|        return bestMove;
+41691|    }
+41692|    
+41693|    // NEW v6.0.0: Update tactical and critical flags
+41694|    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+41695|    const currentEval = alternatives[0].score;
+41696|    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);
+41697|    
+41698|    // Update evaluation history
+41699|    updateEvaluationHistory(currentEval);
+41700|    

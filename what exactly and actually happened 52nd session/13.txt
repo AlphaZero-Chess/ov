@@ -1,0 +1,5 @@
+The book filtering looks correct. Now let me check if there's a CONFIG for `v40BookHardFilterEnabled`:
+Action: $ grep -n "v40BookHardFilterEnabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 2255:    v40BookHardFilterEnabled: true,
+41476:        if (!CONFIG.v40BookHardFilterEnabled) return false;
+Exit code: 0

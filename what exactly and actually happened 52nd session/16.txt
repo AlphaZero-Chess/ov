@@ -1,0 +1,7 @@
+I see there's a `isBlacklistedMove` function being called. Let me check that:
+Action: $ grep -n "function isBlacklistedMove\|isBlacklistedMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 36347:function isBlacklistedMove(move, moveNumber) {
+43201:    if (isBlacklistedMove(move, moveCount)) {
+43693:            if (isBlacklistedMove(finalMove, moveCount)) {
+43697:                    if (!isBlacklistedMove(line.move, moveCount)) {
+Exit code: 0
