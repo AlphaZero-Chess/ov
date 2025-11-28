@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.25 STRATEGIC MASTERY SUPREME
-// @description  TRUE AlphaZero Replica v40.25 - NO EARLY QUEEN TRADE - FORK DETECTION - PAWN RACE CALCULATION - PIECE PRESERVATION - NEVER LOSE MATERIAL FOR FREE!
-// @author       AlphaZero TRUE REPLICA v40.25 STRATEGIC MASTERY SUPREME EDITION
-// @version      40.25.0-STRATEGIC-MASTERY-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME
+// @description  TRUE AlphaZero Replica v40.26 - ABSOLUTE KINGSIDE FORTRESS - BISHOP SACRIFICE DETECTION - FORCED DEFENSE MODE - NEVER WEAKEN KINGSIDE UNDER ATTACK!
+// @author       AlphaZero TRUE REPLICA v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME EDITION
+// @version      40.26.0-ABSOLUTE-KINGSIDE-FORTRESS-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -36676,7 +36676,32 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
                 const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
                 
-                // v40.25: COMBINED v40 SCORE — 100% STRATEGIC MASTERY SUPREME INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════════════════
+                // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME: THE FINAL DEFENSE
+                // From game: g3 was CATASTROPHIC with enemy queen active!
+                // Bxg3 sacrifice DEMOLISHED the kingside!
+                // THE BOT MUST NEVER WEAKEN KINGSIDE UNDER ANY THREAT!
+                // ═══════════════════════════════════════════════════════════════════════════════
+                
+                // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+                const kingsidePawnProhibitionScore = v40AbsoluteKingsidePawnProhibitionEval(fen, move, board, activeColor, moveNumber) * 200.0;
+                
+                // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+                const bishopSacrificeScore = v40BishopSacrificeDetectionEval(fen, move, board, activeColor, moveNumber) * 180.0;
+                
+                // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+                const forcedDefenseModeScore = v40ForcedDefenseModeEval(fen, move, board, activeColor, moveNumber) * 150.0;
+                
+                // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!
+                const queenKingsideThreatScore = v40QueenKingsideThreatEval(fen, move, board, activeColor, moveNumber) * 160.0;
+                
+                // v40.26: DEEP SACRIFICE CALCULATION — Calculate forcing lines after sacrifice!
+                const deepSacrificeCalcScore = v40DeepSacrificeCalcEval(fen, move, board, activeColor, moveNumber) * 140.0;
+                
+                // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+                const kingsideCollapseScore = v40KingsideCollapseDetectionEval(fen, move, board, activeColor, moveNumber) * 170.0;
+                
+                // v40.26: COMBINED v40 SCORE — 100% ABSOLUTE KINGSIDE FORTRESS SUPREME INFLUENCE
                 // This makes v40 the STRATEGIC MASTERY SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -36733,11 +36758,14 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
                                absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
                                // v40.25 STRATEGIC MASTERY SUPREME additions:
-                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — STRATEGIC MASTERY SUPREME PARADIGM SHIFT
+                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score +
+                               // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
+                               kingsidePawnProhibitionScore + bishopSacrificeScore + forcedDefenseModeScore + 
+                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.26 ABSOLUTE KINGSIDE FORTRESS PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.25 STRATEGIC MASTERY SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `🏰 SUPERHUMAN BEAST v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -36749,6 +36777,12 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
