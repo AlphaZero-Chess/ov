@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.39 PAWN CAPTURE CHAIN SUPREME
-// @description  TRUE AlphaZero Replica v40.39 - PAWN CAPTURE CHAIN DETECTION - PIECE UNDER PAWN ATTACK - PROMOTION THREAT - ABSOLUTE ZERO BLUNDERS!
-// @author       AlphaZero TRUE REPLICA v40.39 PAWN CAPTURE CHAIN SUPREME EDITION
-// @version      40.39.0-PAWN-CAPTURE-CHAIN-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.41 PRE-MOVE PAWN THREAT SUPREME
+// @description  TRUE AlphaZero Replica v40.41 - PRE-MOVE PAWN THREAT DETECTION - PIECE UNDER ATTACK MUST RESPOND - ABSOLUTE ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.41 PRE-MOVE THREAT SUPREME EDITION
+// @version      40.41.0-PRE-MOVE-PAWN-THREAT-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2523,6 +2523,40 @@ const CONFIG = {
     // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
     v40CaptureThenAttackEnabled: true,
     v40CaptureThenAttackPenalty: -480000000000000, // 480 trillion for missing capture then attack
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.41: PRE-MOVE PAWN THREAT SUPREME - THE ULTIMATE FIX!
+    // From game: After cxd4, bot played e5 instead of Nxd4 or moving knight!
+    // THE BOT MUST CHECK IF OUR PIECES ARE UNDER ATTACK BEFORE MAKING ANY MOVE!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.41: PRE-MOVE PIECE UNDER PAWN ATTACK - Before any move, check if pieces are attacked
+    v40PreMovePawnThreatEnabled: true,
+    v40PreMovePawnThreatPenalty: -999999999999999, // 999 trillion - ABSOLUTE DEATH PENALTY
+    
+    // v40.41: KNIGHT UNDER PAWN ATTACK - Knight attacked by pawn MUST be addressed
+    v40KnightUnderPawnEnabled: true,
+    v40KnightUnderPawnPenalty: -800000000000000, // 800 trillion for ignoring knight under pawn
+    
+    // v40.41: BISHOP UNDER PAWN ATTACK - Bishop attacked by pawn MUST be addressed  
+    v40BishopUnderPawnEnabled: true,
+    v40BishopUnderPawnPenalty: -750000000000000, // 750 trillion for ignoring bishop under pawn
+    
+    // v40.41: ROOK UNDER PAWN ATTACK - Rook attacked by pawn MUST be addressed
+    v40RookUnderPawnEnabled: true,
+    v40RookUnderPawnPenalty: -850000000000000, // 850 trillion for ignoring rook under pawn
+    
+    // v40.41: QUEEN UNDER PAWN ATTACK - Queen attacked by pawn MUST be addressed
+    v40QueenUnderPawnEnabled: true,
+    v40QueenUnderPawnPenalty: -950000000000000, // 950 trillion for ignoring queen under pawn
+    
+    // v40.41: POST-CAPTURE PAWN POSITION - After pawn captures, what does it attack?
+    v40PostCapturePawnEnabled: true,
+    v40PostCapturePawnPenalty: -700000000000000, // 700 trillion for missing post-capture attack
+    
+    // v40.41: ABSOLUTE MUST RESPOND - If ANY piece is under pawn attack, MUST respond
+    v40AbsoluteMustRespondEnabled: true,
+    v40AbsoluteMustRespondPenalty: -1000000000000000, // 1 QUADRILLION - INFINITY
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -28178,6 +28212,317 @@ function v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) {
     return score;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// v40.41: PRE-MOVE PAWN THREAT SUPREME - THE ULTIMATE FIX!
+// BEFORE making ANY move, the bot MUST check if our pieces are under pawn attack!
+// If yes, the ONLY acceptable moves are: save the piece, capture the pawn, or block
+// ANY OTHER MOVE gets ABSOLUTE INFINITY PENALTY!
+// From game: After cxd4 (d4 pawn now attacks Nc3), bot played e5 and LOST THE KNIGHT!
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.41: PRE-MOVE PAWN THREAT DETECTION - THE ULTIMATE FIX!
+ * This function runs BEFORE making any move and checks:
+ * 1. Are any of our pieces currently under attack by enemy pawns?
+ * 2. If yes, does this move address the threat?
+ * 3. If move doesn't address threat, INFINITY PENALTY!
+ */
+function v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PreMovePawnThreatEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    // STEP 1: Find ALL our pieces currently under pawn attack
+    const piecesUnderPawnAttack = v40FindPiecesUnderPawnAttack(board, activeColor);
+    
+    if (piecesUnderPawnAttack.length === 0) {
+        return 0;  // No pieces under attack, move is OK
+    }
+    
+    debugLog("[V40.41_PRE]", `═══════════════════════════════════════════════════════`);
+    debugLog("[V40.41_PRE]", `🚨🚨🚨 PRE-MOVE CHECK: ${piecesUnderPawnAttack.length} PIECE(S) UNDER PAWN ATTACK!`);
+    
+    for (const attacked of piecesUnderPawnAttack) {
+        debugLog("[V40.41_PRE]", `   ${attacked.pieceType.toUpperCase()}@${attacked.square} attacked by pawn(s) on ${attacked.attackers.join(', ')}`);
+    }
+    
+    // STEP 2: Check if our move addresses ANY of the pawn threats
+    let threatAddressed = false;
+    let addressedHow = '';
+    
+    for (const attacked of piecesUnderPawnAttack) {
+        // OPTION 1: Moving the attacked piece to safety
+        if (fromSquare === attacked.square) {
+            // Make sure we're not moving to another attacked square!
+            const testBoard = simulateMove(board, move);
+            if (testBoard) {
+                const stillUnderAttack = v40IsSquareUnderPawnAttack(testBoard, toSquare, activeColor);
+                if (!stillUnderAttack) {
+                    threatAddressed = true;
+                    addressedHow = `Moving ${attacked.pieceType}@${attacked.square} to ${toSquare}`;
+                    debugLog("[V40.41_PRE]", `✅ ${addressedHow}`);
+                    break;
+                } else {
+                    debugLog("[V40.41_PRE]", `⚠️ Moving ${attacked.pieceType} from ${fromSquare} to ${toSquare} - STILL UNDER ATTACK!`);
+                }
+            }
+        }
+        
+        // OPTION 2: Capturing the attacking pawn
+        for (const attackerSquare of attacked.attackers) {
+            if (toSquare === attackerSquare) {
+                threatAddressed = true;
+                addressedHow = `Capturing attacker on ${attackerSquare}`;
+                debugLog("[V40.41_PRE]", `✅ ${addressedHow}`);
+                break;
+            }
+        }
+        
+        if (threatAddressed) break;
+        
+        // OPTION 3: Blocking (rare with pawns, but check if a piece blocks the diagonal)
+        // For pawns, blocking is generally not possible since they attack diagonally
+    }
+    
+    // STEP 3: If threat NOT addressed, apply DEATH PENALTY!
+    if (!threatAddressed && piecesUnderPawnAttack.length > 0) {
+        // Find the highest value piece under attack
+        const highestValueAttacked = piecesUnderPawnAttack.reduce(
+            (max, curr) => curr.pieceValue > max.pieceValue ? curr : max,
+            piecesUnderPawnAttack[0]
+        );
+        
+        debugLog("[V40.41_PRE]", `☠️☠️☠️ CRITICAL FAILURE! Move ${move} IGNORES pawn threat!`);
+        debugLog("[V40.41_PRE]", `Highest value piece under attack: ${highestValueAttacked.pieceType.toUpperCase()}@${highestValueAttacked.square} (${highestValueAttacked.pieceValue}cp)`);
+        debugLog("[V40.41_PRE]", `═══════════════════════════════════════════════════════`);
+        
+        // Apply piece-specific penalties
+        const pieceType = highestValueAttacked.pieceType;
+        let penalty = 0;
+        
+        if (pieceType === 'q') {
+            penalty = CONFIG.v40QueenUnderPawnPenalty || -950000000000000;
+        } else if (pieceType === 'r') {
+            penalty = CONFIG.v40RookUnderPawnPenalty || -850000000000000;
+        } else if (pieceType === 'b') {
+            penalty = CONFIG.v40BishopUnderPawnPenalty || -750000000000000;
+        } else if (pieceType === 'n') {
+            penalty = CONFIG.v40KnightUnderPawnPenalty || -800000000000000;
+        }
+        
+        // Add the absolute must respond penalty on top
+        penalty += CONFIG.v40AbsoluteMustRespondPenalty || -1000000000000000;
+        
+        score += penalty;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.41 Helper: Find all pieces under pawn attack for a given color
+ */
+function v40FindPiecesUnderPawnAttack(board, activeColor) {
+    const result = [];
+    const isWhite = activeColor === 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;  // Only our pieces
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'p' || pieceType === 'k') continue;  // Skip pawns and king
+        
+        const attackers = v40GetPawnAttackers(board, square, activeColor);
+        
+        if (attackers.length > 0) {
+            result.push({
+                square,
+                piece,
+                pieceType,
+                pieceValue: getPieceValueSimple(pieceType),
+                attackers
+            });
+        }
+    }
+    
+    // Sort by value (highest first)
+    result.sort((a, b) => b.pieceValue - a.pieceValue);
+    
+    return result;
+}
+
+/**
+ * v40.41 Helper: Get list of enemy pawns attacking a square
+ */
+function v40GetPawnAttackers(board, square, activeColor) {
+    const attackers = [];
+    const isWhite = activeColor === 'w';
+    
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square.charAt(1));
+    
+    // Enemy pawn attack positions
+    // If we are White, enemy black pawns attack from one rank below (rank - 1)
+    // If we are Black, enemy white pawns attack from one rank above (rank + 1)
+    const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+    
+    if (enemyPawnRank < 1 || enemyPawnRank > 8) return attackers;
+    
+    // Check left diagonal
+    if (file > 0) {
+        const leftSquare = String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank;
+        const leftPiece = board.get(leftSquare);
+        if (leftPiece && leftPiece.toLowerCase() === 'p') {
+            const pieceIsWhite = leftPiece === leftPiece.toUpperCase();
+            if (pieceIsWhite !== isWhite) {
+                attackers.push(leftSquare);
+            }
+        }
+    }
+    
+    // Check right diagonal
+    if (file < 7) {
+        const rightSquare = String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank;
+        const rightPiece = board.get(rightSquare);
+        if (rightPiece && rightPiece.toLowerCase() === 'p') {
+            const pieceIsWhite = rightPiece === rightPiece.toUpperCase();
+            if (pieceIsWhite !== isWhite) {
+                attackers.push(rightSquare);
+            }
+        }
+    }
+    
+    return attackers;
+}
+
+/**
+ * v40.41 Helper: Check if a square is under pawn attack
+ */
+function v40IsSquareUnderPawnAttack(board, square, activeColor) {
+    const attackers = v40GetPawnAttackers(board, square, activeColor);
+    return attackers.length > 0;
+}
+
+/**
+ * v40.41: POST-CAPTURE PAWN POSITION EVALUATION
+ * After enemy pawn captures something, check what it NOW attacks
+ * Example: After cxd4, the d4 pawn now attacks Nc3!
+ */
+function v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PostCapturePawnEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Simulate our move
+    const testBoard = simulateMove(board, move);
+    if (!testBoard) return 0;
+    
+    // After our move, check if any enemy pawn is positioned to attack our pieces
+    // This catches the case where after cxd4, the d4 pawn attacks Nc3
+    
+    for (const [square, piece] of testBoard) {
+        if (!piece || piece.toLowerCase() !== 'p') continue;
+        
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Only enemy pawns
+        
+        // What does this enemy pawn attack?
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        const pawnDir = pieceIsWhite ? 1 : -1;
+        
+        const attackRank = rank + pawnDir;
+        if (attackRank < 1 || attackRank > 8) continue;
+        
+        const attackSquares = [];
+        if (file > 0) attackSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + attackRank);
+        if (file < 7) attackSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + attackRank);
+        
+        for (const attackSquare of attackSquares) {
+            const target = testBoard.get(attackSquare);
+            if (!target) continue;
+            
+            const targetIsWhite = target === target.toUpperCase();
+            if (targetIsWhite !== isWhite) continue;  // Must be our piece
+            
+            const targetType = target.toLowerCase();
+            if (targetType === 'p' || targetType === 'k') continue;
+            
+            const targetValue = getPieceValueSimple(targetType);
+            
+            // Check if this attack is NEW (wasn't there before our move)
+            const wasAttackedBefore = v40WasPieceUnderPawnAttackBefore(board, attackSquare, activeColor, square);
+            
+            if (!wasAttackedBefore && targetValue >= 300) {
+                debugLog("[V40.41_POST]", `☠️ After ${move}, enemy pawn on ${square} NOW ATTACKS ${targetType.toUpperCase()}@${attackSquare}!`);
+                
+                // This is BAD - our move allowed a new pawn attack on our piece!
+                score += (CONFIG.v40PostCapturePawnPenalty || -700000000000000) * (targetValue / 300);
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.41 Helper: Check if piece was under attack by specific pawn before
+ */
+function v40WasPieceUnderPawnAttackBefore(board, pieceSquare, activeColor, pawnSquare) {
+    // Was this pawn already on a square that could attack the piece?
+    const piece = board.get(pieceSquare);
+    if (!piece) return false;
+    
+    const attackers = v40GetPawnAttackers(board, pieceSquare, activeColor);
+    return attackers.includes(pawnSquare);
+}
+
+/**
+ * v40.41: ABSOLUTE MUST RESPOND TO PAWN THREATS
+ * This is the STRONGEST enforcement - if piece under pawn attack, MUST respond!
+ */
+function v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40AbsoluteMustRespondEnabled) return 0;
+    
+    // This function is essentially a wrapper that combines all threat detection
+    // and applies the strongest possible penalty
+    
+    const piecesUnderAttack = v40FindPiecesUnderPawnAttack(board, activeColor);
+    
+    if (piecesUnderAttack.length === 0) return 0;
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    // Check if move addresses any threat
+    for (const attacked of piecesUnderAttack) {
+        // Moving the attacked piece
+        if (fromSquare === attacked.square) {
+            const testBoard = simulateMove(board, move);
+            if (testBoard && !v40IsSquareUnderPawnAttack(testBoard, toSquare, activeColor)) {
+                return 0;  // Threat addressed!
+            }
+        }
+        
+        // Capturing an attacker
+        if (attacked.attackers.includes(toSquare)) {
+            return 0;  // Threat addressed!
+        }
+    }
+    
+    // If we get here, move doesn't address the threat!
+    debugLog("[V40.41_MUST]", `☠️☠️☠️☠️ ABSOLUTE FAILURE! Move ${move} IGNORES ${piecesUnderAttack.length} piece(s) under pawn attack!`);
+    
+    return CONFIG.v40AbsoluteMustRespondPenalty || -1000000000000000;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 function findAttackedPiecesV40_9(board, color) {
     const attacked = [];
@@ -43947,7 +44292,17 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.40: PAWN CHAIN PROMOTION — Capture chains leading to promotion!
                 const pawnChainPromotionScore = v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) * 3500.0;
                 
-                // v40.40: COMBINED v40 SCORE — 100% MANDATORY RECAPTURE SUPREME INFLUENCE
+                // v40.41: PRE-MOVE PAWN THREAT SUPREME — THE ULTIMATE FIX!
+                // If piece is under pawn attack, MUST address it or get INFINITY PENALTY!
+                const preMovePawnThreatScore = v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: POST-CAPTURE PAWN POSITION — What does enemy pawn attack after capture?
+                const postCapturePawnScore = v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) * 7000.0;
+                
+                // v40.41: ABSOLUTE MUST RESPOND — Strongest enforcement!
+                const absoluteMustRespondScore = v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE
                 // This makes v40 the ABSOLUTE TACTICAL SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
