@@ -2492,6 +2492,37 @@ const CONFIG = {
     // v40.39: PAWN FORK DETECTION - See when enemy pawn can fork pieces
     v40PawnForkDetectionEnabled: true,
     v40PawnForkDetectionPenalty: -240000000000000, // 240 trillion for missing pawn fork
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.40: MANDATORY RECAPTURE SUPREME - THE ULTIMATE FIX FOR PAWN CAPTURE BLINDNESS!
+    // From game: After cxd4, bot played e5 instead of recapturing! Lost knight immediately!
+    // After dxc3, bot played exf6 instead of saving bishop! Lost everything!
+    // THE BOT MUST RECAPTURE WHEN ENEMY PAWN TAKES NEAR OUR PIECES!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.40: MANDATORY RECAPTURE - When enemy pawn takes, MUST recapture or save piece
+    v40MandatoryRecaptureEnabled: true,
+    v40MandatoryRecapturePenalty: -500000000000000, // 500 trillion - HIGHEST priority!
+    
+    // v40.40: PAWN NEAR PIECE DANGER - Enemy pawn that can capture our piece next move
+    v40PawnNearPieceDangerEnabled: true,
+    v40PawnNearPieceDangerPenalty: -400000000000000, // 400 trillion for ignoring pawn threat
+    
+    // v40.40: IMMEDIATE PAWN THREAT - Pawn that currently attacks our piece
+    v40ImmediatePawnThreatEnabled: true,
+    v40ImmediatePawnThreatPenalty: -450000000000000, // 450 trillion for ignoring immediate threat
+    
+    // v40.40: PAWN CHAIN PROMOTION THREAT - Pawn that after capture threatens promotion
+    v40PawnChainPromotionEnabled: true,
+    v40PawnChainPromotionPenalty: -350000000000000, // 350 trillion for missing promotion chain
+    
+    // v40.40: MULTI-THREAT PAWN - Pawn that attacks our piece AND threatens something else
+    v40MultiThreatPawnEnabled: true,
+    v40MultiThreatPawnPenalty: -550000000000000, // 550 trillion for multi-threat pawn
+    
+    // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
+    v40CaptureThenAttackEnabled: true,
+    v40CaptureThenAttackPenalty: -480000000000000, // 480 trillion for missing capture then attack
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -27611,7 +27642,544 @@ function v40PawnForkDetectionEval(fen, move, board, activeColor, moveNumber) {
     return score;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// v40.40: MANDATORY RECAPTURE SUPREME - THE ULTIMATE FIX FOR PAWN CAPTURE BLINDNESS!
+// From game: After cxd4, bot played e5 instead of Nxd4! Lost knight immediately!
+// After dxc3, bot played exf6 instead of saving bishop! Lost everything!
+// THE BOT MUST ADDRESS PAWN THREATS TO PIECES IMMEDIATELY!
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.40: MANDATORY RECAPTURE ENFORCEMENT
+ * When opponent pawn is now threatening our piece, we MUST either:
+ * 1. Capture the threatening pawn
+ * 2. Move our threatened piece to safety
+ * 3. Block the pawn (if possible)
+ * Any other move gets DEATH PENALTY
+ */
+function v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40MandatoryRecaptureEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    // Find all our pieces currently attacked by enemy pawns
+    const piecesUnderPawnThreat = [];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;  // Only our pieces
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'p' || pieceType === 'k') continue;  // Skip pawns and king
+        
+        const pieceValue = getPieceValueSimple(pieceType);
+        if (pieceValue < 300) continue;  // Only valuable pieces
+        
+        // Check if this piece is attacked by enemy pawn
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        // Enemy pawn attack positions (pawns attack diagonally)
+        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+        
+        const attackingPawns = [];
+        // Left diagonal
+        if (file > 0 && enemyPawnRank >= 1 && enemyPawnRank <= 8) {
+            const leftSquare = String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank;
+            const leftPiece = board.get(leftSquare);
+            if (leftPiece && leftPiece.toLowerCase() === 'p') {
+                const pawnIsWhite = leftPiece === leftPiece.toUpperCase();
+                if (pawnIsWhite !== isWhite) {
+                    attackingPawns.push(leftSquare);
+                }
+            }
+        }
+        // Right diagonal
+        if (file < 7 && enemyPawnRank >= 1 && enemyPawnRank <= 8) {
+            const rightSquare = String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank;
+            const rightPiece = board.get(rightSquare);
+            if (rightPiece && rightPiece.toLowerCase() === 'p') {
+                const pawnIsWhite = rightPiece === rightPiece.toUpperCase();
+                if (pawnIsWhite !== isWhite) {
+                    attackingPawns.push(rightSquare);
+                }
+            }
+        }
+        
+        if (attackingPawns.length > 0) {
+            piecesUnderPawnThreat.push({
+                square,
+                piece,
+                pieceType,
+                pieceValue,
+                attackingPawns
+            });
+        }
+    }
+    
+    if (piecesUnderPawnThreat.length === 0) return 0;
+    
+    // Check if our move addresses ANY of the pawn threats
+    let threatAddressed = false;
+    
+    for (const threatened of piecesUnderPawnThreat) {
+        // Option 1: Are we moving the threatened piece?
+        if (fromSquare === threatened.square) {
+            // Good! We're moving the threatened piece
+            // But make sure we're not moving it to another attacked square!
+            const testBoard = simulateMove(board, move);
+            if (testBoard) {
+                const stillUnderPawnAttack = checkPawnAttackOnSquare(testBoard, toSquare, isWhite);
+                if (!stillUnderPawnAttack) {
+                    debugLog("[V40.40_RECAP]", `✅ Moving ${threatened.pieceType} from ${threatened.square} to safety`);
+                    threatAddressed = true;
+                }
+            }
+            continue;
+        }
+        
+        // Option 2: Are we capturing the attacking pawn?
+        for (const attackingPawn of threatened.attackingPawns) {
+            if (toSquare === attackingPawn) {
+                debugLog("[V40.40_RECAP]", `✅ Capturing attacking pawn on ${attackingPawn}`);
+                threatAddressed = true;
+                break;
+            }
+        }
+        
+        // Option 3: Are we blocking the attack? (rare with pawns but check)
+        // Pawns attack diagonally so blocking is usually not possible
+    }
+    
+    // If we have pieces under pawn threat and we're NOT addressing it - DEATH PENALTY!
+    if (!threatAddressed) {
+        const highestValue = Math.max(...piecesUnderPawnThreat.map(t => t.pieceValue));
+        debugLog("[V40.40_RECAP]", `☠️☠️☠️ MANDATORY RECAPTURE VIOLATION! Move ${move} IGNORES pawn threat!`);
+        debugLog("[V40.40_RECAP]", `Threatened pieces: ${piecesUnderPawnThreat.map(t => t.pieceType + '@' + t.square).join(', ')}`);
+        
+        // Scale penalty by piece value
+        const penalty = (CONFIG.v40MandatoryRecapturePenalty || -500000000000000) * (highestValue / 300);
+        score += penalty;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.40: PAWN NEAR PIECE DANGER
+ * Detect when enemy pawn is ONE MOVE away from attacking our valuable piece
+ * Example: After d5, if d5 pawn can advance to d4 attacking Nc3 - DANGER!
+ */
+function v40PawnNearPieceDangerEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnNearPieceDangerEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Simulate our move
+    const testBoard = simulateMove(board, move);
+    if (!testBoard) return 0;
+    
+    // Find enemy pawns that are one advance away from attacking our pieces
+    for (const [square, piece] of testBoard) {
+        if (!piece || piece.toLowerCase() !== 'p') continue;
+        
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Skip our pawns
+        
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        const pawnDir = pieceIsWhite ? 1 : -1;  // White pawns go up, black down
+        
+        // Check one-square advance
+        const advanceRank = rank + pawnDir;
+        if (advanceRank < 1 || advanceRank > 8) continue;
+        
+        const advanceSquare = String.fromCharCode('a'.charCodeAt(0) + file) + advanceRank;
+        if (testBoard.get(advanceSquare)) continue;  // Blocked
+        
+        // From the advance square, what can the pawn attack?
+        const attackRank = advanceRank + pawnDir;
+        if (attackRank < 1 || attackRank > 8) continue;
+        
+        const leftAttack = file > 0 ? String.fromCharCode('a'.charCodeAt(0) + file - 1) + attackRank : null;
+        const rightAttack = file < 7 ? String.fromCharCode('a'.charCodeAt(0) + file + 1) + attackRank : null;
+        
+        for (const attackSquare of [leftAttack, rightAttack]) {
+            if (!attackSquare) continue;
+            
+            const target = testBoard.get(attackSquare);
+            if (!target) continue;
+            
+            const targetIsWhite = target === target.toUpperCase();
+            if (targetIsWhite !== isWhite) continue;  // Not our piece
+            
+            const targetType = target.toLowerCase();
+            if (targetType === 'p' || targetType === 'k') continue;
+            
+            const targetValue = getPieceValueSimple(targetType);
+            if (targetValue >= 300) {
+                debugLog("[V40.40_NEAR]", `⚠️ PAWN DANGER: ${square} can advance to ${advanceSquare} then attack ${target}@${attackSquare}!`);
+                score += (CONFIG.v40PawnNearPieceDangerPenalty || -400000000000000) * (targetValue / 500);
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.40: IMMEDIATE PAWN THREAT RESPONSE
+ * Super strong enforcement - if a pawn attacks our piece RIGHT NOW, we MUST respond
+ * This is even stronger than v40MandatoryRecaptureEval
+ */
+function v40ImmediatePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ImmediatePawnThreatEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    // Find pieces under IMMEDIATE pawn attack
+    const immediateThreat = [];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'p' || pieceType === 'k') continue;
+        
+        const pieceValue = getPieceValueSimple(pieceType);
+        
+        // Check if attacked by enemy pawn
+        if (checkPawnAttackOnSquare(board, square, isWhite) && pieceValue >= 300) {
+            // Is it defended adequately?
+            const isDefended = isSquareDefendedByColor(board, square, activeColor);
+            
+            // Even if defended, losing piece to pawn is bad (pawn value < piece value)
+            immediateThreat.push({
+                square,
+                piece,
+                pieceType,
+                pieceValue,
+                isDefended
+            });
+        }
+    }
+    
+    if (immediateThreat.length === 0) return 0;
+    
+    // Check if move addresses the immediate threat
+    let addressed = false;
+    
+    for (const threat of immediateThreat) {
+        // Moving the threatened piece
+        if (fromSquare === threat.square) {
+            addressed = true;
+            break;
+        }
+        
+        // Capturing the attacking pawn
+        const capturedPiece = board.get(toSquare);
+        if (capturedPiece && capturedPiece.toLowerCase() === 'p') {
+            const capturedIsWhite = capturedPiece === capturedPiece.toUpperCase();
+            if (capturedIsWhite !== isWhite) {
+                // Check if this pawn was the attacker
+                if (checkPawnAttackOnSquare(board, threat.square, isWhite)) {
+                    addressed = true;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (!addressed) {
+        const highestThreat = immediateThreat.reduce((max, t) => t.pieceValue > max.pieceValue ? t : max, immediateThreat[0]);
+        debugLog("[V40.40_IMMED]", `☠️☠️☠️ IMMEDIATE PAWN THREAT IGNORED! ${highestThreat.pieceType}@${highestThreat.square} is attacked!`);
+        score += (CONFIG.v40ImmediatePawnThreatPenalty || -450000000000000) * (highestThreat.pieceValue / 300);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.40: MULTI-THREAT PAWN DETECTION
+ * Detect when enemy pawn attacks our piece AND threatens something else (like promotion)
+ * Example: c3 pawn attacks Bb5 AND threatens cxb2 promotion!
+ */
+function v40MultiThreatPawnEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40MultiThreatPawnEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Find enemy pawns that are creating MULTIPLE threats
+    for (const [square, piece] of board) {
+        if (!piece || piece.toLowerCase() !== 'p') continue;
+        
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Skip our pawns
+        
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        const pawnDir = pieceIsWhite ? 1 : -1;
+        
+        const threats = [];
+        
+        // Threat 1: What can this pawn capture right now?
+        const attackRank = rank + pawnDir;
+        if (attackRank >= 1 && attackRank <= 8) {
+            const leftCapture = file > 0 ? String.fromCharCode('a'.charCodeAt(0) + file - 1) + attackRank : null;
+            const rightCapture = file < 7 ? String.fromCharCode('a'.charCodeAt(0) + file + 1) + attackRank : null;
+            
+            for (const captureSquare of [leftCapture, rightCapture]) {
+                if (!captureSquare) continue;
+                const target = board.get(captureSquare);
+                if (target) {
+                    const targetIsWhite = target === target.toUpperCase();
+                    if (targetIsWhite === isWhite) {
+                        // Can capture our piece!
+                        threats.push({
+                            type: 'capture',
+                            square: captureSquare,
+                            piece: target,
+                            value: getPieceValueSimple(target.toLowerCase())
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Threat 2: Is pawn close to promotion?
+        const promotionRank = pieceIsWhite ? 8 : 1;
+        const distanceToPromotion = Math.abs(promotionRank - rank);
+        if (distanceToPromotion <= 2) {
+            // Check if advance path is clear
+            const advanceSquare = String.fromCharCode('a'.charCodeAt(0) + file) + (rank + pawnDir);
+            if (!board.get(advanceSquare)) {
+                threats.push({
+                    type: 'promotion',
+                    distance: distanceToPromotion,
+                    value: 900  // Queen value
+                });
+            }
+        }
+        
+        // Threat 3: After capture, can pawn attack something else?
+        for (const threat of [...threats]) {
+            if (threat.type === 'capture') {
+                // If pawn captures on threat.square, what can it attack next?
+                const newFile = threat.square.charCodeAt(0) - 'a'.charCodeAt(0);
+                const newRank = parseInt(threat.square.charAt(1));
+                const nextAttackRank = newRank + pawnDir;
+                
+                if (nextAttackRank >= 1 && nextAttackRank <= 8) {
+                    const nextLeft = newFile > 0 ? String.fromCharCode('a'.charCodeAt(0) + newFile - 1) + nextAttackRank : null;
+                    const nextRight = newFile < 7 ? String.fromCharCode('a'.charCodeAt(0) + newFile + 1) + nextAttackRank : null;
+                    
+                    for (const nextSquare of [nextLeft, nextRight]) {
+                        if (!nextSquare) continue;
+                        const nextTarget = board.get(nextSquare);
+                        if (nextTarget) {
+                            const nextIsWhite = nextTarget === nextTarget.toUpperCase();
+                            if (nextIsWhite === isWhite) {
+                                threats.push({
+                                    type: 'chain_capture',
+                                    square: nextSquare,
+                                    piece: nextTarget,
+                                    value: getPieceValueSimple(nextTarget.toLowerCase())
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If pawn has MULTIPLE threats, this is VERY dangerous!
+        if (threats.length >= 2) {
+            const totalThreatValue = threats.reduce((sum, t) => sum + (t.value || 0), 0);
+            debugLog("[V40.40_MULTI]", `☠️☠️ MULTI-THREAT PAWN on ${square}! Threats: ${threats.map(t => t.type + (t.square ? '@' + t.square : '')).join(', ')}`);
+            
+            // Super penalty for multi-threat pawns
+            score += (CONFIG.v40MultiThreatPawnPenalty || -550000000000000) * (totalThreatValue / 600);
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.40: CAPTURE THEN ATTACK PATTERN DETECTION
+ * Detect patterns like: cxd4, then if we don't respond, dxc3 attacks Bb5 AND threatens b2
+ * This is the EXACT pattern from the losing game!
+ */
+function v40CaptureThenAttackEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40CaptureThenAttackEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    // After our move, check if any enemy pawn can do a capture that creates attacks
+    const testBoard = simulateMove(board, move);
+    if (!testBoard) return 0;
+    
+    for (const [square, piece] of testBoard) {
+        if (!piece || piece.toLowerCase() !== 'p') continue;
+        
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Skip our pawns
+        
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        const pawnDir = pieceIsWhite ? 1 : -1;
+        
+        // What can this pawn capture?
+        const captureRank = rank + pawnDir;
+        if (captureRank < 1 || captureRank > 8) continue;
+        
+        const capturableSquares = [];
+        if (file > 0) capturableSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + captureRank);
+        if (file < 7) capturableSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + captureRank);
+        
+        for (const captureSquare of capturableSquares) {
+            const capturable = testBoard.get(captureSquare);
+            if (!capturable) continue;
+            
+            const capturableIsWhite = capturable === capturable.toUpperCase();
+            if (capturableIsWhite !== isWhite) continue;  // Can only capture our pieces
+            
+            const capturableValue = getPieceValueSimple(capturable.toLowerCase());
+            
+            // If pawn captures on captureSquare, what attacks does it create?
+            const newFile = captureSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            const newRank = parseInt(captureSquare.charAt(1));
+            
+            // Check new attack squares
+            const newAttackRank = newRank + pawnDir;
+            if (newAttackRank < 1 || newAttackRank > 8) continue;
+            
+            const newAttacks = [];
+            if (newFile > 0) {
+                const leftAttack = String.fromCharCode('a'.charCodeAt(0) + newFile - 1) + newAttackRank;
+                const leftTarget = testBoard.get(leftAttack);
+                if (leftTarget) {
+                    const leftIsWhite = leftTarget === leftTarget.toUpperCase();
+                    if (leftIsWhite === isWhite) {
+                        newAttacks.push({ square: leftAttack, piece: leftTarget, value: getPieceValueSimple(leftTarget.toLowerCase()) });
+                    }
+                }
+            }
+            if (newFile < 7) {
+                const rightAttack = String.fromCharCode('a'.charCodeAt(0) + newFile + 1) + newAttackRank;
+                const rightTarget = testBoard.get(rightAttack);
+                if (rightTarget) {
+                    const rightIsWhite = rightTarget === rightTarget.toUpperCase();
+                    if (rightIsWhite === isWhite) {
+                        newAttacks.push({ square: rightAttack, piece: rightTarget, value: getPieceValueSimple(rightTarget.toLowerCase()) });
+                    }
+                }
+            }
+            
+            // Check for promotion threat after capture
+            const promotionRank = pieceIsWhite ? 8 : 1;
+            const distanceAfterCapture = Math.abs(promotionRank - newRank);
+            
+            // If capture creates new attacks OR promotion threat, this is dangerous!
+            if (newAttacks.length > 0 || distanceAfterCapture <= 1) {
+                const totalDanger = newAttacks.reduce((sum, a) => sum + a.value, 0) + (distanceAfterCapture <= 1 ? 900 : 0);
+                
+                if (totalDanger >= 300) {
+                    debugLog("[V40.40_CHAIN]", `☠️☠️ CAPTURE THEN ATTACK: ${square}x${captureSquare} creates: ${newAttacks.map(a => a.piece + '@' + a.square).join(', ')}${distanceAfterCapture <= 1 ? ' + PROMOTION THREAT!' : ''}`);
+                    
+                    // Check if our move prevents this
+                    const weRecapture = toSquare === square;  // We're taking the pawn
+                    const weBlockCapture = toSquare === captureSquare;  // We're blocking
+                    const weMoveThreatened = fromSquare === captureSquare;  // We're moving what would be captured
+                    
+                    if (!weRecapture && !weBlockCapture && !weMoveThreatened) {
+                        score += (CONFIG.v40CaptureThenAttackPenalty || -480000000000000) * (totalDanger / 500);
+                    }
+                }
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.40: PAWN CHAIN PROMOTION THREAT
+ * Detect when a pawn capture chain leads to promotion threat
+ */
+function v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnChainPromotionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    // After our move, check for pawns that can promote after captures
+    const testBoard = simulateMove(board, move);
+    if (!testBoard) return 0;
+    
+    for (const [square, piece] of testBoard) {
+        if (!piece || piece.toLowerCase() !== 'p') continue;
+        
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Skip our pawns
+        
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        const pawnDir = pieceIsWhite ? 1 : -1;
+        const promotionRank = pieceIsWhite ? 8 : 1;
+        
+        // Is this pawn close to promotion?
+        const distance = Math.abs(promotionRank - rank);
+        if (distance > 3) continue;  // Too far
+        
+        // Can it capture toward promotion?
+        const captureRank = rank + pawnDir;
+        if (captureRank < 1 || captureRank > 8) continue;
+        
+        // Check captures that get closer to promotion
+        const capturableSquares = [];
+        if (file > 0) capturableSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + captureRank);
+        if (file < 7) capturableSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + captureRank);
+        
+        for (const captureSquare of capturableSquares) {
+            const target = testBoard.get(captureSquare);
+            if (!target) continue;
+            
+            const targetIsWhite = target === target.toUpperCase();
+            if (targetIsWhite !== isWhite) continue;  // Must be our piece
+            
+            const newRank = parseInt(captureSquare.charAt(1));
+            const newDistance = Math.abs(promotionRank - newRank);
+            
+            // If capture gets pawn closer to promotion
+            if (newDistance < distance && newDistance <= 2) {
+                debugLog("[V40.40_PROMO]", `☠️ PAWN CHAIN PROMOTION: ${square}x${captureSquare} brings pawn to ${newDistance} squares from promotion!`);
+                
+                const penalty = (CONFIG.v40PawnChainPromotionPenalty || -350000000000000) * (3 - newDistance);
+                score += penalty;
+            }
+        }
+    }
+    
+    return score;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {
     const attacked = [];
     const isWhite = color === 'w';
     const enemyColor = isWhite ? 'b' : 'w';
@@ -43355,7 +43923,31 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.39: PAWN FORK DETECTION — See pawn fork threats!
                 const pawnForkDetectionScore = v40PawnForkDetectionEval(fen, move, board, activeColor, moveNumber) * 2400.0;
                 
-                // v40.39: COMBINED v40 SCORE — 100% PAWN CAPTURE CHAIN SUPREME INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.40: MANDATORY RECAPTURE SUPREME — THE ULTIMATE PAWN BLINDNESS FIX!
+                // From game: After cxd4, bot played e5 instead of Nxd4! Lost knight!
+                // After dxc3, bot played exf6 instead of saving bishop! Lost everything!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.40: MANDATORY RECAPTURE — When piece under pawn attack, MUST respond!
+                const mandatoryRecaptureScore = v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) * 5000.0;
+                
+                // v40.40: PAWN NEAR PIECE DANGER — See pawns one move from attacking our pieces!
+                const pawnNearPieceDangerScore = v40PawnNearPieceDangerEval(fen, move, board, activeColor, moveNumber) * 4000.0;
+                
+                // v40.40: IMMEDIATE PAWN THREAT — Super strong enforcement for pawn attacks!
+                const immediatePawnThreatScore = v40ImmediatePawnThreatEval(fen, move, board, activeColor, moveNumber) * 4500.0;
+                
+                // v40.40: MULTI-THREAT PAWN — Pawn attacks AND threatens something else!
+                const multiThreatPawnScore = v40MultiThreatPawnEval(fen, move, board, activeColor, moveNumber) * 5500.0;
+                
+                // v40.40: CAPTURE THEN ATTACK — See cxd4, dxc3 patterns!
+                const captureThenAttackScore = v40CaptureThenAttackEval(fen, move, board, activeColor, moveNumber) * 4800.0;
+                
+                // v40.40: PAWN CHAIN PROMOTION — Capture chains leading to promotion!
+                const pawnChainPromotionScore = v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) * 3500.0;
+                
+                // v40.40: COMBINED v40 SCORE — 100% MANDATORY RECAPTURE SUPREME INFLUENCE
                 // This makes v40 the ABSOLUTE TACTICAL SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -43445,8 +44037,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore +
                                // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
                                pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
-                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.39 PAWN CAPTURE CHAIN SUPREME PARADIGM SHIFT
+                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.40 MANDATORY RECAPTURE SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -43521,6 +44116,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   ♟️🔄 RECAPTURE CHAIN: ${recaptureChainScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ♟️☠️ PIECE UNDER PAWN DANGER: ${pieceUnderPawnDangerScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ♟️🍴 PAWN FORK DETECTION: ${pawnForkDetectionScore.toFixed(1)}`);
+                // v40.40 MANDATORY RECAPTURE SUPREME debug logs
+                debugLog("[V40_INTEGRATE]", `   🚨♟️ MANDATORY RECAPTURE: ${mandatoryRecaptureScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚠️♟️ PAWN NEAR PIECE DANGER: ${pawnNearPieceDangerScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥♟️ IMMEDIATE PAWN THREAT: ${immediatePawnThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💀♟️ MULTI-THREAT PAWN: ${multiThreatPawnScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎯♟️ CAPTURE THEN ATTACK: ${captureThenAttackScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑♟️ PAWN CHAIN PROMOTION: ${pawnChainPromotionScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
