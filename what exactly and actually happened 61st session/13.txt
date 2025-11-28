@@ -1,0 +1,29 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28555|                    lowestAttackerValue
+28556|                });
+28557|            }
+28558|        }
+28559|    }
+28560|    
+28561|    // Sort by piece value (highest first - queen, then rook, etc.)
+28562|    attacked.sort((a, b) => b.value - a.value);
+28563|    
+28564|    return attacked;
+28565|}
+28566|
+28567|/**
+28568| * v40.9 Helper: Find all hanging pieces (attacked and not defended)
+28569| */
+28570|function findHangingPiecesV40_9(board, color) {
+28571|    const hanging = [];
+28572|    const isWhite = color === 'w';
+28573|    const enemyColor = isWhite ? 'b' : 'w';
+28574|    
+28575|    for (const [square, piece] of board) {
+28576|        if (!piece) continue;
+28577|        const pieceIsWhite = piece === piece.toUpperCase();
+28578|        if (pieceIsWhite !== isWhite) continue;
+28579|        
+28580|        const pieceType = piece.toLowerCase();

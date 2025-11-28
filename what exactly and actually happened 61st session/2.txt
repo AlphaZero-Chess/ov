@@ -1,0 +1,23 @@
+
+Action: $ grep -n "v40.40" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2497:    // v40.40: MANDATORY RECAPTURE SUPREME - THE ULTIMATE FIX FOR PAWN CAPTURE BLINDNESS!
+2503:    // v40.40: MANDATORY RECAPTURE - When enemy pawn takes, MUST recapture or save piece
+2507:    // v40.40: PAWN NEAR PIECE DANGER - Enemy pawn that can capture our piece next move
+2511:    // v40.40: IMMEDIATE PAWN THREAT - Pawn that currently attacks our piece
+2515:    // v40.40: PAWN CHAIN PROMOTION THREAT - Pawn that after capture threatens promotion
+2519:    // v40.40: MULTI-THREAT PAWN - Pawn that attacks our piece AND threatens something else
+2523:    // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
+27646:// v40.40: MANDATORY RECAPTURE SUPREME - THE ULTIMATE FIX FOR PAWN CAPTURE BLINDNESS!
+27653: * v40.40: MANDATORY RECAPTURE ENFORCEMENT
+27773: * v40.40: PAWN NEAR PIECE DANGER
+27836: * v40.40: IMMEDIATE PAWN THREAT RESPONSE
+27913: * v40.40: MULTI-THREAT PAWN DETECTION
+28020: * v40.40: CAPTURE THEN ATTACK PATTERN DETECTION
+28121: * v40.40: PAWN CHAIN PROMOTION THREAT
+43927:                // v40.40: MANDATORY RECAPTURE SUPREME — THE ULTIMATE PAWN BLINDNESS FIX!
+43932:                // v40.40: MANDATORY RECAPTURE — When piece under pawn attack, MUST respond!
+43935:                // v40.40: PAWN NEAR PIECE DANGER — See pawns one move from attacking our pieces!
+43938:                // v40.40: IMMEDIATE PAWN THREAT — Super strong enforcement for pawn attacks!
+43941:                // v40.40: MULTI-THREAT PAWN — Pawn attacks AND threatens something else!
+43944:                // v40.40: CAPTURE THEN ATTACK — See cxd4, dxc3 patterns!
+Exit code: 0

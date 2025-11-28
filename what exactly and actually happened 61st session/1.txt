@@ -1,0 +1,30 @@
+The file is syntactically correct with 46,894 lines. The version is still at v40.39. Now let me analyze the most recent game from the problem statement to understand what needs to be fixed:
+
+**ANALYSIS OF THE LATEST GAME:**
+```
+[White "AlphaZero"]
+[Black "lichess AI level 8"]
+1. e4 c5 2. Nc3 Nc6 3. Nf3 Nf6 4. Bb5 g6 5. d4 cxd4 6. e5 dxc3 7. exf6 cxb2 
+8. Bxb2 Qa5+ 9. Kf1 Qxb5+ 10. c4 Qxb2 11. fxe7 Bg7 12. Rc1 Qxa2 13. Qd6 Bb2 
+14. Kg1 Bxc1 15. Qd5 Ba3 16. Nd2 Qa1+ 17. Nf1 Bxe7 18. Qf3 Qc1 19. Qd3 d6 
+20. Qd2 Qxd2 21. Nxd2 Be6 22. c5 dxc5 23. f3 O-O-O 24. Nf1 Rd1 25. Kf2 b5 
+26. Ke3 Nd4 27. g3 Re1+ 28. Kd3 c4+ 29. Kc3 b4+ 30. Kxd4 Rd8# 0-1
+```
+
+**CRITICAL FAILURES:**
+1. **Move 6: e5 instead of recapturing dxc3 or Nxd4** - After 5...cxd4, the d4 pawn attacks Nc3. Bot ignored this!
+2. **Move 7: exf6 instead of saving bishop** - After 6...dxc3, the c3 pawn attacks Bb5 and threatens cxb2. Bot ignored!
+3. The bot lost a knight immediately, then lost the bishop, then the game spiraled out of control
+
+The issue is the v40.40 functions may be defined but not integrated into the scoring. Let me check:
+Action: $ grep -n "v40MandatoryRecaptureEval\|v40CaptureThenAttackEval\|v40MultiThreatPawnEval\|v40ImmediatePawnThreatEval" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 27660:function v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) {
+27838: * This is even stronger than v40MandatoryRecaptureEval
+27840:function v40ImmediatePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+27917:function v40MultiThreatPawnEval(fen, move, board, activeColor, moveNumber) {
+28024:function v40CaptureThenAttackEval(fen, move, board, activeColor, moveNumber) {
+43933:                const mandatoryRecaptureScore = v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) * 5000.0;
+43939:                const immediatePawnThreatScore = v40ImmediatePawnThreatEval(fen, move, board, activeColor, moveNumber) * 4500.0;
+43942:                const multiThreatPawnScore = v40MultiThreatPawnEval(fen, move, board, activeColor, moveNumber) * 5500.0;
+43945:                const captureThenAttackScore = v40CaptureThenAttackEval(fen, move, board, activeColor, moveNumber) * 4800.0;
+Exit code: 0

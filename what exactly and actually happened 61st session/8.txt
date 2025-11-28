@@ -1,0 +1,5 @@
+Now let me find where to add the v40.41 functions. Let me find the end of v40.40 functions:
+Action: $ grep -n "v40PawnChainPromotionEval\|function v40PawnChainPromotion" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 28158:function v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) {
+43982:                const pawnChainPromotionScore = v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) * 3500.0;
+Exit code: 0

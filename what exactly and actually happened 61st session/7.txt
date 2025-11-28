@@ -1,0 +1,43 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
+    v40CaptureThenAttackEnabled: true,
+    v40CaptureThenAttackPenalty: -480000000000000, // 480 trillion for missing capture then attack
+};" --new-str "    // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
+    v40CaptureThenAttackEnabled: true,
+    v40CaptureThenAttackPenalty: -480000000000000, // 480 trillion for missing capture then attack
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.41: PRE-MOVE PAWN THREAT SUPREME - THE ULTIMATE FIX!
+    // From game: After cxd4, bot played e5 instead of Nxd4 or moving knight!
+    // THE BOT MUST CHECK IF OUR PIECES ARE UNDER ATTACK BEFORE MAKING ANY MOVE!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.41: PRE-MOVE PIECE UNDER PAWN ATTACK - Before any move, check if pieces are attacked
+    v40PreMovePawnThreatEnabled: true,
+    v40PreMovePawnThreatPenalty: -999999999999999, // 999 trillion - ABSOLUTE DEATH PENALTY
+    
+    // v40.41: KNIGHT UNDER PAWN ATTACK - Knight attacked by pawn MUST be addressed
+    v40KnightUnderPawnEnabled: true,
+    v40KnightUnderPawnPenalty: -800000000000000, // 800 trillion for ignoring knight under pawn
+    
+    // v40.41: BISHOP UNDER PAWN ATTACK - Bishop attacked by pawn MUST be addressed  
+    v40BishopUnderPawnEnabled: true,
+    v40BishopUnderPawnPenalty: -750000000000000, // 750 trillion for ignoring bishop under pawn
+    
+    // v40.41: ROOK UNDER PAWN ATTACK - Rook attacked by pawn MUST be addressed
+    v40RookUnderPawnEnabled: true,
+    v40RookUnderPawnPenalty: -850000000000000, // 850 trillion for ignoring rook under pawn
+    
+    // v40.41: QUEEN UNDER PAWN ATTACK - Queen attacked by pawn MUST be addressed
+    v40QueenUnderPawnEnabled: true,
+    v40QueenUnderPawnPenalty: -950000000000000, // 950 trillion for ignoring queen under pawn
+    
+    // v40.41: POST-CAPTURE PAWN POSITION - After pawn captures, what does it attack?
+    v40PostCapturePawnEnabled: true,
+    v40PostCapturePawnPenalty: -700000000000000, // 700 trillion for missing post-capture attack
+    
+    // v40.41: ABSOLUTE MUST RESPOND - If ANY piece is under pawn attack, MUST respond
+    v40AbsoluteMustRespondEnabled: true,
+    v40AbsoluteMustRespondPenalty: -1000000000000000, // 1 QUADRILLION - INFINITY
+};"
+Observation: Edit was successful.

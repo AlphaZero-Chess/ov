@@ -1,0 +1,29 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28195|            
+28196|            const targetIsWhite = target === target.toUpperCase();
+28197|            if (targetIsWhite !== isWhite) continue;  // Must be our piece
+28198|            
+28199|            const newRank = parseInt(captureSquare.charAt(1));
+28200|            const newDistance = Math.abs(promotionRank - newRank);
+28201|            
+28202|            // If capture gets pawn closer to promotion
+28203|            if (newDistance < distance && newDistance <= 2) {
+28204|                debugLog("[V40.40_PROMO]", `☠️ PAWN CHAIN PROMOTION: ${square}x${captureSquare} brings pawn to ${newDistance} squares from promotion!`);
+28205|                
+28206|                const penalty = (CONFIG.v40PawnChainPromotionPenalty || -350000000000000) * (3 - newDistance);
+28207|                score += penalty;
+28208|            }
+28209|        }
+28210|    }
+28211|    
+28212|    return score;
+28213|}
+28214|
+28215|// ═══════════════════════════════════════════════════════════════════════════════
+28216|function findAttackedPiecesV40_9(board, color) {
+28217|    const attacked = [];
+28218|    const isWhite = color === 'w';
+28219|    const enemyColor = isWhite ? 'b' : 'w';
+28220|    

@@ -1,0 +1,44 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2520|    v40MultiThreatPawnEnabled: true,
+2521|    v40MultiThreatPawnPenalty: -550000000000000, // 550 trillion for multi-threat pawn
+2522|    
+2523|    // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
+2524|    v40CaptureThenAttackEnabled: true,
+2525|    v40CaptureThenAttackPenalty: -480000000000000, // 480 trillion for missing capture then attack
+2526|};
+2527|
+2528|// ═══════════════════════════════════════════════════════════════════════
+2529|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2530|// ═══════════════════════════════════════════════════════════════════════
+2531|
+2532|/**
+2533| * v37: TRUE MCTS Node structure for proper tree search
+2534| */
+2535|class MCTSNode {
+2536|    constructor(move, parent = null, prior = 1.0) {
+2537|        this.move = move;
+2538|        this.parent = parent;
+2539|        this.children = new Map();
+2540|        this.visits = 0;
+2541|        this.totalValue = 0;
+2542|        this.prior = prior;           // Policy prior (P)
+2543|        this.virtualLoss = 0;
+2544|        this.isExpanded = false;
+2545|        this.isTerminal = false;
+2546|        this.depth = parent ? parent.depth + 1 : 0;
+2547|    }
+2548|    
+2549|    get value() {
+2550|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+2551|    }
+2552|    
+2553|    get ucb1Score() {
+2554|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2555|        
+2556|        const exploitation = this.value;
+2557|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+2558|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+2559|        
+2560|        return exploitation + exploration;

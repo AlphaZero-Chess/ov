@@ -1,0 +1,17 @@
+The v40.40 functions exist and are integrated. The problem is that despite these functions, the bot is still losing. Let me look at the game again more deeply:
+
+**DEEP GAME ANALYSIS:**
+
+Move 5...cxd4 - The c5 pawn captures the d4 pawn. Now the d4 pawn attacks Nc3!
+Move 6. e5??? - Bot plays e5 instead of recapturing or saving the knight!
+
+The critical issue is that the bot needs to understand that after `cxd4`, the **d4 pawn** is attacking the **Nc3**. The current v40.40 functions check for **enemy pawns attacking our pieces**, but the problem is that the pawn on d4 (the one that just captured) is now on a new square attacking our knight.
+
+Let me create v40.41 with an even stronger "PAWN JUST CAPTURED DANGER" system that specifically looks at what happens AFTER enemy pawn captures:
+Action: $ grep -n "v40.40:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | tail -5
+Observation: 43938:                // v40.40: IMMEDIATE PAWN THREAT — Super strong enforcement for pawn attacks!
+43941:                // v40.40: MULTI-THREAT PAWN — Pawn attacks AND threatens something else!
+43944:                // v40.40: CAPTURE THEN ATTACK — See cxd4, dxc3 patterns!
+43947:                // v40.40: PAWN CHAIN PROMOTION — Capture chains leading to promotion!
+43950:                // v40.40: COMBINED v40 SCORE — 100% MANDATORY RECAPTURE SUPREME INFLUENCE
+Exit code: 0

@@ -1,0 +1,17 @@
+Now I need to add the v40.41 function calls and integrate them into the scoring. Let me add them after the v40.40 additions:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                const pawnChainPromotionScore = v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) * 3500.0;
+                
+                // v40.40: COMBINED v40 SCORE — 100% MANDATORY RECAPTURE SUPREME INFLUENCE" --new-str "                const pawnChainPromotionScore = v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) * 3500.0;
+                
+                // v40.41: PRE-MOVE PAWN THREAT SUPREME — THE ULTIMATE FIX!
+                // If piece is under pawn attack, MUST address it or get INFINITY PENALTY!
+                const preMovePawnThreatScore = v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: POST-CAPTURE PAWN POSITION — What does enemy pawn attack after capture?
+                const postCapturePawnScore = v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) * 7000.0;
+                
+                // v40.41: ABSOLUTE MUST RESPOND — Strongest enforcement!
+                const absoluteMustRespondScore = v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE"
+Observation: Edit was successful.

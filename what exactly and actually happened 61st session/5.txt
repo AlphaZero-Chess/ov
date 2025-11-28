@@ -1,0 +1,30 @@
+
+Action: Based on my analysis of the 59th and 60th session files and the current state:
+
+CURRENT STATE:
+- File: /app/Lichess Bot-AlphaZero-Pure.user.js
+- Version: v40.39 (header) but has v40.40 functions implemented
+- Lines: 46,894
+- Syntax: Valid
+
+THE PROBLEM:
+Looking at the game: After 5...cxd4, the bot played 6.e5 instead of recapturing or saving the knight.
+
+The v40.40 functions ARE integrated (lines 43932-43950), but the bot STILL lost because:
+1. The penalties are huge but the ENGINE SCORE might still be winning
+2. The v40.40 functions need to check BEFORE the move is made if a piece is under attack
+3. The weight multipliers might not be strong enough vs engine score
+
+What I need to do for v40.41:
+1. Update the header to v40.41
+2. Add v40.41 CONFIG options with EVEN HIGHER penalties
+3. Create v40.41 functions that:
+   - Detect when OUR piece is currently under pawn attack BEFORE we make a move
+   - If piece is under attack, ONLY allow moves that: (a) move the attacked piece, (b) capture the attacker, (c) block
+   - Any other move gets INFINITY penalty
+4. Integrate v40.41 into scoring
+
+The key insight is that the current functions check what happens AFTER the move, but the bot needs to recognize BEFORE making a move that a piece is under attack.
+
+Let me implement v40.41 with "PRE-MOVE PAWN THREAT DETECTION".
+Observation: Your thought has been logged.

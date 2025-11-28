@@ -1,0 +1,13 @@
+Now let me integrate the v40.41 functions into the scoring. Let me find where the v40.40 functions are integrated:
+Action: $ grep -n "v40.40.*MANDATORY\|v40MandatoryRecaptureEval.*\*\|pawnChainPromotionScore" "/app/Lichess Bot-AlphaZero-Pure.user.js" | tail -10
+Observation: 44272:                // v40.40: MANDATORY RECAPTURE SUPREME — THE ULTIMATE PAWN BLINDNESS FIX!
+44277:                // v40.40: MANDATORY RECAPTURE — When piece under pawn attack, MUST respond!
+44278:                const mandatoryRecaptureScore = v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) * 5000.0;
+44293:                const pawnChainPromotionScore = v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) * 3500.0;
+44295:                // v40.40: COMBINED v40 SCORE — 100% MANDATORY RECAPTURE SUPREME INFLUENCE
+44386:                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+44388:                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore;
+44389:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.40 MANDATORY RECAPTURE SUPREME PARADIGM SHIFT
+44464:                // v40.40 MANDATORY RECAPTURE SUPREME debug logs
+44470:                debugLog("[V40_INTEGRATE]", `   👑♟️ PAWN CHAIN PROMOTION: ${pawnChainPromotionScore.toFixed(1)}`);
+Exit code: 0
