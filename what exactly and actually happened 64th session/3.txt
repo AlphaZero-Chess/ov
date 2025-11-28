@@ -1,0 +1,84 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+44270|                // v40.38: FORCED MATE DEFENSE MODE — When mate threatened, ONLY defensive moves
+44271|                const forcedMateDefenseScore = v40ForcedMateDefenseEval(fen, move, board, activeColor, moveNumber) * 2000.0;
+44272|                
+44273|                // v40.38: PAWN MOVE UNDER ATTACK PROHIBITION — No pawn push when under serious attack
+44274|                const pawnMoveUnderAttackScore = v40PawnMoveUnderAttackEval(fen, move, board, activeColor, moveNumber) * 900.0;
+44275|                
+44276|                // v40.38: PASSIVE QUEEN UNDER MATE PROHIBITION — No Qd1/Qc1 when mate threatened
+44277|                const passiveQueenUnderMateScore = v40PassiveQueenUnderMateEval(fen, move, board, activeColor, moveNumber) * 1800.0;
+44278|                
+44279|                // v40.38: BISHOP USELESS SQUARE PROHIBITION — No Bh6/Ba3 type useless moves
+44280|                const bishopUselessSquareScore = v40BishopUselessSquareEval(fen, move, board, activeColor, moveNumber) * 500.0;
+44281|                
+44282|                // ═══════════════════════════════════════════════════════════════════
+44283|                // v40.39: PAWN CAPTURE CHAIN SUPREME — THE ULTIMATE TACTICAL FIX!
+44284|                // From game: After cxd4, White played e5 instead of recapturing!
+44285|                // Then dxc3 attacked Bb5 AND threatened cxb2 promotion!
+44286|                // ═══════════════════════════════════════════════════════════════════
+44287|                
+44288|                // v40.39: PAWN CAPTURE CHAIN DETECTION — See pawn capture chains 3+ moves deep!
+44289|                const pawnCaptureChainScore = v40PawnCaptureChainEval(fen, move, board, activeColor, moveNumber) * 2500.0;
+44290|                
+44291|                // v40.39: PIECE UNDER PAWN ATTACK — Must respond when piece attacked by pawn!
+44292|                const pieceUnderPawnAttackScore = v40PieceUnderPawnAttackEval(fen, move, board, activeColor, moveNumber) * 2000.0;
+44293|                
+44294|                // v40.39: PROMOTION THREAT DETECTION — See promotion threats!
+44295|                const promotionThreatV39Score = v40PromotionThreatEval(fen, move, board, activeColor, moveNumber) * 3000.0;
+44296|                
+44297|                // v40.39: RECAPTURE CHAIN AWARENESS — See recapture chains!
+44298|                const recaptureChainScore = v40RecaptureChainEval(fen, move, board, activeColor, moveNumber) * 1800.0;
+44299|                
+44300|                // v40.39: PIECE UNDER PAWN DANGER — Don't put pieces under pawn attack!
+44301|                const pieceUnderPawnDangerScore = v40PieceUnderPawnDangerEval(fen, move, board, activeColor, moveNumber) * 2200.0;
+44302|                
+44303|                // v40.39: PAWN FORK DETECTION — See pawn fork threats!
+44304|                const pawnForkDetectionScore = v40PawnForkDetectionEval(fen, move, board, activeColor, moveNumber) * 2400.0;
+44305|                
+44306|                // ═══════════════════════════════════════════════════════════════════
+44307|                // v40.40: MANDATORY RECAPTURE SUPREME — THE ULTIMATE PAWN BLINDNESS FIX!
+44308|                // From game: After cxd4, bot played e5 instead of Nxd4! Lost knight!
+44309|                // After dxc3, bot played exf6 instead of saving bishop! Lost everything!
+44310|                // ═══════════════════════════════════════════════════════════════════
+44311|                
+44312|                // v40.40: MANDATORY RECAPTURE — When piece under pawn attack, MUST respond!
+44313|                const mandatoryRecaptureScore = v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) * 5000.0;
+44314|                
+44315|                // v40.40: PAWN NEAR PIECE DANGER — See pawns one move from attacking our pieces!
+44316|                const pawnNearPieceDangerScore = v40PawnNearPieceDangerEval(fen, move, board, activeColor, moveNumber) * 4000.0;
+44317|                
+44318|                // v40.40: IMMEDIATE PAWN THREAT — Super strong enforcement for pawn attacks!
+44319|                const immediatePawnThreatScore = v40ImmediatePawnThreatEval(fen, move, board, activeColor, moveNumber) * 4500.0;
+44320|                
+44321|                // v40.40: MULTI-THREAT PAWN — Pawn attacks AND threatens something else!
+44322|                const multiThreatPawnScore = v40MultiThreatPawnEval(fen, move, board, activeColor, moveNumber) * 5500.0;
+44323|                
+44324|                // v40.40: CAPTURE THEN ATTACK — See cxd4, dxc3 patterns!
+44325|                const captureThenAttackScore = v40CaptureThenAttackEval(fen, move, board, activeColor, moveNumber) * 4800.0;
+44326|                
+44327|                // v40.40: PAWN CHAIN PROMOTION — Capture chains leading to promotion!
+44328|                const pawnChainPromotionScore = v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) * 3500.0;
+44329|                
+44330|                // v40.41: PRE-MOVE PAWN THREAT SUPREME — THE ULTIMATE FIX!
+44331|                // If piece is under pawn attack, MUST address it or get INFINITY PENALTY!
+44332|                const preMovePawnThreatScore = v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+44333|                
+44334|                // v40.41: POST-CAPTURE PAWN POSITION — What does enemy pawn attack after capture?
+44335|                const postCapturePawnScore = v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) * 7000.0;
+44336|                
+44337|                // v40.41: ABSOLUTE MUST RESPOND — Strongest enforcement!
+44338|                const absoluteMustRespondScore = v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+44339|                
+44340|                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE
+44341|                // This makes v40 the ABSOLUTE TACTICAL SUPREME factor
+44342|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+44343|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+44344|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+44345|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+44346|                               counterattackBonus + initiativePreservationBonus +
+44347|                               // v40.4 additions:
+44348|                               openingPrinciplesScore + discoveredAttackPenalty + 
+44349|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+44350|                               // v40.5 additions:

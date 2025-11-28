@@ -1,0 +1,74 @@
+Now I need to integrate these new v40.44 functions into the `computeCombinedScore` function. Let me find the right location:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+44430|                
+44431|                // v40.23: QUEEN H-FILE INVASION — Detect queen mating on h-file (Qh4-Qxh2#)
+44432|                const queenHFileScore = v40QueenHFileInvasionEval(fen, move, board, activeColor, moveNumber) * 75.0;
+44433|                
+44434|                // v40.23: F3/G3 ABSOLUTE PROHIBITION — NEVER weaken kingside!
+44435|                const f3g3ProhibitionScore = v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) * 80.0;
+44436|                
+44437|                // v40.23: MATING ATTACK PATTERN RECOGNITION — Specific mating patterns
+44438|                const matingAttackPatternScore = v40MatingAttackPatternEval(fen, move, board, activeColor, moveNumber) * 65.0;
+44439|                
+44440|                // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
+44441|                const kingsideFortressScore = v40KingsideFortressEval(fen, move, board, activeColor, moveNumber) * 60.0;
+44442|                
+44443|                // ═══════════════════════════════════════════════════════════════════
+44444|                // v40.24 ABSOLUTE QUEEN SAFETY SUPREME
+44445|                // From game: Bot played Rfe1 while queen on d2 was attacked by knight on e4!
+44446|                // Then Black played Nxd2 and captured the queen FOR FREE!
+44447|                // THIS IS THE #1 BLUNDER - LOSING QUEEN WITHOUT COMPENSATION!
+44448|                // ═══════════════════════════════════════════════════════════════════
+44449|                
+44450|                // v40.24: ABSOLUTE QUEEN SAFETY — NEVER ignore queen being attacked!
+44451|                const absoluteQueenSafetyScore = v40AbsoluteQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 100.0;
+44452|                
+44453|                // v40.24: MUST DEFEND QUEEN — If queen attacked, move MUST defend it!
+44454|                const mustDefendQueenScore = v40MustDefendQueenEval(fen, move, board, activeColor, moveNumber) * 95.0;
+44455|                
+44456|                // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+44457|                const knightForkQueenScore = v40KnightForkQueenEval(fen, move, board, activeColor, moveNumber) * 90.0;
+44458|                
+44459|                // v40.24: PRE-MOVE QUEEN SAFETY — Check queen safety BEFORE every move
+44460|                const preMoveQueenSafetyScore = v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 85.0;
+44461|                
+44462|                // ═══════════════════════════════════════════════════════════════════════════════
+44463|                // v40.25 STRATEGIC MASTERY SUPREME: THE ULTIMATE FIXES
+44464|                // From game: Qxb6 queen trade in closed position = TERRIBLE!
+44465|                // Nxf3+ Nxd2 fork missed = CATASTROPHIC!
+44466|                // b2 vs c7 pawn race lost = GAME OVER!
+44467|                // ═══════════════════════════════════════════════════════════════════════════════
+44468|                
+44469|                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+44470|                const noEarlyQueenTradeScore = v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) * 110.0;
+44471|                
+44472|                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+44473|                const enhancedForkScore = v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) * 105.0;
+44474|                
+44475|                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+44476|                const pawnRaceScore = v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) * 100.0;
+44477|                
+44478|                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+44479|                const piecePreservationAbsoluteScore = v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) * 95.0;
+44480|                
+44481|                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+44482|                const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
+44483|                
+44484|                // ═══════════════════════════════════════════════════════════════════════════════
+44485|                // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME: THE FINAL DEFENSE
+44486|                // From game: g3 was CATASTROPHIC with enemy queen active!
+44487|                // Bxg3 sacrifice DEMOLISHED the kingside!
+44488|                // THE BOT MUST NEVER WEAKEN KINGSIDE UNDER ANY THREAT!
+44489|                // ═══════════════════════════════════════════════════════════════════════════════
+44490|                
+44491|                // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+44492|                const kingsidePawnProhibitionScore = v40AbsoluteKingsidePawnProhibitionEval(fen, move, board, activeColor, moveNumber) * 200.0;
+44493|                
+44494|                // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+44495|                const bishopSacrificeScore = v40BishopSacrificeDetectionEval(fen, move, board, activeColor, moveNumber) * 180.0;
+44496|                
+44497|                // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+44498|                const forcedDefenseModeScore = v40ForcedDefenseModeEval(fen, move, board, activeColor, moveNumber) * 150.0;
+44499|                
+44500|                // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!

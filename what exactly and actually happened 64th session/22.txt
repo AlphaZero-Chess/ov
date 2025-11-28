@@ -1,0 +1,9 @@
+The syntax is valid. Let me also add debug logging for the v40.44 scores and verify all the function calls are working. Let me also check if there are any issues with the helper functions we're calling:
+Action: $ cd /app && grep -n "function findHangingPiecesV40_9\|function findAttackedPiecesV40_9\|function v40GetPawnAttackers\|function v40IsSquareUnderPawnAttack\|function simulateMove" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 3295:function simulateMoveOnBoard(board, move) {
+28396:function v40GetPawnAttackers(board, square, activeColor) {
+28442:function v40IsSquareUnderPawnAttack(board, square, activeColor) {
+28984:function findAttackedPiecesV40_9(board, color) {
+29030:function findHangingPiecesV40_9(board, color) {
+41614:function simulateMoveForRepetition(currentFen, move) {
+Exit code: 0

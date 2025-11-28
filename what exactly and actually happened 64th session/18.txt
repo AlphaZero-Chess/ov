@@ -1,0 +1,40 @@
+Now let me find where to add the v40.44 function calls and integrate them into the score:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.41: PRE-MOVE PAWN THREAT SUPREME — THE ULTIMATE FIX!
+                // If piece is under pawn attack, MUST address it or get INFINITY PENALTY!
+                const preMovePawnThreatScore = v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: POST-CAPTURE PAWN POSITION — What does enemy pawn attack after capture?
+                const postCapturePawnScore = v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) * 7000.0;
+                
+                // v40.41: ABSOLUTE MUST RESPOND — Strongest enforcement!
+                const absoluteMustRespondScore = v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) * 10000.0;" --new-str "                // v40.41: PRE-MOVE PAWN THREAT SUPREME — THE ULTIMATE FIX!
+                // If piece is under pawn attack, MUST address it or get INFINITY PENALTY!
+                const preMovePawnThreatScore = v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: POST-CAPTURE PAWN POSITION — What does enemy pawn attack after capture?
+                const postCapturePawnScore = v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) * 7000.0;
+                
+                // v40.41: ABSOLUTE MUST RESPOND — Strongest enforcement!
+                const absoluteMustRespondScore = v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.44: CRITICAL MISSING IMPLEMENTATIONS - THE REAL FIX!
+                // Session 63 fixed pawn attack direction but CONFIG functions were NEVER implemented!
+                // This caused the bot to STILL lose despite having \"penalties\" defined!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.44: TWO-MOVE PAWN CHAIN — See cxd4, dxc3, cxb2 chains BEFORE they happen!
+                const twoMovePawnChainScore = v40TwoMovePawnChainEval(fen, move, board, activeColor, moveNumber) * 20000.0;
+                
+                // v40.44: DON'T PUSH WHEN HANGING — Don't play e5 when Nc3 is attacked!
+                const dontPushWhenHangingScore = v40DontPushWhenHangingEval(fen, move, board, activeColor, moveNumber) * 15000.0;
+                
+                // v40.44: PROTECT KNIGHT FROM PAWN — Knight under pawn attack = EMERGENCY!
+                const protectKnightFromPawnScore = v40ProtectKnightFromPawnEval(fen, move, board, activeColor, moveNumber) * 18000.0;
+                
+                // v40.44: CENTRAL PAWN CAPTURE RESPONSE — cxd4 MUST be recaptured!
+                const centralPawnCaptureResponseScore = v40CentralPawnCaptureResponseEval(fen, move, board, activeColor, moveNumber) * 12000.0;
+                
+                // v40.44: BISHOP B5 HANGING — Don't ignore bishop under pawn attack!
+                const bishopB5HangingScore = v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) * 9000.0;"
+Observation: Edit was successful.

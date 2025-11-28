@@ -1,0 +1,11 @@
+The v40.43 CONFIG settings exist but the functions are NOT implemented yet. This is a major bug! Let me check what functions ARE being called:
+Action: $ cd /app && grep -n "v40TwoMovePawnChain\|v40DontPushWhenHanging\|v40ProtectKnightFromPawn\|v40CentralPawnCaptureResponse" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 2570:    v40TwoMovePawnChainEnabled: true,
+2571:    v40TwoMovePawnChainPenalty: -2000000000000000, // 2 QUADRILLION - SUPREME PRIORITY!
+2574:    v40DontPushWhenHangingEnabled: true,
+2575:    v40DontPushWhenHangingPenalty: -1500000000000000, // 1.5 QUADRILLION
+2578:    v40ProtectKnightFromPawnEnabled: true,
+2579:    v40ProtectKnightFromPawnPenalty: -1800000000000000, // 1.8 QUADRILLION
+2582:    v40CentralPawnCaptureResponseEnabled: true,
+2583:    v40CentralPawnCaptureResponsePenalty: -1200000000000000, // 1.2 QUADRILLION
+Exit code: 0

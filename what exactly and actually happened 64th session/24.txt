@@ -1,0 +1,5 @@
+
+Action: $ cd /app && grep -n "function simulateMove" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 3295:function simulateMoveOnBoard(board, move) {
+41614:function simulateMoveForRepetition(currentFen, move) {
+Exit code: 0

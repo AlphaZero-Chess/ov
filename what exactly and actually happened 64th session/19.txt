@@ -1,0 +1,8 @@
+Now I need to add these new scores to the v40DeepScore calculation:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.41 PRE-MOVE PAWN THREAT SUPREME additions — THE ULTIMATE FIX!
+                               preMovePawnThreatScore + postCapturePawnScore + absoluteMustRespondScore;" --new-str "                               // v40.41 PRE-MOVE PAWN THREAT SUPREME additions — THE ULTIMATE FIX!
+                               preMovePawnThreatScore + postCapturePawnScore + absoluteMustRespondScore +
+                               // v40.44 CRITICAL MISSING IMPLEMENTATIONS — THE REAL FIX!
+                               twoMovePawnChainScore + dontPushWhenHangingScore + protectKnightFromPawnScore +
+                               centralPawnCaptureResponseScore + bishopB5HangingScore;"
+Observation: Edit was successful.

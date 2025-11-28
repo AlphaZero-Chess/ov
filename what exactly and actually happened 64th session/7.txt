@@ -1,0 +1,103 @@
+Good. Now I understand the issue better. The v40MandatoryRecaptureEval function is designed to detect pieces under pawn attack and penalize moves that don't address it. However, looking at the recent games:
+
+**Game Analysis (B23 Sicilian):**
+- After 4. d4 cxd4 - The d-pawn was captured, but there's no **piece** under pawn attack yet
+- The problem is the bot played 5. Ne2 instead of 5. Nxd4 (recapturing the pawn)
+- The current function only checks for **pieces** under pawn attack, not **pawn captures that should be recaptured**
+
+The key insight: **The bot needs a function to detect when a PAWN was just captured and it should recapture immediately** - not just when pieces are under pawn attack.
+
+Let me implement a v40.44 enhancement to handle this case:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2560|    
+2561|    // ═══════════════════════════════════════════════════════════════════════════════
+2562|    // v40.43: SICILIAN DEFENSE SPECIFIC FIXES - CRITICAL!
+2563|    // ═══════════════════════════════════════════════════════════════════════════════
+2564|    // From game: 1.e4 c5 2.Nc3 Nc6 3.Nf3 Nf6 4.Bb5 g6 5.d4 cxd4 6.e5 dxc3 7.exf6 cxb2
+2565|    // The bot allowed cxd4 to capture knight AND bishop via dxc3 and cxb2!
+2566|    // FIX: Must see TWO moves ahead after pawn captures!
+2567|    // ═══════════════════════════════════════════════════════════════════════════════
+2568|    
+2569|    // v40.43: TWO-MOVE PAWN CHAIN DETECTION - See dxc3 BEFORE playing e5!
+2570|    v40TwoMovePawnChainEnabled: true,
+2571|    v40TwoMovePawnChainPenalty: -2000000000000000, // 2 QUADRILLION - SUPREME PRIORITY!
+2572|    
+2573|    // v40.43: DONT PUSH PAWN WHEN KNIGHT HANGING - e5 was bad because Nc3 was attacked!
+2574|    v40DontPushWhenHangingEnabled: true,
+2575|    v40DontPushWhenHangingPenalty: -1500000000000000, // 1.5 QUADRILLION
+2576|    
+2577|    // v40.43: PROTECT KNIGHT FROM PAWN IMMEDIATELY - Must respond to pawn attack on knight!
+2578|    v40ProtectKnightFromPawnEnabled: true,
+2579|    v40ProtectKnightFromPawnPenalty: -1800000000000000, // 1.8 QUADRILLION
+2580|    
+2581|    // v40.43: D4/E4 PAWN CAPTURE RESPONSE - When cxd4/exd4, MUST recapture or protect!
+2582|    v40CentralPawnCaptureResponseEnabled: true,
+2583|    v40CentralPawnCaptureResponsePenalty: -1200000000000000, // 1.2 QUADRILLION
+2584|    
+2585|    // v40.43: BISHOP HANGING ON B5 - Must move if attacked by pawn chain
+2586|    v40BishopB5HangingEnabled: true,
+2587|    v40BishopB5HangingPenalty: -900000000000000, // 900 trillion
+2588|};
+2589|
+2590|// ═══════════════════════════════════════════════════════════════════════
+2591|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2592|// ═══════════════════════════════════════════════════════════════════════
+2593|
+2594|/**
+2595| * v37: TRUE MCTS Node structure for proper tree search
+2596| */
+2597|class MCTSNode {
+2598|    constructor(move, parent = null, prior = 1.0) {
+2599|        this.move = move;
+2600|        this.parent = parent;
+2601|        this.children = new Map();
+2602|        this.visits = 0;
+2603|        this.totalValue = 0;
+2604|        this.prior = prior;           // Policy prior (P)
+2605|        this.virtualLoss = 0;
+2606|        this.isExpanded = false;
+2607|        this.isTerminal = false;
+2608|        this.depth = parent ? parent.depth + 1 : 0;
+2609|    }
+2610|    
+2611|    get value() {
+2612|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+2613|    }
+2614|    
+2615|    get ucb1Score() {
+2616|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2617|        
+2618|        const exploitation = this.value;
+2619|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+2620|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+2621|        
+2622|        return exploitation + exploration;
+2623|    }
+2624|    
+2625|    get puctScore() {
+2626|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2627|        
+2628|        const Q = this.value;
+2629|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+2630|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+2631|        
+2632|        // Apply virtual loss for diversity
+2633|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);
+2634|        
+2635|        return Q + U - virtualLossAdjustment;
+2636|    }
+2637|    
+2638|    selectChild() {
+2639|        if (this.children.size === 0) return null;
+2640|        
+2641|        let bestChild = null;
+2642|        let bestScore = -Infinity;
+2643|        
+2644|        for (const [move, child] of this.children) {
+2645|            const score = child.puctScore;
+2646|            if (score > bestScore) {
+2647|                bestScore = score;
+2648|                bestChild = child;
+2649|            }
+2650|        }

@@ -1,0 +1,3 @@
+Now let me find where the v40.43 functions are implemented and add the v40.44 enhancements:
+Action: $ cd /app && grep -n "function v40TwoMovePawnChain\|function v40DontPushWhenHanging\|function v40ProtectKnightFromPawn\|function v40CentralPawnCaptureResponse" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: Exit code: 1

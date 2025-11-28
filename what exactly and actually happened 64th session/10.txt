@@ -1,0 +1,6 @@
+I found the issue! The CONFIG settings for v40.43 were added but the actual functions were **never implemented**! This explains why the bot is still losing - the key fixes from v40.43 are just config values but no actual code!
+
+Let me implement these critical functions now. First, let me find a good location to add them:
+Action: $ cd /app && grep -n "function v40PreMovePawnThreatEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 28263:function v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0
