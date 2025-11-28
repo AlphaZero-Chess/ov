@@ -37197,8 +37197,24 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
                 const kingsideCollapseScore = v40KingsideCollapseDetectionEval(fen, move, board, activeColor, moveNumber) * 170.0;
                 
-                // v40.26: COMBINED v40 SCORE — 100% ABSOLUTE KINGSIDE FORTRESS SUPREME INFLUENCE
-                // This makes v40 the STRATEGIC MASTERY SUPREME factor
+                // ═══════════════════════════════════════════════════════════════════════════════
+                // v40.27 ABSOLUTE TACTICAL SUPREMACY: THE ULTIMATE TACTICAL DEFENSE
+                // From game: Rxd4 > Rxd3 > Nxf2 sequences were MISSED!
+                // Knight forks on f2 devastating the position!
+                // THE BOT MUST SEE ALL TACTICAL SEQUENCES 3-4 MOVES DEEP!
+                // ═══════════════════════════════════════════════════════════════════════════════
+                
+                // v40.27: FORCED EXCHANGE SEQUENCE CALCULATION — See 3-4 moves into exchanges!
+                const forcedExchangeSequenceScore = v40ForcedExchangeSequenceEval(fen, move, board, activeColor, moveNumber) * 250.0;
+                
+                // v40.27: ABSOLUTE KNIGHT FORK SHIELD — Protect critical fork squares!
+                const knightForkShieldScore = v40AbsoluteKnightForkShieldEval(fen, move, board, activeColor, moveNumber) * 220.0;
+                
+                // v40.27: KING EXPOSURE INDEX — Calculate king safety after moves!
+                const kingExposureIndexScore = v40KingExposureIndexEval(fen, move, board, activeColor, moveNumber) * 200.0;
+                
+                // v40.27: COMBINED v40 SCORE — 100% ABSOLUTE TACTICAL SUPREMACY INFLUENCE
+                // This makes v40 the ABSOLUTE TACTICAL SUPREMACY factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -37257,11 +37273,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score +
                                // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
                                kingsidePawnProhibitionScore + bishopSacrificeScore + forcedDefenseModeScore + 
-                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.26 ABSOLUTE KINGSIDE FORTRESS PARADIGM SHIFT
+                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore +
+                               // v40.27 ABSOLUTE TACTICAL SUPREMACY additions:
+                               forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.27 ABSOLUTE TACTICAL SUPREMACY PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `🏰 SUPERHUMAN BEAST v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.27 ABSOLUTE TACTICAL SUPREMACY EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -37273,12 +37291,15 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
-                debugLog("[V40_INTEGRATE]", `   🏰🏰🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ ForcedExchangeSequence: ${forcedExchangeSequenceScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KnightForkShield: ${knightForkShieldScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KingExposureIndex: ${kingExposureIndexScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
