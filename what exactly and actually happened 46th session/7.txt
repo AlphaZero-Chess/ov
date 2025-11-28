@@ -1,0 +1,103 @@
+
+Action: $ cd /app && tail -n +24000 "Lichess Bot-AlphaZero-Pure.user.js" | head -100 | cat -n
+Observation:      1	/**
+     2	 * v40.29: Detect piece infiltration level
+     3	 */
+     4	function v40DetectPieceInfiltration(board, isEnemy) {
+     5	    let infiltration = 0;
+     6	    const isWhite = !isEnemy;
+     7	    
+     8	    // Check for enemy pieces in our territory
+     9	    const ourRanks = isWhite ? [0, 1, 2, 3] : [4, 5, 6, 7];
+    10	    
+    11	    for (const [square, piece] of board) {
+    12	        if (!piece) continue;
+    13	        const pieceType = piece.toLowerCase();
+    14	        const pieceIsWhite = piece === piece.toUpperCase();
+    15	        if (pieceIsWhite === isWhite) continue;
+    16	        if (pieceType === 'p') continue;
+    17	        
+    18	        const rank = parseInt(square[1]) - 1;
+    19	        if (ourRanks.includes(rank)) {
+    20	            const pieceValue = getPieceValueSimple(pieceType);
+    21	            infiltration += pieceValue / 100;
+    22	        }
+    23	    }
+    24	    
+    25	    return infiltration;
+    26	}
+    27	
+    28	// ═══════════════════════════════════════════════════════════════════════════════
+    29	function findAttackedPiecesV40_9(board, color) {
+    30	    const attacked = [];
+    31	    const isWhite = color === 'w';
+    32	    const enemyColor = isWhite ? 'b' : 'w';
+    33	    
+    34	    for (const [square, piece] of board) {
+    35	        if (!piece) continue;
+    36	        const pieceIsWhite = piece === piece.toUpperCase();
+    37	        if (pieceIsWhite !== isWhite) continue;
+    38	        
+    39	        const pieceType = piece.toLowerCase();
+    40	        if (pieceType === 'k') continue;  // King attacks handled separately
+    41	        
+    42	        // Check if this square is attacked by enemy
+    43	        if (isSquareAttackedByColor(board, square, enemyColor)) {
+    44	            // Check if it's adequately defended
+    45	            const isDefended = isSquareDefendedByColor(board, square, color);
+    46	            
+    47	            // If attacked by something of lower value, still need to consider
+    48	            const attackers = findAttackersOfSquare(board, square, enemyColor);
+    49	            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+    50	            const ourPieceValue = getPieceValueSimple(pieceType);
+    51	            
+    52	            // Consider it under attack if:
+    53	            // 1. Not defended at all, or
+    54	            // 2. Attacker is of lower value than our piece
+    55	            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+    56	                attacked.push({
+    57	                    square,
+    58	                    piece,
+    59	                    value: ourPieceValue,
+    60	                    lowestAttackerValue
+    61	                });
+    62	            }
+    63	        }
+    64	    }
+    65	    
+    66	    // Sort by piece value (highest first - queen, then rook, etc.)
+    67	    attacked.sort((a, b) => b.value - a.value);
+    68	    
+    69	    return attacked;
+    70	}
+    71	
+    72	/**
+    73	 * v40.9 Helper: Find all hanging pieces (attacked and not defended)
+    74	 */
+    75	function findHangingPiecesV40_9(board, color) {
+    76	    const hanging = [];
+    77	    const isWhite = color === 'w';
+    78	    const enemyColor = isWhite ? 'b' : 'w';
+    79	    
+    80	    for (const [square, piece] of board) {
+    81	        if (!piece) continue;
+    82	        const pieceIsWhite = piece === piece.toUpperCase();
+    83	        if (pieceIsWhite !== isWhite) continue;
+    84	        
+    85	        const pieceType = piece.toLowerCase();
+    86	        if (pieceType === 'k') continue;
+    87	        
+    88	        const isAttacked = isSquareAttackedByColor(board, square, enemyColor);
+    89	        const isDefended = isSquareDefendedByColor(board, square, color);
+    90	        
+    91	        if (isAttacked && !isDefended) {
+    92	            hanging.push({ square, piece, value: getPieceValueSimple(pieceType) });
+    93	        }
+    94	    }
+    95	    
+    96	    return hanging;
+    97	}
+    98	
+    99	/**
+   100	 * v40.9 Helper: Find most valuable attacked piece
+Exit code: 0

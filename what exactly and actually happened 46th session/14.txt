@@ -1,0 +1,14 @@
+Now update the v40DeepScore calculation to include v40.30 scores:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+                               pieceCoordinationCheckScore + threatAnticipationScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.29 DEEP DEFENSIVE AWARENESS PARADIGM SHIFT" --new-str "                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+                               pieceCoordinationCheckScore + threatAnticipationScore +
+                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.30 ABSOLUTE OPENING MASTERY PARADIGM SHIFT"
+Observation: Edit was successful.

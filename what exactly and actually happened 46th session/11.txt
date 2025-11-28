@@ -1,0 +1,15 @@
+Now I need to integrate the v40.30 functions into computeCombinedScore. Let me find where to add them:
+Action: $ cd /app && grep -n "v40.29 DEEP DEFENSIVE AWARENESS\|deepDefensiveAwarenessScore\|threatAnticipationScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY
+4:// @author       AlphaZero TRUE REPLICA v40.29 DEEP DEFENSIVE AWARENESS EDITION
+40413:                // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY & PROPHYLAXIS SUPREME
+40419:                const deepDefensiveAwarenessScore = v40DeepDefensiveAwarenessEval(fen, move, board, activeColor, moveNumber) * 350.0;
+40440:                const threatAnticipationScore = v40ThreatAnticipationEval(fen, move, board, activeColor, moveNumber) * 340.0;
+40508:                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+40509:                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+40511:                               pieceCoordinationCheckScore + threatAnticipationScore;
+40512:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.29 DEEP DEFENSIVE AWARENESS PARADIGM SHIFT
+40515:                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+40541:                debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ DeepDefensiveAwareness: ${deepDefensiveAwarenessScore.toFixed(1)}`);
+40548:                debugLog("[V40_INTEGRATE]", `   🔭🔭🔭 ThreatAnticipation: ${threatAnticipationScore.toFixed(1)}`);
+Exit code: 0

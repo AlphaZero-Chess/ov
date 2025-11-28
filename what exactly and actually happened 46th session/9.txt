@@ -1,0 +1,19 @@
+Now let me add the v40.30 functions right after line 24025 (after the v40DetectPieceInfiltration function):
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+24020|            infiltration += pieceValue / 100;
+24021|        }
+24022|    }
+24023|    
+24024|    return infiltration;
+24025|}
+24026|
+24027|// ═══════════════════════════════════════════════════════════════════════════════
+24028|function findAttackedPiecesV40_9(board, color) {
+24029|    const attacked = [];
+24030|    const isWhite = color === 'w';
+24031|    const enemyColor = isWhite ? 'b' : 'w';
+24032|    
+24033|    for (const [square, piece] of board) {
+24034|        if (!piece) continue;
+24035|        const pieceIsWhite = piece === piece.toUpperCase();

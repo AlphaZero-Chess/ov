@@ -1,0 +1,5 @@
+Now let me update the debug logging to include v40.30 scores:
+Action: $ cd /app && grep -n "SUPERHUMAN BEAST v40.29\|ThreatAnticipation.*toFixed" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 40542:                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+40575:                debugLog("[V40_INTEGRATE]", `   🔭🔭🔭 ThreatAnticipation: ${threatAnticipationScore.toFixed(1)}`);
+Exit code: 0

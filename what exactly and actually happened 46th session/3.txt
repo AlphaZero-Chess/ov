@@ -1,0 +1,12 @@
+Now let me check the current state of the file and see if v40.30 functions were implemented or if we need to add them:
+Action: $ cd /app && grep -n "v40.30\|v40AbsoluteOpeningProhibitionEval\|v40DeepForkVisionEval" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 2161:    // v40.30.0: ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+2166:    // v40.30: ABSOLUTE OPENING PROHIBITION — d3/e3 are FORBIDDEN in first 10 moves
+2175:    // v40.30: DEEP FORK VISION — See ALL forks 3 moves ahead
+2184:    // v40.30: BISHOP PAIR PRESERVATION — Never trade bishop needlessly
+2190:    // v40.30: PIECE ACTIVITY SUPREME — All pieces must be active by move 12
+2197:    // v40.30: CENTER CONTROL ABSOLUTE — Must control center by move 8
+2204:    // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics
+2212:    // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
+2213:    v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
+Exit code: 0

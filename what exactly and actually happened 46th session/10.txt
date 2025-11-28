@@ -1,0 +1,840 @@
+Now I'll add the v40.30 functions. This is a critical implementation that will:
+1. ABSOLUTELY FORBID passive openings like d3 in first 10 moves
+2. DEEP FORK VISION to see forks 3 moves ahead
+3. BISHOP PAIR PRESERVATION
+4. PIECE ACTIVITY SUPREME
+5. CENTER CONTROL ABSOLUTE
+6. TACTICAL BLINDNESS ELIMINATION
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    return infiltration;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {" --new-str "    return infiltration;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.30.0: ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+// From game: Bot STILL plays d3 instead of d4, allows knight forks, loses material
+// THE BOT MUST: 1) NEVER play d3/e3 when d4/e4 possible, 2) SEE ALL FORKS 3 moves ahead
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.30: ABSOLUTE OPENING PROHIBITION EVALUATION
+ * d3/e3 are ABSOLUTELY FORBIDDEN in the first 10 moves!
+ */
+function v40AbsoluteOpeningProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40AbsoluteOpeningProhibitionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const maxMoves = CONFIG.v40MaxMovesForOpeningProhibition || 10;
+    
+    // Only apply in the opening (first 10 moves)
+    if (moveNumber > maxMoves) return 0;
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(fromSquare);
+    
+    if (!piece) return 0;
+    const pieceType = piece.toLowerCase();
+    
+    // Check if this is a PASSIVE d3 or e3 pawn move
+    if (pieceType === 'p') {
+        if (isWhite) {
+            // White playing d3 when d4 is available - DISASTER
+            if (toSquare === 'd3' && fromSquare === 'd2') {
+                // Check if d4 is available
+                const d4Piece = board.get('d4');
+                const e5Piece = board.get('e5');
+                if (!d4Piece) {
+                    debugLog(\"[V40.30_OPENING]\", `🚫🚫🚫 ABSOLUTE PROHIBITION: d3 is FORBIDDEN! d4 is available!`);
+                    score += CONFIG.v40D3OpeningPenalty || -5000000000;
+                }
+            }
+            // White playing e3 when e4 is better - BAD
+            if (toSquare === 'e3' && fromSquare === 'e2') {
+                const e4Piece = board.get('e4');
+                if (!e4Piece) {
+                    debugLog(\"[V40.30_OPENING]\", `🚫🚫🚫 ABSOLUTE PROHIBITION: e3 is FORBIDDEN! e4 is better!`);
+                    score += CONFIG.v40E3OpeningPenalty || -5000000000;
+                }
+            }
+            // White playing d4 or e4 - EXCELLENT
+            if (toSquare === 'd4' || toSquare === 'e4') {
+                debugLog(\"[V40.30_OPENING]\", `✅✅✅ EXCELLENT: Playing ${toSquare} - proper central control!`);
+                score += CONFIG.v40MustPlayD4E4Bonus || 500000000;
+            }
+        } else {
+            // Black playing d6 early without need - PASSIVE
+            if (toSquare === 'd6' && fromSquare === 'd7' && moveNumber <= 4) {
+                const d5Piece = board.get('d5');
+                if (!d5Piece) {
+                    debugLog(\"[V40.30_OPENING]\", `⚠️ PASSIVE: d6 early, d5 may be better`);
+                    score += CONFIG.v40PassiveOpeningMovesPenalty / 10 || -300000000;
+                }
+            }
+            // Black playing d5 - GOOD
+            if (toSquare === 'd5' || toSquare === 'e5') {
+                score += CONFIG.v40MustPlayD4E4Bonus / 2 || 250000000;
+            }
+        }
+    }
+    
+    // Check for passive knight development (Nc3/Nf3 before center pawns)
+    if (pieceType === 'n' && moveNumber <= 4) {
+        const d2Pawn = board.get('d2');
+        const e2Pawn = board.get('e2');
+        if (isWhite && d2Pawn && e2Pawn) {
+            // Knights before both center pawns - slight penalty
+            if (d2Pawn.toLowerCase() === 'p' && e2Pawn.toLowerCase() === 'p') {
+                score += -50000000; // Prefer center pawns first
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.30: DEEP FORK VISION EVALUATION
+ * See ALL forks 1-3 moves ahead and ABSOLUTELY avoid them!
+ */
+function v40DeepForkVisionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40DeepForkVisionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // Check for forks in 1 move (immediate threat after our move)
+    const forkIn1 = v40DetectForkThreatIn1(afterBoard, isWhite);
+    if (forkIn1.hasFork) {
+        if (forkIn1.isRoyalFork) {
+            debugLog(\"[V40.30_FORK]\", `🚫🚫🚫 ROYAL FORK THREAT IN 1: ${forkIn1.description}`);
+            score += (CONFIG.v40ForkIn1Penalty || -10000000000) * 2;
+        } else if (forkIn1.isMajorFork) {
+            debugLog(\"[V40.30_FORK]\", `🚫🚫 MAJOR FORK THREAT IN 1: ${forkIn1.description}`);
+            score += CONFIG.v40ForkIn1Penalty || -10000000000;
+        } else {
+            debugLog(\"[V40.30_FORK]\", `🚫 FORK THREAT IN 1: ${forkIn1.description}`);
+            score += (CONFIG.v40ForkIn1Penalty || -10000000000) / 2;
+        }
+    }
+    
+    // Check for forks in 2 moves (opponent plays, we play, opponent forks)
+    const forkIn2 = v40DetectForkThreatIn2(afterBoard, isWhite);
+    if (forkIn2.hasFork) {
+        if (forkIn2.isRoyalFork) {
+            debugLog(\"[V40.30_FORK]\", `⚠️⚠️ ROYAL FORK THREAT IN 2: ${forkIn2.description}`);
+            score += (CONFIG.v40ForkIn2Penalty || -5000000000) * 2;
+        } else {
+            debugLog(\"[V40.30_FORK]\", `⚠️ FORK THREAT IN 2: ${forkIn2.description}`);
+            score += CONFIG.v40ForkIn2Penalty || -5000000000;
+        }
+    }
+    
+    // Check if our move PREVENTS a fork
+    const forkBefore = v40DetectForkThreatIn1(board, isWhite);
+    if (forkBefore.hasFork && !forkIn1.hasFork) {
+        debugLog(\"[V40.30_FORK]\", `✅ Move PREVENTS fork! ${forkBefore.description}`);
+        score += CONFIG.v40PreventForkBonus || 800000000;
+    }
+    
+    // Check if move creates fork vulnerability
+    if (!forkBefore.hasFork && forkIn1.hasFork) {
+        debugLog(\"[V40.30_FORK]\", `🚫 Move CREATES fork vulnerability!`);
+        score += CONFIG.v40MoveAllowsForkPenalty || -8000000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.30: Detect fork threat that can happen in 1 move
+ */
+function v40DetectForkThreatIn1(board, isWhite) {
+    const result = { hasFork: false, isRoyalFork: false, isMajorFork: false, description: '' };
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Find all enemy knights
+    const enemyKnights = [];
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        if (piece.toLowerCase() === 'n') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) {
+                enemyKnights.push(square);
+            }
+        }
+    }
+    
+    // Find our valuable pieces
+    const valuablePieces = [];
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite && (pieceType === 'k' || pieceType === 'q' || pieceType === 'r')) {
+            valuablePieces.push({ square, piece, type: pieceType, value: getPieceValueSimple(pieceType) });
+        }
+    }
+    
+    const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+    
+    // For each enemy knight, check all squares it can reach
+    for (const knightSquare of enemyKnights) {
+        const kFile = knightSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kRank = parseInt(knightSquare[1]) - 1;
+        
+        for (const [df, dr] of knightMoves) {
+            const forkFile = kFile + df;
+            const forkRank = kRank + dr;
+            
+            if (forkFile < 0 || forkFile > 7 || forkRank < 0 || forkRank > 7) continue;
+            
+            const forkSquare = String.fromCharCode('a'.charCodeAt(0) + forkFile) + (forkRank + 1);
+            const forkSquarePiece = board.get(forkSquare);
+            
+            // Knight can move here if square is empty or has our piece (capture)
+            if (forkSquarePiece) {
+                const forkPieceIsWhite = forkSquarePiece === forkSquarePiece.toUpperCase();
+                if (forkPieceIsWhite !== isWhite) continue; // Blocked by own piece
+            }
+            
+            // Check what this knight would attack from forkSquare
+            const attacked = [];
+            for (const [vdf, vdr] of knightMoves) {
+                const targetFile = forkFile + vdf;
+                const targetRank = forkRank + vdr;
+                
+                if (targetFile < 0 || targetFile > 7 || targetRank < 0 || targetRank > 7) continue;
+                
+                const targetSquare = String.fromCharCode('a'.charCodeAt(0) + targetFile) + (targetRank + 1);
+                const vp = valuablePieces.find(p => p.square === targetSquare);
+                if (vp) {
+                    attacked.push(vp);
+                }
+            }
+            
+            // Fork if attacking 2+ valuable pieces
+            if (attacked.length >= 2) {
+                result.hasFork = true;
+                
+                const hasKing = attacked.some(p => p.type === 'k');
+                const hasQueen = attacked.some(p => p.type === 'q');
+                const hasRook = attacked.filter(p => p.type === 'r').length;
+                
+                if (hasKing && hasQueen) {
+                    result.isRoyalFork = true;
+                    result.description = `Knight on ${forkSquare} forks King and Queen!`;
+                } else if (hasKing && hasRook > 0) {
+                    result.isMajorFork = true;
+                    result.description = `Knight on ${forkSquare} forks King and Rook!`;
+                } else if (hasQueen && hasRook > 0) {
+                    result.isMajorFork = true;
+                    result.description = `Knight on ${forkSquare} forks Queen and Rook!`;
+                } else {
+                    result.description = `Knight on ${forkSquare} forks ${attacked.map(p => p.type.toUpperCase()).join(' and ')}`;
+                }
+                
+                return result;
+            }
+        }
+    }
+    
+    return result;
+}
+
+/**
+ * v40.30: Detect fork threat that can happen in 2 moves
+ */
+function v40DetectForkThreatIn2(board, isWhite) {
+    const result = { hasFork: false, isRoyalFork: false, isMajorFork: false, description: '' };
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Find all enemy knights
+    const enemyKnights = [];
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        if (piece.toLowerCase() === 'n') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) {
+                enemyKnights.push(square);
+            }
+        }
+    }
+    
+    // Find our valuable pieces
+    const valuablePieces = [];
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite && (pieceType === 'k' || pieceType === 'q' || pieceType === 'r')) {
+            valuablePieces.push({ square, piece, type: pieceType, value: getPieceValueSimple(pieceType) });
+        }
+    }
+    
+    const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+    
+    // For each enemy knight, check all squares it can reach in TWO moves
+    for (const knightSquare of enemyKnights) {
+        const kFile = knightSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kRank = parseInt(knightSquare[1]) - 1;
+        
+        // First move - all squares knight can reach
+        for (const [df1, dr1] of knightMoves) {
+            const midFile = kFile + df1;
+            const midRank = kRank + dr1;
+            
+            if (midFile < 0 || midFile > 7 || midRank < 0 || midRank > 7) continue;
+            
+            const midSquare = String.fromCharCode('a'.charCodeAt(0) + midFile) + (midRank + 1);
+            
+            // Second move - all squares knight can reach from mid
+            for (const [df2, dr2] of knightMoves) {
+                const forkFile = midFile + df2;
+                const forkRank = midRank + dr2;
+                
+                if (forkFile < 0 || forkFile > 7 || forkRank < 0 || forkRank > 7) continue;
+                
+                const forkSquare = String.fromCharCode('a'.charCodeAt(0) + forkFile) + (forkRank + 1);
+                
+                // Check what this knight would attack from forkSquare
+                const attacked = [];
+                for (const [vdf, vdr] of knightMoves) {
+                    const targetFile = forkFile + vdf;
+                    const targetRank = forkRank + vdr;
+                    
+                    if (targetFile < 0 || targetFile > 7 || targetRank < 0 || targetRank > 7) continue;
+                    
+                    const targetSquare = String.fromCharCode('a'.charCodeAt(0) + targetFile) + (targetRank + 1);
+                    const vp = valuablePieces.find(p => p.square === targetSquare);
+                    if (vp) {
+                        attacked.push(vp);
+                    }
+                }
+                
+                // Fork if attacking 2+ valuable pieces
+                if (attacked.length >= 2) {
+                    const hasKing = attacked.some(p => p.type === 'k');
+                    const hasQueen = attacked.some(p => p.type === 'q');
+                    
+                    if (hasKing && hasQueen) {
+                        result.hasFork = true;
+                        result.isRoyalFork = true;
+                        result.description = `Knight ${knightSquare} can reach ${forkSquare} in 2 moves to fork K+Q!`;
+                        return result;
+                    } else if (hasKing || hasQueen) {
+                        result.hasFork = true;
+                        result.isMajorFork = true;
+                        result.description = `Knight ${knightSquare} can reach ${forkSquare} in 2 moves for major fork`;
+                    }
+                }
+            }
+        }
+    }
+    
+    return result;
+}
+
+/**
+ * v40.30: BISHOP PAIR PRESERVATION EVALUATION
+ * Never trade bishop pair needlessly!
+ */
+function v40BishopPairPreservationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40BishopPairPreservationEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // Count bishops before and after
+    let bishopsBefore = 0;
+    let bishopsAfter = 0;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        if (piece.toLowerCase() === 'b') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) bishopsBefore++;
+        }
+    }
+    
+    for (const [square, piece] of afterBoard) {
+        if (!piece) continue;
+        if (piece.toLowerCase() === 'b') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) bishopsAfter++;
+        }
+    }
+    
+    // Check if we're trading away bishop pair
+    if (bishopsBefore === 2 && bishopsAfter === 1) {
+        // We had bishop pair and now have only 1
+        debugLog(\"[V40.30_BISHOP]\", `⚠️ Giving up bishop pair!`);
+        score += CONFIG.v40GivingUpBishopPairPenalty || -300000000;
+    }
+    
+    // Bonus for keeping bishop pair in middlegame
+    if (bishopsAfter === 2 && moveNumber >= 10) {
+        score += CONFIG.v40BishopPairBonus / 10 || 20000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.30: PIECE ACTIVITY SUPREME EVALUATION
+ * All pieces must be active by move 12!
+ */
+function v40PieceActivitySupremeEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PieceActivitySupremeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // Count undeveloped pieces
+    let undeveloped = 0;
+    const backRank = isWhite ? '1' : '8';
+    const secondRank = isWhite ? '2' : '7';
+    
+    for (const [square, piece] of afterBoard) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        // Check knights and bishops on back rank
+        if ((pieceType === 'n' || pieceType === 'b') && square[1] === backRank) {
+            undeveloped++;
+        }
+        
+        // Check rooks not connected
+        if (pieceType === 'r' && square[1] === backRank) {
+            // Rook not developed if queen is still between
+            const queenPos = findQueenSquare(afterBoard, activeColor);
+            if (queenPos && queenPos[1] === backRank) {
+                undeveloped += 0.5;
+            }
+        }
+    }
+    
+    // Apply penalties based on move number
+    if (moveNumber >= 10 && undeveloped > 0) {
+        debugLog(\"[V40.30_ACTIVITY]\", `⚠️ ${undeveloped} pieces undeveloped by move ${moveNumber}!`);
+        score += (CONFIG.v40UndevelopedPieceByMove10Penalty || -600000000) * undeveloped;
+    }
+    
+    if (moveNumber >= 12 && undeveloped > 0) {
+        debugLog(\"[V40.30_ACTIVITY]\", `🚫 ${undeveloped} pieces STILL undeveloped by move ${moveNumber}!`);
+        score += (CONFIG.v40UndevelopedPieceByMove12Penalty || -800000000) * undeveloped;
+    }
+    
+    // Check if move develops a piece
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (movingPiece) {
+        const movingType = movingPiece.toLowerCase();
+        if ((movingType === 'n' || movingType === 'b') && fromSquare[1] === backRank && toSquare[1] !== backRank) {
+            // Developing a piece - bonus
+            score += 100000000;
+        }
+    }
+    
+    // Bonus if all pieces active
+    if (undeveloped === 0 && moveNumber >= 8) {
+        score += CONFIG.v40AllPiecesActiveBonus || 400000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.30: CENTER CONTROL ABSOLUTE EVALUATION
+ * Must control center by move 8!
+ */
+function v40CenterControlAbsoluteEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40CenterControlAbsoluteEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+    const expandedCenter = ['c4', 'c5', 'f4', 'f5', 'd3', 'd6', 'e3', 'e6'];
+    
+    // Count pawns in center
+    let ourCenterPawns = 0;
+    let enemyCenterPawns = 0;
+    
+    for (const sq of centerSquares) {
+        const piece = afterBoard.get(sq);
+        if (piece && piece.toLowerCase() === 'p') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                ourCenterPawns++;
+            } else {
+                enemyCenterPawns++;
+            }
+        }
+    }
+    
+    // Count pieces controlling center
+    let ourCenterControl = 0;
+    let enemyCenterControl = 0;
+    
+    for (const sq of centerSquares) {
+        if (isSquareAttackedByColor(afterBoard, sq, activeColor)) {
+            ourCenterControl++;
+        }
+        if (isSquareAttackedByColor(afterBoard, sq, isWhite ? 'b' : 'w')) {
+            enemyCenterControl++;
+        }
+    }
+    
+    // Penalty for no center control by move 8
+    if (moveNumber >= 8 && ourCenterPawns === 0 && ourCenterControl < 2) {
+        debugLog(\"[V40.30_CENTER]\", `🚫 No center control by move ${moveNumber}!`);
+        score += CONFIG.v40NoCenterControlByMove8Penalty || -1000000000;
+    }
+    
+    // Bonus for strong center
+    if (ourCenterPawns >= 1 && ourCenterControl >= 3) {
+        score += CONFIG.v40StrongCenterBonus || 500000000;
+    }
+    
+    // Penalty for weak center vs strong enemy center
+    if (enemyCenterPawns > ourCenterPawns && enemyCenterControl > ourCenterControl + 1) {
+        score += CONFIG.v40WeakCenterPenalty || -400000000;
+    }
+    
+    // Check if move places piece on central outpost
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(move.substring(0, 2));
+    if (movingPiece) {
+        const movingType = movingPiece.toLowerCase();
+        if ((movingType === 'n' || movingType === 'b') && centerSquares.includes(toSquare)) {
+            // Check if outpost is protected by pawn
+            const pawnDefends = v40IsPawnDefended(afterBoard, toSquare, isWhite);
+            if (pawnDefends) {
+                debugLog(\"[V40.30_CENTER]\", `✅ Central outpost ${toSquare} with ${movingType}!`);
+                score += CONFIG.v40CentralOutpostBonus || 300000000;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.30: Check if square is defended by pawn
+ */
+function v40IsPawnDefended(board, square, isWhite) {
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    
+    // Pawns that could defend this square
+    const pawnRank = isWhite ? rank - 1 : rank + 1;
+    
+    if (pawnRank < 0 || pawnRank > 7) return false;
+    
+    for (const df of [-1, 1]) {
+        const pawnFile = file + df;
+        if (pawnFile < 0 || pawnFile > 7) continue;
+        
+        const pawnSquare = String.fromCharCode('a'.charCodeAt(0) + pawnFile) + (pawnRank + 1);
+        const piece = board.get(pawnSquare);
+        if (piece && piece.toLowerCase() === 'p') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.30: TACTICAL BLINDNESS ELIMINATION EVALUATION
+ * See ALL tactics - pins, forks, discovered attacks!
+ */
+function v40TacticalBlindnessEliminationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40TacticalBlindnessEliminationEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // Check for missed tactics that opponent can play
+    const opponentTactics = v40FindOpponentTactics(afterBoard, isWhite);
+    
+    if (opponentTactics.hasPin) {
+        debugLog(\"[V40.30_TACTICAL]\", `⚠️ Move allows opponent PIN!`);
+        score += CONFIG.v40PinMissedPenalty || -1200000000;
+    }
+    
+    if (opponentTactics.hasDiscoveredAttack) {
+        debugLog(\"[V40.30_TACTICAL]\", `🚫 Move allows opponent DISCOVERED ATTACK!`);
+        score += CONFIG.v40DiscoveredAttackMissedPenalty || -1800000000;
+    }
+    
+    if (opponentTactics.hasDoubleAttack) {
+        debugLog(\"[V40.30_TACTICAL]\", `🚫 Move allows opponent DOUBLE ATTACK!`);
+        score += CONFIG.v40DoubleAttackMissedPenalty || -1500000000;
+    }
+    
+    // Check if WE have tactics available that we should play
+    const ourTactics = v40FindOurTactics(board, move, isWhite);
+    
+    if (ourTactics.foundTactic) {
+        debugLog(\"[V40.30_TACTICAL]\", `✅ Move is a TACTIC! ${ourTactics.description}`);
+        score += CONFIG.v40FoundTacticBonus || 800000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.30: Find opponent tactics available after our move
+ */
+function v40FindOpponentTactics(board, isWhite) {
+    const result = { hasPin: false, hasDiscoveredAttack: false, hasDoubleAttack: false };
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Check for pins on our pieces
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (pieceType === 'k') continue;
+        
+        // Check if piece is pinned to king
+        const kingSquare = findKingSquare(board, activeColor);
+        if (kingSquare && v40IsPiecePinned(board, square, kingSquare, !isWhite)) {
+            result.hasPin = true;
+        }
+    }
+    
+    // Simple double attack check - enemy piece attacks 2+ of our pieces
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        let attackedPieces = 0;
+        for (const [targetSquare, targetPiece] of board) {
+            if (!targetPiece) continue;
+            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+            if (targetIsWhite !== isWhite) continue;
+            
+            if (v40DoesAttackSquare(board, square, targetSquare, piece)) {
+                attackedPieces++;
+            }
+        }
+        
+        if (attackedPieces >= 2) {
+            result.hasDoubleAttack = true;
+        }
+    }
+    
+    return result;
+}
+
+/**
+ * v40.30: Find our tactics with this move
+ */
+function v40FindOurTactics(board, move, isWhite) {
+    const result = { foundTactic: false, description: '' };
+    const afterBoard = simulateMoveOnBoard(board, move);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(move.substring(0, 2));
+    
+    if (!movingPiece) return result;
+    
+    // Check if move creates double attack
+    let attackedEnemyPieces = 0;
+    let attackedTypes = [];
+    
+    for (const [targetSquare, targetPiece] of afterBoard) {
+        if (!targetPiece) continue;
+        const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+        if (targetIsWhite === isWhite) continue;
+        
+        if (v40DoesAttackSquare(afterBoard, toSquare, targetSquare, movingPiece)) {
+            attackedEnemyPieces++;
+            attackedTypes.push(targetPiece.toLowerCase());
+        }
+    }
+    
+    if (attackedEnemyPieces >= 2) {
+        result.foundTactic = true;
+        result.description = `Double attack on ${attackedTypes.join(' and ')}`;
+    }
+    
+    return result;
+}
+
+/**
+ * v40.30: Check if piece attacks a square
+ */
+function v40DoesAttackSquare(board, fromSquare, toSquare, piece) {
+    const pieceType = piece.toLowerCase();
+    const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(fromSquare[1]) - 1;
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    const df = toFile - fromFile;
+    const dr = toRank - fromRank;
+    
+    if (pieceType === 'n') {
+        const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        return knightMoves.some(([ndf, ndr]) => ndf === df && ndr === dr);
+    }
+    
+    if (pieceType === 'b') {
+        if (Math.abs(df) !== Math.abs(dr)) return false;
+        return !v40IsBlockedDiagonal(board, fromFile, fromRank, toFile, toRank);
+    }
+    
+    if (pieceType === 'r') {
+        if (df !== 0 && dr !== 0) return false;
+        return !v40IsBlockedStraight(board, fromFile, fromRank, toFile, toRank);
+    }
+    
+    if (pieceType === 'q') {
+        if (Math.abs(df) === Math.abs(dr)) {
+            return !v40IsBlockedDiagonal(board, fromFile, fromRank, toFile, toRank);
+        }
+        if (df === 0 || dr === 0) {
+            return !v40IsBlockedStraight(board, fromFile, fromRank, toFile, toRank);
+        }
+    }
+    
+    if (pieceType === 'p') {
+        const isWhite = piece === piece.toUpperCase();
+        const pawnDir = isWhite ? 1 : -1;
+        return Math.abs(df) === 1 && dr === pawnDir;
+    }
+    
+    if (pieceType === 'k') {
+        return Math.abs(df) <= 1 && Math.abs(dr) <= 1;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.30: Check if diagonal path is blocked
+ */
+function v40IsBlockedDiagonal(board, fromFile, fromRank, toFile, toRank) {
+    const stepFile = toFile > fromFile ? 1 : -1;
+    const stepRank = toRank > fromRank ? 1 : -1;
+    
+    let f = fromFile + stepFile;
+    let r = fromRank + stepRank;
+    
+    while (f !== toFile || r !== toRank) {
+        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+        if (board.get(sq)) return true;
+        f += stepFile;
+        r += stepRank;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.30: Check if straight path is blocked
+ */
+function v40IsBlockedStraight(board, fromFile, fromRank, toFile, toRank) {
+    const stepFile = toFile > fromFile ? 1 : (toFile < fromFile ? -1 : 0);
+    const stepRank = toRank > fromRank ? 1 : (toRank < fromRank ? -1 : 0);
+    
+    let f = fromFile + stepFile;
+    let r = fromRank + stepRank;
+    
+    while (f !== toFile || r !== toRank) {
+        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+        if (board.get(sq)) return true;
+        f += stepFile;
+        r += stepRank;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.30: Check if piece is pinned
+ */
+function v40IsPiecePinned(board, pieceSquare, kingSquare, enemyIsWhite) {
+    const pieceFile = pieceSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const pieceRank = parseInt(pieceSquare[1]) - 1;
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]) - 1;
+    
+    const df = kingFile - pieceFile;
+    const dr = kingRank - pieceRank;
+    
+    // Check if piece is on line to king
+    if (df !== 0 && dr !== 0 && Math.abs(df) !== Math.abs(dr)) return false;
+    
+    // Find attacker on opposite side
+    const stepFile = df === 0 ? 0 : (df > 0 ? -1 : 1);
+    const stepRank = dr === 0 ? 0 : (dr > 0 ? -1 : 1);
+    
+    let f = pieceFile + stepFile;
+    let r = pieceRank + stepRank;
+    
+    while (f >= 0 && f <= 7 && r >= 0 && r <= 7) {
+        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+        const piece = board.get(sq);
+        
+        if (piece) {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === enemyIsWhite) {
+                const pieceType = piece.toLowerCase();
+                // Check if this piece can attack along this line
+                if (df === 0 || dr === 0) {
+                    return pieceType === 'r' || pieceType === 'q';
+                } else {
+                    return pieceType === 'b' || pieceType === 'q';
+                }
+            }
+            return false; // Blocked by own piece
+        }
+        
+        f += stepFile;
+        r += stepRank;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.30: Find queen square for a color
+ */
+function findQueenSquare(board, color) {
+    const isWhite = color === 'w';
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        if (piece.toLowerCase() === 'q') {
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) {
+                return square;
+            }
+        }
+    }
+    return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {"
+Observation: Edit was successful.

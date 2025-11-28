@@ -1,0 +1,21 @@
+Now update the debug logs and header to v40.30:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY
+// @description  TRUE AlphaZero Replica v40.29 - DEEP DEFENSIVE AWARENESS - PIECE HARMONY - ANTI-FORK SUPREME - THREAT ANTICIPATION - PROPHYLAXIS PRIORITY!
+// @author       AlphaZero TRUE REPLICA v40.29 DEEP DEFENSIVE AWARENESS EDITION
+// @version      40.29.0-DEEP-DEFENSIVE-AWARENESS
+// @match         *://lichess.org/*
+// @run-at        document-idle
+// @grant         none
+// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+// ==/UserScript==" --new-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME
+// @description  TRUE AlphaZero Replica v40.30 - ABSOLUTE OPENING PROHIBITION - DEEP FORK VISION - BISHOP PAIR PRESERVATION - PIECE ACTIVITY SUPREME - CENTER CONTROL ABSOLUTE!
+// @author       AlphaZero TRUE REPLICA v40.30 ABSOLUTE OPENING MASTERY EDITION
+// @version      40.30.0-ABSOLUTE-OPENING-MASTERY
+// @match         *://lichess.org/*
+// @run-at        document-idle
+// @grant         none
+// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+// ==/UserScript=="
+Observation: Edit was successful.
