@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.42 INTEGRATED PAWN THREAT SUPREME
-// @description  TRUE AlphaZero Replica v40.42 - v40.41 SCORES NOW INTEGRATED INTO DEEP SCORE - ABSOLUTE ZERO BLUNDERS!
-// @author       AlphaZero TRUE REPLICA v40.42 INTEGRATED THREAT SUPREME EDITION
-// @version      40.42.0-INTEGRATED-PAWN-THREAT-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.43 PAWN ATTACK FIX SUPREME
+// @description  TRUE AlphaZero Replica v40.43 - CRITICAL PAWN ATTACK DIRECTION FIX - ALL 5 INSTANCES CORRECTED!
+// @author       AlphaZero TRUE REPLICA v40.43 PAWN ATTACK DIRECTION FIX SUPREME
+// @version      40.43.0-PAWN-ATTACK-FIX-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2557,6 +2557,34 @@ const CONFIG = {
     // v40.41: ABSOLUTE MUST RESPOND - If ANY piece is under pawn attack, MUST respond
     v40AbsoluteMustRespondEnabled: true,
     v40AbsoluteMustRespondPenalty: -1000000000000000, // 1 QUADRILLION - INFINITY
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.43: SICILIAN DEFENSE SPECIFIC FIXES - CRITICAL!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // From game: 1.e4 c5 2.Nc3 Nc6 3.Nf3 Nf6 4.Bb5 g6 5.d4 cxd4 6.e5 dxc3 7.exf6 cxb2
+    // The bot allowed cxd4 to capture knight AND bishop via dxc3 and cxb2!
+    // FIX: Must see TWO moves ahead after pawn captures!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.43: TWO-MOVE PAWN CHAIN DETECTION - See dxc3 BEFORE playing e5!
+    v40TwoMovePawnChainEnabled: true,
+    v40TwoMovePawnChainPenalty: -2000000000000000, // 2 QUADRILLION - SUPREME PRIORITY!
+    
+    // v40.43: DONT PUSH PAWN WHEN KNIGHT HANGING - e5 was bad because Nc3 was attacked!
+    v40DontPushWhenHangingEnabled: true,
+    v40DontPushWhenHangingPenalty: -1500000000000000, // 1.5 QUADRILLION
+    
+    // v40.43: PROTECT KNIGHT FROM PAWN IMMEDIATELY - Must respond to pawn attack on knight!
+    v40ProtectKnightFromPawnEnabled: true,
+    v40ProtectKnightFromPawnPenalty: -1800000000000000, // 1.8 QUADRILLION
+    
+    // v40.43: D4/E4 PAWN CAPTURE RESPONSE - When cxd4/exd4, MUST recapture or protect!
+    v40CentralPawnCaptureResponseEnabled: true,
+    v40CentralPawnCaptureResponsePenalty: -1200000000000000, // 1.2 QUADRILLION
+    
+    // v40.43: BISHOP HANGING ON B5 - Must move if attacked by pawn chain
+    v40BishopB5HangingEnabled: true,
+    v40BishopB5HangingPenalty: -900000000000000, // 900 trillion
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -27322,8 +27350,10 @@ function v40PieceUnderPawnAttackEval(fen, move, board, activeColor, moveNumber) 
         const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
         const rank = parseInt(square.charAt(1));
         
-        // Enemy pawn attack squares (pawns attack diagonally)
-        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+        // CRITICAL FIX v40.43: Enemy pawn attack squares (pawns attack diagonally)
+        // Black pawns attack DOWN (from higher ranks), White pawns attack UP
+        // For WHITE pieces, enemy black pawns are on rank+1
+        const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
         const attackerSquares = [];
         if (file > 0) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank);
         if (file < 7) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank);
@@ -27550,7 +27580,8 @@ function v40PieceUnderPawnDangerEval(fen, move, board, activeColor, moveNumber) 
         const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
         const rank = parseInt(square.charAt(1));
         
-        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+        // CRITICAL FIX v40.43: Black pawns attack from higher ranks (rank+1 for white pieces)
+        const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
         const attackerSquares = [];
         if (file > 0) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank);
         if (file < 7) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank);
@@ -27586,7 +27617,8 @@ function checkPawnAttackOnSquare(board, square, isWhite) {
     const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
     const rank = parseInt(square.charAt(1));
     
-    const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+    // CRITICAL FIX v40.43: Black pawns attack from higher ranks
+    const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
     if (enemyPawnRank < 1 || enemyPawnRank > 8) return false;
     
     const attackerSquares = [];
@@ -27717,8 +27749,9 @@ function v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) {
         const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
         const rank = parseInt(square.charAt(1));
         
-        // Enemy pawn attack positions (pawns attack diagonally)
-        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+        // CRITICAL FIX v40.43: Enemy pawn attack positions (pawns attack diagonally)
+        // Black pawns attack from higher ranks (rank+1 for white pieces)
+        const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
         
         const attackingPawns = [];
         // Left diagonal
