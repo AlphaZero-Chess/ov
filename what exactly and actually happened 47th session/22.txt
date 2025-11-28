@@ -1,0 +1,4 @@
+The `simulateMoveOnBoard` is being called but I can't find where it's defined. This could be a CRITICAL BUG - the function might be undefined! Let me search more thoroughly:
+Action: $ cd /app && grep -n "simulateMoveOnBoard" "Lichess Bot-AlphaZero-Pure.user.js" | wc -l
+Observation: 27
+Exit code: 0

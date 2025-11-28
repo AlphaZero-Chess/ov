@@ -1,0 +1,64 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+24900|        const piece = board.get(sq);
+24901|        
+24902|        if (piece) {
+24903|            const pieceIsWhite = piece === piece.toUpperCase();
+24904|            if (pieceIsWhite === enemyIsWhite) {
+24905|                const pieceType = piece.toLowerCase();
+24906|                // Check if this piece can attack along this line
+24907|                if (df === 0 || dr === 0) {
+24908|                    return pieceType === 'r' || pieceType === 'q';
+24909|                } else {
+24910|                    return pieceType === 'b' || pieceType === 'q';
+24911|                }
+24912|            }
+24913|            return false; // Blocked by own piece
+24914|        }
+24915|        
+24916|        f += stepFile;
+24917|        r += stepRank;
+24918|    }
+24919|    
+24920|    return false;
+24921|}
+24922|
+24923|/**
+24924| * v40.30: Find queen square for a color
+24925| */
+24926|function findQueenSquare(board, color) {
+24927|    const isWhite = color === 'w';
+24928|    for (const [square, piece] of board) {
+24929|        if (!piece) continue;
+24930|        if (piece.toLowerCase() === 'q') {
+24931|            const pieceIsWhite = piece === piece.toUpperCase();
+24932|            if (pieceIsWhite === isWhite) {
+24933|                return square;
+24934|            }
+24935|        }
+24936|    }
+24937|    return null;
+24938|}
+24939|
+24940|// ═══════════════════════════════════════════════════════════════════════════════
+24941|function findAttackedPiecesV40_9(board, color) {
+24942|    const attacked = [];
+24943|    const isWhite = color === 'w';
+24944|    const enemyColor = isWhite ? 'b' : 'w';
+24945|    
+24946|    for (const [square, piece] of board) {
+24947|        if (!piece) continue;
+24948|        const pieceIsWhite = piece === piece.toUpperCase();
+24949|        if (pieceIsWhite !== isWhite) continue;
+24950|        
+24951|        const pieceType = piece.toLowerCase();
+24952|        if (pieceType === 'k') continue;  // King attacks handled separately
+24953|        
+24954|        // Check if this square is attacked by enemy
+24955|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+24956|            // Check if it's adequately defended
+24957|            const isDefended = isSquareDefendedByColor(board, square, color);
+24958|            
+24959|            // If attacked by something of lower value, still need to consider
+24960|            const attackers = findAttackersOfSquare(board, square, enemyColor);

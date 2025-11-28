@@ -1,0 +1,54 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+21870|    if (!movingPiece) return 0;
+21871|    
+21872|    const pieceType = movingPiece.toLowerCase();
+21873|    const pieceValue = getPieceValueSimple(pieceType);
+21874|    const capturedValue = capturedPiece ? getPieceValueSimple(capturedPiece.toLowerCase()) : 0;
+21875|    
+21876|    // Check if this is a sacrifice (giving up more than we get)
+21877|    const isSacrifice = pieceValue > capturedValue + 100;
+21878|    
+21879|    if (!isSacrifice) return 0;  // Not a sacrifice, no penalty needed
+21880|    
+21881|    // This IS a sacrifice - verify it's sound
+21882|    debugLog("[V40.28_SAC_VERIFY]", `🔍 Detected sacrifice: ${move} (${pieceType} for ${capturedPiece || 'nothing'})`);
+21883|    
+21884|    // 1. COUNT ATTACKING PIECES AFTER SACRIFICE
+21885|    const afterBoard = simulateMoveOnBoard(board, move);
+21886|    const attackingPieces = v40CountAttackingPieces(afterBoard, isWhite);
+21887|    
+21888|    if (attackingPieces < CONFIG.v40MinAttackersForSacrifice) {
+21889|        score += CONFIG.v40SacrificeWithoutSupportPenalty;
+21890|        debugLog("[V40.28_SAC_VERIFY]", `❌ INSUFFICIENT ATTACKERS: Only ${attackingPieces} pieces attacking (need ${CONFIG.v40MinAttackersForSacrifice})`);
+21891|    }
+21892|    
+21893|    // 2. CHECK IF ATTACK CAN BE EASILY REPELLED
+21894|    const attackCanBeRepelled = v40CanAttackBeRepelled(afterBoard, isWhite);
+21895|    if (attackCanBeRepelled) {
+21896|        score += CONFIG.v40UnsoundSacrificePenalty;
+21897|        debugLog("[V40.28_SAC_VERIFY]", `❌ ATTACK CAN BE REPELLED - Sacrifice is UNSOUND!`);
+21898|    }
+21899|    
+21900|    // 3. SPECIAL CHECK FOR CLASSIC GREEK GIFT Bxh7+
+21901|    if (v40IsGreekGiftAttempt(move, board, isWhite)) {
+21902|        const greekGiftSound = v40VerifyGreekGiftWorks(afterBoard, isWhite);
+21903|        if (!greekGiftSound) {
+21904|            score += CONFIG.v40BishopSacH7Penalty;
+21905|            debugLog("[V40.28_SAC_VERIFY]", `❌ GREEK GIFT Bxh7+ DOESN'T WORK - No follow-up!`);
+21906|        }
+21907|    }
+21908|    
+21909|    // 4. QUEEN SACRIFICE MUST LEAD TO FORCED MATE
+21910|    if (pieceType === 'q' && CONFIG.v40QueenSacWithoutImmediateMateRequirement) {
+21911|        const leadToMate = v40SacrificeleadsToMate(afterBoard, isWhite, 6);
+21912|        if (!leadToMate) {
+21913|            score += CONFIG.v40QueenSacWithoutMate;
+21914|            debugLog("[V40.28_SAC_VERIFY]", `❌ QUEEN SACRIFICE without forced mate - ABSOLUTELY FORBIDDEN!`);
+21915|        }
+21916|    }
+21917|    
+21918|    // 5. VERIFY THERE'S A CONCRETE FOLLOW-UP
+21919|    const hasConcreteFollowUp = v40HasConcreteFollowUp(afterBoard, isWhite, pieceValue);
+21920|    if (!hasConcreteFollowUp) {

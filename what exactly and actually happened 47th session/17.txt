@@ -1,0 +1,53 @@
+The function `simulateMoveOnBoard` is being used but doesn't seem to be defined as a standalone function! Let me search for where it might be defined differently:
+Action: $ cd /app && grep -n "simulateMoveOnBoard\|simBoard" "Lichess Bot-AlphaZero-Pure.user.js" | head -50
+Observation: 3960:        const simBoard = new Map(board);
+3961:        simBoard.delete(fromSquare);
+3962:        simBoard.set(toSquare, movingPiece);
+3966:        for (const [square, piece] of simBoard) {
+3979:        for (const [square, piece] of simBoard) {
+4000:                    const canAttack = v40CanPieceAttack(pieceType, attackerFile, attackerRank, targetFile, targetRank, simBoard, enemyColor);
+4071:        const simBoard = new Map(board);
+4072:        simBoard.delete(fromSquare);
+4073:        simBoard.set(toSquare, movingPiece);
+4077:        for (const [square, piece] of simBoard) {
+4108:                const occupant = simBoard.get(sq);
+4117:                const attackers = v40CountAttackers(simBoard, sq, activeColor === 'w' ? 'b' : 'w');
+4160:        const simBoard = new Map(board);
+4161:        simBoard.delete(fromSquare);
+4162:        simBoard.set(toSquare, movingPiece);
+4165:        const ourKing = findKing(simBoard, activeColor);
+4183:                const occupant = simBoard.get(sq);
+4192:                const attackers = v40CountAttackers(simBoard, sq, activeColor === 'w' ? 'b' : 'w');
+4201:            const kingAttackers = v40CountAttackers(simBoard, ourKing, activeColor === 'w' ? 'b' : 'w');
+4241:        const simBoard = new Map(board);
+4242:        simBoard.delete(fromSquare);
+4243:        simBoard.set(toSquare, movingPiece);
+4246:        for (const [square, piece] of simBoard) {
+4253:            const attackers = v40CountAttackers(simBoard, square, activeColor === 'w' ? 'b' : 'w');
+4254:            const defenders = v40CountDefenders(simBoard, square, activeColor);
+4269:        const movedPieceAttackers = v40CountAttackers(simBoard, toSquare, activeColor === 'w' ? 'b' : 'w');
+4270:        const movedPieceDefenders = v40CountDefenders(simBoard, toSquare, activeColor);
+4419:        const simBoard = new Map(board);
+4420:        simBoard.delete(fromSquare);
+4421:        simBoard.set(toSquare, movingPiece);
+4425:        for (const [square, piece] of simBoard) {
+4434:        for (const [square, piece] of simBoard) {
+4459:                const occupant = simBoard.get(forkSquare);
+4516:        const simBoard = new Map(board);
+4517:        simBoard.delete(fromSquare);
+4518:        simBoard.set(toSquare, movingPiece);
+4521:        const ourKing = findKing(simBoard, activeColor);
+4528:        for (const [square, piece] of simBoard) {
+4562:                const occupant = simBoard.get(sq);
+4619:        const simBoard = new Map(board);
+4620:        simBoard.delete(fromSquare);
+4621:        simBoard.set(toSquare, movingPiece);
+4624:        const ourKing = findKing(simBoard, activeColor);
+4644:            const occupant = simBoard.get(escapeSquare);
+4661:            for (const [square, piece] of simBoard) {
+4677:                        if (simBoard.get(sq)) {
+4693:                    const canReachBackRank = v40IsPathClear(attackerFile, attackerRank, attackerFile, kingRank, simBoard);
+5066:        const simBoard = new Map(board);
+5072:            simBoard.delete(fromSquare);
+5073:            simBoard.set(toSquare, movingPiece);
+Exit code: 0

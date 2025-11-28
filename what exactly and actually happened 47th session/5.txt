@@ -1,0 +1,25 @@
+I see the issue. Looking at the game `1. e4 c5 2. Nc3 d6 3. d3` - the bot played `e4` first (which is correct!) and then `Nc3`, and THEN played `d3`. The problem is:
+
+1. On move 3, the pawn is NOT on d2 anymore because it already moved e2-e4. The check `fromSquare === 'd2'` is correct for a pawn starting position.
+2. The real issue is the bot doesn't understand that after e4, playing d4 is even MORE important because it creates a strong pawn center.
+
+Let me also check what the game flow was - the bot played:
+- 1. e4 (good)
+- 2. Nc3 (ok, but d4 might be better)
+- 3. d3 (BAD! Should be d4!)
+
+In move 3, the pawn IS on d2, so the check should work. But there might be issues with:
+1. The check only triggers when d4 is empty AND not considering e5 pawn
+2. The Stockfish evaluation might be overriding the v40 penalty
+
+Let me check how the scores are combined and whether the v40 bonus is actually being applied:
+Action: $ cd /app && grep -n "v40Bonus\|v40DeepScore\|finalScore" "Lichess Bot-AlphaZero-Pure.user.js" | grep -v "function\|const\|let\|return" | head -30
+Observation: 40468:                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+40539:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.30 ABSOLUTE OPENING MASTERY PARADIGM SHIFT
+40582:                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+40647:                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+40664:                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+40668:                v40Bonus = 0;
+40678:            v40Bonus                      // v40 GODLIKE DOMINANT at 100%
+40681:        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp (100% v40 GODLIKE)`);
+Exit code: 0

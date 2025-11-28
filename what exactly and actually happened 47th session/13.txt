@@ -1,0 +1,33 @@
+
+Action: $ cd /app && grep -n -B2 "simulateMoveOnBoard" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 21883-    
+21884-    // 1. COUNT ATTACKING PIECES AFTER SACRIFICE
+21885:    const afterBoard = simulateMoveOnBoard(board, move);
+--
+22110-    
+22111-    for (const move of legalMoves) {
+22112:        const afterBoard = simulateMoveOnBoard(board, move);
+--
+22124-            
+22125-            for (const oppMove of opponentMoves) {
+22126:                const afterOppBoard = simulateMoveOnBoard(afterBoard, oppMove);
+--
+22151-    
+22152-    for (const move of legalMoves) {
+22153:        const afterBoard = simulateMoveOnBoard(board, move);
+--
+22188-    
+22189-    // Check if this move starts or continues an attack on enemy king
+22190:    const afterBoard = simulateMoveOnBoard(board, move);
+--
+22294-    
+22295-    // Check if this is a forcing move (check, capture of valuable piece, or strong threat)
+22296:    const afterBoard = simulateMoveOnBoard(board, move);
+--
+22360-    let bestDefense = -Infinity;
+22361-    for (const oppMove of opponentMoves.slice(0, 5)) {  // Check top 5 moves only
+22362:        const afterOppBoard = simulateMoveOnBoard(board, oppMove);
+--
+22367-        
+22368-        for (const ourMove of ourMoves.slice(0, 5)) {
+Exit code: 0

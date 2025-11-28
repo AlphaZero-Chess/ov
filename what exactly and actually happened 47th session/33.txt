@@ -1,0 +1,4 @@
+Now let me verify the function was added correctly:
+Action: $ cd /app && grep -n "function simulateMoveOnBoard" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 2921:function simulateMoveOnBoard(board, move) {
+Exit code: 0

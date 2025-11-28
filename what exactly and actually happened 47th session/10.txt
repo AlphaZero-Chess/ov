@@ -1,0 +1,23 @@
+
+Action: $ cd /app && grep -n "simulateMoveOnBoard" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 21885:    const afterBoard = simulateMoveOnBoard(board, move);
+22112:        const afterBoard = simulateMoveOnBoard(board, move);
+22126:                const afterOppBoard = simulateMoveOnBoard(afterBoard, oppMove);
+22153:        const afterBoard = simulateMoveOnBoard(board, move);
+22190:    const afterBoard = simulateMoveOnBoard(board, move);
+22296:    const afterBoard = simulateMoveOnBoard(board, move);
+22362:        const afterOppBoard = simulateMoveOnBoard(board, oppMove);
+22369:            const afterOurBoard = simulateMoveOnBoard(afterOppBoard, ourMove);
+22425:            const afterBoard = simulateMoveOnBoard(board, move);
+22439:            const afterBoard = simulateMoveOnBoard(board, move);
+22455:            const afterBoard = simulateMoveOnBoard(board, move);
+22477:    const afterBoard = simulateMoveOnBoard(board, move);
+22552:    const afterBoard = simulateMoveOnBoard(board, move);
+22605:    const afterBoard = simulateMoveOnBoard(board, move);
+22652:    const afterBoard = simulateMoveOnBoard(board, move);
+22692:    const afterBoard = simulateMoveOnBoard(board, move);
+22750:    const afterBoard = simulateMoveOnBoard(board, move);
+22837:    const afterBoard = simulateMoveOnBoard(board, move);
+22881:    const afterBoard = simulateMoveOnBoard(board, move);
+23633:    const afterBoard = simulateMoveOnBoard(board, move);
+Exit code: 0

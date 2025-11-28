@@ -1,0 +1,19 @@
+I'll add the `simulateMoveOnBoard` function before line 2908 (at the start of the v40 functions):
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2900| * This is the REAL implementation of AlphaZero-style search
+2901| * 
+2902| * The four phases of MCTS:
+2903| * 1. SELECTION: Traverse tree using PUCT until leaf node
+2904| * 2. EXPANSION: Expand leaf node with all legal moves
+2905| * 3. SIMULATION: Evaluate position (value network emulation)
+2906| * 4. BACKPROPAGATION: Propagate value back up the tree
+2907| */
+2908|function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+2909|    if (!CONFIG.v40Enabled) {
+2910|        return null;
+2911|    }
+2912|    
+2913|    debugLog("[V40_MCTS]", "═══════════════════════════════════════════════════════════════");
+2914|    debugLog("[V40_MCTS]", "🦁 TRUE ALPHAZERO MCTS — SUPERHUMAN BEAST MODE ACTIVATED");
+2915|    debugLog("[V40_MCTS]", "═══════════════════════════════════════════════════════════════");

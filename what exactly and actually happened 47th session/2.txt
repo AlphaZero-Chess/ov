@@ -1,0 +1,9 @@
+
+Action: $ cd /app && grep -n "v40AbsoluteOpeningProhibitionEnabled\|v40D3OpeningPenalty\|v40DeepForkVisionEnabled" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 2167:    v40AbsoluteOpeningProhibitionEnabled: true,
+2168:    v40D3OpeningPenalty: -5000000000,               // MASSIVE penalty for d3 opening
+2176:    v40DeepForkVisionEnabled: true,
+24038:    if (!CONFIG.v40AbsoluteOpeningProhibitionEnabled) return 0;
+24064:                    score += CONFIG.v40D3OpeningPenalty || -5000000000;
+24116:    if (!CONFIG.v40DeepForkVisionEnabled) return 0;
+Exit code: 0

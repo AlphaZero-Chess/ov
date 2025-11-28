@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -c "function simulateMoveOnBoard" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 0
+Exit code: 1

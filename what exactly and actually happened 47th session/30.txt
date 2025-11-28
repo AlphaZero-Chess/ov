@@ -1,0 +1,23 @@
+Let me find the best place to add the `simulateMoveOnBoard` function. I'll add it near the beginning of the helper functions:
+Action: $ cd /app && grep -n "// Helper functions\|// Utility functions\|// ═══.*HELPER\|// ═══.*UTILITY\|^function v40" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2908:function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+2998:function v40InitializeOrReuseTree(fen, legalMoves) {
+3037:function v40CreateNewTree(fen, legalMoves) {
+3062:function v40ValueNetworkEmulation(fen, move, board, activeColor, moveNumber) {
+3125:function v40EvaluateMaterial(board, activeColor) {
+3143:function v40EvaluateMobility(board, activeColor) {
+3177:function v40EvaluateKingSafety(board, activeColor, moveNumber) {
+3211:function v40EvaluatePawnStructure(board, activeColor) {
+3279:function v40EvaluateSpaceControl(board, activeColor) {
+3306:function v40EvaluateInitiative(board, activeColor, moveNumber) {
+3337:function v40EvaluatePieceCoordination(board, activeColor) {
+3378:function v40EvaluateCenterControl(board, activeColor) {
+3405:function v40EvaluateMoveQuality(fen, move, board, activeColor, moveNumber) {
+3470:function v40EvaluateEndgame(board, activeColor) {
+3534:function v40SuperhumanBeastEvaluate(fen, candidateMove, depth = 100) {
+3676:function v40DeepKingSafetyAnalysis(fen, move, board, activeColor, moveNumber) {
+3715:function v40FileAndDiagonalControl(fen, move, board, activeColor) {
+3759:function v40PieceCoordinationEval(fen, move, board, activeColor) {
+3794:function v40MultiPassBlunderCheck(fen, move, board, activeColor) {
+3950:function v40CheckDiscoveredAttacks(fen, move, board, activeColor) {
+Exit code: 0

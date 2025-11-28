@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -n "simulateMoveOnBoard" "Lichess Bot-AlphaZero-Pure.user.js" | head -1
+Observation: 21885:    const afterBoard = simulateMoveOnBoard(board, move);
+Exit code: 0

@@ -1,0 +1,14 @@
+The function is now defined. Now let me implement v40.31 enhancements based on the analysis of the most recent game. The bot still:
+1. Played d3 (passive)
+2. Made wasteful queen moves (Qd2-Qd1)
+3. Missed knight forks
+
+Let me add v40.31 with:
+1. ABSOLUTE QUEEN DEVELOPMENT PROHIBITION - no Qd2/Qe2/Qc3 before move 10
+2. TEMPO TRACKING - penalize moves that lose tempo (like Qd2-Qd1)
+3. PIECE COORDINATION SUPREME - pieces must defend each other
+Action: $ cd /app && grep -n "v40TacticalBlindnessEliminationEnabled\|function v40TacticalBlindnessEliminationEval" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2205:    v40TacticalBlindnessEliminationEnabled: true,
+24669:function v40TacticalBlindnessEliminationEval(fen, move, board, activeColor, moveNumber) {
+24670:    if (!CONFIG.v40TacticalBlindnessEliminationEnabled) return 0;
+Exit code: 0

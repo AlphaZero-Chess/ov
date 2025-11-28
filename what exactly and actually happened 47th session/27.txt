@@ -1,0 +1,31 @@
+**CONFIRMED!** The function `simulateMoveOnBoard` is called 27 times but NEVER DEFINED! This is a CRITICAL BUG that would cause the entire v40 evaluation to fail with an exception!
+
+Let me now implement the missing function and continue with v40.31 improvements. First, let me find where to add it:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+3950|function v40CheckDiscoveredAttacks(fen, move, board, activeColor) {
+3951|    const result = { threat: false, details: '', value: 0 };
+3952|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+3953|    const pieceValues = { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900 };
+3954|    
+3955|    try {
+3956|        const fromSquare = move.substring(0, 2);
+3957|        const toSquare = move.substring(2, 4);
+3958|        const movingPiece = board.get(fromSquare);
+3959|        
+3960|        const simBoard = new Map(board);
+3961|        simBoard.delete(fromSquare);
+3962|        simBoard.set(toSquare, movingPiece);
+3963|        
+3964|        // Find our valuable pieces
+3965|        const ourPieces = [];
+3966|        for (const [square, piece] of simBoard) {
+3967|            if (!piece) continue;
+3968|            const isOurs = (piece === piece.toUpperCase()) === (activeColor === 'w');
+3969|            if (isOurs && pieceValues[piece.toLowerCase()] >= 300) {
+3970|                ourPieces.push({ square, piece, value: pieceValues[piece.toLowerCase()] });
+3971|            }
+3972|        }
+3973|        
+3974|        // Check if moving the piece exposes another piece to attack
+3975|        const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);

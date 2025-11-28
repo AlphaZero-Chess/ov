@@ -1,0 +1,28 @@
+The issue now becomes clear. The v40.30 scores ARE added to v40DeepScore. The problem is likely:
+
+1. The d3 penalty is -5 billion but multiplied by 500 = -2.5 trillion
+2. However, other functions might be giving d3 massive bonuses
+
+Let me also check if there's a problem with the function being called - maybe the `board.get()` function isn't working as expected:
+Action: $ cd /app && grep -n "function simulateMoveOnBoard\|board.get\|new Map" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2227:        this.children = new Map();
+2338:        this.children = new Map();
+2581:let v39MoveQualityScores = new Map(); // Quality assessment per move
+2630:        this.children = new Map();           // Child nodes (move -> node)
+3291:            const piece = board.get(square);
+3384:        const piece = board.get(square);
+3392:        const piece = board.get(square);
+3410:    const piece = board.get(fromSquare);
+3454:    const capturedPiece = board.get(toSquare);
+3720:        const movingPiece = board.get(move.substring(0, 2));
+3958:        const movingPiece = board.get(fromSquare);
+3960:        const simBoard = new Map(board);
+4069:        const movingPiece = board.get(fromSquare);
+4071:        const simBoard = new Map(board);
+4158:        const movingPiece = board.get(fromSquare);
+4160:        const simBoard = new Map(board);
+4236:        const movingPiece = board.get(fromSquare);
+4241:        const simBoard = new Map(board);
+4396:        if (board.get(sq)) return false;  // Path blocked
+4417:        const movingPiece = board.get(fromSquare);
+Exit code: 0

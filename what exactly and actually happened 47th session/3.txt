@@ -1,0 +1,11 @@
+
+Action: $ cd /app && grep -n "absoluteOpeningProhibitionScore\|deepForkVisionScore\|centerControlAbsoluteScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -15
+Observation: 40449:                const absoluteOpeningProhibitionScore = v40AbsoluteOpeningProhibitionEval(fen, move, board, activeColor, moveNumber) * 500.0;
+40452:                const deepForkVisionScore = v40DeepForkVisionEval(fen, move, board, activeColor, moveNumber) * 450.0;
+40461:                const centerControlAbsoluteScore = v40CenterControlAbsoluteEval(fen, move, board, activeColor, moveNumber) * 400.0;
+40537:                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+40538:                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore;
+40576:                debugLog("[V40_INTEGRATE]", `   🚫🎯 AbsoluteOpeningProhibition: ${absoluteOpeningProhibitionScore.toFixed(1)}`);
+40577:                debugLog("[V40_INTEGRATE]", `   🐴🔮 DeepForkVision: ${deepForkVisionScore.toFixed(1)}`);
+40580:                debugLog("[V40_INTEGRATE]", `   🏛️🏛️ CenterControlAbsolute: ${centerControlAbsoluteScore.toFixed(1)}`);
+Exit code: 0

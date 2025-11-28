@@ -1,0 +1,6 @@
+
+Action: $ cd /app && grep -n "function.*simBoard\|simBoard.*function\|function sim" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 33117:function simulateStrategicRollout(fen, move, depth) {
+35887:async function simulateRollout(fen, move, depth) {
+37479:function simulateMoveForRepetition(currentFen, move) {
+Exit code: 0

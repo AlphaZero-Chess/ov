@@ -1,0 +1,3 @@
+
+Action: $ cd /app && awk '/function simulateMoveOnBoard/,/^}$/' "Lichess Bot-AlphaZero-Pure.user.js" 2>/dev/null | head -30
+Observation: Exit code: 0
