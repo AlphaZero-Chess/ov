@@ -34158,7 +34158,28 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.22: MUST RESPOND TO THREAT — Don't ignore threats!
                 const mustRespondScore = v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) * 50.0;
                 
-                // v40.22: COMBINED v40 SCORE — 100% ABSOLUTE KING SAFETY SUPREME INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME
+                // From game: Bot missed Rf5-Rh5 + Qe7-Qh4-Qxh2# mating attack!
+                // The bot played f3 which CATASTROPHICALLY weakened the kingside!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.23: ROOK LIFT DETECTION — Detect rook lift mating patterns (Rf5-Rh5)
+                const rookLiftScore = v40RookLiftDetectionEval(fen, move, board, activeColor, moveNumber) * 70.0;
+                
+                // v40.23: QUEEN H-FILE INVASION — Detect queen mating on h-file (Qh4-Qxh2#)
+                const queenHFileScore = v40QueenHFileInvasionEval(fen, move, board, activeColor, moveNumber) * 75.0;
+                
+                // v40.23: F3/G3 ABSOLUTE PROHIBITION — NEVER weaken kingside!
+                const f3g3ProhibitionScore = v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) * 80.0;
+                
+                // v40.23: MATING ATTACK PATTERN RECOGNITION — Specific mating patterns
+                const matingAttackPatternScore = v40MatingAttackPatternEval(fen, move, board, activeColor, moveNumber) * 65.0;
+                
+                // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
+                const kingsideFortressScore = v40KingsideFortressEval(fen, move, board, activeColor, moveNumber) * 60.0;
+                
+                // v40.23: COMBINED v40 SCORE — 100% ABSOLUTE KING SAFETY SUPREME INFLUENCE
                 // This makes v40 the ABSOLUTE CATASTROPHIC KINGSIDE DEFENSE SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -34209,11 +34230,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
                                deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
                                // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
-                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore;
+                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore;
                 v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -34268,6 +34291,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🏇🏇 KnightInfiltration: ${knightInfiltrationScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏇🏇 CheckSequenceDetection: ${checkSequenceDetectionScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏇🏇 MustRespond: ${mustRespondScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 RookLift: ${rookLiftScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 QueenHFile: ${queenHFileScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 F3G3Prohibition: ${f3g3ProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 MatingAttackPattern: ${matingAttackPatternScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsideFortress: ${kingsideFortressScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
