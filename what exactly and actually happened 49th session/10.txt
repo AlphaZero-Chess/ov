@@ -1,0 +1,98 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.31.0: ABSOLUTE MOVE FILTER & TEMPO MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // From game analysis: Bot STILL plays d3, Qd2-Qd1 tempo waste, allows Nxf3+ forks
+    // CRITICAL FIX: HARD FILTER that REJECTS bad moves BEFORE scoring
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.31: HARD MOVE FILTER — Rejects moves outright, not just penalizes
+    v40HardMoveFilterEnabled: true,
+    v40RejectD3InOpening: true,                     // HARD REJECT d2d3 in first 10 moves
+    v40RejectE3InOpening: true,                     // HARD REJECT e2e3 in first 10 moves  
+    v40RejectQueenRetreatEarly: true,               // HARD REJECT queen retreat before move 10
+    
+    // v40.31: TEMPO TRACKING — Track and punish tempo waste
+    v40TempoTrackingEnabled: true,
+    v40TempoWastePenalty: -500000000000,            // 500 billion penalty per wasted tempo
+    v40QueenRetreatPenalty: -800000000000,          // 800 billion for queen retreat
+    v40SamePieceTwicePenalty: -300000000000,        // 300 billion for moving same piece twice early
+    v40MaxEarlyMoveNumber: 12,                      // \"Early\" is moves 1-12
+    
+    // v40.31: ENHANCED KNIGHT FORK DETECTION — See forks 3+ moves ahead
+    v40EnhancedForkDetectionEnabled: true,
+    v40KnightForkIn2Penalty: -1000000000000,        // 1 trillion for fork in 2
+    v40KnightForkIn3Penalty: -500000000000,         // 500 billion for fork in 3
+    v40RoyalForkMultiplier: 5.0,                    // 5x penalty for K+Q fork
+    
+    // v40.31: ABSOLUTE D4 PREFERENCE — d4 must be played if d-pawn is on d2
+    v40AbsoluteD4PreferenceEnabled: true,
+    v40D4ImmediateBonus: 2000000000000,             // 2 trillion bonus for d4 when possible
+    v40E4ImmediateBonus: 2000000000000,             // 2 trillion bonus for e4 when possible
+    v40NotPlayingD4Penalty: -1000000000000,         // 1 trillion penalty for NOT playing d4 when possible
+};" --new-str "    // v40.31.0: ABSOLUTE MOVE FILTER & TEMPO MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // From game analysis: Bot STILL plays d3, Qd2-Qd1 tempo waste, allows Nxf3+ forks
+    // CRITICAL FIX: HARD FILTER that REJECTS bad moves BEFORE scoring
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.31: HARD MOVE FILTER — Rejects moves outright, not just penalizes
+    v40HardMoveFilterEnabled: true,
+    v40RejectD3InOpening: true,                     // HARD REJECT d2d3 in first 10 moves
+    v40RejectE3InOpening: true,                     // HARD REJECT e2e3 in first 10 moves  
+    v40RejectQueenRetreatEarly: true,               // HARD REJECT queen retreat before move 10
+    
+    // v40.31: TEMPO TRACKING — Track and punish tempo waste
+    v40TempoTrackingEnabled: true,
+    v40TempoWastePenalty: -500000000000,            // 500 billion penalty per wasted tempo
+    v40QueenRetreatPenalty: -800000000000,          // 800 billion for queen retreat
+    v40SamePieceTwicePenalty: -300000000000,        // 300 billion for moving same piece twice early
+    v40MaxEarlyMoveNumber: 12,                      // \"Early\" is moves 1-12
+    
+    // v40.31: ENHANCED KNIGHT FORK DETECTION — See forks 3+ moves ahead
+    v40EnhancedForkDetectionEnabled: true,
+    v40KnightForkIn2Penalty: -1000000000000,        // 1 trillion for fork in 2
+    v40KnightForkIn3Penalty: -500000000000,         // 500 billion for fork in 3
+    v40RoyalForkMultiplier: 5.0,                    // 5x penalty for K+Q fork
+    
+    // v40.31: ABSOLUTE D4 PREFERENCE — d4 must be played if d-pawn is on d2
+    v40AbsoluteD4PreferenceEnabled: true,
+    v40D4ImmediateBonus: 2000000000000,             // 2 trillion bonus for d4 when possible
+    v40E4ImmediateBonus: 2000000000000,             // 2 trillion bonus for e4 when possible
+    v40NotPlayingD4Penalty: -1000000000000,         // 1 trillion penalty for NOT playing d4 when possible
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.32.0: BOOK FILTER & COUNTERPLAY MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: Bot STILL plays d3 because book moves BYPASS the hard filter!
+    // FIX: Filter book moves BEFORE playing them, not after
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.32: BOOK MOVE HARD FILTER — Filter book moves BEFORE playing!
+    v40BookHardFilterEnabled: true,
+    v40BookRejectD3: true,                          // NEVER play d2d3 from book
+    v40BookRejectE3: true,                          // NEVER play e2e3 from book
+    v40BookRejectPassiveMoves: true,                // Reject all passive book moves
+    v40BookForceD4: true,                           // If d4 is in book, prefer it strongly
+    v40BookForceE4: true,                           // If e4 is in book, prefer it strongly
+    
+    // v40.32: ENHANCED COUNTERPLAY GENERATION — Active defense when behind
+    v40CounterplayEnabled: true,
+    v40CounterplayPriorityMultiplier: 3.0,          // 3x priority for counterplay when losing
+    v40CounterplayThreshold: -200,                  // Activate when eval < -200cp
+    v40ActiveDefenseBonus: 800000000000,            // 800 billion for active defense moves
+    v40PassiveDefensePenalty: -400000000000,        // 400 billion penalty for passive defense
+    v40ComplicationBonus: 500000000000,             // 500 billion for creating complications
+    
+    // v40.32: TACTICAL SUPREMACY — Enhanced threat detection
+    v40TacticalSupremacyEnabled: true,
+    v40ThreatDetectionDepth: 6,                     // Look 6 plies for threats
+    v40HangingPiecePenalty: -2000000000000,         // 2 trillion for hanging pieces
+    v40UndefendedSquarePenalty: -100000000000,      // 100 billion for undefended squares
+    v40TacticalBlindspotCheck: true,                // Extra verification pass
+    
+    // v40.32: PIECE COORDINATION — Better piece harmony
+    v40PieceCoordinationEnabled: true,
+    v40CoordinationBonus: 300000000000,             // 300 billion for well-coordinated pieces
+    v40DiscoordinationPenalty: -200000000000,       // 200 billion for scattered pieces
+};"
+Observation: Edit was successful.

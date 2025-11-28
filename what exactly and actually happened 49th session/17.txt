@@ -1,0 +1,24 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36905|    
+36906|    // AlphaZero Italian: After 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5
+36907|    "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -": {
+36908|        white: [
+36909|            { move: "c2c3", weight: 0.70, name: "Giuoco Piano (AlphaZero)" },
+36910|            { move: "d2d3", weight: 0.20, name: "Giuoco Pianissimo" },
+36911|            { move: "b2b4", weight: 0.10, name: "Evans Gambit" }
+36912|        ]
+36913|    },
+36914|    
+36915|    // AlphaZero Nimzo-Indian: After 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4
+36916|    "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq -": {
+36917|        white: [
+36918|            { move: "e2e3", weight: 0.60, name: "Rubinstein Variation (AlphaZero)" },
+36919|            { move: "d1c2", weight: 0.30, name: "Classical Nimzo" },
+36920|            { move: "g1f3", weight: 0.10, name: "Flexible" }
+36921|        ]
+36922|    },
+36923|    
+36924|    // AlphaZero Sicilian Accelerated Dragon: After 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 g6
+36925|    "r1bqkbnr/pp1ppp1p/2n3p1/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq -": {

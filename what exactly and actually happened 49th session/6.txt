@@ -1,0 +1,64 @@
+I found the problem! The opening book still has d2d3 with weights like 0.15, 0.20. The book move is selected BEFORE the hard filter and is played immediately without filtering! Let me check how the book move is handled:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+42460|    debugLog("[ENGINE]", `  Color: ${colorName}`);
+42461|    debugLog("[ENGINE]", `  FEN: ${currentFen}`);
+42462|    
+42463|    // Opening book first - BUT SKIP IF IN EMERGENCY MODE
+42464|    const fenKey = currentFen.split(' ').slice(0, 4).join(' ');
+42465|    const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
+42466|    
+42467|    // v31.0.0: Never use book moves when there's a critical threat!
+42468|    if (bookMove && gamePhase === "opening" && !window.__EMERGENCY_DEFENSE_MODE && !preSafetyResult.hasCriticalThreat) {
+42469|        const thinkTime = Math.random() * 900 + 500;
+42470|        
+42471|        debugLog("[ENGINE]", `📖 Book move: ${bookMove} (${(thinkTime/1000).toFixed(1)}s)`);
+42472|        
+42473|        setTimeout(() => {
+42474|            bestMove = bookMove;
+42475|            calculationLock = false;
+42476|            calculationStartTime = 0;
+42477|            currentCalculatingColor = null;
+42478|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+42479|            sendMove(bookMove);
+42480|        }, thinkTime);
+42481|        
+42482|        return;
+42483|    }
+42484|    
+42485|    // v31.0.0: If book move would be used but there's a threat, skip book and use engine
+42486|    if (bookMove && preSafetyResult.hasCriticalThreat) {
+42487|        debugLog("[ENGINE]", `⚠️ SKIPPING book move ${bookMove} due to critical threat - using engine`);
+42488|    }
+42489|    
+42490|    // Engine calculation
+42491|    const isStrategic = isStrategicPosition(currentFen);
+42492|    const depth = getStrategicDepth(gamePhase, isStrategic, timeRemaining);
+42493|    const thinkTime = getAlphaZeroThinkTime(gamePhase, isStrategic, timeRemaining);
+42494|    
+42495|    debugLog("[ENGINE]", `🧠 Depth ${depth}, Time ${(thinkTime/1000).toFixed(1)}s, Strategic: ${isStrategic}`);
+42496|    
+42497|    multiPVLines = [];
+42498|    
+42499|    // Send position to engine with explicit logging
+42500|    const fenCommand = "position fen " + currentFen;
+42501|    debugLog("[ENGINE]", `📤 Sending to Stockfish: ${fenCommand}`);
+42502|    chessEngine.postMessage(fenCommand);
+42503|    
+42504|    // Calculate intelligent movetime
+42505|    let intelligentMoveTime = Math.floor(thinkTime);
+42506|    
+42507|    if (timeRemaining < 10000) intelligentMoveTime = Math.min(intelligentMoveTime, 4000);
+42508|    else if (timeRemaining < 20000) intelligentMoveTime = Math.min(intelligentMoveTime, 6000);
+42509|    else if (timeRemaining < 35000) intelligentMoveTime = Math.min(intelligentMoveTime, 8000);
+42510|    else intelligentMoveTime = Math.min(intelligentMoveTime, 10000);
+42511|    
+42512|    if (isStrategic && timeRemaining > 25000) {
+42513|        intelligentMoveTime = Math.min(intelligentMoveTime * 1.2, 12000);
+42514|    }
+42515|    
+42516|    chessEngine.postMessage(`go depth ${depth} movetime ${intelligentMoveTime}`);
+42517|    debugLog("[ENGINE]", `⏱️ Command: go depth ${depth} movetime ${intelligentMoveTime}`);
+42518|    
+42519|    // Safety timeout
+42520|    const safetyTimeout = intelligentMoveTime + 2000;

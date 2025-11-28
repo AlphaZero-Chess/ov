@@ -1,0 +1,15 @@
+Now let me set those d2d3 weights to 0 or remove them to ensure they're never selected even before the filter kicks in:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    \"rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -\": {
+        white: [
+            { move: \"d2d4\", weight: 0.60, name: \"French main\" },
+            { move: \"g1f3\", weight: 0.25, name: \"King's Indian Attack\" },
+            { move: \"d2d3\", weight: 0.15, name: \"Quiet King's Indian\" }
+        ]
+    }," --new-str "    \"rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -\": {
+        white: [
+            { move: \"d2d4\", weight: 0.70, name: \"French main\" },
+            { move: \"g1f3\", weight: 0.30, name: \"King's Indian Attack\" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
+        ]
+    },"
+Observation: Edit was successful.

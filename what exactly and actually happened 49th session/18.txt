@@ -1,0 +1,19 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    
+    // AlphaZero Italian: After 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5
+    \"r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -\": {
+        white: [
+            { move: \"c2c3\", weight: 0.70, name: \"Giuoco Piano (AlphaZero)\" },
+            { move: \"d2d3\", weight: 0.20, name: \"Giuoco Pianissimo\" },
+            { move: \"b2b4\", weight: 0.10, name: \"Evans Gambit\" }
+        ]
+    }," --new-str "    
+    // AlphaZero Italian: After 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5
+    \"r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -\": {
+        white: [
+            { move: \"c2c3\", weight: 0.80, name: \"Giuoco Piano (AlphaZero)\" },
+            { move: \"b2b4\", weight: 0.20, name: \"Evans Gambit\" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
+        ]
+    },"
+Observation: Edit was successful.

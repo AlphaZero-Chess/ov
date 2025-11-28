@@ -1,0 +1,119 @@
+Now let me update the `getAlphaZeroBookMove` function to apply the hard filter to book moves:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "* v16 deterministic mainlines + v17 essence-guided alternatives
+ */
+function getAlphaZeroBookMove(fen, activeColor) {
+    const position = ALPHAZERO_OPENINGS[fen];
+    if (!position) return null;
+    
+    const moves = activeColor === 'w' ? position.white : position.black;
+    if (!moves || moves.length === 0) return null;
+    
+    // v20: TRUE ALPHAZERO - ALWAYS use book moves (NEVER DEVIATE)
+    if (moveCount <= TRUE_ALPHAZERO.openingStabilityMove) {
+        debugLog(\"[OPENING]\", `📖 Opening phase (move ${moveCount}) - using PERFECT theory`);
+        // ABSOLUTE ZERO novelties - PERFECT theory always
+        
+        // v20 TRUE ALPHAZERO: 100% priority for highest-weighted move (PERFECT mainlines)
+        // 0% chance for alternatives (ZERO variation)
+        
+        // ALWAYS use highest-weighted move (mainline)
+        const bestMove = moves.reduce((best, move) => move.weight > best.weight ? move : best, moves[0]);
+        debugLog(\"[ENGINE]\", `📖 BOOK MOVE (MAINLINE 100%): ${bestMove.name} - ${bestMove.move}`);
+        return bestMove.move;
+    }
+    
+    // Fallback to highest-weighted move
+    const bestMove = moves.reduce((best, move) => move.weight > best.weight ? move : best, moves[0]);
+    debugLog(\"[ENGINE]\", `📖 BOOK MOVE (default): ${bestMove.name} - ${bestMove.move}`);
+    return bestMove.move;
+}" --new-str "* v16 deterministic mainlines + v17 essence-guided alternatives
+ * v40.32: BOOK MOVE HARD FILTER — Filter forbidden moves from book!
+ */
+function getAlphaZeroBookMove(fen, activeColor) {
+    const position = ALPHAZERO_OPENINGS[fen];
+    if (!position) return null;
+    
+    const moves = activeColor === 'w' ? position.white : position.black;
+    if (!moves || moves.length === 0) return null;
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.32: BOOK MOVE HARD FILTER — CRITICAL FIX!
+    // Filter out FORBIDDEN moves from book BEFORE selecting
+    // This prevents d2d3, e2e3 from ever being played!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    const isBookMoveForbidden = (move) => {
+        if (!CONFIG.v40BookHardFilterEnabled) return false;
+        
+        // FORBIDDEN: d2d3 in any opening position
+        if (CONFIG.v40BookRejectD3 && move === 'd2d3') {
+            debugLog(\"[V40.32_BOOK_FILTER]\", `🚫🚫🚫 BOOK HARD FILTER: d2d3 is ABSOLUTELY FORBIDDEN!`);
+            return true;
+        }
+        
+        // FORBIDDEN: e2e3 in any opening position (unless e4 already played)
+        if (CONFIG.v40BookRejectE3 && move === 'e2e3') {
+            debugLog(\"[V40.32_BOOK_FILTER]\", `🚫🚫🚫 BOOK HARD FILTER: e2e3 is ABSOLUTELY FORBIDDEN!`);
+            return true;
+        }
+        
+        // FORBIDDEN: Passive knight moves
+        if (CONFIG.v40BookRejectPassiveMoves) {
+            const passiveMoves = ['g1h3', 'b1a3', 'g8h6', 'b8a6', 'a2a3', 'h2h3'];
+            if (passiveMoves.includes(move)) {
+                debugLog(\"[V40.32_BOOK_FILTER]\", `🚫 BOOK HARD FILTER: ${move} is passive and FORBIDDEN!`);
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    // Filter the moves array to remove forbidden moves
+    const filteredMoves = moves.filter(m => !isBookMoveForbidden(m.move));
+    
+    // If all moves are forbidden (shouldn't happen), return null to use engine
+    if (filteredMoves.length === 0) {
+        debugLog(\"[V40.32_BOOK_FILTER]\", `⚠️ ALL book moves filtered out - using engine instead`);
+        return null;
+    }
+    
+    // v40.32: FORCE d4/e4 PREFERENCE — If d4 or e4 is available, use it!
+    if (CONFIG.v40BookForceD4) {
+        const d4Move = filteredMoves.find(m => m.move === 'd2d4');
+        if (d4Move) {
+            debugLog(\"[V40.32_BOOK_FILTER]\", `✅ FORCE d4: Playing d2d4 (FORCED PREFERENCE)`);
+            return 'd2d4';
+        }
+    }
+    
+    if (CONFIG.v40BookForceE4) {
+        const e4Move = filteredMoves.find(m => m.move === 'e2e4');
+        if (e4Move) {
+            debugLog(\"[V40.32_BOOK_FILTER]\", `✅ FORCE e4: Playing e2e4 (FORCED PREFERENCE)`);
+            return 'e2e4';
+        }
+    }
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // END v40.32 BOOK FILTER
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v20: TRUE ALPHAZERO - ALWAYS use book moves (NEVER DEVIATE)
+    if (moveCount <= TRUE_ALPHAZERO.openingStabilityMove) {
+        debugLog(\"[OPENING]\", `📖 Opening phase (move ${moveCount}) - using PERFECT theory`);
+        // ABSOLUTE ZERO novelties - PERFECT theory always
+        
+        // v20 TRUE ALPHAZERO: 100% priority for highest-weighted move (PERFECT mainlines)
+        // 0% chance for alternatives (ZERO variation)
+        
+        // ALWAYS use highest-weighted move from FILTERED moves (mainline)
+        const bestMove = filteredMoves.reduce((best, move) => move.weight > best.weight ? move : best, filteredMoves[0]);
+        debugLog(\"[ENGINE]\", `📖 BOOK MOVE (MAINLINE 100%): ${bestMove.name} - ${bestMove.move}`);
+        return bestMove.move;
+    }
+    
+    // Fallback to highest-weighted move from FILTERED moves
+    const bestMove = filteredMoves.reduce((best, move) => move.weight > best.weight ? move : best, filteredMoves[0]);
+    debugLog(\"[ENGINE]\", `📖 BOOK MOVE (default): ${bestMove.name} - ${bestMove.move}`);
+    return bestMove.move;
+}"
+Observation: Edit was successful.

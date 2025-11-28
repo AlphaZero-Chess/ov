@@ -1,0 +1,144 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+41060|/**
+41061| * AlphaZero move selection - v17.0.0: ESSENCE MODE + TACTICAL PRECISION
+41062| * ENHANCED: With AlphaZero essence overlay and v16 safety validation
+41063| */
+41064|function applyAlphaZeroLogic(bestMove, alternatives) {
+41065|    // ═══════════════════════════════════════════════════════════════════════════════
+41066|    // v40.31: ABSOLUTE HARD MOVE FILTER — REJECT BAD MOVES BEFORE ANY SCORING
+41067|    // This filter runs FIRST and REJECTS moves that are absolutely forbidden
+41068|    // This is NOT a penalty - the move is EXCLUDED from consideration entirely
+41069|    // ═══════════════════════════════════════════════════════════════════════════════
+41070|    
+41071|    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+41072|        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+41073|        debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+41074|        
+41075|        // Filter function to check if move should be REJECTED
+41076|        const shouldRejectMove = (move) => {
+41077|            if (!move || move.length < 4) return false;
+41078|            
+41079|            const fromSquare = move.substring(0, 2);
+41080|            const toSquare = move.substring(2, 4);
+41081|            
+41082|            // RULE 1: REJECT d2d3 in first 10 moves
+41083|            if (CONFIG.v40RejectD3InOpening && moveCount <= 10) {
+41084|                if (fromSquare === 'd2' && toSquare === 'd3') {
+41085|                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: d2d3 is ABSOLUTELY FORBIDDEN!`);
+41086|                    return true;
+41087|                }
+41088|            }
+41089|            
+41090|            // RULE 2: REJECT e2e3 in first 10 moves (when e4 is possible)
+41091|            if (CONFIG.v40RejectE3InOpening && moveCount <= 10) {
+41092|                if (fromSquare === 'e2' && toSquare === 'e3') {
+41093|                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: e2e3 is ABSOLUTELY FORBIDDEN!`);
+41094|                    return true;
+41095|                }
+41096|            }
+41097|            
+41098|            // RULE 3: REJECT queen retreat in first 10 moves (Qd2-Qd1, etc.)
+41099|            if (CONFIG.v40RejectQueenRetreatEarly && moveCount <= 10) {
+41100|                // Common queen retreats
+41101|                if ((fromSquare === 'd2' && toSquare === 'd1') ||
+41102|                    (fromSquare === 'e2' && toSquare === 'e1') ||
+41103|                    (fromSquare === 'f3' && toSquare === 'd1') ||
+41104|                    (fromSquare === 'e3' && toSquare === 'd1')) {
+41105|                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: Queen retreat ${move} is FORBIDDEN!`);
+41106|                    return true;
+41107|                }
+41108|            }
+41109|            
+41110|            return false;
+41111|        };
+41112|        
+41113|        // Check if bestMove should be rejected
+41114|        if (shouldRejectMove(bestMove)) {
+41115|            debugLog("[V40.31_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+41116|            
+41117|            // Find first alternative that passes the filter
+41118|            for (let i = 1; i < alternatives.length; i++) {
+41119|                const altMove = alternatives[i].move;
+41120|                if (!shouldRejectMove(altMove)) {
+41121|                    debugLog("[V40.31_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+41122|                    bestMove = altMove;
+41123|                    break;
+41124|                }
+41125|            }
+41126|        }
+41127|        
+41128|        // Also filter ALL alternatives to remove bad moves from consideration
+41129|        alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+41130|        
+41131|        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+41132|    }
+41133|    
+41134|    // Don't be creative if we only have one option
+41135|    if (alternatives.length < 2) {
+41136|        return bestMove;
+41137|    }
+41138|    
+41139|    // NEW v6.0.0: Update tactical and critical flags
+41140|    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+41141|    const currentEval = alternatives[0].score;
+41142|    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);
+41143|    
+41144|    // Update evaluation history
+41145|    updateEvaluationHistory(currentEval);
+41146|    
+41147|    // ═══════════════════════════════════════════════════════════════
+41148|    // NEW v17.0.0: ALPHAZERO ESSENCE MODE OVERLAY
+41149|    // ═══════════════════════════════════════════════════════════════
+41150|    
+41151|    // ═══════════════════════════════════════════════════════════════
+41152|    // NEW v18.0.0: TRUE ALPHAZERO Q+POLICY ARCHITECTURE
+41153|    // ═══════════════════════════════════════════════════════════════
+41154|    
+41155|    if (TRUE_ALPHAZERO.enabled && alternatives.length >= 2) {
+41156|        // Update trend reconciliation
+41157|        updateTrendReconciliation(currentEval);
+41158|        
+41159|        // Check trend floor
+41160|        const trendOK = checkTrendFloor();
+41161|        
+41162|        if (trendOK && !positionIsTactical && !positionIsCritical) {
+41163|            trueAlphaAttempted++;
+41164|            
+41165|            debugLog("[TRUE_AZ]", `🎯 TRUE ALPHAZERO mode active (attempt #${trueAlphaAttempted})`);
+41166|            
+41167|            // Evaluate top N candidates with Q+Policy merge
+41168|            const N = Math.min(4, alternatives.length);
+41169|            const candidatesWithQPolicy = [];
+41170|            
+41171|            for (let i = 0; i < N; i++) {
+41172|                const candidate = alternatives[i];
+41173|                const engine_Q = candidate.score;
+41174|                
+41175|                // For now, use engine score as rollout (async rollouts would be full implementation)
+41176|                const rollout_Q = engine_Q; // TODO: implement async playouts
+41177|                
+41178|                // Compute combined Q+Policy score
+41179|                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+41180|                
+41181|                // Compute harmony for sacrifice validation
+41182|                const harmony = computeHarmonyScore(currentFen);
+41183|                
+41184|                candidatesWithQPolicy.push({
+41185|                    move: candidate.move,
+41186|                    engineScore: engine_Q,
+41187|                    rolloutScore: rollout_Q,
+41188|                    combinedScore: combinedScore,
+41189|                    policyPrior: computePolicyPrior(candidate.move, alternatives),
+41190|                    harmony: harmony
+41191|                });
+41192|            }
+41193|            
+41194|            // Sort by combined score (deterministic argmax, no temperature sampling)
+41195|            candidatesWithQPolicy.sort((a, b) => b.combinedScore - a.combinedScore);
+41196|            
+41197|            debugLog("[TRUE_AZ]", `Top Q+Policy candidates:`);
+41198|            for (let i = 0; i < Math.min(3, candidatesWithQPolicy.length); i++) {
+41199|                const c = candidatesWithQPolicy[i];
+41200|                debugLog("[TRUE_AZ]", `  ${i+1}. ${c.move}: Q=${c.engineScore.toFixed(1)}cp, rollout=${c.rolloutScore.toFixed(1)}cp, policy=${c.policyPrior.toFixed(3)}, combined=${c.combinedScore.toFixed(1)}cp`);

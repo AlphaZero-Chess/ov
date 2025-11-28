@@ -1,0 +1,26 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36843|    // AlphaZero Ruy Lopez: After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6
+36844|    "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -": {
+36845|        white: [
+36846|            { move: "e1g1", weight: 0.80, name: "Castling (AlphaZero)" },
+36847|            { move: "d2d3", weight: 0.15, name: "Solid Setup" },
+36848|            { move: "b1c3", weight: 0.05, name: "Development" }
+36849|        ]
+36850|    },
+36851|    
+36852|    // After castling: 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7
+36853|    "r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 w kq -": {
+36854|        white: [
+36855|            { move: "f1e1", weight: 0.90, name: "Re1 Main Line (AlphaZero)" },
+36856|            { move: "d2d3", weight: 0.08, name: "Closed Variation" },
+36857|            { move: "c2c3", weight: 0.02, name: "Slow Development" }
+36858|        ]
+36859|    },
+36860|    
+36861|    // AlphaZero Caro-Kann: After 1.e4 c6 2.d4 d5 3.Nc3 dxe4
+36862|    "rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq -": {
+36863|        white: [
+36864|            { move: "c3e4", weight: 0.80, name: "Classical Caro-Kann (AlphaZero)" },
+36865|            { move: "f1c4", weight: 0.15, name: "Accelerated Development" },

@@ -1,0 +1,35 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // AlphaZero Ruy Lopez: After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6
+    \"r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -\": {
+        white: [
+            { move: \"e1g1\", weight: 0.80, name: \"Castling (AlphaZero)\" },
+            { move: \"d2d3\", weight: 0.15, name: \"Solid Setup\" },
+            { move: \"b1c3\", weight: 0.05, name: \"Development\" }
+        ]
+    },
+    
+    // After castling: 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7
+    \"r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 w kq -\": {
+        white: [
+            { move: \"f1e1\", weight: 0.90, name: \"Re1 Main Line (AlphaZero)\" },
+            { move: \"d2d3\", weight: 0.08, name: \"Closed Variation\" },
+            { move: \"c2c3\", weight: 0.02, name: \"Slow Development\" }
+        ]
+    }," --new-str "    // AlphaZero Ruy Lopez: After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6
+    \"r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -\": {
+        white: [
+            { move: \"e1g1\", weight: 0.85, name: \"Castling (AlphaZero)\" },
+            { move: \"b1c3\", weight: 0.15, name: \"Development\" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
+        ]
+    },
+    
+    // After castling: 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7
+    \"r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 w kq -\": {
+        white: [
+            { move: \"f1e1\", weight: 0.95, name: \"Re1 Main Line (AlphaZero)\" },
+            { move: \"c2c3\", weight: 0.05, name: \"Slow Development\" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
+        ]
+    },"
+Observation: Edit was successful.

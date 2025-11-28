@@ -1,0 +1,15 @@
+
+Action: $ grep -n "v40.31" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.31 ABSOLUTE MOVE FILTER & TEMPO MASTERY
+3:// @description  TRUE AlphaZero Replica v40.31 - HARD MOVE FILTER (d3/e3 REJECTED!) - TEMPO TRACKING - QUEEN RETREAT PROHIBITION - KNIGHT FORK SHIELD - ENHANCED FORK DETECTION!
+4:// @author       AlphaZero TRUE REPLICA v40.31 ABSOLUTE MOVE FILTER EDITION
+2216:    // v40.31.0: ABSOLUTE MOVE FILTER & TEMPO MASTERY SUPREME
+2222:    // v40.31: HARD MOVE FILTER — Rejects moves outright, not just penalizes
+2228:    // v40.31: TEMPO TRACKING — Track and punish tempo waste
+2235:    // v40.31: ENHANCED KNIGHT FORK DETECTION — See forks 3+ moves ahead
+2241:    // v40.31: ABSOLUTE D4 PREFERENCE — d4 must be played if d-pawn is on d2
+2942:// v40.31: CRITICAL FIX - simulateMoveOnBoard was UNDEFINED causing ALL v40 evals to fail!
+2947: * v40.31: CRITICAL - Simulate a move on the board and return the new board state
+41066:    // v40.31: ABSOLUTE HARD MOVE FILTER — REJECT BAD MOVES BEFORE ANY SCORING
+41073:        debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+Exit code: 0

@@ -1,0 +1,8 @@
+Now let me also remove d2d3 from the opening book entries entirely to prevent it from ever being selected. Let me check and remove them:
+Action: $ grep -n "d2d3.*weight\|weight.*d2d3" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 36704:            { move: "d2d3", weight: 0.15, name: "Quiet King's Indian" }
+36847:            { move: "d2d3", weight: 0.15, name: "Solid Setup" },
+36856:            { move: "d2d3", weight: 0.08, name: "Closed Variation" },
+36910:            { move: "d2d3", weight: 0.20, name: "Giuoco Pianissimo" },
+37019:            { move: "d2d3", weight: 0.05, name: "d3 - Quiet" }
+Exit code: 0
