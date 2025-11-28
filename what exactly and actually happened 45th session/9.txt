@@ -1,0 +1,17 @@
+Indeed! The v40.29 scores are calculated but NEVER added to v40DeepScore! This is the critical bug - all those v40.29 functions are being computed but their results are NOT integrated. Let me fix this by adding them to the v40DeepScore calculation:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.27 ABSOLUTE TACTICAL SUPREMACY additions:
+                               forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore +
+                               // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
+                               absoluteSacrificeVerificationScore + attackCoordinationScore + deepForcingCalcScore +
+                               pieceSacrificeAnalysisScore + attackProgressScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.28 ABSOLUTE SACRIFICE VERIFICATION PARADIGM SHIFT" --new-str "                               // v40.27 ABSOLUTE TACTICAL SUPREMACY additions:
+                               forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore +
+                               // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
+                               absoluteSacrificeVerificationScore + attackCoordinationScore + deepForcingCalcScore +
+                               pieceSacrificeAnalysisScore + attackProgressScore +
+                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+                               pieceCoordinationCheckScore + threatAnticipationScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.29 DEEP DEFENSIVE AWARENESS PARADIGM SHIFT"
+Observation: Edit was successful.

@@ -1,0 +1,11 @@
+I notice that v40.29 functions are calculated but NOT integrated into the v40DeepScore! The scores are calculated (lines 39541-39562) but they are NOT added to the sum on lines 39566-39629. This is a critical bug! Let me verify this:
+Action: $ cd /app && grep -n "deepDefensiveAwarenessScore\|pieceHarmonyScore\|prophylaxisPriorityScore\|knightInvasionPreventionScore\|antiForkSupremeScore\|quietPositionScore\|pieceCoordinationCheckScore\|threatAnticipationScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 39541:                const deepDefensiveAwarenessScore = v40DeepDefensiveAwarenessEval(fen, move, board, activeColor, moveNumber) * 350.0;
+39544:                const pieceHarmonyScore = v40PieceHarmonyEval(fen, move, board, activeColor, moveNumber) * 280.0;
+39547:                const prophylaxisPriorityScore = v40ProphylaxisPriorityEval(fen, move, board, activeColor, moveNumber) * 320.0;
+39550:                const knightInvasionPreventionScore = v40KnightInvasionPreventionEval(fen, move, board, activeColor, moveNumber) * 380.0;
+39553:                const antiForkSupremeScore = v40AntiForkSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+39556:                const quietPositionScore = v40QuietPositionAssessmentEval(fen, move, board, activeColor, moveNumber) * 200.0;
+39559:                const pieceCoordinationCheckScore = v40PieceCoordinationCheckEval(fen, move, board, activeColor, moveNumber) * 260.0;
+39562:                const threatAnticipationScore = v40ThreatAnticipationEval(fen, move, board, activeColor, moveNumber) * 340.0;
+Exit code: 0

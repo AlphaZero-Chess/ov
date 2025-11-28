@@ -1,0 +1,149 @@
+v40.29 is implemented. Let me check what the current integration looks like and see if there are any issues with the recent game:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+39535|                // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY & PROPHYLAXIS SUPREME
+39536|                // From game: Bot played passive d3, allowed Nxf3+ fork, pieces became uncoordinated
+39537|                // THE BOT MUST: 1) Defend properly, 2) Keep pieces harmonized, 3) Anticipate threats
+39538|                // ═══════════════════════════════════════════════════════════════════════════════
+39539|                
+39540|                // v40.29: DEEP DEFENSIVE AWARENESS — Know when to defend vs attack!
+39541|                const deepDefensiveAwarenessScore = v40DeepDefensiveAwarenessEval(fen, move, board, activeColor, moveNumber) * 350.0;
+39542|                
+39543|                // v40.29: PIECE HARMONY — All pieces must work together!
+39544|                const pieceHarmonyScore = v40PieceHarmonyEval(fen, move, board, activeColor, moveNumber) * 280.0;
+39545|                
+39546|                // v40.29: PROPHYLAXIS PRIORITY — Prevent opponent's ideas BEFORE they happen!
+39547|                const prophylaxisPriorityScore = v40ProphylaxisPriorityEval(fen, move, board, activeColor, moveNumber) * 320.0;
+39548|                
+39549|                // v40.29: KNIGHT INVASION PREVENTION — Never allow enemy knight on f3/f6!
+39550|                const knightInvasionPreventionScore = v40KnightInvasionPreventionEval(fen, move, board, activeColor, moveNumber) * 380.0;
+39551|                
+39552|                // v40.29: ANTI-FORK SUPREME — Never allow forks!
+39553|                const antiForkSupremeScore = v40AntiForkSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+39554|                
+39555|                // v40.29: QUIET POSITION ASSESSMENT — Don't force when position is quiet!
+39556|                const quietPositionScore = v40QuietPositionAssessmentEval(fen, move, board, activeColor, moveNumber) * 200.0;
+39557|                
+39558|                // v40.29: PIECE COORDINATION CHECK — All pieces must work together!
+39559|                const pieceCoordinationCheckScore = v40PieceCoordinationCheckEval(fen, move, board, activeColor, moveNumber) * 260.0;
+39560|                
+39561|                // v40.29: THREAT ANTICIPATION — See threats 2-3 moves in advance!
+39562|                const threatAnticipationScore = v40ThreatAnticipationEval(fen, move, board, activeColor, moveNumber) * 340.0;
+39563|                
+39564|                // v40.29: COMBINED v40 SCORE — 100% DEEP DEFENSIVE AWARENESS INFLUENCE
+39565|                // This makes v40 the ABSOLUTE SACRIFICE VERIFICATION factor
+39566|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+39567|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+39568|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+39569|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+39570|                               counterattackBonus + initiativePreservationBonus +
+39571|                               // v40.4 additions:
+39572|                               openingPrinciplesScore + discoveredAttackPenalty + 
+39573|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+39574|                               // v40.5 additions:
+39575|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+39576|                               // v40.6 ULTIMATE additions:
+39577|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+39578|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+39579|                               // v40.7 DIVINE additions:
+39580|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+39581|                               // v40.8 TRANSCENDENT additions:
+39582|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+39583|                               counterplayGenScore + centralControlSupremeScore +
+39584|                               // v40.9 OMNISCIENT additions:
+39585|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+39586|                               // v40.10 GODLIKE additions:
+39587|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+39588|                               // v40.11 TRANSCENDENT SUPREME additions:
+39589|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+39590|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+39591|                               // v40.12 PROACTIVE SUPREME additions:
+39592|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+39593|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+39594|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+39595|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+39596|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+39597|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+39598|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+39599|                               // v40.15 PIECE PRESERVATION SUPREME additions:
+39600|                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+39601|                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+39602|                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+39603|                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+39604|                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+39605|                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+39606|                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+39607|                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+39608|                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+39609|                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore +
+39610|                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+39611|                               promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
+39612|                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+39613|                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+39614|                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+39615|                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+39616|                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+39617|                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+39618|                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+39619|                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+39620|                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+39621|                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score +
+39622|                               // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
+39623|                               kingsidePawnProhibitionScore + bishopSacrificeScore + forcedDefenseModeScore + 
+39624|                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore +
+39625|                               // v40.27 ABSOLUTE TACTICAL SUPREMACY additions:
+39626|                               forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore +
+39627|                               // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
+39628|                               absoluteSacrificeVerificationScore + attackCoordinationScore + deepForcingCalcScore +
+39629|                               pieceSacrificeAnalysisScore + attackProgressScore;
+39630|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.28 ABSOLUTE SACRIFICE VERIFICATION PARADIGM SHIFT
+39631|                
+39632|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+39633|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.28 ABSOLUTE SACRIFICE VERIFICATION EVALUATION`);
+39634|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+39635|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+39636|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+39637|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+39638|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+39639|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+39640|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+39641|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+39642|                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+39643|                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+39644|                debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+39645|                debugLog("[V40_INTEGRATE]", `   🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+39646|                debugLog("[V40_INTEGRATE]", `   🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+39647|                debugLog("[V40_INTEGRATE]", `   🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+39648|                debugLog("[V40_INTEGRATE]", `   🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
+39649|                debugLog("[V40_INTEGRATE]", `   🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
+39650|                debugLog("[V40_INTEGRATE]", `   🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
+39651|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ ForcedExchangeSequence: ${forcedExchangeSequenceScore.toFixed(1)}`);
+39652|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KnightForkShield: ${knightForkShieldScore.toFixed(1)}`);
+39653|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KingExposureIndex: ${kingExposureIndexScore.toFixed(1)}`);
+39654|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AbsoluteSacrificeVerification: ${absoluteSacrificeVerificationScore.toFixed(1)}`);
+39655|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackCoordination: ${attackCoordinationScore.toFixed(1)}`);
+39656|                debugLog("[V40_INTEGRATE]", `   🎯🎯 DeepForcingCalc: ${deepForcingCalcScore.toFixed(1)}`);
+39657|                debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceSacrificeAnalysis: ${pieceSacrificeAnalysisScore.toFixed(1)}`);
+39658|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackProgress: ${attackProgressScore.toFixed(1)}`);
+39659|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+39660|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+39661|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+39662|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+39663|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+39664|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+39665|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+39666|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+39667|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+39668|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+39669|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+39670|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+39671|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+39672|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+39673|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+39674|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+39675|                debugLog("[V40_INTEGRATE]", `   ⭐ ImmediateMaterialLoss: ${immediateMaterialLossScore.toFixed(1)}`);
+39676|                debugLog("[V40_INTEGRATE]", `   ⭐ CaptureChain: ${captureChainScore.toFixed(1)}`);
+39677|                debugLog("[V40_INTEGRATE]", `   ⭐ QueenInfiltrationAbsolute: ${queenInfiltrationAbsoluteScore.toFixed(1)}`);
+39678|                debugLog("[V40_INTEGRATE]", `   ⭐ PreMoveSafety: ${preMoveSafetyScore.toFixed(1)}`);
+39679|                debugLog("[V40_INTEGRATE]", `   ⭐ OpeningBlunder: ${openingBlunderScore.toFixed(1)}`);
+39680|                debugLog("[V40_INTEGRATE]", `   ⭐ SimpleThreat: ${simpleThreatScore.toFixed(1)}`);

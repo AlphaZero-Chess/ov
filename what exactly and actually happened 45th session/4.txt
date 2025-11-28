@@ -1,0 +1,105 @@
+Let me now view the CONFIG section around line 2057 to see where to add new v40.29 parameters:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2049|    // v40.28.0: ABSOLUTE SACRIFICE VERIFICATION & DEEP FORCING CALCULATION
+2050|    // THE BOT MUST NEVER PLAY SPECULATIVE SACRIFICES THAT DON'T WORK!
+2051|    // From game: 9. Bxh7+ was played but attack didn't materialize
+2052|    // The sacrifice was UNSOUND - not enough pieces to continue attack!
+2053|    // ═══════════════════════════════════════════════════════════════════════════════
+2054|    
+2055|    // v40.28: ABSOLUTE SACRIFICE VERIFICATION — Never play unsound sacrifices
+2056|    v40AbsoluteSacrificeVerificationEnabled: true,
+2057|    v40UnsoundSacrificePenalty: -900000000,         // MASSIVE penalty for unsound sacrifice
+2058|    v40SacrificeWithoutSupportPenalty: -500000000,  // Penalty for sac without piece support
+2059|    v40MinAttackersForSacrifice: 3,                 // Minimum attackers needed after sacrifice
+2060|    v40SacrificeCompensationRequired: 300,          // Min positional compensation for sacrifice
+2061|    
+2062|    // v40.28: DEEP FORCING CALCULATION — See 6+ moves into forcing lines
+2063|    v40DeepForcingCalcEnabled: true,
+2064|    v40DeepForcingDepth: 6,                         // Look 6 moves deep into forcing lines
+2065|    v40ForcingLineFailPenalty: -400000000,          // Penalty if forcing line doesn't work
+2066|    v40MustHaveMateOrMaterialPenalty: -300000000,   // Penalty if sac doesn't lead to mate/material
+2067|    
+2068|    // v40.28: ATTACK COORDINATION REQUIREMENT — Pieces must be coordinated
+2069|    v40AttackCoordinationEnabled: true,
+2070|    v40InsufficientCoordinationPenalty: -600000000, // Penalty for attacking without coordination
+2071|    v40MinSupportingPiecesForAttack: 2,             // Min pieces supporting attack
+2072|    v40AttackingKingWithOneAttackerPenalty: -700000000, // Never attack king with just one piece
+2073|    
+2074|    // v40.28: PIECE SACRIFICE ANALYSIS — Verify compensation is REAL
+2075|    v40PieceSacrificeAnalysisEnabled: true,
+2076|    v40BishopSacH7Penalty: -800000000,              // Bxh7+ without follow-up is usually bad
+2077|    v40KnightSacF7Penalty: -500000000,              // Nxf7 without proper support
+2078|    v40RookSacrificeWithoutMatePathPenalty: -600000000, // Rook sac without mate path
+2079|    v40QueenSacWithoutImmediateMateRequirement: true, // Queen sac MUST lead to forced mate
+2080|    v40QueenSacWithoutMate: -1000000000,            // NEVER sacrifice queen without forced mate
+2081|    
+2082|    // v40.28: ATTACK VERIFICATION DEPTH — Verify attacks work
+2083|    v40AttackVerificationDepth: 8,                  // Verify attacks work 8 moves deep
+2084|    v40AttackMustProgressBonus: 50000,              // Bonus for attacks that make progress
+2085|    v40StalledAttackPenalty: -200000000,            // Penalty for attacks that stall
+2086|    
+2087|    // v40.28: 100% ABSOLUTE SACRIFICE VERIFICATION DOMINANCE
+2088|    v40AbsoluteSacrificeVerificationDominance: 1.0, // 100% v40.28 dominance
+2089|    
+2090|    // ═══════════════════════════════════════════════════════════════════════════════
+2091|    // v40.29.0: DEEP DEFENSIVE AWARENESS & PIECE HARMONY & PROPHYLAXIS SUPREME
+2092|    // From game: Bot played passive d3, allowed Nxf3+ fork, pieces became uncoordinated
+2093|    // THE BOT MUST: 1) Defend properly, 2) Keep pieces harmonized, 3) Anticipate threats
+2094|    // ═══════════════════════════════════════════════════════════════════════════════
+2095|    
+2096|    // v40.29: DEEP DEFENSIVE AWARENESS — Know when to defend vs attack
+2097|    v40DeepDefensiveAwarenessEnabled: true,
+2098|    v40MustDefendWhenThreatened: -800000000000,      // MUST defend when pieces are threatened
+2099|    v40IgnoringMajorThreatPenalty: -1000000000000,   // NEVER ignore major threats
+2100|    v40DefenseMovePriorityBonus: 100000000,          // Bonus for defensive moves when needed
+2101|    v40AttackWhenDefenseNeededPenalty: -600000000000, // Don't attack when defense is needed
+2102|    v40DefenseRequiredThreshold: 300,                // Threshold to determine if defense is needed
+2103|    
+2104|    // v40.29: PIECE HARMONY — All pieces must work together
+2105|    v40PieceHarmonyEnabled: true,
+2106|    v40PiecesNotCoordinatedPenalty: -200000000,      // Penalty when pieces don't coordinate
+2107|    v40IsolatedPiecePenalty: -150000000,             // Penalty for isolated pieces
+2108|    v40PiecesSupportingEachOtherBonus: 80000000,     // Bonus when pieces support each other
+2109|    v40MinPiecesCoordinatedForAttack: 3,             // Min pieces for coordinated attack
+2110|    v40ScatteredPiecesPenalty: -300000000,           // Penalty for scattered piece placement
+2111|    
+2112|    // v40.29: PROPHYLAXIS PRIORITY — Prevent opponent's ideas BEFORE they happen
+2113|    v40ProphylaxisPriorityEnabled: true,
+2114|    v40PreventOpponentPlanBonus: 150000000,          // Bonus for preventing opponent's plan
+2115|    v40AllowOpponentPlanPenalty: -400000000000,      // Penalty for allowing obvious threat
+2116|    v40ThreatIgnoredPenalty: -500000000000,          // Penalty for ignoring opponent's threat
+2117|    v40BlockEnemyOutpostBonus: 120000000,            // Bonus for blocking enemy outpost
+2118|    
+2119|    // v40.29: KNIGHT INVASION PREVENTION — Knights on f3/f6/c3/c6 are dangerous
+2120|    v40KnightInvasionPreventionEnabled: true,
+2121|    v40EnemyKnightOnF3Penalty: -400000000000,        // Enemy knight on f3 devastating
+2122|    v40EnemyKnightOnF6Penalty: -400000000000,        // Enemy knight on f6 devastating
+2123|    v40EnemyKnightOnE3Penalty: -350000000000,        // Enemy knight on e3 very dangerous
+2124|    v40EnemyKnightOnE6Penalty: -350000000000,        // Enemy knight on e6 very dangerous
+2125|    v40AllowKnightInvasionPenalty: -500000000000,    // Allowing knight invasion is terrible
+2126|    v40PreventKnightInvasionBonus: 200000000,        // Bonus for preventing knight invasion
+2127|    
+2128|    // v40.29: QUIET POSITION ASSESSMENT — Don't force when position is quiet
+2129|    v40QuietPositionAssessmentEnabled: true,
+2130|    v40ForcingInQuietPositionPenalty: -100000000,    // Don't force in quiet positions
+2131|    v40BuildingPositionBonus: 80000000,              // Bonus for building position quietly
+2132|    v40PrematureAttackPenalty: -300000000,           // Penalty for attacking too early
+2133|    v40DevelopmentBeforeAttackBonus: 150000000,      // Bonus for developing before attacking
+2134|    
+2135|    // v40.29: ANTI-FORK SUPREME — Never allow forks
+2136|    v40AntiForkSupremeEnabled: true,
+2137|    v40KnightForkAllowedPenalty: -900000000000,      // DEVASTATING penalty for allowing fork
+2138|    v40DoubleForkAllowedPenalty: -1200000000000,     // Even worse for double fork
+2139|    v40RoyalForkAllowedPenalty: -1500000000000,      // King+Queen fork is disaster
+2140|    v40ForkPreventionBonus: 300000000,               // Bonus for preventing fork
+2141|    v40MoveCreatingForkVulnerabilityPenalty: -700000000000, // Creating fork vulnerability
+2142|    
+2143|    // v40.29: PIECE COORDINATION CHECK — All pieces must work together
+2144|    v40PieceCoordinationCheckEnabled: true,
+2145|    v40AllPiecesActiveBonus: 200000000,              // Bonus when all pieces are active
+2146|    v40PassivePiecePenalty: -250000000,              // Penalty for passive pieces
+2147|    v40PiecesDefendingEachOtherBonus: 150000000,     // Bonus for pieces defending each other
+2148|    v40NoPieceLeftBehindPenalty: -400000000,         // Penalty for leaving piece behind
+2149|    
+2150|    // v40.29: THREAT ANTICIPATION — See threats 3+ moves in advance

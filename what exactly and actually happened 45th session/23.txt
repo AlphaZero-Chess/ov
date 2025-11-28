@@ -1,0 +1,104 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+23700|    if (materialAfter < materialBefore - 100) {
+23701|        return false;
+23702|    }
+23703|    
+23704|    return true;
+23705|}
+23706|
+23707|/**
+23708| * v40.29: Calculate material balance
+23709| */
+23710|function v40CalculateMaterialBalance(board, isWhite) {
+23711|    let balance = 0;
+23712|    
+23713|    for (const [square, piece] of board) {
+23714|        if (!piece) continue;
+23715|        const pieceType = piece.toLowerCase();
+23716|        const pieceIsWhite = piece === piece.toUpperCase();
+23717|        const value = getPieceValueSimple(pieceType);
+23718|        
+23719|        if (pieceIsWhite === isWhite) {
+23720|            balance += value;
+23721|        } else {
+23722|            balance -= value;
+23723|        }
+23724|    }
+23725|    
+23726|    return balance;
+23727|}
+23728|
+23729|/**
+23730| * v40.29: Calculate development level
+23731| */
+23732|function v40CalculateDevelopmentLevel(board, isWhite) {
+23733|    let developed = 0;
+23734|    const backRank = isWhite ? '1' : '8';
+23735|    
+23736|    for (const [square, piece] of board) {
+23737|        if (!piece) continue;
+23738|        const pieceType = piece.toLowerCase();
+23739|        const pieceIsWhite = piece === piece.toUpperCase();
+23740|        if (pieceIsWhite !== isWhite) continue;
+23741|        
+23742|        if (pieceType === 'n' || pieceType === 'b') {
+23743|            if (square[1] !== backRank) {
+23744|                developed++;
+23745|            }
+23746|        }
+23747|    }
+23748|    
+23749|    // Check if castled
+23750|    const kingSquare = findKingSquare(board, isWhite ? 'w' : 'b');
+23751|    if (kingSquare) {
+23752|        const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+23753|        if (kingFile === 6 || kingFile === 2) { // g or c file (castled)
+23754|            developed += 2;
+23755|        }
+23756|    }
+23757|    
+23758|    return developed;
+23759|}
+23760|
+23761|/**
+23762| * v40.29: Count active pieces
+23763| */
+23764|function v40CountActivePieces(board, isWhite) {
+23765|    let active = 0;
+23766|    
+23767|    for (const [square, piece] of board) {
+23768|        if (!piece) continue;
+23769|        const pieceType = piece.toLowerCase();
+23770|        const pieceIsWhite = piece === piece.toUpperCase();
+23771|        if (pieceIsWhite !== isWhite) continue;
+23772|        if (pieceType === 'k' || pieceType === 'p') continue;
+23773|        
+23774|        // Check if piece has good activity
+23775|        const attacks = v40CountSquaresAttacked(board, square, piece);
+23776|        if (attacks >= 3) {
+23777|            active++;
+23778|        }
+23779|    }
+23780|    
+23781|    return active;
+23782|}
+23783|
+23784|/**
+23785| * v40.29: Count squares attacked by piece
+23786| */
+23787|function v40CountSquaresAttacked(board, square, piece) {
+23788|    let count = 0;
+23789|    const pieceType = piece.toLowerCase();
+23790|    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+23791|    const rank = parseInt(square[1]) - 1;
+23792|    
+23793|    if (pieceType === 'n') {
+23794|        const moves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+23795|        for (const [df, dr] of moves) {
+23796|            const nf = file + df;
+23797|            const nr = rank + dr;
+23798|            if (nf >= 0 && nf <= 7 && nr >= 0 && nr <= 7) {
+23799|                count++;
+23800|            }

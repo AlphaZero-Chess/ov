@@ -1,0 +1,90 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+9944|function v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) {
+9945|    if (!CONFIG.v40OpeningAggressionEnabled) return 0;
+9946|    if (moveNumber > 12) return 0;  // Only in opening
+9947|    
+9948|    let score = 0;
+9949|    const isWhite = activeColor === 'w';
+9950|    
+9951|    try {
+9952|        const fromSquare = move.substring(0, 2);
+9953|        const toSquare = move.substring(2, 4);
+9954|        const movingPiece = board.get(fromSquare);
+9955|        
+9956|        if (!movingPiece) return 0;
+9957|        
+9958|        const pieceType = movingPiece.toLowerCase();
+9959|        
+9960|        // CHECK 1: Pawn moves - prefer aggressive center pushes
+9961|        if (pieceType === 'p') {
+9962|            // Check for passive pawn moves (d3, e3 when d4, e4 possible)
+9963|            const passivePawnMoves = isWhite ? 
+9964|                { 'd3': 'd4', 'e3': 'e4', 'c3': 'c4' } : 
+9965|                { 'd6': 'd5', 'e6': 'e5', 'c6': 'c5' };
+9966|            
+9967|            if (passivePawnMoves[toSquare]) {
+9968|                // Check if the aggressive move is possible
+9969|                const aggressiveSquare = passivePawnMoves[toSquare];
+9970|                const aggressiveFromSquare = isWhite ? 
+9971|                    aggressiveSquare[0] + '2' : 
+9972|                    aggressiveSquare[0] + '7';
+9973|                
+9974|                const pawnOnStart = board.get(aggressiveFromSquare);
+9975|                const aggressiveSquareBlocked = board.has(aggressiveSquare);
+9976|                
+9977|                // If aggressive move was possible but we chose passive
+9978|                if (pawnOnStart && !aggressiveSquareBlocked && fromSquare === aggressiveFromSquare) {
+9979|                    score += CONFIG.v40PassivePawnPenalty || -25000;
+9980|                    debugLog("[V40.8_AGGRO]", `🚨🚨 PASSIVE PAWN MOVE ${toSquare} when ${aggressiveSquare} possible!`);
+9981|                }
+9982|            }
+9983|            
+9984|            // BONUS for aggressive center pawn advances
+9985|            const aggressiveCenterSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+9986|            if (aggressiveCenterSquares.includes(toSquare)) {
+9987|                score += CONFIG.v40CenterPawnAdvanceBonus || 15000;
+9988|                debugLog("[V40.8_AGGRO]", `✅ AGGRESSIVE CENTER PAWN TO ${toSquare}!`);
+9989|            }
+9990|        }
+9991|        
+9992|        // CHECK 2: By move 5, we should have center presence
+9993|        if (moveNumber >= 5) {
+9994|            const hasCenterPawn = hasCenterPawnPresence(board, activeColor);
+9995|            if (!hasCenterPawn) {
+9996|                score += CONFIG.v40CenterPawnAbsenceEarlyPenalty || -25000;
+9997|                debugLog("[V40.8_AGGRO]", `🚨 NO CENTER PAWN PRESENCE BY MOVE ${moveNumber}!`);
+9998|            }
+9999|        }
+10000|        
+10001|    } catch (e) {
+10002|        debugLog("[V40.8_AGGRO]", `Error: ${e.message}`);
+10003|    }
+10004|    
+10005|    return score;
+10006|}
+10007|
+10008|/**
+10009| * v40.8 TRANSCENDENT: EXCHANGE QUALITY EVALUATION
+10010| * CRITICAL: Don't trade pieces that help opponent (like Nxd5 bringing queen to center)
+10011| * Prevents: Bad exchanges that centralize enemy pieces
+10012| */
+10013|function v40ExchangeQualityEval(fen, move, board, activeColor) {
+10014|    if (!CONFIG.v40ExchangeQualityEnabled) return 0;
+10015|    
+10016|    let score = 0;
+10017|    const enemyColor = activeColor === 'w' ? 'b' : 'w';
+10018|    
+10019|    try {
+10020|        const fromSquare = move.substring(0, 2);
+10021|        const toSquare = move.substring(2, 4);
+10022|        const movingPiece = board.get(fromSquare);
+10023|        const capturedPiece = board.get(toSquare);
+10024|        
+10025|        if (!movingPiece || !capturedPiece) return 0; // Not a capture
+10026|        
+10027|        const capturedIsEnemy = (capturedPiece === capturedPiece.toUpperCase()) !== (activeColor === 'w');
+10028|        if (!capturedIsEnemy) return 0;
+10029|        
+10030|        const movingType = movingPiece.toLowerCase();

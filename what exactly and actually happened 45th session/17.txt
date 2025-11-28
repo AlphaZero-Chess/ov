@@ -1,0 +1,23 @@
+Now let me find where v40.29 functions end to add v40.30 functions:
+Action: $ cd /app && grep -n "v40.29: Check for pawn storm\|function v40Check\|// v40.30\|class MCTSNode" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2161:    // v40.30.0: ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+2166:    // v40.30: ABSOLUTE OPENING PROHIBITION — d3/e3 are FORBIDDEN in first 10 moves
+2175:    // v40.30: DEEP FORK VISION — See ALL forks 3 moves ahead
+2184:    // v40.30: BISHOP PAIR PRESERVATION — Never trade bishop needlessly
+2190:    // v40.30: PIECE ACTIVITY SUPREME — All pieces must be active by move 12
+2197:    // v40.30: CENTER CONTROL ABSOLUTE — Must control center by move 8
+2204:    // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics
+2212:    // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
+2223:class MCTSNode {
+3950:function v40CheckDiscoveredAttacks(fen, move, board, activeColor) {
+4040:function v40CheckDesperado(fen, move, board, activeColor) {
+4052:function v40CheckZwischenzug(fen, move, board, activeColor) {
+4062:function v40CheckQueenTrap(fen, move, board, activeColor) {
+4142:function v40CheckOverloadedPieces(fen, move, board, activeColor) {
+4152:function v40CheckMatingNet(fen, move, board, activeColor) {
+4218:function v40CheckPerpetualMiss(fen, move, board, activeColor) {
+4229:function v40CheckHangingPieces(fen, move, board, activeColor) {
+4408:function v40CheckForForks(fen, move, board, activeColor) {
+4505:function v40CheckPinsSkewers(fen, move, board, activeColor) {
+4607:function v40CheckBackRankMate(fen, move, board, activeColor) {
+Exit code: 0

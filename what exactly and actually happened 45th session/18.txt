@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -n "v40.29: Check for pawn storm potential\|v40PawnStormPotential" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 23396: * v40.29: Check for pawn storm potential
+Exit code: 0

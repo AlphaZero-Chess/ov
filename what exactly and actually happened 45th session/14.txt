@@ -1,0 +1,7 @@
+I see the logic but the penalty is only -25,000 which is much smaller than other scores. Let me check the CONFIG for these values:
+Action: $ cd /app && grep -n "v40PassivePawnPenalty\|v40CenterPawnAdvance" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 1254:    v40PassivePawnPenalty: -25000,          // d3/e3 when d4/e4 possible = BAD
+1255:    v40CenterPawnAdvanceBonus: 15000,       // d4/e4 moves get bonus
+9979:                    score += CONFIG.v40PassivePawnPenalty || -25000;
+9987:                score += CONFIG.v40CenterPawnAdvanceBonus || 15000;
+Exit code: 0

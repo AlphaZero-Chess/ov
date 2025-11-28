@@ -1,0 +1,25 @@
+The penalty is only -25,000 which is way too small compared to other scores that can be in the billions. Also, looking at the latest game, the problem is the bot keeps playing d3 against Sicilian Defense. Let me implement a much stronger v40.30 that:
+
+1. **ABSOLUTELY FORBIDS passive openings like d3 in the first 10 moves**
+2. **Detects and PREVENTS knight forks more strongly**
+3. **Forces proper opening principles**
+
+Let me add v40.30 - ABSOLUTE OPENING MASTERY:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2155|    v40ProactiveDefenseBonus: 180000000,             // Bonus for proactive defense
+2156|    
+2157|    // v40.29: 100% DEEP DEFENSIVE AWARENESS DOMINANCE
+2158|    v40DeepDefensiveAwarenessDominance: 1.0,         // 100% v40.29 dominance
+2159|};
+2160|
+2161|// ═══════════════════════════════════════════════════════════════════════
+2162|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2163|// ═══════════════════════════════════════════════════════════════════════
+2164|
+2165|/**
+2166| * v37: TRUE MCTS Node structure for proper tree search
+2167| */
+2168|class MCTSNode {
+2169|    constructor(move, parent = null, prior = 1.0) {
+2170|        this.move = move;

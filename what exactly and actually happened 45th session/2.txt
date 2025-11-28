@@ -1,0 +1,8 @@
+Let me check where to add the new CONFIG parameters and find the end of v40.28 functions:
+Action: $ cd /app && grep -n "v40UnsoundSacrificePenalty\|v40AttackMustProgressBonus" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2057:    v40UnsoundSacrificePenalty: -900000000,         // MASSIVE penalty for unsound sacrifice
+2084:    v40AttackMustProgressBonus: 50000,              // Bonus for attacks that make progress
+21841:        score += CONFIG.v40UnsoundSacrificePenalty;
+22255:        score += CONFIG.v40AttackMustProgressBonus * (forcingResult / 100);
+22440:        score += CONFIG.v40AttackMustProgressBonus * (attackIntensityAfter - attackIntensityBefore);
+Exit code: 0
