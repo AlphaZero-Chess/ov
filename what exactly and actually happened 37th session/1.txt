@@ -1,0 +1,46 @@
+Session 36 Continuation - v40.25 STRATEGIC MASTERY SUPREME Implementation
+
+GAME ANALYSIS (Caro-Kann Defense - Loss):
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nf3 e6 5. Nc3 Ne7 6. Bd3 Bxd3 7. cxd3 Nf5 8. O-O Nd7 
+9. Qb3 Qb6 10. Qxb6 Nxb6 11. Bd2 a5 ... (Lost to checkmate)
+
+KEY FAILURES IDENTIFIED:
+1. QUEEN TRADE (Qxb6) - Traded queens in closed position losing initiative
+2. FORK MISSED - Nxf3+ Nxd2 pattern not detected
+3. PAWN RACE LOST - b2 vs c7 race was lost
+4. PASSIVE PLAY - No counterplay generation
+5. KING CORNER TRAP - King trapped at edge allowing checkmate
+
+v40.25 STRATEGIC MASTERY SUPREME IMPLEMENTED:
+1. CONFIG Settings Added:
+   - v40NoEarlyQueenTradeEnabled: true
+   - v40EarlyQueenTradePenalty: -30000000000
+   - v40ClosedPositionQueenTradePenalty: -50000000000
+   - v40InitiativeLossQueenTradePenalty: -40000000000
+   - v40ForkDetectionEnhancedEnabled: true
+   - v40KnightForkKingQueenPenalty: -100000000000
+   - v40KnightForkKingRookPenalty: -40000000000
+   - v40PawnRaceCalcEnabled: true
+   - v40PawnRaceWinningBonus: 50000000000
+   - v40PawnRaceLosingPenalty: -60000000000
+   - v40PiecePreservationAbsoluteEnabled: true
+   - v40InitiativePreservationEnabled: true
+
+2. Functions Already Implemented (from previous session):
+   - v40NoEarlyQueenTradeEval() - Penalizes bad queen trades
+   - v40EnhancedForkDetection() - Detects knight forks
+   - v40PawnRaceCalculation() - Calculates pawn race outcomes
+   - v40PiecePreservationAbsolute() - Ensures no pieces hang
+   - v40InitiativePreservationEval() - Maintains initiative
+
+3. Integration Added:
+   - Added v40.25 function calls to computeCombinedScore()
+   - Added score summation to v40DeepScore calculation
+   - Added debug logging for v40.25 evaluations
+   - Weights: 110.0, 105.0, 100.0, 95.0, 90.0 respectively
+
+4. Updated Version Header:
+   - Changed from v40.24 to v40.25 STRATEGIC MASTERY SUPREME
+   - Updated description to include new features
+
+SYNTAX CHECK: PASSED ✓
