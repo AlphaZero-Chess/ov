@@ -1,0 +1,9 @@
+v40.37 CONFIG and functions are already partially added. Let me check if they're integrated into computeCombinedScore:
+Action: $ grep -n "rookPassiveProhibitionScore\|kingCornerRetreatScore\|desperationSacrificeScore\|ultraQueenCaptureScore\|passiveUnderAttackScore\|v40.37.*COMBINED\|v40.36.*COMBINED" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 42282:                const rookPassiveProhibitionScore = v40RookPassiveProhibitionEval(fen, move, board, activeColor, moveNumber) * 700.0;
+42285:                const kingCornerRetreatScore = v40KingCornerRetreatEval(fen, move, board, activeColor, moveNumber) * 900.0;
+42288:                const desperationSacrificeScore = v40DesperationSacrificePreventionEval(fen, move, board, activeColor, moveNumber) * 600.0;
+42291:                const ultraQueenCaptureScore = v40UltraQueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) * 1200.0;
+42294:                const passiveUnderAttackScore = v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, moveNumber) * 800.0;
+42296:                // v40.37: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+Exit code: 0

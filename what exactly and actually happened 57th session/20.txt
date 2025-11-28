@@ -1,0 +1,4 @@
+
+Action: $ grep -c "v40.37" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 24
+Exit code: 0

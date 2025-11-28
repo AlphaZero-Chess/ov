@@ -1,0 +1,18 @@
+
+Action: $ ls -d /app/what* 2>/dev/null | tail -15
+Observation: /app/what exactly and actually happened 48th session
+/app/what exactly and actually happened 49th session
+/app/what exactly and actually happened 4th session
+/app/what exactly and actually happened 50th session
+/app/what exactly and actually happened 51st session
+/app/what exactly and actually happened 52nd session
+/app/what exactly and actually happened 53rd session
+/app/what exactly and actually happened 54th session
+/app/what exactly and actually happened 55th session
+/app/what exactly and actually happened 56th session
+/app/what exactly and actually happened 5th session
+/app/what exactly and actually happened 6th session
+/app/what exactly and actually happened 7th session
+/app/what exactly and actually happened 8th session
+/app/what exactly and actually happened 9th session
+Exit code: 0

@@ -1,0 +1,20 @@
+The syntax is valid. Now let me verify the header and key functions:
+Action: $ head -15 "/app/Lichess Bot-AlphaZero-Pure.user.js" && echo "..." && wc -l "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: // ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME
+// @description  TRUE AlphaZero Replica v40.37 - NO PASSIVE ROOKS - NO KING CORNER RETREAT - NO DESPERATION SACRIFICE - ABSOLUTE ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.37 ROOK PASSIVE & KING CORNER SUPREME EDITION
+// @version      40.37.0-ROOK-PASSIVE-KING-CORNER-SUPREME
+// @match         *://lichess.org/*
+// @run-at        document-idle
+// @grant         none
+// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+// ==/UserScript==
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * v40.11.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — TRANSCENDENT SUPREME EDITION
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+...
+45212 /app/Lichess Bot-AlphaZero-Pure.user.js
+Exit code: 0

@@ -1,0 +1,43 @@
+The file has 45,204 lines and the syntax is valid. Current version is v40.36. Now let me check if v40.37 CONFIG and functions were partially added and complete them:
+Action: $ grep -n "v40.37\|v40RookPassive\|v40KingCorner\|v40Desperation\|v40UltraQueen\|v40PassiveUnderAttack" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -40
+Observation: 947:    v40DesperationCounterplay: true,        // Generate complications
+1150:    v40KingCornerEnabled: true,
+1151:    v40KingCornerPenalty: -15000,           // Penalty for cornered king
+2399:    // v40.37.0: ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME
+2408:    // v40.37: ROOK PASSIVE MOVE PROHIBITION - Don't play passive rook when attacked
+2409:    v40RookPassiveProhibitionEnabled: true,
+2410:    v40RookPassivePenalty: -25000000000000,         // 25 trillion for passive rook
+2411:    v40RookPassiveSquares: ['d3', 'e3', 'd6', 'e6'],// Passive rook squares
+2413:    // v40.37: KING CORNER RETREAT PROHIBITION - Don't retreat king to corner
+2414:    v40KingCornerRetreatEnabled: true,
+2415:    v40KingCornerPenalty: -60000000000000,          // 60 trillion for king corner retreat
+2416:    v40KingCornerSquares: ['a1', 'h1', 'a8', 'h8'], // Corner squares
+2418:    // v40.37: DESPERATION SACRIFICE PREVENTION - Don't make losing sacrifices
+2419:    v40DesperationSacrificePrevEnabled: true,
+2420:    v40DesperationSacrificePenalty: -35000000000000,// 35 trillion for desperation sacrifice
+2422:    // v40.37: ULTRA QUEEN CAPTURE PROHIBITION - Even stronger
+2423:    v40UltraQueenCaptureEnabled: true,
+2424:    v40UltraQueenCapturePenalty: -100000000000000,  // 100 trillion for ANY Qxd4/Qxe5
+2426:    // v40.37: PASSIVE UNDER ATTACK PROHIBITION - No passive moves when attacked
+2427:    v40PassiveUnderAttackEnabled: true,
+2428:    v40PassiveUnderAttackPenalty: -45000000000000,  // 45 trillion for passive when attacked
+8684:function v40KingCornerSafetyEval(fen, move, board, activeColor) {
+8685:    if (!CONFIG.v40KingCornerEnabled) return 0;
+8771:            penalty -= CONFIG.v40KingCornerPenalty || -15000;
+26344:// v40.37 ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME FUNCTIONS
+26348: * v40.37: ROOK PASSIVE MOVE PROHIBITION — Don't play passive rook when attacked
+26351:function v40RookPassiveProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26352:    if (!CONFIG.v40RookPassiveProhibitionEnabled) return 0;
+26379:    const passiveSquares = CONFIG.v40RookPassiveSquares || ['d3', 'e3', 'd6', 'e6', 'c3', 'f3', 'c6', 'f6'];
+26383:        score += CONFIG.v40RookPassivePenalty || -25000000000000;
+26392:            score += (CONFIG.v40RookPassivePenalty || -25000000000000) / 2;
+26400: * v40.37: KING CORNER RETREAT PROHIBITION — Don't retreat king to corner
+26403:function v40KingCornerRetreatEval(fen, move, board, activeColor, moveNumber) {
+26404:    if (!CONFIG.v40KingCornerRetreatEnabled) return 0;
+26414:    const cornerSquares = CONFIG.v40KingCornerSquares || ['a1', 'h1', 'a8', 'h8'];
+26418:        score += CONFIG.v40KingCornerPenalty || -60000000000000;
+26440:            score += (CONFIG.v40KingCornerPenalty || -60000000000000) * 2;
+26448: * v40.37: DESPERATION SACRIFICE PREVENTION — Don't make losing sacrifices
+26451:function v40DesperationSacrificePreventionEval(fen, move, board, activeColor, moveNumber) {
+26452:    if (!CONFIG.v40DesperationSacrificePrevEnabled) return 0;
+Exit code: 0
