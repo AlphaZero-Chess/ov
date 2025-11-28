@@ -1,0 +1,53 @@
+
+Action: $ cd /app && grep -n "v40\.[0-9]*:" "Lichess Bot-AlphaZero-Pure.user.js" | tail -50
+Observation: 36524:                // v40.16: QUEEN INFILTRATION PATH — Detect Qg4-Qxg3-Qh3 sequences
+36527:                // v40.16: 3-PLY DEEP LOOK-AHEAD — Simulate forcing sequences
+36530:                // v40.16: KINGSIDE PAWN SHELTER — Never allow shelter destruction
+36533:                // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
+36536:                // v40.17: ABSOLUTE RECAPTURE — NEVER leave free pieces on the board
+36539:                // v40.17: IMMEDIATE CAPTURE DETECTION — Don't allow opponent free captures
+36542:                // v40.17: MATERIAL AWARENESS — Material is KING
+36545:                // v40.17: ANTI-PAWN-GRAB DEFENSE — Don't let pawns be taken for free
+36548:                // v40.18: KING ESCAPE ROUTE — Ensure king always has escape squares
+36551:                // v40.18: ROOK INVASION DETECTION — Detect enemy rooks on 2nd/7th rank
+36554:                // v40.18: BACK RANK WEAKNESS — Detect back rank mate threats
+36557:                // v40.18: DISCOVERED ATTACK DETECTION — Don't allow discovered attacks
+36560:                // v40.19: MATING PATTERN RECOGNITION — Detect Rook+Queen mating patterns
+36563:                // v40.19: KING CORRIDOR DEFENSE — Protect king corridor squares
+36566:                // v40.19: LUFT CREATION — Ensure king has escape squares
+36569:                // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+36577:                // v40.20: PROMOTION THREAT DETECTION — Calculate ALL promotion lines 8+ moves ahead
+36580:                // v40.20: FORCING SEQUENCE CALCULATOR — See ALL forcing sequences
+36583:                // v40.20: KING WEAKENING PENALTY — NEVER weaken king under attack
+36586:                // v40.20: PIECE SAFETY ABSOLUTE — Never allow pieces to become hanging after move
+36594:                // v40.21: DEEP PAWN CHAIN — Calculate FULL pawn promotion sequences
+36597:                // v40.21: FORCING LINE DETECTION — Calculate ALL forcing sequences
+36600:                // v40.21: QUIET MOVE DANGER — Innocent moves that lose
+36608:                // v40.22: KNIGHT INFILTRATION — Detect knight attacks near king
+36611:                // v40.22: CHECK SEQUENCE DETECTION — Detect perpetual/mating checks
+36614:                // v40.22: MUST RESPOND TO THREAT — Don't ignore threats!
+36623:                // v40.23: ROOK LIFT DETECTION — Detect rook lift mating patterns (Rf5-Rh5)
+36626:                // v40.23: QUEEN H-FILE INVASION — Detect queen mating on h-file (Qh4-Qxh2#)
+36629:                // v40.23: F3/G3 ABSOLUTE PROHIBITION — NEVER weaken kingside!
+36632:                // v40.23: MATING ATTACK PATTERN RECOGNITION — Specific mating patterns
+36635:                // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
+36645:                // v40.24: ABSOLUTE QUEEN SAFETY — NEVER ignore queen being attacked!
+36648:                // v40.24: MUST DEFEND QUEEN — If queen attacked, move MUST defend it!
+36651:                // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+36654:                // v40.24: PRE-MOVE QUEEN SAFETY — Check queen safety BEFORE every move
+36664:                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+36667:                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+36670:                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+36673:                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+36676:                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+36686:                // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+36689:                // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+36692:                // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+36695:                // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!
+36698:                // v40.26: DEEP SACRIFICE CALCULATION — Calculate forcing lines after sacrifice!
+36701:                // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+36704:                // v40.26: COMBINED v40 SCORE — 100% ABSOLUTE KINGSIDE FORTRESS SUPREME INFLUENCE
+36876:        // v40.10: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (100%)
+37684: * v40.4: ROBUST ENGINE INITIALIZATION WITH RETRY AND FALLBACK
+37756: * v40.4: FALLBACK STOCKFISH INITIALIZATION
+Exit code: 0

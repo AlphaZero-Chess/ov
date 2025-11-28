@@ -1,0 +1,6 @@
+Now I need to add the v40.27 CONFIG parameters. Let me find where to add them:
+Action: $ grep -n "v40.26: 100% ABSOLUTE KINGSIDE FORTRESS\|v40KingsideCollapseDetectionEnabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 2013:    v40KingsideCollapseDetectionEnabled: true,
+2021:    // v40.26: 100% ABSOLUTE KINGSIDE FORTRESS SUPREME DOMINANCE
+20787:    if (!CONFIG.v40KingsideCollapseDetectionEnabled) return 0;
+Exit code: 0

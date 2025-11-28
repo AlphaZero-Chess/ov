@@ -1,0 +1,525 @@
+
+Action: $ cd "/app/what exactly and actually happened 39th session" && for i in {1..15}; do echo "=== FILE $i ==="; cat "$i.txt" 2>/dev/null | head -80 || echo "File not found"; done
+Observation: === FILE 1 ===
+Let me check where in computeCombinedScore the v40.26 additions are integrated:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+35790|        const maxScore = Math.max(...scores);
+35791|        
+35792|        // Softmax with temperature=100 (moderate sharpness)
+35793|        const expScores = scores.map(s => Math.exp((s - maxScore) / 100));
+35794|        const sumExp = expScores.reduce((a, b) => a + b, 0);
+35795|        const probabilities = expScores.map(e => e / sumExp);
+35796|        
+35797|        const policyPrior = probabilities[moveIndex];
+35798|        
+35799|        // Clamp to min/max policy bias
+35800|        const clampedPrior = Math.max(
+35801|            TRUE_ALPHAZERO.minPolicyBias,
+35802|            Math.min(TRUE_ALPHAZERO.maxPolicyBias, policyPrior)
+35803|        );
+35804|        
+35805|        return clampedPrior;
+35806|    } catch (e) {
+35807|        debugLog("[POLICY]", "⚠️ Error computing policy:", e.message);
+35808|        return 0.1;
+35809|    }
+35810|}
+35811|
+35812|/**
+35813| * NEW v18.0.0: REMOVED elegance scoring - replaced with policy prior
+35814| * Keeping stub for compatibility
+35815| */
+35816|function computeEleganceScore(fen, move, engineEval, alternatives) {
+35817|    try {
+35818|        // v18: Elegance removed, use policy prior instead
+35819|        return computePolicyPrior(move, alternatives);
+35820|    } catch (e) {
+35821|        debugLog("[LEGACY]", "⚠️ computeEleganceScore called (deprecated in v18)");
+35822|        return 0.5;
+35823|    }
+35824|}
+35825|
+35826|/**
+35827| * NEW v18.0.0: Update trend reconciliation system
+35828| * Tracks last N evaluations and computes trend
+35829| * Disables creativity if trend declining below threshold
+35830| */
+35831|function updateTrendReconciliation(currentEval) {
+35832|    try {
+35833|        // Add to trend history
+35834|        trendHistory.push(currentEval);
+35835|        
+35836|        // Keep only last stabilizationMoves
+35837|        if (trendHistory.length > TRUE_ALPHAZERO.stabilizationMoves) {
+35838|            trendHistory.shift();
+35839|        }
+35840|        
+35841|        // Compute trend (linear regression slope approximation)
+35842|        if (trendHistory.length >= 4) {
+35843|            const n = trendHistory.length;
+35844|            const recentAvg = trendHistory.slice(-3).reduce((a, b) => a + b, 0) / 3;
+35845|            const olderAvg = trendHistory.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+35846|            const trend = recentAvg - olderAvg;
+35847|            
+35848|            evaluationTrend = trend;
+35849|            
+35850|            // Log trend status
+35851|            if (trend < TRUE_ALPHAZERO.tacticalFloorCp) {
+35852|                debugLog("[TREND]", `📉 Declining trend: ${trend.toFixed(1)}cp (below floor ${TRUE_ALPHAZERO.tacticalFloorCp}cp)`);
+35853|            }
+35854|            
+35855|            // Update debug object
+35856|            window.__AZ18_DEBUG.trendData.push({
+35857|                move: moveCount,
+35858|                eval: currentEval,
+35859|                trend: trend,
+35860|                history: [...trendHistory]
+35861|            });
+35862|        }
+35863|        
+35864|        // Update evaluation history for compatibility
+35865|        updateEvaluationHistory(currentEval);
+35866|    } catch (e) {
+=== FILE 2 ===
+Let me find where the v40.26 functions are integrated in computeCombinedScore:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+35600|            coordination: evaluatePieceCoordination(fen) * 10, // Scale to 0-10
+35601|            activity: evaluatePieceActivity(fen) * 10, // Scale to 0-10
+35602|            pawnStructure: evaluatePawnStructure(fen) * 10, // Scale to 0-10
+35603|            bishopPair: hasBishopPair(fen) ? CONFIG.bishopPairBonus : 0,
+35604|            badPieces: detectBadPieces(fen) * -CONFIG.badPiecePenalty,
+35605|            
+35606|            // Calculate weighted total
+35607|            total: 0
+35608|        };
+35609|        
+35610|        // Apply weights from CONFIG
+35611|        evaluation.total = 
+35612|            evaluation.kingSafety * CONFIG.kingSafetyWeight +
+35613|            evaluation.development * CONFIG.developmentWeight +
+35614|            evaluation.centerControl * CONFIG.centerControlWeight +
+35615|            evaluation.mobility * CONFIG.mobilityWeight +
+35616|            evaluation.coordination * CONFIG.coordinationWeight +
+35617|            evaluation.activity * CONFIG.pieceActivityBonus +
+35618|            evaluation.pawnStructure * CONFIG.pawnStructureWeight +
+35619|            evaluation.bishopPair +
+35620|            evaluation.badPieces;
+35621|        
+35622|        // Log comprehensive evaluation periodically
+35623|        if (moveCount % 5 === 0 || evaluation.kingSafety < 3) {
+35624|            debugLog("[HOLISTIC]", `Position Evaluation (move ${moveCount}):`);
+35625|            debugLog("[HOLISTIC]", `  King Safety: ${evaluation.kingSafety.toFixed(1)}/10 (weight: ${CONFIG.kingSafetyWeight})`);
+35626|            debugLog("[HOLISTIC]", `  Development: ${evaluation.development.toFixed(1)}/10`);
+35627|            debugLog("[HOLISTIC]", `  Center Control: ${evaluation.centerControl.toFixed(1)}/10`);
+35628|            debugLog("[HOLISTIC]", `  Mobility: ${evaluation.mobility.toFixed(1)}/10`);
+35629|            debugLog("[HOLISTIC]", `  Coordination: ${evaluation.coordination.toFixed(1)}/10`);
+35630|            debugLog("[HOLISTIC]", `  Total Score: ${evaluation.total.toFixed(1)}`);
+35631|        }
+35632|        
+35633|        return evaluation;
+35634|    } catch (e) {
+35635|        debugLog("[HOLISTIC]", "⚠️ Error in holistic evaluation:", e.message);
+35636|        return { total: 0, kingSafety: 5 };
+35637|    }
+35638|}
+35639|
+35640|
+35641|
+35642|/**
+35643| * v12.0.0: Maximum thinking time for classical - deep calculation
+35644| */
+35645|function getAlphaZeroThinkTime(phase, isStrategic, timeLeft) {
+35646|    let speedMultiplier = 1.0;
+35647|    
+35648|    // Adjust based on phase - CONSISTENT time for deep calculation
+35649|    if (phase === "opening") speedMultiplier = 1.2;  // Moderate time in opening
+35650|    else if (phase === "middlegame") speedMultiplier = 1.5;  // More time in middlegame
+35651|    else speedMultiplier = 1.3;  // Good time in endgame
+35652|    
+35653|    // Strategic positions get more time
+35654|    if (isStrategic) speedMultiplier *= 1.3;  // Moderate boost
+35655|    
+35656|    // Complex positions deserve more thinking
+35657|    if (positionComplexity > 0.7) speedMultiplier *= 1.2;  // Small boost
+35658|    
+35659|    // Classical time management - use time wisely
+35660|    if (timeLeft > 180000) speedMultiplier *= 1.3;  // 3+ minutes - use good time
+35661|    else if (timeLeft > 120000) speedMultiplier *= 1.2;  // 2+ minutes - use time well
+35662|    else if (timeLeft > 60000) speedMultiplier *= 1.0;   // 1+ minute - normal time
+35663|    else if (timeLeft > 30000) speedMultiplier *= 0.9;   // 30s-1min - start conserving
+35664|    else if (timeLeft < 15000) speedMultiplier *= 0.7;   // <15s - time pressure
+35665|    else if (timeLeft < 5000) speedMultiplier *= 0.5;    // <5s - crisis mode
+35666|    
+35667|    let baseTime = CONFIG.thinkingTimeMin;
+35668|    // DETERMINISTIC: reduce randomness, compute stable thinkTime
+35669|    let additionalTime = (CONFIG.thinkingTimeMax - CONFIG.thinkingTimeMin) * speedMultiplier * 0.6;
+35670|    
+35671|    const thinkTime = baseTime + additionalTime;
+35672|    return Math.floor(Math.max(CONFIG.thinkingTimeMin, Math.min(thinkTime, CONFIG.thinkingTimeMax)));
+35673|}
+35674|
+35675|/**
+35676| * Strategic depth calculation - ENHANCED v6.0.0 with TACTICAL AWARENESS
+=== FILE 3 ===
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36600|                // v40.21: QUIET MOVE DANGER — Innocent moves that lose
+36601|                const quietMoveDangerScore = v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) * 35.0;
+36602|                
+36603|                // ═══════════════════════════════════════════════════════════════════
+36604|                // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME
+36605|                // From game: Bot played a3 ignoring Nh4-Nxg2-Nf3+ mating attack!
+36606|                // ═══════════════════════════════════════════════════════════════════
+36607|                
+36608|                // v40.22: KNIGHT INFILTRATION — Detect knight attacks near king
+36609|                const knightInfiltrationScore = v40KnightInfiltrationEval(fen, move, board, activeColor, moveNumber) * 60.0;
+36610|                
+36611|                // v40.22: CHECK SEQUENCE DETECTION — Detect perpetual/mating checks
+36612|                const checkSequenceDetectionScore = v40CheckSequenceDetectionEval(fen, move, board, activeColor, moveNumber) * 55.0;
+36613|                
+36614|                // v40.22: MUST RESPOND TO THREAT — Don't ignore threats!
+36615|                const mustRespondScore = v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) * 50.0;
+36616|                
+36617|                // ═══════════════════════════════════════════════════════════════════
+36618|                // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME
+36619|                // From game: Bot missed Rf5-Rh5 + Qe7-Qh4-Qxh2# mating attack!
+36620|                // The bot played f3 which CATASTROPHICALLY weakened the kingside!
+36621|                // ═══════════════════════════════════════════════════════════════════
+36622|                
+36623|                // v40.23: ROOK LIFT DETECTION — Detect rook lift mating patterns (Rf5-Rh5)
+36624|                const rookLiftScore = v40RookLiftDetectionEval(fen, move, board, activeColor, moveNumber) * 70.0;
+36625|                
+36626|                // v40.23: QUEEN H-FILE INVASION — Detect queen mating on h-file (Qh4-Qxh2#)
+36627|                const queenHFileScore = v40QueenHFileInvasionEval(fen, move, board, activeColor, moveNumber) * 75.0;
+36628|                
+36629|                // v40.23: F3/G3 ABSOLUTE PROHIBITION — NEVER weaken kingside!
+36630|                const f3g3ProhibitionScore = v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) * 80.0;
+36631|                
+36632|                // v40.23: MATING ATTACK PATTERN RECOGNITION — Specific mating patterns
+36633|                const matingAttackPatternScore = v40MatingAttackPatternEval(fen, move, board, activeColor, moveNumber) * 65.0;
+36634|                
+36635|                // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
+36636|                const kingsideFortressScore = v40KingsideFortressEval(fen, move, board, activeColor, moveNumber) * 60.0;
+36637|                
+36638|                // ═══════════════════════════════════════════════════════════════════
+36639|                // v40.24 ABSOLUTE QUEEN SAFETY SUPREME
+36640|                // From game: Bot played Rfe1 while queen on d2 was attacked by knight on e4!
+36641|                // Then Black played Nxd2 and captured the queen FOR FREE!
+36642|                // THIS IS THE #1 BLUNDER - LOSING QUEEN WITHOUT COMPENSATION!
+36643|                // ═══════════════════════════════════════════════════════════════════
+36644|                
+36645|                // v40.24: ABSOLUTE QUEEN SAFETY — NEVER ignore queen being attacked!
+36646|                const absoluteQueenSafetyScore = v40AbsoluteQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 100.0;
+36647|                
+36648|                // v40.24: MUST DEFEND QUEEN — If queen attacked, move MUST defend it!
+36649|                const mustDefendQueenScore = v40MustDefendQueenEval(fen, move, board, activeColor, moveNumber) * 95.0;
+36650|                
+36651|                // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+36652|                const knightForkQueenScore = v40KnightForkQueenEval(fen, move, board, activeColor, moveNumber) * 90.0;
+36653|                
+36654|                // v40.24: PRE-MOVE QUEEN SAFETY — Check queen safety BEFORE every move
+36655|                const preMoveQueenSafetyScore = v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 85.0;
+36656|                
+36657|                // ═══════════════════════════════════════════════════════════════════════════════
+36658|                // v40.25 STRATEGIC MASTERY SUPREME: THE ULTIMATE FIXES
+36659|                // From game: Qxb6 queen trade in closed position = TERRIBLE!
+36660|                // Nxf3+ Nxd2 fork missed = CATASTROPHIC!
+36661|                // b2 vs c7 pawn race lost = GAME OVER!
+36662|                // ═══════════════════════════════════════════════════════════════════════════════
+36663|                
+36664|                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+36665|                const noEarlyQueenTradeScore = v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) * 110.0;
+36666|                
+36667|                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+36668|                const enhancedForkScore = v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) * 105.0;
+36669|                
+36670|                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+36671|                const pawnRaceScore = v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) * 100.0;
+36672|                
+36673|                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+36674|                const piecePreservationAbsoluteScore = v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) * 95.0;
+36675|                
+36676|                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+=== FILE 4 ===
+Now I need to check if v40.26 functions are integrated. Let me search for the v40.26 integration:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36750|                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+36751|                debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+36752|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+36753|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+36754|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+36755|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+36756|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+36757|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+36758|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+36759|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+36760|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+36761|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+36762|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+36763|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+36764|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+36765|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+36766|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+36767|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+36768|                debugLog("[V40_INTEGRATE]", `   ⭐ ImmediateMaterialLoss: ${immediateMaterialLossScore.toFixed(1)}`);
+36769|                debugLog("[V40_INTEGRATE]", `   ⭐ CaptureChain: ${captureChainScore.toFixed(1)}`);
+36770|                debugLog("[V40_INTEGRATE]", `   ⭐ QueenInfiltrationAbsolute: ${queenInfiltrationAbsoluteScore.toFixed(1)}`);
+36771|                debugLog("[V40_INTEGRATE]", `   ⭐ PreMoveSafety: ${preMoveSafetyScore.toFixed(1)}`);
+36772|                debugLog("[V40_INTEGRATE]", `   ⭐ OpeningBlunder: ${openingBlunderScore.toFixed(1)}`);
+36773|                debugLog("[V40_INTEGRATE]", `   ⭐ SimpleThreat: ${simpleThreatScore.toFixed(1)}`);
+36774|                debugLog("[V40_INTEGRATE]", `   🔥🔥 LookAheadBlunder: ${lookAheadBlunderScore.toFixed(1)}`);
+36775|                debugLog("[V40_INTEGRATE]", `   🔥🔥 TripleCheck: ${tripleCheckScore.toFixed(1)}`);
+36776|                debugLog("[V40_INTEGRATE]", `   🔥🔥 FailSafe: ${failSafeScore.toFixed(1)}`);
+36777|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ PiecePreservation: ${piecePreservationScore.toFixed(1)}`);
+36778|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ AllPiecesSafety: ${allPiecesSafetyScore.toFixed(1)}`);
+36779|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ ProphylaxisMove: ${prophylaxisMoveScore.toFixed(1)}`);
+36780|                debugLog("[V40_INTEGRATE]", `   🏰🏰 FileOpeningTowardKing: ${fileOpeningTowardKingScore.toFixed(1)}`);
+36781|                debugLog("[V40_INTEGRATE]", `   🏰🏰 PawnStormDetection: ${pawnStormDetectionScore.toFixed(1)}`);
+36782|                debugLog("[V40_INTEGRATE]", `   🏰🏰 QueenInfiltrationPath: ${queenInfiltrationPathScore.toFixed(1)}`);
+36783|                debugLog("[V40_INTEGRATE]", `   🏰🏰 DeepLookAhead: ${deepLookAheadScore.toFixed(1)}`);
+36784|                debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsidePawnShelter: ${kingsidePawnShelterScore.toFixed(1)}`);
+36785|                debugLog("[V40_INTEGRATE]", `   🏰🏰 ForcingLineRejection: ${forcingLineRejectionScore.toFixed(1)}`);
+36786|                debugLog("[V40_INTEGRATE]", `   💰💰 AbsoluteRecapture: ${absoluteRecaptureScore.toFixed(1)}`);
+36787|                debugLog("[V40_INTEGRATE]", `   💰💰 ImmediateCaptureDetection: ${immediateCaptureDetectionScore.toFixed(1)}`);
+36788|                debugLog("[V40_INTEGRATE]", `   💰💰 MaterialAwareness: ${materialAwarenessScore.toFixed(1)}`);
+36789|                debugLog("[V40_INTEGRATE]", `   💰💰 AntiPawnGrab: ${antiPawnGrabScore.toFixed(1)}`);
+36790|                debugLog("[V40_INTEGRATE]", `   👑👑 KingEscapeRoute: ${kingEscapeRouteScore.toFixed(1)}`);
+36791|                debugLog("[V40_INTEGRATE]", `   👑👑 RookInvasionDetection: ${rookInvasionDetectionScore.toFixed(1)}`);
+36792|                debugLog("[V40_INTEGRATE]", `   👑👑 BackRankWeakness: ${backRankWeaknessScore.toFixed(1)}`);
+36793|                debugLog("[V40_INTEGRATE]", `   👑👑 DiscoveredAttackDetection: ${discoveredAttackDetectionScore.toFixed(1)}`);
+36794|                debugLog("[V40_INTEGRATE]", `   🔥🔥 MatingPattern: ${matingPatternScore.toFixed(1)}`);
+36795|                debugLog("[V40_INTEGRATE]", `   🔥🔥 KingCorridorDefense: ${kingCorridorDefenseScore.toFixed(1)}`);
+36796|                debugLog("[V40_INTEGRATE]", `   🔥🔥 LuftCreation: ${luftCreationScore.toFixed(1)}`);
+36797|                debugLog("[V40_INTEGRATE]", `   🔥🔥 WinningPosition: ${winningPositionScore.toFixed(1)}`);
+36798|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ PromotionThreat: ${promotionThreatScore.toFixed(1)}`);
+36799|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ ForcingSequence: ${forcingSequenceScore.toFixed(1)}`);
+36800|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ KingWeakening: ${kingWeakeningScore.toFixed(1)}`);
+36801|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ PieceSafetyV40: ${pieceSafetyV40Score.toFixed(1)}`);
+36802|                debugLog("[V40_INTEGRATE]", `   🐴🐴 DeepPawnChain: ${deepPawnChainScore.toFixed(1)}`);
+36803|                debugLog("[V40_INTEGRATE]", `   🐴🐴 ForcingLine: ${forcingLineScore.toFixed(1)}`);
+36804|                debugLog("[V40_INTEGRATE]", `   🐴🐴 QuietMoveDanger: ${quietMoveDangerScore.toFixed(1)}`);
+36805|                debugLog("[V40_INTEGRATE]", `   🏇🏇 KnightInfiltration: ${knightInfiltrationScore.toFixed(1)}`);
+36806|                debugLog("[V40_INTEGRATE]", `   🏇🏇 CheckSequenceDetection: ${checkSequenceDetectionScore.toFixed(1)}`);
+36807|                debugLog("[V40_INTEGRATE]", `   🏇🏇 MustRespond: ${mustRespondScore.toFixed(1)}`);
+36808|                debugLog("[V40_INTEGRATE]", `   🏰🏰 RookLift: ${rookLiftScore.toFixed(1)}`);
+36809|                debugLog("[V40_INTEGRATE]", `   🏰🏰 QueenHFile: ${queenHFileScore.toFixed(1)}`);
+36810|                debugLog("[V40_INTEGRATE]", `   🏰🏰 F3G3Prohibition: ${f3g3ProhibitionScore.toFixed(1)}`);
+36811|                debugLog("[V40_INTEGRATE]", `   🏰🏰 MatingAttackPattern: ${matingAttackPatternScore.toFixed(1)}`);
+36812|                debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsideFortress: ${kingsideFortressScore.toFixed(1)}`);
+36813|                debugLog("[V40_INTEGRATE]", `   👸👸 AbsoluteQueenSafety: ${absoluteQueenSafetyScore.toFixed(1)}`);
+36814|                debugLog("[V40_INTEGRATE]", `   👸👸 MustDefendQueen: ${mustDefendQueenScore.toFixed(1)}`);
+36815|                debugLog("[V40_INTEGRATE]", `   👸👸 KnightForkQueen: ${knightForkQueenScore.toFixed(1)}`);
+36816|                debugLog("[V40_INTEGRATE]", `   👸👸 PreMoveQueenSafety: ${preMoveQueenSafetyScore.toFixed(1)}`);
+36817|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+36818|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+36819|                debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
+36820|                debugLog("[V40_INTEGRATE]", `   MatingAttack: ${matingAttackScore.toFixed(1)}`);
+36821|                debugLog("[V40_INTEGRATE]", `   G-FILE ATTACK: ${gFileAttackScore.toFixed(1)}`);
+36822|                debugLog("[V40_INTEGRATE]", `   KINGSIDE ATTACK PATTERN: ${kingsideAttackPatternScore.toFixed(1)}`);
+36823|                debugLog("[V40_INTEGRATE]", `   PASSIVE QUEENSIDE: ${passiveQueensideScore.toFixed(1)}`);
+36824|                debugLog("[V40_INTEGRATE]", `   BAD EXCHANGE FILE: ${badExchangeFileScore.toFixed(1)}`);
+36825|                debugLog("[V40_INTEGRATE]", `   PAWN STORM: ${pawnStormScore.toFixed(1)}`);
+36826|                debugLog("[V40_INTEGRATE]", `   DEFEND KINGSIDE: ${defendKingsideScore.toFixed(1)}`);
+=== FILE 5 ===
+Now I can see that v40.26 functions exist but I need to check if they're integrated. Let me check the v40.26 related scores in the combined calculation:
+Action: $ grep -n "v40AbsoluteKingsidePawnProhibition\|v40BishopSacrificeDetection\|v40ForcedDefenseMode\|v40QueenKingsideThreat\|v40DeepSacrificeCalc\|v40KingsideCollapseDetection" "/app/Lichess Bot-AlphaZero-Pure.user.js" | grep -E "Score|= v40" | head -20
+Observation: Exit code: 0=== FILE 6 ===
+The v40.26 functions are NOT integrated into the computeCombinedScore. I need to add them. Let me first check what v40.26 functions exist:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+20382|function v40AbsoluteKingsidePawnProhibitionEval(fen, move, board, activeColor, moveNumber) {
+20383|    if (!CONFIG.v40AbsoluteKingsideProhibitionEnabled) return 0;
+20384|    
+20385|    let score = 0;
+20386|    const isWhite = activeColor === 'w';
+20387|    const enemyColor = isWhite ? 'b' : 'w';
+20388|    
+20389|    try {
+20390|        const fromSquare = move.substring(0, 2);
+20391|        const toSquare = move.substring(2, 4);
+20392|        const movingPiece = board.get(fromSquare);
+20393|        
+20394|        if (!movingPiece) return 0;
+20395|        
+20396|        // Only check pawn moves
+20397|        if (movingPiece.toLowerCase() !== 'p') return 0;
+20398|        
+20399|        const fromFile = fromSquare[0];
+20400|        const toFile = toSquare[0];
+20401|        const fromRank = parseInt(fromSquare[1]);
+20402|        const toRank = parseInt(toSquare[1]);
+20403|        
+20404|        // For WHITE: f3, g3, h3 are dangerous (ranks 2->3)
+20405|        // For BLACK: f6, g6, h6 are dangerous (ranks 7->6)
+20406|        const startRank = isWhite ? 2 : 7;
+20407|        const dangerRank = isWhite ? 3 : 6;
+20408|        
+20409|        // Check if this is a kingside pawn weakening move
+20410|        const isKingsidePawn = (toFile === 'f' || toFile === 'g' || toFile === 'h');
+20411|        const isWeakeningMove = isKingsidePawn && toRank === dangerRank;
+20412|        
+20413|        if (!isWeakeningMove) return 0;
+20414|        
+20415|        // CHECK: Is enemy queen threatening kingside?
+20416|        const enemyQueenPos = v40FindQueenPosition(board, enemyColor);
+20417|        const enemyQueenOnKingside = enemyQueenPos && v40IsQueenThreateningKingside(enemyQueenPos, isWhite);
+20418|        
+20419|        // CHECK: Does enemy have dark-squared bishop?
+20420|        const enemyHasDarkBishop = v40HasDarkSquaredBishop(board, enemyColor);
+20421|        
+20422|        // CHECK: Does enemy have active pieces on kingside?
+20423|        const enemyKingsideActivity = v40CountEnemyKingsideActivity(board, enemyColor, isWhite);
+20424|        
+20425|        // CHECK: Is our king castled kingside?
+20426|        const ourKing = findKing(board, activeColor);
+20427|        const isKingsideCastled = ourKing && (isWhite ? 
+20428|            (ourKing[0] >= 'f' && ourKing[0] <= 'h') : 
+20429|            (ourKing[0] >= 'f' && ourKing[0] <= 'h'));
+20430|        
+20431|        if (toFile === 'g') {
+20432|            // G3/G6 MOVE — Potentially catastrophic!
+20433|            if (enemyQueenOnKingside) {
+20434|                score += CONFIG.v40G3UnderQueenThreatPenalty || -500000000000;
+20435|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️☠️ ${move} is g${dangerRank} WITH ENEMY QUEEN ON KINGSIDE! SUICIDE!`);
+20436|            }
+20437|            
+20438|            if (enemyHasDarkBishop) {
+20439|                score += CONFIG.v40G3WithEnemyBishopPenalty || -450000000000;
+20440|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️ ${move} is g${dangerRank} WITH ENEMY DARK BISHOP! Bxg${dangerRank} SACRIFICE ENABLED!`);
+20441|            }
+20442|            
+20443|            if (enemyKingsideActivity >= 2) {
+20444|                score += CONFIG.v40KingsidePawnWeakenPenalty || -300000000000;
+20445|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️ ${move} weakens kingside with ${enemyKingsideActivity} enemy pieces active!`);
+20446|            }
+20447|        }
+20448|        
+20449|        if (toFile === 'f') {
+20450|            // F3/F6 MOVE — Even more dangerous!
+20451|            if (enemyQueenOnKingside) {
+20452|                score += CONFIG.v40F3UnderQueenThreatPenalty || -600000000000;
+20453|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️☠️☠️ ${move} is f${dangerRank} WITH ENEMY QUEEN ACTIVE! CATASTROPHIC!`);
+20454|            }
+20455|            
+20456|            // Check for knight that can exploit f3/f6
+20457|            if (v40HasKnightThatCanExploitWeakness(board, enemyColor, toSquare, isWhite)) {
+20458|                score += CONFIG.v40F3WithEnemyKnightPenalty || -400000000000;
+=== FILE 7 ===
+Excellent! The v40.26 functions exist. Now I need to integrate them into computeCombinedScore. Let me find where v40.25 is integrated and add v40.26 after it:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36660|                // Nxf3+ Nxd2 fork missed = CATASTROPHIC!
+36661|                // b2 vs c7 pawn race lost = GAME OVER!
+36662|                // ═══════════════════════════════════════════════════════════════════════════════
+36663|                
+36664|                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+36665|                const noEarlyQueenTradeScore = v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) * 110.0;
+36666|                
+36667|                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+36668|                const enhancedForkScore = v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) * 105.0;
+36669|                
+36670|                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+36671|                const pawnRaceScore = v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) * 100.0;
+36672|                
+36673|                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+36674|                const piecePreservationAbsoluteScore = v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) * 95.0;
+36675|                
+36676|                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+36677|                const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
+36678|                
+36679|                // v40.25: COMBINED v40 SCORE — 100% STRATEGIC MASTERY SUPREME INFLUENCE
+36680|                // This makes v40 the STRATEGIC MASTERY SUPREME factor
+36681|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+36682|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+36683|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+36684|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+36685|                               counterattackBonus + initiativePreservationBonus +
+36686|                               // v40.4 additions:
+36687|                               openingPrinciplesScore + discoveredAttackPenalty + 
+36688|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+36689|                               // v40.5 additions:
+36690|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+36691|                               // v40.6 ULTIMATE additions:
+36692|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+36693|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+36694|                               // v40.7 DIVINE additions:
+36695|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+36696|                               // v40.8 TRANSCENDENT additions:
+36697|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+36698|                               counterplayGenScore + centralControlSupremeScore +
+36699|                               // v40.9 OMNISCIENT additions:
+36700|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+=== FILE 8 ===
+Now I'll add the v40.26 integration. First, let me create the implementation:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+                const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
+                
+                // v40.25: COMBINED v40 SCORE — 100% STRATEGIC MASTERY SUPREME INFLUENCE" --new-str "                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+                const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
+                
+                // ═══════════════════════════════════════════════════════════════════════════════
+                // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME: THE FINAL DEFENSE
+                // From game: g3 was CATASTROPHIC with enemy queen active!
+                // Bxg3 sacrifice DEMOLISHED the kingside!
+                // THE BOT MUST NEVER WEAKEN KINGSIDE UNDER ANY THREAT!
+                // ═══════════════════════════════════════════════════════════════════════════════
+                
+                // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+                const kingsidePawnProhibitionScore = v40AbsoluteKingsidePawnProhibitionEval(fen, move, board, activeColor, moveNumber) * 200.0;
+                
+                // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+                const bishopSacrificeScore = v40BishopSacrificeDetectionEval(fen, move, board, activeColor, moveNumber) * 180.0;
+                
+                // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+                const forcedDefenseModeScore = v40ForcedDefenseModeEval(fen, move, board, activeColor, moveNumber) * 150.0;
+                
+                // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!
+                const queenKingsideThreatScore = v40QueenKingsideThreatEval(fen, move, board, activeColor, moveNumber) * 160.0;
+                
+                // v40.26: DEEP SACRIFICE CALCULATION — Calculate forcing lines after sacrifice!
+                const deepSacrificeCalcScore = v40DeepSacrificeCalcEval(fen, move, board, activeColor, moveNumber) * 140.0;
+                
+                // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+                const kingsideCollapseScore = v40KingsideCollapseDetectionEval(fen, move, board, activeColor, moveNumber) * 170.0;
+                
+                // v40.26: COMBINED v40 SCORE — 100% ABSOLUTE KINGSIDE FORTRESS SUPREME INFLUENCE"
+Observation: Edit was successful.=== FILE 9 ===
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+                               // v40.12 PROACTIVE SUPREME additions:
+                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+                               // v40.15 PIECE PRESERVATION SUPREME additions:
+                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore +
+                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+                               promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
+                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+          
+... [stdout truncated]
+Exit code: 0

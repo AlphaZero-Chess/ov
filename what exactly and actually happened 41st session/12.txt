@@ -1,0 +1,43 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    v40GFileOpenToKingPenalty: -450000000000,       // G-file opens toward our king
+    v40HFileOpenToKingPenalty: -500000000000,       // H-file opens toward our king
+    v40FFileOpenToKingPenalty: -400000000000,       // F-file opens toward our king
+    v40NoKingsidePawnShieldPenalty: -550000000000,  // Lost all kingside pawn shelter
+    v40KingsideWeaknessCreatedPenalty: -350000000000, // Move creates kingside weakness
+    
+    // v40.26: 100% ABSOLUTE KINGSIDE FORTRESS SUPREME DOMINANCE
+    v40AbsoluteKingsideFortressDominance: 1.0,      // 100% v40.26 dominance
+};" --new-str "    v40GFileOpenToKingPenalty: -450000000000,       // G-file opens toward our king
+    v40HFileOpenToKingPenalty: -500000000000,       // H-file opens toward our king
+    v40FFileOpenToKingPenalty: -400000000000,       // F-file opens toward our king
+    v40NoKingsidePawnShieldPenalty: -550000000000,  // Lost all kingside pawn shelter
+    v40KingsideWeaknessCreatedPenalty: -350000000000, // Move creates kingside weakness
+    
+    // v40.26: 100% ABSOLUTE KINGSIDE FORTRESS SUPREME DOMINANCE
+    v40AbsoluteKingsideFortressDominance: 1.0,      // 100% v40.26 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // v40.27.0: ABSOLUTE TACTICAL SUPREMACY — Never lose to tactics
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // v40.27: FORCED EXCHANGE SEQUENCE CALCULATION — See 3-4 moves into exchanges
+    v40ForcedExchangeSequenceEnabled: true,
+    v40ExchangeSequenceDepth: 4,                    // Calculate 4 moves into exchanges
+    v40MaterialLossInExchangePenalty: -10000,       // Per centipawn lost in exchange
+    v40LoosePieceAfterMovePenalty: -5000,           // Per value point of loose piece
+    
+    // v40.27: ABSOLUTE KNIGHT FORK SHIELD — Protect critical fork squares
+    v40KnightForkShieldEnabled: true,
+    v40KnightForkThreatPenalty: -500000000,         // Knight fork threatens King+Queen
+    v40KnightForkRookPenalty: -300000000,           // Knight fork threatens King+Rook
+    v40ForkSquareDefenseBonus: 50000,               // Bonus for defending fork square
+    
+    // v40.27: KING EXPOSURE INDEX — Calculate king safety after moves
+    v40KingExposureIndexEnabled: true,
+    v40KingExposureIncreasePenalty: -100000,        // Per exposure point increase
+    v40LowKingDefendersPenalty: -200000,            // Per missing defender below 2
+    
+    // v40.27: 100% ABSOLUTE TACTICAL SUPREMACY DOMINANCE
+    v40AbsoluteTacticalSupremacyDominance: 1.0,     // 100% v40.27 dominance
+};"
+Observation: Edit was successful.

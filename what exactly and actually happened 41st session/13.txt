@@ -1,0 +1,23 @@
+Now I need to integrate the v40.27 functions into the computeCombinedScore. Let me find where the v40.26 scores are integrated:
+Action: $ grep -n "kingsideCollapseScore\|v40.26: COMBINED\|v40.26 ABSOLUTE KINGSIDE\|// v40.26:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 1964:    // v40.26: ABSOLUTE KINGSIDE FORTRESS SUPREME — THE FINAL DEFENSE
+1970:    // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+1979:    // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+1987:    // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+1995:    // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!
+2004:    // v40.26: DEEP SACRIFICE CALCULATION — Calculate forcing lines after sacrifice!
+2012:    // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+2021:    // v40.26: 100% ABSOLUTE KINGSIDE FORTRESS SUPREME DOMINANCE
+20398:// v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME FUNCTIONS
+37176:                // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME: THE FINAL DEFENSE
+37182:                // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+37185:                // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+37188:                // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+37191:                // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!
+37194:                // v40.26: DEEP SACRIFICE CALCULATION — Calculate forcing lines after sacrifice!
+37197:                // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+37198:                const kingsideCollapseScore = v40KingsideCollapseDetectionEval(fen, move, board, activeColor, moveNumber) * 170.0;
+37200:                // v40.26: COMBINED v40 SCORE — 100% ABSOLUTE KINGSIDE FORTRESS SUPREME INFLUENCE
+37258:                               // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
+37260:                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore;
+Exit code: 0

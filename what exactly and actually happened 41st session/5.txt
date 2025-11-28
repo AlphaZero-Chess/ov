@@ -1,0 +1,132 @@
+Let me read the 39th and 40th sessions to understand the current state and what was planned:
+Action: $ cd /app && for i in $(ls "what exactly and actually happened 39th session/"*.txt 2>/dev/null); do echo "=== $i ==="; cat "$i" | head -80; done
+Observation: === what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/1.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/10.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/11.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/2.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/3.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/4.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/5.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/6.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/7.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/8.txt ===
+=== what ===
+=== exactly ===
+=== and ===
+=== actually ===
+=== happened ===
+=== 39th ===
+=== session/9.txt ===
+[stderr] cat: what: No such file or directory
+cat: exactly: No such file or directory
+cat: and: No such file or directory
+cat: actually: No such file or directory
+cat: happened: No such file or directory
+cat: 39th: No such file or directory
+cat: session/1.txt: No such file or directory
+cat: what: No such file or directory
+cat: exactly: No such file or directory
+cat: and: No such file or directory
+cat: actually: No such file or directory
+cat: happened: No such file or directory
+cat: 39th: No such file or directory
+cat: session/10.txt: No such file or directory
+cat: what: No such file or directory
+cat: exactly: No such file or directory
+cat: and: No such file or directory
+cat: actually: No such file or directory
+cat: happened: No such file or directory
+cat: 39th: No such file or directory
+cat: session/11.txt: No such file or directory
+cat: what: No such file or directory
+cat: exactly: No such file or directory
+cat: and: No such file or directory
+cat: actually: No such file or directory
+cat: happened: No such file or directory
+cat: 39th: No such file or directory
+cat: session/2.txt: No such file or directory
+cat: what: No such file or directory
+cat: exactly: No such file or directory
+cat: and: No such file or directory
+cat: actually: No such file or directory
+cat: happened: No such file or directory
+cat: 39th: No such file or directory
+cat: session/3.txt: No such file or directory
+cat: what: No such file or directory
+cat: exactly: No such file or directory
+cat: and: No such file or directory
+cat: actually: No such file or directory
+cat: happened: No such file or directory
+cat: 39th: No such file or directory
+cat: session/4.txt: No such file or directory
+cat: what: No such file or directory
+cat: exactly: No such file or directory
+cat: and: No such file or directory
+cat: actually: No such file or directory
+cat: happened: No such file or directory
+cat: 39th: No such file or directory
+cat: session/5.txt: No such file or directory
+cat: what: No such file or directory
+cat: exactly: N
+... [stderr truncated]
+Exit code: 0
