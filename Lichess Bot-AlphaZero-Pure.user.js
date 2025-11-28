@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
-// @description  TRUE AlphaZero Replica v40.36 - NO Qxd4 EVER - NO CASTLING INTO DANGER - NO KNIGHT SACRIFICE - ABSOLUTE ZERO BLUNDERS!
-// @author       AlphaZero TRUE REPLICA v40.36 QUEEN CAPTURE & CASTLING DIRECTION SUPREME EDITION
-// @version      40.36.0-QUEEN-CAPTURE-PROHIBITION-CASTLING-DIRECTION-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME
+// @description  TRUE AlphaZero Replica v40.37 - NO PASSIVE ROOKS - NO KING CORNER RETREAT - NO DESPERATION SACRIFICE - ABSOLUTE ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.37 ROOK PASSIVE & KING CORNER SUPREME EDITION
+// @version      40.37.0-ROOK-PASSIVE-KING-CORNER-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -42374,8 +42374,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                centralControlPriorityScore + pieceCoordinationSupremeScore +
                                // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME additions!
                                queenCaptureProhibitionScore + knightSacrificePreventionScore + castlingDirectionScore +
-                               exchangeQualityVerificationScore + pieceActivityRequirementScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.36 QUEEN CAPTURE & CASTLING PARADIGM SHIFT
+                               exchangeQualityVerificationScore + pieceActivityRequirementScore +
+                               // v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME additions!
+                               rookPassiveProhibitionScore + kingCornerRetreatScore + desperationSacrificeScore +
+                               ultraQueenCaptureScore + passiveUnderAttackScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.37 ROOK PASSIVE & KING CORNER PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -42433,6 +42436,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🏰🚫 CASTLING DIRECTION: ${castlingDirectionScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🔄🚫 EXCHANGE QUALITY VERIFICATION: ${exchangeQualityVerificationScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   📍🚫 PIECE ACTIVITY REQUIREMENT: ${pieceActivityRequirementScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🚫 ROOK PASSIVE PROHIBITION: ${rookPassiveProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑🚫 KING CORNER RETREAT: ${kingCornerRetreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💣🚫 DESPERATION SACRIFICE: ${desperationSacrificeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸💀 ULTRA QUEEN CAPTURE: ${ultraQueenCaptureScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚫⚔️ PASSIVE UNDER ATTACK: ${passiveUnderAttackScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
