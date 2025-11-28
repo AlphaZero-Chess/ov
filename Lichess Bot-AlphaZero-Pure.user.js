@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME
-// @description  TRUE AlphaZero Replica v40.23 - ROOK LIFT DETECTION - QUEEN H-FILE INVASION - F3/G3 ABSOLUTE PROHIBITION - MATING ATTACK AWARENESS - KINGSIDE FORTRESS SUPREME
-// @author       AlphaZero TRUE REPLICA v40.23 ROOK LIFT MATING ATTACK SUPREME EDITION
-// @version      40.23.0-ROOK-LIFT-MATING-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.24 ABSOLUTE QUEEN SAFETY SUPREME
+// @description  TRUE AlphaZero Replica v40.24 - ABSOLUTE QUEEN SAFETY - MUST DEFEND QUEEN - KNIGHT FORK DETECTION - PRE-MOVE QUEEN CHECK - NEVER LOSE QUEEN FOR FREE!
+// @author       AlphaZero TRUE REPLICA v40.24 ABSOLUTE QUEEN SAFETY SUPREME EDITION
+// @version      40.24.0-QUEEN-SAFETY-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -1869,6 +1869,42 @@ const CONFIG = {
     v40FortressBreachedPenalty: -2000000000,        // Fortress has been breached
     v40PawnShieldDestroyedPenalty: -1800000000,     // Pawn shield destroyed
     v40LightSquareWeaknessPenalty: -1500000000,     // Light squares around king weak
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.24: ABSOLUTE QUEEN SAFETY SUPREME
+    // From game analysis: Bot played Rfe1 while queen on d2 was attacked by knight on e4!
+    // Then Black played Nxd2 and captured the queen FOR FREE!
+    // THIS IS THE #1 BLUNDER - LOSING QUEEN WITHOUT COMPENSATION!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.24: QUEEN UNDER ATTACK DETECTION — NEVER ignore queen being attacked!
+    v40QueenSafetySupremeEnabled: true,
+    v40QueenUnderAttackIgnorePenalty: -50000000000, // CATASTROPHIC - ignoring attack on queen
+    v40QueenHangingPenalty: -100000000000,          // Queen is hanging (attacked, not defended)
+    v40QueenExposedPenalty: -5000000000,            // Queen in exposed position
+    v40QueenAttackedByKnightPenalty: -30000000000,  // Knight attacking queen (forks!)
+    v40QueenAttackedByPawnPenalty: -20000000000,    // Pawn attacking queen
+    v40QueenAttackedByBishopPenalty: -15000000000,  // Bishop attacking queen
+    v40QueenAttackedByRookPenalty: -10000000000,    // Rook attacking queen
+    
+    // v40.24: MUST DEFEND QUEEN — If queen attacked, the move MUST defend it!
+    v40MustDefendQueenEnabled: true,
+    v40FailToDefendQueenPenalty: -80000000000,      // Move doesn't defend attacked queen
+    v40DefendQueenBonus: 5000000000,                // Move successfully defends queen
+    v40MoveQueenToSafetyBonus: 10000000000,         // Move queen to safe square
+    v40BlockAttackOnQueenBonus: 3000000000,         // Block the attack on queen
+    v40CaptureAttackerBonus: 8000000000,            // Capture the piece attacking queen
+    
+    // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+    v40KnightForkEnabled: true,
+    v40KnightForkingQueenPenalty: -40000000000,     // Enemy knight can fork our queen
+    v40AllowKnightToForkQueenPenalty: -60000000000, // Allowing knight to reach forking square
+    v40KnightApproachingQueenPenalty: -10000000000, // Knight 1 move from attacking queen
+    
+    // v40.24: PRE-MOVE QUEEN SAFETY CHECK — Check queen safety BEFORE every move
+    v40PreMoveQueenCheckEnabled: true,
+    v40QueenLeftHangingPenalty: -90000000000,       // After our move, queen is left hanging
+    v40CreateQueenThreatBonus: 2000000000,          // Our move threatens enemy queen
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -18718,10 +18754,666 @@ function evaluateFortressStrengthV40_23(board, kingSquare, color) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// v40.24 ABSOLUTE QUEEN SAFETY SUPREME
+// From game analysis: Bot played Rfe1 while queen on d2 was attacked by knight on e4!
+// Then Black played Nxd2 and captured the queen FOR FREE!
+// THIS IS THE #1 BLUNDER - LOSING QUEEN WITHOUT COMPENSATION!
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * v40.9 Helper: Find all attacked pieces for a color
+ * v40.24 ABSOLUTE QUEEN SAFETY: Check if our queen is under attack and if move defends it
+ * THE MOST CRITICAL FUNCTION - NEVER LOSE YOUR QUEEN!
  */
+function v40AbsoluteQueenSafetyEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40QueenSafetySupremeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // STEP 1: Find our queen
+        let ourQueenSquare = null;
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() === 'q') {
+                ourQueenSquare = sq;
+                break;
+            }
+        }
+        
+        if (!ourQueenSquare) return 0; // No queen on board
+        
+        // STEP 2: Is our queen currently under attack?
+        const queenIsAttacked = isSquareAttackedByColor(board, ourQueenSquare, enemyColor);
+        
+        if (queenIsAttacked) {
+            // CRITICAL: Our queen is under attack!
+            debugLog("[V40.24_QUEEN]", `⚠️⚠️⚠️ OUR QUEEN ON ${ourQueenSquare} IS UNDER ATTACK!`);
+            
+            // Find attackers
+            const attackers = findAttackersOfSquareV40_24(board, ourQueenSquare, enemyColor);
+            debugLog("[V40.24_QUEEN]", `Attackers: ${JSON.stringify(attackers)}`);
+            
+            // Is queen defended?
+            const queenIsDefended = isSquareDefendedByColor(board, ourQueenSquare, activeColor);
+            
+            // Find lowest value attacker
+            let lowestAttackerValue = Infinity;
+            let lowestAttackerPiece = null;
+            for (const attacker of attackers) {
+                const attackerValue = getPieceValueSimple(attacker.piece.toLowerCase());
+                if (attackerValue < lowestAttackerValue) {
+                    lowestAttackerValue = attackerValue;
+                    lowestAttackerPiece = attacker.piece;
+                }
+            }
+            
+            // CRITICAL: If queen is attacked by lower value piece and not properly defended = HANGING!
+            if (!queenIsDefended || lowestAttackerValue < 9) { // Queen value = 9
+                debugLog("[V40.24_QUEEN]", `☠️☠️☠️ QUEEN IS HANGING! Attacked by ${lowestAttackerPiece} (value ${lowestAttackerValue})`);
+                
+                // Check if this move defends the queen
+                const moveDefendsQueen = doesMoveDefendQueenV40_24(move, board, ourQueenSquare, activeColor, attackers);
+                
+                if (!moveDefendsQueen) {
+                    // THIS MOVE DOES NOT DEFEND THE QUEEN! CATASTROPHIC!
+                    score += CONFIG.v40FailToDefendQueenPenalty || -80000000000;
+                    debugLog("[V40.24_QUEEN]", `☠️☠️☠️☠️☠️ MOVE ${move} DOES NOT DEFEND QUEEN! PENALTY: ${score}`);
+                    
+                    // Extra penalty based on attacker type
+                    if (lowestAttackerPiece && lowestAttackerPiece.toLowerCase() === 'n') {
+                        score += CONFIG.v40QueenAttackedByKnightPenalty || -30000000000;
+                        debugLog("[V40.24_QUEEN]", `☠️ KNIGHT attacking queen! Extra penalty!`);
+                    } else if (lowestAttackerPiece && lowestAttackerPiece.toLowerCase() === 'p') {
+                        score += CONFIG.v40QueenAttackedByPawnPenalty || -20000000000;
+                    } else if (lowestAttackerPiece && lowestAttackerPiece.toLowerCase() === 'b') {
+                        score += CONFIG.v40QueenAttackedByBishopPenalty || -15000000000;
+                    } else if (lowestAttackerPiece && lowestAttackerPiece.toLowerCase() === 'r') {
+                        score += CONFIG.v40QueenAttackedByRookPenalty || -10000000000;
+                    }
+                } else {
+                    // Move defends the queen - GOOD!
+                    score += CONFIG.v40DefendQueenBonus || 5000000000;
+                    debugLog("[V40.24_QUEEN]", `✅ MOVE ${move} DEFENDS QUEEN! Bonus: ${score}`);
+                }
+            }
+        }
+        
+        // STEP 3: Simulate the move and check if queen is left hanging AFTER the move
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        // Handle promotion
+        if (move.length > 4) {
+            const promotionPiece = isWhite ? move[4].toUpperCase() : move[4].toLowerCase();
+            afterBoard.set(toSquare, promotionPiece);
+        }
+        
+        // Find queen position after move
+        let queenSquareAfter = ourQueenSquare;
+        if (fromSquare === ourQueenSquare) {
+            // We moved the queen
+            queenSquareAfter = toSquare;
+        }
+        
+        // Is queen exposed after this move?
+        if (queenSquareAfter) {
+            const queenAttackedAfter = isSquareAttackedByColor(afterBoard, queenSquareAfter, enemyColor);
+            const queenDefendedAfter = isSquareDefendedByColor(afterBoard, queenSquareAfter, activeColor);
+            
+            if (queenAttackedAfter && !queenDefendedAfter) {
+                // CATASTROPHIC! This move leaves queen hanging!
+                score += CONFIG.v40QueenLeftHangingPenalty || -90000000000;
+                debugLog("[V40.24_QUEEN]", `☠️☠️☠️ MOVE ${move} LEAVES QUEEN HANGING ON ${queenSquareAfter}!`);
+            } else if (queenAttackedAfter && queenDefendedAfter) {
+                // Queen is attacked but defended - still dangerous
+                const attackersAfter = findAttackersOfSquareV40_24(afterBoard, queenSquareAfter, enemyColor);
+                for (const att of attackersAfter) {
+                    if (getPieceValueSimple(att.piece.toLowerCase()) < 9) {
+                        score += CONFIG.v40QueenExposedPenalty || -5000000000;
+                        debugLog("[V40.24_QUEEN]", `⚠️ Queen attacked by lower value piece after ${move}`);
+                        break;
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.24_QUEEN]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.24 MUST DEFEND QUEEN: Specific check that move MUST defend the queen
+ */
+function v40MustDefendQueenEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40MustDefendQueenEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Find our queen
+        let ourQueenSquare = null;
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() === 'q') {
+                ourQueenSquare = sq;
+                break;
+            }
+        }
+        
+        if (!ourQueenSquare) return 0;
+        
+        // Is queen under attack?
+        if (!isSquareAttackedByColor(board, ourQueenSquare, enemyColor)) {
+            return 0; // Queen not attacked, no special handling needed
+        }
+        
+        // Find all attackers
+        const attackers = findAttackersOfSquareV40_24(board, ourQueenSquare, enemyColor);
+        
+        // Determine how this move handles the threat
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Option 1: Move the queen to safety
+        if (fromSquare === ourQueenSquare) {
+            // Check if destination is safe
+            const afterBoard = new Map(board);
+            afterBoard.delete(fromSquare);
+            afterBoard.set(toSquare, movingPiece);
+            
+            if (!isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+                score += CONFIG.v40MoveQueenToSafetyBonus || 10000000000;
+                debugLog("[V40.24_DEFEND]", `✅ ${move} moves queen to safety!`);
+            } else {
+                // Queen moved to another attacked square - still dangerous
+                score += CONFIG.v40QueenExposedPenalty * 0.5 || -2500000000;
+                debugLog("[V40.24_DEFEND]", `⚠️ ${move} moves queen but still attacked!`);
+            }
+            return score;
+        }
+        
+        // Option 2: Capture the attacker
+        for (const attacker of attackers) {
+            if (toSquare === attacker.square) {
+                // We're capturing an attacker!
+                score += CONFIG.v40CaptureAttackerBonus || 8000000000;
+                debugLog("[V40.24_DEFEND]", `✅ ${move} captures attacker on ${attacker.square}!`);
+                return score;
+            }
+        }
+        
+        // Option 3: Block the attack
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        if (!isSquareAttackedByColor(afterBoard, ourQueenSquare, enemyColor)) {
+            // Our move blocked the attack!
+            score += CONFIG.v40BlockAttackOnQueenBonus || 3000000000;
+            debugLog("[V40.24_DEFEND]", `✅ ${move} blocks attack on queen!`);
+            return score;
+        }
+        
+        // Option 4: Add defender
+        if (isSquareDefendedByColor(afterBoard, ourQueenSquare, activeColor)) {
+            // Check if defense is adequate (lower value defender)
+            const defenders = findDefendersOfSquareV40_24(afterBoard, ourQueenSquare, activeColor);
+            const attackerValues = attackers.map(a => getPieceValueSimple(a.piece.toLowerCase()));
+            const lowestAttackerValue = Math.min(...attackerValues);
+            const defenderValues = defenders.map(d => getPieceValueSimple(d.piece.toLowerCase()));
+            const lowestDefenderValue = Math.min(...defenderValues);
+            
+            if (lowestDefenderValue <= lowestAttackerValue) {
+                score += CONFIG.v40DefendQueenBonus || 5000000000;
+                debugLog("[V40.24_DEFEND]", `✅ ${move} adds defender to queen!`);
+                return score;
+            }
+        }
+        
+        // If we get here, this move does NOT address the queen threat!
+        score += CONFIG.v40FailToDefendQueenPenalty * 0.5 || -40000000000;
+        debugLog("[V40.24_DEFEND]", `☠️ ${move} does NOT defend the attacked queen!`);
+        
+    } catch (e) {
+        debugLog("[V40.24_DEFEND]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.24 KNIGHT FORK DETECTION: Detect knight forks threatening queen
+ */
+function v40KnightForkQueenEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KnightForkEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Find our queen
+        let ourQueenSquare = null;
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() === 'q') {
+                ourQueenSquare = sq;
+                break;
+            }
+        }
+        
+        if (!ourQueenSquare) return 0;
+        
+        // Find our king
+        const ourKingSquare = findKing(board, activeColor);
+        if (!ourKingSquare) return 0;
+        
+        // Find enemy knights
+        const enemyKnights = [];
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            if (piece.toLowerCase() === 'n') {
+                enemyKnights.push(sq);
+            }
+        }
+        
+        if (enemyKnights.length === 0) return 0;
+        
+        // Check if any enemy knight can fork our queen and king
+        for (const knightSq of enemyKnights) {
+            const knightMoves = getKnightMovesV40_24(knightSq);
+            
+            // Is knight currently attacking our queen?
+            if (knightMoves.includes(ourQueenSquare)) {
+                score += CONFIG.v40KnightForkingQueenPenalty || -40000000000;
+                debugLog("[V40.24_FORK]", `☠️ Knight on ${knightSq} is attacking queen on ${ourQueenSquare}!`);
+                
+                // Is it also attacking king? (Fork!)
+                if (knightMoves.includes(ourKingSquare)) {
+                    score += CONFIG.v40KnightForkingQueenPenalty || -40000000000;
+                    debugLog("[V40.24_FORK]", `☠️☠️ KNIGHT FORK! King on ${ourKingSquare} and Queen on ${ourQueenSquare}!`);
+                }
+            }
+            
+            // Check squares knight can reach in ONE move that would fork
+            for (const targetSq of knightMoves) {
+                // Can the knight reach a forking square?
+                const futureMoves = getKnightMovesV40_24(targetSq);
+                if (futureMoves.includes(ourQueenSquare) && futureMoves.includes(ourKingSquare)) {
+                    // Knight can reach a forking square!
+                    // Check if that square is occupied/defended
+                    const pieceOnTarget = board.get(targetSq);
+                    if (!pieceOnTarget) {
+                        score += CONFIG.v40AllowKnightToForkQueenPenalty * 0.3 || -18000000000;
+                        debugLog("[V40.24_FORK]", `⚠️ Knight can reach forking square ${targetSq}!`);
+                    }
+                }
+            }
+        }
+        
+        // After our move, check if knight fork becomes possible
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (movingPiece) {
+            const afterBoard = new Map(board);
+            afterBoard.delete(fromSquare);
+            afterBoard.set(toSquare, movingPiece);
+            
+            // Update queen position if we moved it
+            let queenSquareAfter = ourQueenSquare;
+            if (fromSquare === ourQueenSquare) {
+                queenSquareAfter = toSquare;
+            }
+            
+            // Check if move creates fork opportunity for enemy
+            for (const knightSq of enemyKnights) {
+                const knightMoves = getKnightMovesV40_24(knightSq);
+                for (const targetSq of knightMoves) {
+                    const pieceOnTarget = afterBoard.get(targetSq);
+                    if (!pieceOnTarget || (pieceOnTarget && pieceOnTarget === movingPiece && toSquare !== targetSq)) {
+                        const futureMoves = getKnightMovesV40_24(targetSq);
+                        if (futureMoves.includes(queenSquareAfter) && futureMoves.includes(ourKingSquare)) {
+                            score += CONFIG.v40AllowKnightToForkQueenPenalty * 0.5 || -30000000000;
+                            debugLog("[V40.24_FORK]", `⚠️ Move ${move} allows knight fork from ${targetSq}!`);
+                        }
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.24_FORK]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.24 PRE-MOVE QUEEN SAFETY: Check queen safety BEFORE committing to a move
+ */
+function v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PreMoveQueenCheckEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Find our queen
+        let ourQueenSquare = null;
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() === 'q') {
+                ourQueenSquare = sq;
+                break;
+            }
+        }
+        
+        if (!ourQueenSquare) return 0;
+        
+        // Simulate the move
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        // Update queen position if we moved it
+        let queenSquareAfter = ourQueenSquare;
+        if (fromSquare === ourQueenSquare) {
+            queenSquareAfter = toSquare;
+        }
+        
+        // CHECK 1: Is our queen attacked BEFORE but we're not addressing it?
+        const queenAttackedBefore = isSquareAttackedByColor(board, ourQueenSquare, enemyColor);
+        if (queenAttackedBefore) {
+            const queenStillAttacked = isSquareAttackedByColor(afterBoard, queenSquareAfter, enemyColor);
+            const queenDefended = isSquareDefendedByColor(afterBoard, queenSquareAfter, activeColor);
+            
+            if (queenStillAttacked && !queenDefended) {
+                // We haven't addressed the queen threat!
+                score += CONFIG.v40QueenUnderAttackIgnorePenalty || -50000000000;
+                debugLog("[V40.24_PRE]", `☠️☠️☠️ ${move} IGNORES queen under attack on ${queenSquareAfter}!`);
+            }
+        }
+        
+        // CHECK 2: Does this move EXPOSE our queen to new attacks?
+        if (!queenAttackedBefore) {
+            const queenAttackedAfter = isSquareAttackedByColor(afterBoard, queenSquareAfter, enemyColor);
+            if (queenAttackedAfter) {
+                const queenDefendedAfter = isSquareDefendedByColor(afterBoard, queenSquareAfter, activeColor);
+                if (!queenDefendedAfter) {
+                    score += CONFIG.v40QueenLeftHangingPenalty || -90000000000;
+                    debugLog("[V40.24_PRE]", `☠️ ${move} EXPOSES queen to attack!`);
+                } else {
+                    // Check if queen is attacked by lower value pieces
+                    const attackers = findAttackersOfSquareV40_24(afterBoard, queenSquareAfter, enemyColor);
+                    for (const att of attackers) {
+                        if (getPieceValueSimple(att.piece.toLowerCase()) < 9) {
+                            score += CONFIG.v40QueenExposedPenalty || -5000000000;
+                            debugLog("[V40.24_PRE]", `⚠️ ${move} allows queen to be attacked by ${att.piece}`);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // CHECK 3: Does this move create a threat to enemy queen?
+        let enemyQueenSquare = null;
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            if (piece.toLowerCase() === 'q') {
+                enemyQueenSquare = sq;
+                break;
+            }
+        }
+        
+        if (enemyQueenSquare) {
+            const attackingBefore = isSquareAttackedByColor(board, enemyQueenSquare, activeColor);
+            const attackingAfter = isSquareAttackedByColor(afterBoard, enemyQueenSquare, activeColor);
+            
+            if (!attackingBefore && attackingAfter) {
+                score += CONFIG.v40CreateQueenThreatBonus || 2000000000;
+                debugLog("[V40.24_PRE]", `✅ ${move} creates threat to enemy queen!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.24_PRE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.24 Helper: Find all pieces attacking a square
+ */
+function findAttackersOfSquareV40_24(board, targetSquare, attackingColor) {
+    const attackers = [];
+    const isAttackingWhite = attackingColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isAttackingWhite) continue;
+        
+        if (canPieceAttackSquareV40_24(sq, piece, targetSquare, board)) {
+            attackers.push({
+                square: sq,
+                piece: piece
+            });
+        }
+    }
+    
+    return attackers;
+}
+
+/**
+ * v40.24 Helper: Find all pieces defending a square
+ */
+function findDefendersOfSquareV40_24(board, targetSquare, defendingColor) {
+    const defenders = [];
+    const isDefendingWhite = defendingColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        if (sq === targetSquare) continue; // Don't count the piece itself
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isDefendingWhite) continue;
+        
+        if (canPieceAttackSquareV40_24(sq, piece, targetSquare, board)) {
+            defenders.push({
+                square: sq,
+                piece: piece
+            });
+        }
+    }
+    
+    return defenders;
+}
+
+/**
+ * v40.24 Helper: Can a piece attack a square?
+ */
+function canPieceAttackSquareV40_24(fromSq, piece, toSq, board) {
+    if (!piece || fromSq === toSq) return false;
+    
+    const fromFile = fromSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(fromSq[1]);
+    const toFile = toSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSq[1]);
+    const dx = toFile - fromFile;
+    const dy = toRank - fromRank;
+    const pieceType = piece.toLowerCase();
+    const isWhite = piece === piece.toUpperCase();
+    
+    switch (pieceType) {
+        case 'p':
+            // Pawn attacks diagonally
+            const pawnDir = isWhite ? 1 : -1;
+            return Math.abs(dx) === 1 && dy === pawnDir;
+            
+        case 'n':
+            // Knight moves
+            return (Math.abs(dx) === 1 && Math.abs(dy) === 2) || (Math.abs(dx) === 2 && Math.abs(dy) === 1);
+            
+        case 'b':
+            // Bishop moves diagonally
+            if (Math.abs(dx) !== Math.abs(dy) || dx === 0) return false;
+            return isPathClearV40_24(fromFile, fromRank, toFile, toRank, board);
+            
+        case 'r':
+            // Rook moves in straight lines
+            if (dx !== 0 && dy !== 0) return false;
+            return isPathClearV40_24(fromFile, fromRank, toFile, toRank, board);
+            
+        case 'q':
+            // Queen moves like rook or bishop
+            if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return false;
+            return isPathClearV40_24(fromFile, fromRank, toFile, toRank, board);
+            
+        case 'k':
+            // King moves one square
+            return Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.24 Helper: Is path clear between two squares?
+ */
+function isPathClearV40_24(fromFile, fromRank, toFile, toRank, board) {
+    const dx = Math.sign(toFile - fromFile);
+    const dy = Math.sign(toRank - fromRank);
+    
+    let file = fromFile + dx;
+    let rank = fromRank + dy;
+    
+    while (file !== toFile || rank !== toRank) {
+        const sq = String.fromCharCode(file + 'a'.charCodeAt(0)) + rank;
+        if (board.get(sq)) return false; // Path is blocked
+        file += dx;
+        rank += dy;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.24 Helper: Get all knight moves from a square
+ */
+function getKnightMovesV40_24(square) {
+    const moves = [];
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]);
+    
+    const offsets = [
+        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+        [1, -2], [1, 2], [2, -1], [2, 1]
+    ];
+    
+    for (const [df, dr] of offsets) {
+        const newFile = file + df;
+        const newRank = rank + dr;
+        
+        if (newFile >= 0 && newFile <= 7 && newRank >= 1 && newRank <= 8) {
+            moves.push(String.fromCharCode(newFile + 'a'.charCodeAt(0)) + newRank);
+        }
+    }
+    
+    return moves;
+}
+
+/**
+ * v40.24 Helper: Does move defend the queen?
+ */
+function doesMoveDefendQueenV40_24(move, board, queenSquare, color, attackers) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece) return false;
+    
+    // Option 1: Move the queen itself
+    if (fromSquare === queenSquare) {
+        // Check if destination is safe
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        const enemyColor = color === 'w' ? 'b' : 'w';
+        if (!isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+            return true; // Queen moved to safety
+        }
+    }
+    
+    // Option 2: Capture the attacker
+    for (const attacker of attackers) {
+        if (toSquare === attacker.square) {
+            return true; // Capturing an attacker
+        }
+    }
+    
+    // Option 3: Block the attack
+    const afterBoard = new Map(board);
+    afterBoard.delete(fromSquare);
+    afterBoard.set(toSquare, movingPiece);
+    
+    const enemyColor = color === 'w' ? 'b' : 'w';
+    if (!isSquareAttackedByColor(afterBoard, queenSquare, enemyColor)) {
+        return true; // Attack is blocked
+    }
+    
+    // Option 4: Add defender
+    // Check if we're adding a defender that makes the trade favorable
+    const defendersBefore = findDefendersOfSquareV40_24(board, queenSquare, color);
+    const defendersAfter = findDefendersOfSquareV40_24(afterBoard, queenSquare, color);
+    
+    if (defendersAfter.length > defendersBefore.length) {
+        return true; // Added a defender
+    }
+    
+    return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 function findAttackedPiecesV40_9(board, color) {
     const attacked = [];
     const isWhite = color === 'w';
@@ -34179,8 +34871,27 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
                 const kingsideFortressScore = v40KingsideFortressEval(fen, move, board, activeColor, moveNumber) * 60.0;
                 
-                // v40.23: COMBINED v40 SCORE — 100% ABSOLUTE KING SAFETY SUPREME INFLUENCE
-                // This makes v40 the ABSOLUTE CATASTROPHIC KINGSIDE DEFENSE SUPREME factor
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.24 ABSOLUTE QUEEN SAFETY SUPREME
+                // From game: Bot played Rfe1 while queen on d2 was attacked by knight on e4!
+                // Then Black played Nxd2 and captured the queen FOR FREE!
+                // THIS IS THE #1 BLUNDER - LOSING QUEEN WITHOUT COMPENSATION!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.24: ABSOLUTE QUEEN SAFETY — NEVER ignore queen being attacked!
+                const absoluteQueenSafetyScore = v40AbsoluteQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 100.0;
+                
+                // v40.24: MUST DEFEND QUEEN — If queen attacked, move MUST defend it!
+                const mustDefendQueenScore = v40MustDefendQueenEval(fen, move, board, activeColor, moveNumber) * 95.0;
+                
+                // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+                const knightForkQueenScore = v40KnightForkQueenEval(fen, move, board, activeColor, moveNumber) * 90.0;
+                
+                // v40.24: PRE-MOVE QUEEN SAFETY — Check queen safety BEFORE every move
+                const preMoveQueenSafetyScore = v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 85.0;
+                
+                // v40.24: COMBINED v40 SCORE — 100% ABSOLUTE QUEEN SAFETY SUPREME INFLUENCE
+                // This makes v40 the ABSOLUTE QUEEN SAFETY SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -34232,11 +34943,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
                                knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
                                // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
-                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE ZERO BLUNDER SUPREME PARADIGM SHIFT
+                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE QUEEN SAFETY SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.24 ABSOLUTE QUEEN SAFETY SUPREME EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -34296,6 +35009,10 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🏰🏰 F3G3Prohibition: ${f3g3ProhibitionScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏰🏰 MatingAttackPattern: ${matingAttackPatternScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsideFortress: ${kingsideFortressScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸👸 AbsoluteQueenSafety: ${absoluteQueenSafetyScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸👸 MustDefendQueen: ${mustDefendQueenScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸👸 KnightForkQueen: ${knightForkQueenScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸👸 PreMoveQueenSafety: ${preMoveQueenSafetyScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
