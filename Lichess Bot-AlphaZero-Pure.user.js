@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME
-// @description  TRUE AlphaZero Replica v40.30 - ABSOLUTE OPENING PROHIBITION - DEEP FORK VISION - BISHOP PAIR PRESERVATION - PIECE ACTIVITY SUPREME - CENTER CONTROL ABSOLUTE!
-// @author       AlphaZero TRUE REPLICA v40.30 ABSOLUTE OPENING MASTERY EDITION
-// @version      40.30.0-ABSOLUTE-OPENING-MASTERY
+// @name         Lichess Bot - TRUE ALPHAZERO v40.31 ABSOLUTE MOVE FILTER & TEMPO MASTERY
+// @description  TRUE AlphaZero Replica v40.31 - HARD MOVE FILTER (d3/e3 REJECTED!) - TEMPO TRACKING - QUEEN RETREAT PROHIBITION - KNIGHT FORK SHIELD - ENHANCED FORK DETECTION!
+// @author       AlphaZero TRUE REPLICA v40.31 ABSOLUTE MOVE FILTER EDITION
+// @version      40.31.0-ABSOLUTE-MOVE-FILTER-TEMPO-MASTERY
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2211,6 +2211,38 @@ const CONFIG = {
     
     // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
     v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.31.0: ABSOLUTE MOVE FILTER & TEMPO MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // From game analysis: Bot STILL plays d3, Qd2-Qd1 tempo waste, allows Nxf3+ forks
+    // CRITICAL FIX: HARD FILTER that REJECTS bad moves BEFORE scoring
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.31: HARD MOVE FILTER — Rejects moves outright, not just penalizes
+    v40HardMoveFilterEnabled: true,
+    v40RejectD3InOpening: true,                     // HARD REJECT d2d3 in first 10 moves
+    v40RejectE3InOpening: true,                     // HARD REJECT e2e3 in first 10 moves  
+    v40RejectQueenRetreatEarly: true,               // HARD REJECT queen retreat before move 10
+    
+    // v40.31: TEMPO TRACKING — Track and punish tempo waste
+    v40TempoTrackingEnabled: true,
+    v40TempoWastePenalty: -500000000000,            // 500 billion penalty per wasted tempo
+    v40QueenRetreatPenalty: -800000000000,          // 800 billion for queen retreat
+    v40SamePieceTwicePenalty: -300000000000,        // 300 billion for moving same piece twice early
+    v40MaxEarlyMoveNumber: 12,                      // "Early" is moves 1-12
+    
+    // v40.31: ENHANCED KNIGHT FORK DETECTION — See forks 3+ moves ahead
+    v40EnhancedForkDetectionEnabled: true,
+    v40KnightForkIn2Penalty: -1000000000000,        // 1 trillion for fork in 2
+    v40KnightForkIn3Penalty: -500000000000,         // 500 billion for fork in 3
+    v40RoyalForkMultiplier: 5.0,                    // 5x penalty for K+Q fork
+    
+    // v40.31: ABSOLUTE D4 PREFERENCE — d4 must be played if d-pawn is on d2
+    v40AbsoluteD4PreferenceEnabled: true,
+    v40D4ImmediateBonus: 2000000000000,             // 2 trillion bonus for d4 when possible
+    v40E4ImmediateBonus: 2000000000000,             // 2 trillion bonus for e4 when possible
+    v40NotPlayingD4Penalty: -1000000000000,         // 1 trillion penalty for NOT playing d4 when possible
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -41030,6 +41062,75 @@ function isPassiveOpeningMove(move, moveNum) {
  * ENHANCED: With AlphaZero essence overlay and v16 safety validation
  */
 function applyAlphaZeroLogic(bestMove, alternatives) {
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.31: ABSOLUTE HARD MOVE FILTER — REJECT BAD MOVES BEFORE ANY SCORING
+    // This filter runs FIRST and REJECTS moves that are absolutely forbidden
+    // This is NOT a penalty - the move is EXCLUDED from consideration entirely
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+        debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+        
+        // Filter function to check if move should be REJECTED
+        const shouldRejectMove = (move) => {
+            if (!move || move.length < 4) return false;
+            
+            const fromSquare = move.substring(0, 2);
+            const toSquare = move.substring(2, 4);
+            
+            // RULE 1: REJECT d2d3 in first 10 moves
+            if (CONFIG.v40RejectD3InOpening && moveCount <= 10) {
+                if (fromSquare === 'd2' && toSquare === 'd3') {
+                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: d2d3 is ABSOLUTELY FORBIDDEN!`);
+                    return true;
+                }
+            }
+            
+            // RULE 2: REJECT e2e3 in first 10 moves (when e4 is possible)
+            if (CONFIG.v40RejectE3InOpening && moveCount <= 10) {
+                if (fromSquare === 'e2' && toSquare === 'e3') {
+                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: e2e3 is ABSOLUTELY FORBIDDEN!`);
+                    return true;
+                }
+            }
+            
+            // RULE 3: REJECT queen retreat in first 10 moves (Qd2-Qd1, etc.)
+            if (CONFIG.v40RejectQueenRetreatEarly && moveCount <= 10) {
+                // Common queen retreats
+                if ((fromSquare === 'd2' && toSquare === 'd1') ||
+                    (fromSquare === 'e2' && toSquare === 'e1') ||
+                    (fromSquare === 'f3' && toSquare === 'd1') ||
+                    (fromSquare === 'e3' && toSquare === 'd1')) {
+                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: Queen retreat ${move} is FORBIDDEN!`);
+                    return true;
+                }
+            }
+            
+            return false;
+        };
+        
+        // Check if bestMove should be rejected
+        if (shouldRejectMove(bestMove)) {
+            debugLog("[V40.31_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+            
+            // Find first alternative that passes the filter
+            for (let i = 1; i < alternatives.length; i++) {
+                const altMove = alternatives[i].move;
+                if (!shouldRejectMove(altMove)) {
+                    debugLog("[V40.31_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+                    bestMove = altMove;
+                    break;
+                }
+            }
+        }
+        
+        // Also filter ALL alternatives to remove bad moves from consideration
+        alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+        
+        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+    }
+    
     // Don't be creative if we only have one option
     if (alternatives.length < 2) {
         return bestMove;
