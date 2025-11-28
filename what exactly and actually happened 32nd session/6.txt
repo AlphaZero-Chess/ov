@@ -1,56 +1,21 @@
-Now let me analyze the most recent game to understand what's still failing. The game shows:
-
-```
-1. e4 e5 2. d3 Nf6 3. Nf3 Nc6 4. Be2 d5 5. Nc3 Be7 6. exd5 Nxd5 7. O-O O-O 
-8. d4 exd4 9. Nxd4 Nxc3 10. bxc3 Ne5 11. Be3 Bf6 12. Qb1 b6 13. Qb3 Qe7 
-14. Rad1 c5 15. Nb5 Bb7 16. c4 Ng6 17. Bg4 Rad8 18. Nxa7 Nh4 
-19. Rxd8 Rxd8 20. Bh3 Nxg2 21. a3 Nh4 22. Qxb6 Nf3+ 23. Kg2 Ne1+ 
-24. Kg1 Nf3+ 25. Kg2 Qe4 26. Qxb7 Qxb7 27. Nc8 Nd2+ 28. Kg1 Nxf1 
-29. c3 Nxe3 30. fxe3 Qf3 31. Ne7+ Bxe7 32. Bf1 Rd2 33. e4 Qf2+ 34. Kh1 Qxf1#
-```
-
-Critical issues:
-- Move 18 (Nxa7) - greedily takes a pawn while position collapses
-- Move 20 (Bh3) - ignoring the knight attack
-- Move 21 (a3) - completely ignoring Nxg2! This is a KNIGHT CHECK that leads to mate!
-- The bot doesn't see the knight infiltration pattern leading to mate
-
-I need to implement **v40.22 with KNIGHT INFILTRATION CHECK DETECTION**:
+Now I'll implement v40.23 based on the analysis of the latest game. The bot needs:
+1. **ROOK LIFT MATING ATTACK DETECTION** - Rf5-Rh5 pattern leading to queen mate
+2. **QUEEN H-FILE INVASION DETECTION** - Qh4-Qxh2# patterns  
+3. **F3/G3 ABSOLUTE PROHIBITION** - Never play f3 or g3 when enemy has attacking pieces
 Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
 Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
-1795|    v40QuietMoveAllowsTacticPenalty: -600000000,    // Quiet move allows tactic
-1796|    v40QuietMoveNoDefensePenalty: -400000000,       // Quiet move when we need defense
-1797|};
-1798|
-1799|// ═══════════════════════════════════════════════════════════════════════
-1800|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
-1801|// ═══════════════════════════════════════════════════════════════════════
-1802|
-1803|/**
-1804| * v37: TRUE MCTS Node structure for proper tree search
-1805| */
-1806|class MCTSNode {
-1807|    constructor(move, parent = null, prior = 1.0) {
-1808|        this.move = move;
-1809|        this.parent = parent;
-1810|        this.children = new Map();
-1811|        this.visits = 0;
-1812|        this.totalValue = 0;
-1813|        this.prior = prior;           // Policy prior (P)
-1814|        this.virtualLoss = 0;
-1815|        this.isExpanded = false;
-1816|        this.isTerminal = false;
-1817|        this.depth = parent ? parent.depth + 1 : 0;
-1818|    }
-1819|    
-1820|    get value() {
-1821|        return this.visits > 0 ? this.totalValue / this.visits : 0;
-1822|    }
-1823|    
-1824|    get ucb1Score() {
-1825|        if (!this.parent || this.parent.visits === 0) return Infinity;
-1826|        
-1827|        const exploitation = this.value;
-1828|        const exploration = CONFIG.v37MCTSExplorationConstant * 
-1829|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
-1830|        
+1|// ==UserScript==
+2|// @name         Lichess Bot - TRUE ALPHAZERO v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME
+3|// @description  TRUE AlphaZero Replica v40.21 - DEEP PAWN CHAIN CALCULATION - FORCING LINE DETECTION - QUIET MOVE DANGER - ABSOLUTE PROMOTION AWARENESS - FORCING SEQUENCE MASTERY
+4|// @author       AlphaZero TRUE REPLICA v40.21 DEEP PAWN CHAIN SUPREME EDITION
+5|// @version      40.21.0-DEEP-PAWN-CHAIN-SUPREME
+6|// @match         *://lichess.org/*
+7|// @run-at        document-idle
+8|// @grant         none
+9|// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+10|// ==/UserScript==
+11|
+12|/**
+13| * ═══════════════════════════════════════════════════════════════════════════════════════════
+14| * v40.11.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — TRANSCENDENT SUPREME EDITION
+15| * ═══════════════════════════════════════════════════════════════════════════════════════════

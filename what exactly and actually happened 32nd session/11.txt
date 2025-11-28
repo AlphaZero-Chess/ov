@@ -1,3 +1,873 @@
-Now let me verify the syntax:
-Action: $ cd /app && node -c "Lichess Bot-AlphaZero-Pure.user.js" 2>&1
-Observation: Exit code: 0
+Now I'll add the v40.23 functions after line 17865:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    }
+    
+    return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.9 Helper: Find all attacked pieces for a color
+ */
+function findAttackedPiecesV40_9(board, color) {" --new-str "    }
+    
+    return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME
+// From game analysis: Bot missed Rf5-Rh5 + Qe7-Qh4-Qxh2# mating attack completely!
+// The bot played f3 which CATASTROPHICALLY weakened the kingside!
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.23 ROOK LIFT DETECTION: Detect rook lift mating patterns (Rf5-Rh5)
+ * CRITICAL: Catches rook lift patterns that prepare queen mating attacks
+ */
+function v40RookLiftDetectionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40RookLiftEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        const ourKing = findKing(afterMove, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]);
+        
+        // Find enemy rooks
+        const enemyRookChar = enemyColor === 'w' ? 'R' : 'r';
+        const enemyRooks = [];
+        
+        for (const [sq, piece] of afterMove) {
+            if (piece === enemyRookChar) {
+                enemyRooks.push(sq);
+            }
+        }
+        
+        // CHECK: Rook lift patterns
+        for (const rookSq of enemyRooks) {
+            const rookFile = rookSq.charCodeAt(0) - 'a'.charCodeAt(0);
+            const rookRank = parseInt(rookSq[1]);
+            
+            // Is rook on the h-file (toward our king if kingside castled)?
+            if (rookSq[0] === 'h') {
+                score += CONFIG.v40RookLiftToHFilePenalty;
+                debugLog(\"[V40.23_LIFT]\", `☠️☠️☠️ Enemy rook on h-file at ${rookSq}! MATING DANGER!`);
+            }
+            
+            // Is rook on the g-file?
+            if (rookSq[0] === 'g') {
+                score += CONFIG.v40RookLiftToGFilePenalty;
+                debugLog(\"[V40.23_LIFT]\", `☠️☠️ Enemy rook on g-file at ${rookSq}! ATTACKING!`);
+            }
+            
+            // Is rook on 5th rank (lift position for black) or 4th rank (lift for white)?
+            const liftRank = enemyColor === 'w' ? 4 : 5;
+            if (rookRank === liftRank) {
+                score += CONFIG.v40RookOn5thRankPenalty;
+                debugLog(\"[V40.23_LIFT]\", `⚠️ Enemy rook on ${liftRank}th rank at ${rookSq}! LIFT POSITION!`);
+                
+                // Is it threatening to swing to h-file?
+                // Check if path to h-file is clear
+                const hFileSquare = 'h' + rookRank;
+                const pathClear = isPathClearV40_23(rookSq, hFileSquare, afterMove);
+                if (pathClear) {
+                    score += CONFIG.v40RookLiftToHFilePenalty / 2;
+                    debugLog(\"[V40.23_LIFT]\", `☠️ Rook can swing to ${hFileSquare}! IMMINENT DANGER!`);
+                }
+            }
+            
+            // Rook on open file toward king
+            if (Math.abs(rookFile - kingFile) <= 2) {
+                const fileChar = String.fromCharCode(rookFile + 'a'.charCodeAt(0));
+                if (isFileOpenV40_23(afterMove, fileChar)) {
+                    score += CONFIG.v40RookOnOpenFilePenalty;
+                    debugLog(\"[V40.23_LIFT]\", `⚠️ Enemy rook on open ${fileChar}-file near king!`);
+                }
+            }
+        }
+        
+        // CHECK: Multiple rooks lifting
+        let rooksInAttackPosition = 0;
+        for (const rookSq of enemyRooks) {
+            const rookRank = parseInt(rookSq[1]);
+            const liftRank = enemyColor === 'w' ? 4 : 5;
+            if (rookRank >= liftRank - 1 && rookRank <= liftRank + 1) {
+                rooksInAttackPosition++;
+            }
+        }
+        if (rooksInAttackPosition >= 2) {
+            score += CONFIG.v40MultipleRooksLiftingPenalty;
+            debugLog(\"[V40.23_LIFT]\", `☠️☠️☠️ MULTIPLE ROOKS IN ATTACK POSITION! CRITICAL!`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.23_LIFT]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.23 QUEEN H-FILE INVASION: Detect queen mating on h-file (Qh4-Qxh2#)
+ * CRITICAL: Catches queen invasion patterns that lead to mate
+ */
+function v40QueenHFileInvasionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40QueenHFileEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        const ourKing = findKing(afterMove, activeColor);
+        if (!ourKing) return 0;
+        
+        // Find enemy queen
+        const enemyQueenChar = enemyColor === 'w' ? 'Q' : 'q';
+        let enemyQueenSquare = null;
+        
+        for (const [sq, piece] of afterMove) {
+            if (piece === enemyQueenChar) {
+                enemyQueenSquare = sq;
+                break;
+            }
+        }
+        
+        if (!enemyQueenSquare) return 0;
+        
+        const queenFile = enemyQueenSquare[0];
+        const queenRank = parseInt(enemyQueenSquare[1]);
+        
+        // CHECK: Queen on h-file
+        if (queenFile === 'h') {
+            score += CONFIG.v40QueenOnHFilePenalty;
+            debugLog(\"[V40.23_QUEEN]\", `☠️☠️ Enemy queen on h-file at ${enemyQueenSquare}! MATING DANGER!`);
+            
+            // Queen on h4 or h5 (attacking h2)
+            if (queenRank === 4 || queenRank === 5) {
+                score += CONFIG.v40QueenOnH4Penalty;
+                debugLog(\"[V40.23_QUEEN]\", `☠️☠️☠️ Enemy queen on ${enemyQueenSquare}! THREATENS Qxh2#!`);
+            }
+            
+            // Queen on h3 (threatening h2)
+            if (queenRank === 3) {
+                score += CONFIG.v40QueenOnH3Penalty;
+                debugLog(\"[V40.23_QUEEN]\", `☠️☠️ Enemy queen on h3! THREATENS h2!`);
+            }
+        }
+        
+        // CHECK: Queen on g3 or g4 (can swing to h-file)
+        if (queenFile === 'g' && (queenRank === 3 || queenRank === 4)) {
+            score += CONFIG.v40QueenOnG3H3Penalty;
+            debugLog(\"[V40.23_QUEEN]\", `⚠️ Enemy queen on ${enemyQueenSquare}! THREATENS g2/h2!`);
+        }
+        
+        // CHECK: Queen + Rook battery on h-file
+        const enemyRookChar = enemyColor === 'w' ? 'R' : 'r';
+        for (const [sq, piece] of afterMove) {
+            if (piece === enemyRookChar && sq[0] === 'h') {
+                if (queenFile === 'h') {
+                    // Both queen and rook on h-file!
+                    score += CONFIG.v40QueenRookBatteryHFilePenalty;
+                    debugLog(\"[V40.23_QUEEN]\", `☠️☠️☠️☠️ QUEEN + ROOK BATTERY ON H-FILE! MATE IMMINENT!`);
+                }
+            }
+        }
+        
+        // CHECK: Can queen reach h4/h3 in one move?
+        const canReachH4 = canQueenReachSquareV40_23(enemyQueenSquare, 'h4', afterMove);
+        const canReachH3 = canQueenReachSquareV40_23(enemyQueenSquare, 'h3', afterMove);
+        
+        if (canReachH4 || canReachH3) {
+            score += CONFIG.v40QueenOnHFilePenalty / 2;
+            debugLog(\"[V40.23_QUEEN]\", `⚠️ Enemy queen can reach h4/h3! DANGER IMMINENT!`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.23_QUEEN]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.23 F3/G3 ABSOLUTE PROHIBITION: NEVER play f3 or g3 when under pressure
+ * CRITICAL: From game analysis, f3 was the CATASTROPHIC move that lost the game!
+ */
+function v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40F3G3ProhibitionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Only check pawn moves
+        if (movingPiece.toLowerCase() !== 'p') return 0;
+        
+        const ourKing = findKing(board, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]);
+        
+        // Check if this is an f3, g3, f6, or g6 move (depending on color)
+        const fromFile = fromSquare[0];
+        const toFile = toSquare[0];
+        const toRank = parseInt(toSquare[1]);
+        
+        // For WHITE: f3, g3 moves (from f2 or g2 to f3 or g3)
+        // For BLACK: f6, g6 moves (from f7 or g7 to f6 or g6)
+        const dangerousRank = isWhite ? 3 : 6;
+        const startRank = isWhite ? 2 : 7;
+        
+        // Is this a kingside pawn advance near our king?
+        const kingFileChar = String.fromCharCode(kingFile + 'a'.charCodeAt(0));
+        const isKingsidePawn = (toFile === 'f' || toFile === 'g') && 
+                               Math.abs(toFile.charCodeAt(0) - kingFileChar.charCodeAt(0)) <= 2;
+        
+        if (isKingsidePawn && toRank === dangerousRank) {
+            // CHECK: Does enemy have active pieces that can exploit this?
+            const enemyHasActivePieces = hasEnemyActivePiecesV40_23(board, enemyColor);
+            const enemyQueenActive = isEnemyQueenActiveV40_23(board, enemyColor, activeColor);
+            const enemyHasEFilePressure = hasEFilePressureV40_23(board, enemyColor);
+            
+            if (toFile === 'f' && toRank === dangerousRank) {
+                // f3 or f6 move - EXTREMELY DANGEROUS
+                score += CONFIG.v40F3MoveProhibitionPenalty;
+                debugLog(\"[V40.23_F3G3]\", `☠️☠️☠️☠️ ${move} IS f${dangerousRank}! CATASTROPHIC KINGSIDE WEAKNESS!`);
+                
+                if (enemyQueenActive) {
+                    score += CONFIG.v40F3WithEnemyQueenActivePenalty;
+                    debugLog(\"[V40.23_F3G3]\", `☠️☠️☠️☠️☠️ f${dangerousRank} WITH ENEMY QUEEN ACTIVE! SUICIDE!`);
+                }
+                
+                if (enemyHasEFilePressure) {
+                    score += CONFIG.v40F3WithEnemyOnEFilePenalty;
+                    debugLog(\"[V40.23_F3G3]\", `☠️☠️☠️☠️ f${dangerousRank} WITH ENEMY E-FILE PRESSURE! DISASTER!`);
+                }
+            }
+            
+            if (toFile === 'g' && toRank === dangerousRank) {
+                // g3 or g6 move - DANGEROUS
+                score += CONFIG.v40G3MoveProhibitionPenalty;
+                debugLog(\"[V40.23_F3G3]\", `☠️☠️☠️ ${move} IS g${dangerousRank}! WEAKENS KINGSIDE!`);
+                
+                if (enemyQueenActive) {
+                    score += CONFIG.v40F3WithEnemyQueenActivePenalty / 2;
+                    debugLog(\"[V40.23_F3G3]\", `☠️☠️☠️☠️ g${dangerousRank} WITH ENEMY QUEEN ACTIVE! VERY BAD!`);
+                }
+            }
+            
+            // General kingside pawn push penalty
+            if (enemyHasActivePieces) {
+                score += CONFIG.v40KingsidePawnPushPenalty;
+                debugLog(\"[V40.23_F3G3]\", `⚠️ ${move} pushes kingside pawn with enemy active pieces!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.23_F3G3]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.23 MATING ATTACK PATTERN: Detect specific mating attack patterns
+ */
+function v40MatingAttackPatternEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40MatingAttackEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        const ourKing = findKing(afterMove, activeColor);
+        if (!ourKing) return 0;
+        
+        // H-FILE ASSAULT PATTERN: Rook on h-file + Queen can reach h-file
+        const hFileAssault = detectHFileAssaultV40_23(afterMove, enemyColor, activeColor);
+        if (hFileAssault.detected) {
+            score += CONFIG.v40HFileAssaultPenalty;
+            debugLog(\"[V40.23_MATE]\", `☠️☠️☠️ H-FILE ASSAULT DETECTED! ${hFileAssault.description}`);
+        }
+        
+        // G-FILE ASSAULT PATTERN
+        const gFileAssault = detectGFileAssaultV40_23(afterMove, enemyColor, activeColor);
+        if (gFileAssault.detected) {
+            score += CONFIG.v40GFileAssaultPenalty;
+            debugLog(\"[V40.23_MATE]\", `☠️☠️ G-FILE ASSAULT DETECTED! ${gFileAssault.description}`);
+        }
+        
+        // ROOK + QUEEN MATE PATTERN
+        const rookQueenMate = detectRookQueenMatePatternV40_23(afterMove, enemyColor, ourKing);
+        if (rookQueenMate.detected) {
+            score += CONFIG.v40RookQueenMatePatternPenalty;
+            debugLog(\"[V40.23_MATE]\", `☠️☠️☠️☠️ ROOK+QUEEN MATE PATTERN! ${rookQueenMate.description}`);
+        }
+        
+        // BACK RANK MATE PATTERN
+        const backRankMate = detectBackRankMatePatternV40_23(afterMove, enemyColor, ourKing);
+        if (backRankMate.detected) {
+            score += CONFIG.v40BackRankMatePatternPenalty;
+            debugLog(\"[V40.23_MATE]\", `☠️☠️☠️ BACK RANK MATE PATTERN! ${backRankMate.description}`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.23_MATE]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.23 KINGSIDE FORTRESS: Maintain fortress around king
+ */
+function v40KingsideFortressEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingsideFortressEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate our move
+        const afterMove = new Map(board);
+        afterMove.delete(fromSquare);
+        afterMove.set(toSquare, movingPiece);
+        
+        // Find our king
+        const ourKing = findKing(afterMove, activeColor);
+        if (!ourKing) return 0;
+        
+        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(ourKing[1]);
+        
+        // CHECK: Is pawn shield intact?
+        const pawnShieldIntact = isPawnShieldIntactV40_23(afterMove, ourKing, activeColor);
+        if (!pawnShieldIntact) {
+            score += CONFIG.v40PawnShieldDestroyedPenalty;
+            debugLog(\"[V40.23_FORT]\", `☠️☠️ PAWN SHIELD DESTROYED around ${ourKing}!`);
+        }
+        
+        // CHECK: Light square weakness
+        const lightSquareWeak = isLightSquareWeakV40_23(afterMove, ourKing, activeColor);
+        if (lightSquareWeak) {
+            score += CONFIG.v40LightSquareWeaknessPenalty;
+            debugLog(\"[V40.23_FORT]\", `⚠️ Light squares weak around ${ourKing}!`);
+        }
+        
+        // CHECK: Fortress breached (enemy pieces near king)
+        const fortressBreached = isFortressBreachedV40_23(afterMove, ourKing, enemyColor);
+        if (fortressBreached) {
+            score += CONFIG.v40FortressBreachedPenalty;
+            debugLog(\"[V40.23_FORT]\", `☠️☠️☠️ FORTRESS BREACHED! Enemy pieces near king!`);
+        }
+        
+        // BONUS: Maintaining good fortress
+        const fortressStrength = evaluateFortressStrengthV40_23(afterMove, ourKing, activeColor);
+        if (fortressStrength > 0.7) {
+            score += CONFIG.v40KingsideFortressBonus * fortressStrength;
+            debugLog(\"[V40.23_FORT]\", `✅ Good fortress maintained: ${(fortressStrength * 100).toFixed(0)}%`);
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.23_FORT]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.23 HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.23 Helper: Is path clear between two squares (for rook/queen)
+ */
+function isPathClearV40_23(fromSq, toSq, board) {
+    const fromFile = fromSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(fromSq[1]);
+    const toFile = toSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSq[1]);
+    
+    const fileDir = toFile > fromFile ? 1 : (toFile < fromFile ? -1 : 0);
+    const rankDir = toRank > fromRank ? 1 : (toRank < fromRank ? -1 : 0);
+    
+    let f = fromFile + fileDir;
+    let r = fromRank + rankDir;
+    
+    while (f !== toFile || r !== toRank) {
+        const sq = String.fromCharCode(f + 'a'.charCodeAt(0)) + r;
+        if (board.get(sq)) {
+            return false;
+        }
+        f += fileDir;
+        r += rankDir;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.23 Helper: Is file open?
+ */
+function isFileOpenV40_23(board, fileChar) {
+    for (let rank = 1; rank <= 8; rank++) {
+        const sq = fileChar + rank;
+        const piece = board.get(sq);
+        if (piece && piece.toLowerCase() === 'p') {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * v40.23 Helper: Can queen reach a square?
+ */
+function canQueenReachSquareV40_23(queenSq, targetSq, board) {
+    const qFile = queenSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const qRank = parseInt(queenSq[1]);
+    const tFile = targetSq.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(targetSq[1]);
+    
+    const fileDiff = Math.abs(tFile - qFile);
+    const rankDiff = Math.abs(tRank - qRank);
+    
+    // Queen moves: straight or diagonal
+    if (fileDiff === 0 || rankDiff === 0 || fileDiff === rankDiff) {
+        return isPathClearV40_23(queenSq, targetSq, board);
+    }
+    
+    return false;
+}
+
+/**
+ * v40.23 Helper: Does enemy have active pieces?
+ */
+function hasEnemyActivePiecesV40_23(board, enemyColor) {
+    const isEnemyWhite = enemyColor === 'w';
+    let activePieces = 0;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isEnemyWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        
+        const rank = parseInt(sq[1]);
+        const file = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        
+        // Piece is active if it's past the 4th rank (for white) or before 5th (for black)
+        // Or if it's on an open file
+        const isActive = (isEnemyWhite && rank >= 4) || (!isEnemyWhite && rank <= 5);
+        
+        if (isActive) {
+            activePieces++;
+        }
+    }
+    
+    return activePieces >= 2;
+}
+
+/**
+ * v40.23 Helper: Is enemy queen active?
+ */
+function isEnemyQueenActiveV40_23(board, enemyColor, ourColor) {
+    const enemyQueenChar = enemyColor === 'w' ? 'Q' : 'q';
+    const ourKing = findKing(board, ourColor);
+    
+    for (const [sq, piece] of board) {
+        if (piece === enemyQueenChar) {
+            const rank = parseInt(sq[1]);
+            const file = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+            
+            // Queen is active if:
+            // 1. On an open file
+            // 2. Near the center
+            // 3. In an attacking position
+            const isCenter = file >= 2 && file <= 5;
+            const isAdvanced = (enemyColor === 'w' && rank >= 4) || (enemyColor === 'b' && rank <= 5);
+            
+            // Check distance to our king
+            if (ourKing) {
+                const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+                const kingRank = parseInt(ourKing[1]);
+                const distToKing = Math.abs(file - kingFile) + Math.abs(rank - kingRank);
+                
+                if (distToKing <= 4) {
+                    return true; // Queen is close to our king
+                }
+            }
+            
+            if (isCenter || isAdvanced) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.23 Helper: Does enemy have e-file pressure?
+ */
+function hasEFilePressureV40_23(board, enemyColor) {
+    const isEnemyWhite = enemyColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isEnemyWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType !== 'r' && pieceType !== 'q') continue;
+        
+        // Is this rook/queen on e-file?
+        if (sq[0] === 'e') {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.23 Helper: Detect H-file assault pattern
+ */
+function detectHFileAssaultV40_23(board, enemyColor, ourColor) {
+    const enemyRookChar = enemyColor === 'w' ? 'R' : 'r';
+    const enemyQueenChar = enemyColor === 'w' ? 'Q' : 'q';
+    
+    let rookOnHFile = false;
+    let queenCanReachH = false;
+    let queenSq = null;
+    
+    for (const [sq, piece] of board) {
+        if (piece === enemyRookChar && sq[0] === 'h') {
+            rookOnHFile = true;
+        }
+        if (piece === enemyQueenChar) {
+            queenSq = sq;
+        }
+    }
+    
+    if (queenSq) {
+        queenCanReachH = canQueenReachSquareV40_23(queenSq, 'h4', board) ||
+                         canQueenReachSquareV40_23(queenSq, 'h3', board) ||
+                         canQueenReachSquareV40_23(queenSq, 'h5', board);
+    }
+    
+    if (rookOnHFile && queenCanReachH) {
+        return { detected: true, description: 'Rook on h-file, Queen can join!' };
+    }
+    if (rookOnHFile) {
+        return { detected: true, description: 'Rook on h-file!' };
+    }
+    
+    return { detected: false, description: '' };
+}
+
+/**
+ * v40.23 Helper: Detect G-file assault pattern
+ */
+function detectGFileAssaultV40_23(board, enemyColor, ourColor) {
+    const enemyRookChar = enemyColor === 'w' ? 'R' : 'r';
+    const enemyQueenChar = enemyColor === 'w' ? 'Q' : 'q';
+    
+    let rookOnGFile = false;
+    let queenOnGFile = false;
+    
+    for (const [sq, piece] of board) {
+        if (piece === enemyRookChar && sq[0] === 'g') {
+            rookOnGFile = true;
+        }
+        if (piece === enemyQueenChar && sq[0] === 'g') {
+            queenOnGFile = true;
+        }
+    }
+    
+    if (rookOnGFile && queenOnGFile) {
+        return { detected: true, description: 'Rook + Queen battery on g-file!' };
+    }
+    if (queenOnGFile) {
+        return { detected: true, description: 'Queen on g-file!' };
+    }
+    
+    return { detected: false, description: '' };
+}
+
+/**
+ * v40.23 Helper: Detect Rook + Queen mate pattern
+ */
+function detectRookQueenMatePatternV40_23(board, enemyColor, ourKing) {
+    const enemyRookChar = enemyColor === 'w' ? 'R' : 'r';
+    const enemyQueenChar = enemyColor === 'w' ? 'Q' : 'q';
+    
+    const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(ourKing[1]);
+    
+    let rookNearKing = false;
+    let queenNearKing = false;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        
+        const sqFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const sqRank = parseInt(sq[1]);
+        const dist = Math.abs(sqFile - kingFile) + Math.abs(sqRank - kingRank);
+        
+        if (piece === enemyRookChar && dist <= 3) {
+            rookNearKing = true;
+        }
+        if (piece === enemyQueenChar && dist <= 4) {
+            queenNearKing = true;
+        }
+    }
+    
+    if (rookNearKing && queenNearKing) {
+        return { detected: true, description: 'Rook + Queen coordinating near king!' };
+    }
+    
+    return { detected: false, description: '' };
+}
+
+/**
+ * v40.23 Helper: Detect back rank mate pattern
+ */
+function detectBackRankMatePatternV40_23(board, enemyColor, ourKing) {
+    const kingRank = parseInt(ourKing[1]);
+    const backRank = ourKing[0] >= 'a' && ourKing[0] <= 'h' && (kingRank === 1 || kingRank === 8);
+    
+    if (!backRank) return { detected: false, description: '' };
+    
+    const enemyRookChar = enemyColor === 'w' ? 'R' : 'r';
+    const enemyQueenChar = enemyColor === 'w' ? 'Q' : 'q';
+    
+    // Check if king is trapped on back rank
+    const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+    let escapesBlocked = 0;
+    
+    for (const df of [-1, 0, 1]) {
+        const newFile = kingFile + df;
+        if (newFile < 0 || newFile > 7) continue;
+        
+        const escapeRank = kingRank === 1 ? 2 : 7;
+        const escapeSq = String.fromCharCode(newFile + 'a'.charCodeAt(0)) + escapeRank;
+        
+        // Is escape square blocked by our own piece or attacked?
+        const piece = board.get(escapeSq);
+        if (piece) {
+            escapesBlocked++;
+        }
+    }
+    
+    // Check if enemy has rook/queen on back rank or can reach it
+    for (const [sq, piece] of board) {
+        if (piece === enemyRookChar || piece === enemyQueenChar) {
+            const sqRank = parseInt(sq[1]);
+            if (sqRank === kingRank) {
+                if (escapesBlocked >= 2) {
+                    return { detected: true, description: 'Back rank vulnerable! King escape blocked!' };
+                }
+            }
+        }
+    }
+    
+    return { detected: false, description: '' };
+}
+
+/**
+ * v40.23 Helper: Is pawn shield intact?
+ */
+function isPawnShieldIntactV40_23(board, kingSquare, color) {
+    const isWhite = color === 'w';
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    const pawnChar = isWhite ? 'P' : 'p';
+    
+    // Check pawns in front of king
+    const shieldRank = isWhite ? kingRank + 1 : kingRank - 1;
+    if (shieldRank < 1 || shieldRank > 8) return false;
+    
+    let shieldPawns = 0;
+    for (let df = -1; df <= 1; df++) {
+        const checkFile = kingFile + df;
+        if (checkFile < 0 || checkFile > 7) continue;
+        
+        const checkSq = String.fromCharCode(checkFile + 'a'.charCodeAt(0)) + shieldRank;
+        if (board.get(checkSq) === pawnChar) {
+            shieldPawns++;
+        }
+    }
+    
+    return shieldPawns >= 2;
+}
+
+/**
+ * v40.23 Helper: Are light squares weak around king?
+ */
+function isLightSquareWeakV40_23(board, kingSquare, color) {
+    const isWhite = color === 'w';
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    
+    // Light squares are those where file + rank is even
+    const lightSquares = [];
+    for (let df = -2; df <= 2; df++) {
+        for (let dr = -2; dr <= 2; dr++) {
+            const newFile = kingFile + df;
+            const newRank = kingRank + dr;
+            if (newFile < 0 || newFile > 7 || newRank < 1 || newRank > 8) continue;
+            
+            if ((newFile + newRank) % 2 === 0) {
+                lightSquares.push(String.fromCharCode(newFile + 'a'.charCodeAt(0)) + newRank);
+            }
+        }
+    }
+    
+    // Check if we have a light-squared bishop
+    const ourBishop = isWhite ? 'B' : 'b';
+    let hasLightBishop = false;
+    
+    for (const [sq, piece] of board) {
+        if (piece === ourBishop) {
+            const bFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+            const bRank = parseInt(sq[1]);
+            if ((bFile + bRank) % 2 === 0) {
+                hasLightBishop = true;
+                break;
+            }
+        }
+    }
+    
+    // If no light bishop and light squares around king are weak, it's bad
+    if (!hasLightBishop) {
+        // Check if f3/g3 pawns exist (or f6/g6 for black)
+        const weakenedSquare = isWhite ? 'f3' : 'f6';
+        const pawnChar = isWhite ? 'P' : 'p';
+        
+        // If pawn is on f3/f6, light squares are weakened
+        if (board.get(weakenedSquare) === pawnChar) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.23 Helper: Is fortress breached?
+ */
+function isFortressBreachedV40_23(board, kingSquare, enemyColor) {
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    const isEnemyWhite = enemyColor === 'w';
+    
+    let enemyPiecesNearKing = 0;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isEnemyWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        
+        const sqFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const sqRank = parseInt(sq[1]);
+        const dist = Math.abs(sqFile - kingFile) + Math.abs(sqRank - kingRank);
+        
+        if (dist <= 3) {
+            enemyPiecesNearKing++;
+        }
+    }
+    
+    return enemyPiecesNearKing >= 2;
+}
+
+/**
+ * v40.23 Helper: Evaluate fortress strength
+ */
+function evaluateFortressStrengthV40_23(board, kingSquare, color) {
+    let strength = 0;
+    
+    // Pawn shield intact?
+    if (isPawnShieldIntactV40_23(board, kingSquare, color)) {
+        strength += 0.4;
+    }
+    
+    // Light squares not weak?
+    if (!isLightSquareWeakV40_23(board, kingSquare, color)) {
+        strength += 0.2;
+    }
+    
+    // No enemy pieces nearby?
+    const enemyColor = color === 'w' ? 'b' : 'w';
+    if (!isFortressBreachedV40_23(board, kingSquare, enemyColor)) {
+        strength += 0.4;
+    }
+    
+    return Math.min(strength, 1.0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════"
+Observation: Edit was successful.

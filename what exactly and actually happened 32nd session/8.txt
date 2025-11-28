@@ -1,4 +1,58 @@
-Now let me find where to add the v40.22 functions (after v40.21):
-Action: $ cd /app && grep -n "function v40QuietMoveDangerEval" "Lichess Bot-AlphaZero-Pure.user.js" | tail -1
-Observation: 17130:function v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) {
-Exit code: 0
+Now let me add the v40.23 CONFIG parameters:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.22: MUST RESPOND TO THREAT — Don't ignore immediate threats!
+    v40MustRespondEnabled: true,
+    v40IgnoreThreatPenalty: -1200000000,            // Ignored a serious threat
+    v40GreedyWhileUnderAttackPenalty: -800000000,   // Grabbed material while under attack
+    v40PassiveMoveUnderAttackPenalty: -600000000,   // Passive move when being attacked
+};" --new-str "    // v40.22: MUST RESPOND TO THREAT — Don't ignore immediate threats!
+    v40MustRespondEnabled: true,
+    v40IgnoreThreatPenalty: -1200000000,            // Ignored a serious threat
+    v40GreedyWhileUnderAttackPenalty: -800000000,   // Grabbed material while under attack
+    v40PassiveMoveUnderAttackPenalty: -600000000,   // Passive move when being attacked
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.23: ROOK LIFT & QUEEN MATING ATTACK SUPREME
+    // From game analysis: Bot missed Rf5-Rh5 + Qe7-Qh4-Qxh2# mating attack!
+    // The bot played f3 which CATASTROPHICALLY weakened the kingside!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.23: ROOK LIFT DETECTION — Detect rook lift mating patterns
+    v40RookLiftEnabled: true,
+    v40RookLiftToHFilePenalty: -1500000000,         // Enemy rook lifting to h-file
+    v40RookLiftToGFilePenalty: -1200000000,         // Enemy rook lifting to g-file
+    v40RookOnOpenFilePenalty: -800000000,           // Enemy rook on open file toward king
+    v40RookOn5thRankPenalty: -1000000000,           // Enemy rook on 5th rank (lift position)
+    v40MultipleRooksLiftingPenalty: -2000000000,    // Multiple rooks lifting
+    
+    // v40.23: QUEEN H-FILE INVASION — Detect queen mating on h-file
+    v40QueenHFileEnabled: true,
+    v40QueenOnHFilePenalty: -1800000000,            // Enemy queen on h-file
+    v40QueenOnH4Penalty: -2000000000,               // Queen on h4 (mating square)
+    v40QueenOnH3Penalty: -1600000000,               // Queen on h3 threatening h2
+    v40QueenOnG3H3Penalty: -1400000000,             // Queen on g3 (threatens h2/g2)
+    v40QueenRookBatteryHFilePenalty: -2500000000,   // Queen + Rook on h-file = MATE!
+    
+    // v40.23: F3/G3 ABSOLUTE PROHIBITION — NEVER weaken kingside!
+    v40F3G3ProhibitionEnabled: true,
+    v40F3MoveProhibitionPenalty: -3000000000,       // NEVER play f3 when enemy has active pieces
+    v40G3MoveProhibitionPenalty: -2500000000,       // NEVER play g3 when enemy has active pieces
+    v40KingsidePawnPushPenalty: -1500000000,        // Pushing f/g pawns near king
+    v40F3WithEnemyOnEFilePenalty: -3500000000,      // f3 when enemy has e-file pressure
+    v40F3WithEnemyQueenActivePenalty: -4000000000,  // f3 when enemy queen is active CRITICAL!
+    
+    // v40.23: MATING ATTACK PATTERN RECOGNITION — Specific mating patterns
+    v40MatingAttackEnabled: true,
+    v40HFileAssaultPenalty: -2000000000,            // H-file assault pattern
+    v40GFileAssaultPenalty: -1800000000,            // G-file assault pattern
+    v40BackRankMatePatternPenalty: -2500000000,     // Back rank mate setup
+    v40QueenKnightMatePatternPenalty: -2200000000,  // Queen + Knight coordinated attack
+    v40RookQueenMatePatternPenalty: -2800000000,    // Rook + Queen coordinated mate
+    
+    // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
+    v40KingsideFortressEnabled: true,
+    v40KingsideFortressBonus: 500000000,            // Maintaining kingside fortress
+    v40FortressBreachedPenalty: -2000000000,        // Fortress has been breached
+    v40PawnShieldDestroyedPenalty: -1800000000,     // Pawn shield destroyed
+    v40LightSquareWeaknessPenalty: -1500000000,     // Light squares around king weak
+};"
+Observation: Edit was successful.
