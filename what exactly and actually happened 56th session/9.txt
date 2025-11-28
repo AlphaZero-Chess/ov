@@ -1,0 +1,32 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2372|    // v40.36: QUEEN CAPTURE PROHIBITION - Never capture with queen early
+2373|    v40QueenCaptureProhibitionEnabled: true,
+2374|    v40QueenCaptureMoveLimit: 15,                   // Prohibit until move 15
+2375|    v40QueenCapturePenalty: -20000000000000,        // 20 trillion penalty
+2376|    v40QueenCaptureQxd4Penalty: -50000000000000,    // 50 trillion for Qxd4 specifically
+2377|    
+2378|    // v40.36: KNIGHT SACRIFICE PREVENTION - Don't sacrifice knight for pawn
+2379|    v40KnightSacrificePreventionEnabled: true,
+2380|    v40KnightForPawnPenalty: -30000000000000,       // 30 trillion for knight sacrifice
+2381|    
+2382|    // v40.36: CASTLING DIRECTION ANALYSIS - Don't castle into danger
+2383|    v40CastlingDirectionEnabled: true,
+2384|    v40CastleIntoDangerPenalty: -40000000000000,    // 40 trillion for castling into danger
+2385|    v40QueensideCastleDangerThreshold: 2,          // If 2+ pieces attacking queenside, don't O-O-O
+2386|    v40KingsideCastleDangerThreshold: 2,           // If 2+ pieces attacking kingside, don't O-O
+2387|    
+2388|    // v40.36: EXCHANGE QUALITY VERIFICATION - Don't trade in bad positions
+2389|    v40ExchangeQualityEnabled: true,
+2390|    v40BadExchangePenalty: -15000000000000,         // 15 trillion for bad exchange
+2391|    v40ExchangeWhenLosingPenalty: -25000000000000,  // 25 trillion for trading when losing
+2392|    
+2393|    // v40.36: PIECE ACTIVITY REQUIREMENT - Must develop before passive moves
+2394|    v40PieceActivityEnabled: true,
+2395|    v40UndevelopedPiecePenalty: -5000000000000,     // 5 trillion for passive when undeveloped
+2396|    v40DevelopmentRequirement: 3,                  // Must have 3+ pieces developed
+2397|};
+2398|
+2399|// ═══════════════════════════════════════════════════════════════════════
+2400|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE

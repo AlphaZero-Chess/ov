@@ -1,0 +1,26 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+26338|    }
+26339|    
+26340|    return count;
+26341|}
+26342|
+26343|// ═══════════════════════════════════════════════════════════════════════════════
+26344|function findAttackedPiecesV40_9(board, color) {
+26345|    const attacked = [];
+26346|    const isWhite = color === 'w';
+26347|    const enemyColor = isWhite ? 'b' : 'w';
+26348|    
+26349|    for (const [square, piece] of board) {
+26350|        if (!piece) continue;
+26351|        const pieceIsWhite = piece === piece.toUpperCase();
+26352|        if (pieceIsWhite !== isWhite) continue;
+26353|        
+26354|        const pieceType = piece.toLowerCase();
+26355|        if (pieceType === 'k') continue;  // King attacks handled separately
+26356|        
+26357|        // Check if this square is attacked by enemy
+26358|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+26359|            // Check if it's adequately defended
+26360|            const isDefended = isSquareDefendedByColor(board, square, color);

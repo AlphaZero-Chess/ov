@@ -1,0 +1,12 @@
+
+Action: $ grep -n "function v40QueenCaptureProhibitionEval\|function v40KnightSacrificePreventionEval\|function v40CastlingDirectionEval\|function v40ExchangeQualityEval\|function v40PieceActivityRequirementEval\|function v40CountDevelopedPieces\|function v40CountSideAttackers\|function v40DoesAttackSquare" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 10341:function v40ExchangeQualityEval(fen, move, board, activeColor) {
+24972:function v40DoesAttackSquare(board, fromSquare, toSquare, piece) {
+26018:function v40QueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26050:function v40KnightSacrificePreventionEval(fen, move, board, activeColor, moveNumber) {
+26087:function v40CastlingDirectionEval(fen, move, board, activeColor, moveNumber) {
+26159:function v40CountSideAttackers(board, color, side) {
+26193:function v40ExchangeQualityEval(fen, move, board, activeColor, moveNumber) {
+26249:function v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) {
+26276:function v40CountDevelopedPieces(board, isWhite) {
+Exit code: 0

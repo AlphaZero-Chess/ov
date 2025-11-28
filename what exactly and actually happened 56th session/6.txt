@@ -1,0 +1,13 @@
+
+Action: $ head -10 "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: // ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
+// @description  TRUE AlphaZero Replica v40.36 - NO Qxd4 EVER - NO CASTLING INTO DANGER - NO KNIGHT SACRIFICE - ABSOLUTE ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.36 QUEEN CAPTURE & CASTLING DIRECTION SUPREME EDITION
+// @version      40.36.0-QUEEN-CAPTURE-PROHIBITION-CASTLING-DIRECTION-SUPREME
+// @match         *://lichess.org/*
+// @run-at        document-idle
+// @grant         none
+// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+// ==/UserScript==
+Exit code: 0

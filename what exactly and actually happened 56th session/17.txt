@@ -1,0 +1,29 @@
+Now let me add the v40.37 function calls and integrate them:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.36: PIECE ACTIVITY REQUIREMENT — Must develop before passive moves
+                const pieceActivityRequirementScore = v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // v40.36: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE" --new-str "                // v40.36: PIECE ACTIVITY REQUIREMENT — Must develop before passive moves
+                const pieceActivityRequirementScore = v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.37 ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME
+                // From Sicilian game analysis: Rd3 passive, Ka1 corner retreat
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.37: ROOK PASSIVE MOVE PROHIBITION — Don't play passive rook when attacked
+                const rookPassiveProhibitionScore = v40RookPassiveProhibitionEval(fen, move, board, activeColor, moveNumber) * 700.0;
+                
+                // v40.37: KING CORNER RETREAT PROHIBITION — Don't retreat king to corner
+                const kingCornerRetreatScore = v40KingCornerRetreatEval(fen, move, board, activeColor, moveNumber) * 900.0;
+                
+                // v40.37: DESPERATION SACRIFICE PREVENTION — Don't make losing sacrifices
+                const desperationSacrificeScore = v40DesperationSacrificePreventionEval(fen, move, board, activeColor, moveNumber) * 600.0;
+                
+                // v40.37: ULTRA QUEEN CAPTURE PROHIBITION — Even stronger
+                const ultraQueenCaptureScore = v40UltraQueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) * 1200.0;
+                
+                // v40.37: PASSIVE UNDER ATTACK PROHIBITION — No passive moves when attacked
+                const passiveUnderAttackScore = v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, moveNumber) * 800.0;
+                
+                // v40.37: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE"
+Observation: Edit was successful.

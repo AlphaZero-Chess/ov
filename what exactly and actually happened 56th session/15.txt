@@ -1,0 +1,69 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+42255|                
+42256|                // ═══════════════════════════════════════════════════════════════════
+42257|                // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
+42258|                // From Sicilian game analysis: Qxd4, Nxe5, O-O-O were TERRIBLE
+42259|                // ═══════════════════════════════════════════════════════════════════
+42260|                
+42261|                // v40.36: QUEEN CAPTURE PROHIBITION — Never capture with queen early
+42262|                const queenCaptureProhibitionScore = v40QueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) * 1000.0;
+42263|                
+42264|                // v40.36: KNIGHT SACRIFICE PREVENTION — Don't sacrifice knight for pawn
+42265|                const knightSacrificePreventionScore = v40KnightSacrificePreventionEval(fen, move, board, activeColor, moveNumber) * 800.0;
+42266|                
+42267|                // v40.36: CASTLING DIRECTION ANALYSIS — Don't castle into danger
+42268|                const castlingDirectionScore = v40CastlingDirectionEval(fen, move, board, activeColor, moveNumber) * 900.0;
+42269|                
+42270|                // v40.36: EXCHANGE QUALITY VERIFICATION — Don't trade in bad positions
+42271|                const exchangeQualityVerificationScore = v40ExchangeQualityEval(fen, move, board, activeColor, moveNumber) * 600.0;
+42272|                
+42273|                // v40.36: PIECE ACTIVITY REQUIREMENT — Must develop before passive moves
+42274|                const pieceActivityRequirementScore = v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) * 500.0;
+42275|                
+42276|                // v40.36: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+42277|                // This makes v40 the ABSOLUTE D3 PROHIBITION factor
+42278|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+42279|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+42280|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+42281|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+42282|                               counterattackBonus + initiativePreservationBonus +
+42283|                               // v40.4 additions:
+42284|                               openingPrinciplesScore + discoveredAttackPenalty + 
+42285|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+42286|                               // v40.5 additions:
+42287|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+42288|                               // v40.6 ULTIMATE additions:
+42289|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+42290|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+42291|                               // v40.7 DIVINE additions:
+42292|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+42293|                               // v40.8 TRANSCENDENT additions:
+42294|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+42295|                               counterplayGenScore + centralControlSupremeScore +
+42296|                               // v40.9 OMNISCIENT additions:
+42297|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+42298|                               // v40.10 GODLIKE additions:
+42299|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+42300|                               // v40.11 TRANSCENDENT SUPREME additions:
+42301|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+42302|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+42303|                               // v40.12 PROACTIVE SUPREME additions:
+42304|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+42305|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+42306|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+42307|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+42308|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+42309|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+42310|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+42311|                               // v40.15 PIECE PRESERVATION SUPREME additions:
+42312|                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+42313|                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+42314|                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+42315|                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+42316|                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+42317|                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+42318|                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+42319|                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+42320|                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:

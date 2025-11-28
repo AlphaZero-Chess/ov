@@ -2394,6 +2394,38 @@ const CONFIG = {
     v40PieceActivityEnabled: true,
     v40UndevelopedPiecePenalty: -5000000000000,     // 5 trillion for passive when undeveloped
     v40DevelopmentRequirement: 3,                  // Must have 3+ pieces developed
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.37.0: ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: From Sicilian game analysis:
+    // 1. Move 17: Rd3 - Passive rook move when under attack
+    // 2. Move 21: Ka1 - King retreated to corner under mating attack
+    // 3. Move 25: Bxf7+ - Desperation sacrifice that didn't help
+    // FIX: Prohibit passive rook moves + king corner retreats
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.37: ROOK PASSIVE MOVE PROHIBITION - Don't play passive rook when attacked
+    v40RookPassiveProhibitionEnabled: true,
+    v40RookPassivePenalty: -25000000000000,         // 25 trillion for passive rook
+    v40RookPassiveSquares: ['d3', 'e3', 'd6', 'e6'],// Passive rook squares
+    
+    // v40.37: KING CORNER RETREAT PROHIBITION - Don't retreat king to corner
+    v40KingCornerRetreatEnabled: true,
+    v40KingCornerPenalty: -60000000000000,          // 60 trillion for king corner retreat
+    v40KingCornerSquares: ['a1', 'h1', 'a8', 'h8'], // Corner squares
+    
+    // v40.37: DESPERATION SACRIFICE PREVENTION - Don't make losing sacrifices
+    v40DesperationSacrificePrevEnabled: true,
+    v40DesperationSacrificePenalty: -35000000000000,// 35 trillion for desperation sacrifice
+    
+    // v40.37: ULTRA QUEEN CAPTURE PROHIBITION - Even stronger
+    v40UltraQueenCaptureEnabled: true,
+    v40UltraQueenCapturePenalty: -100000000000000,  // 100 trillion for ANY Qxd4/Qxe5
+    
+    // v40.37: PASSIVE UNDER ATTACK PROHIBITION - No passive moves when attacked
+    v40PassiveUnderAttackEnabled: true,
+    v40PassiveUnderAttackPenalty: -45000000000000,  // 45 trillion for passive when attacked
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -26309,6 +26341,260 @@ function v40CountDevelopedPieces(board, isWhite) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// v40.37 ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.37: ROOK PASSIVE MOVE PROHIBITION — Don't play passive rook when attacked
+ * Critical fix from Sicilian game: Rd3 was passive when under attack
+ */
+function v40RookPassiveProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40RookPassiveProhibitionEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    // Check if rook is moving
+    if (!movingPiece || movingPiece.toLowerCase() !== 'r') return 0;
+    
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Check if we're under attack (any piece attacked by enemy)
+    let underAttack = false;
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        if (isSquareAttackedByColor(board, square, enemyColor)) {
+            underAttack = true;
+            break;
+        }
+    }
+    
+    // Check if rook is moving to a passive square
+    const passiveSquares = CONFIG.v40RookPassiveSquares || ['d3', 'e3', 'd6', 'e6', 'c3', 'f3', 'c6', 'f6'];
+    
+    if (underAttack && passiveSquares.includes(toSquare)) {
+        debugLog("[V40.37_ROOK]", `🚫🚫🚫 ROOK PASSIVE PROHIBITION: R${toSquare} is PASSIVE when under attack!`);
+        score += CONFIG.v40RookPassivePenalty || -25000000000000;
+    }
+    
+    // Also penalize rook moves that don't address threats
+    if (underAttack) {
+        const capturedPiece = board.get(toSquare);
+        if (!capturedPiece) {
+            // Non-capturing rook move when under attack
+            debugLog("[V40.37_ROOK]", `⚠️ ROOK PASSIVE: Rook not capturing when under attack!`);
+            score += (CONFIG.v40RookPassivePenalty || -25000000000000) / 2;
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.37: KING CORNER RETREAT PROHIBITION — Don't retreat king to corner
+ * Critical fix from Sicilian game: Ka1 was TERRIBLE under mating attack
+ */
+function v40KingCornerRetreatEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingCornerRetreatEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    // Check if king is moving
+    if (!movingPiece || movingPiece.toLowerCase() !== 'k') return 0;
+    
+    const cornerSquares = CONFIG.v40KingCornerSquares || ['a1', 'h1', 'a8', 'h8'];
+    
+    if (cornerSquares.includes(toSquare)) {
+        debugLog("[V40.37_KING]", `🚫🚫🚫 KING CORNER RETREAT PROHIBITION: K${toSquare} is CORNER!`);
+        score += CONFIG.v40KingCornerPenalty || -60000000000000;
+        
+        // Extra penalty if under mating attack
+        const isWhite = activeColor === 'w';
+        const enemyColor = isWhite ? 'b' : 'w';
+        
+        // Check if enemy has queen and rooks (mating material)
+        let hasMatingMaterial = false;
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'q' || pieceType === 'r') {
+                hasMatingMaterial = true;
+                break;
+            }
+        }
+        
+        if (hasMatingMaterial) {
+            debugLog("[V40.37_KING]", `🚫🚫🚫 CRITICAL: King to corner with mating material present!`);
+            score += (CONFIG.v40KingCornerPenalty || -60000000000000) * 2;
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.37: DESPERATION SACRIFICE PREVENTION — Don't make losing sacrifices
+ * Critical fix from Sicilian game: Bxf7+ was desperation that didn't help
+ */
+function v40DesperationSacrificePreventionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40DesperationSacrificePrevEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Only evaluate captures
+    if (!capturedPiece) return 0;
+    
+    const isWhite = activeColor === 'w';
+    const ourMaterial = v40CalculateMaterial(board, isWhite);
+    const theirMaterial = v40CalculateMaterial(board, !isWhite);
+    
+    // Check if we're significantly behind in material
+    const materialDeficit = theirMaterial - ourMaterial;
+    
+    if (materialDeficit > 300) {  // Behind by at least 3 pawns
+        // Check if this is a sacrifice (losing more material)
+        const afterBoard = simulateMoveOnBoard(board, move);
+        const enemyColor = isWhite ? 'b' : 'w';
+        
+        if (movingPiece && isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+            const movingValue = getPieceValueSimple(movingPiece.toLowerCase());
+            const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+            
+            if (movingValue > capturedValue + 100) {  // Sacrificing more than captured
+                debugLog("[V40.37_DESP]", `🚫🚫🚫 DESPERATION SACRIFICE: ${movingPiece}x${capturedPiece} when behind ${materialDeficit}!`);
+                score += CONFIG.v40DesperationSacrificePenalty || -35000000000000;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.37: ULTRA QUEEN CAPTURE PROHIBITION — Even stronger Qxd4/Qxe5 prohibition
+ */
+function v40UltraQueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40UltraQueenCaptureEnabled) return 0;
+    
+    let score = 0;
+    
+    // Only apply in first 20 moves
+    if (moveNumber > 20) return 0;
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Check if queen is capturing
+    if (movingPiece && movingPiece.toLowerCase() === 'q' && capturedPiece) {
+        // ABSOLUTE PROHIBITION for Qxd4/Qxd5/Qxe4/Qxe5
+        if (['d4', 'd5', 'e4', 'e5'].includes(toSquare)) {
+            debugLog("[V40.37_ULTRA]", `🚫🚫🚫🚫 ULTRA QUEEN CAPTURE PROHIBITION: Qx${toSquare} is FORBIDDEN!`);
+            score += CONFIG.v40UltraQueenCapturePenalty || -100000000000000;
+        }
+        
+        // Also penalize any early queen capture
+        if (moveNumber <= 10 && capturedPiece.toLowerCase() === 'p') {
+            debugLog("[V40.37_ULTRA]", `🚫🚫🚫🚫 ULTRA: Queen capturing pawn early!`);
+            score += (CONFIG.v40UltraQueenCapturePenalty || -100000000000000) / 2;
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.37: PASSIVE UNDER ATTACK PROHIBITION — No passive moves when attacked
+ */
+function v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PassiveUnderAttackEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // First check if we have any attacked pieces
+    const attackedPieces = [];
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        if (isSquareAttackedByColor(board, square, enemyColor)) {
+            const pieceValue = getPieceValueSimple(piece.toLowerCase());
+            if (pieceValue > 100) {  // Not just pawns
+                attackedPieces.push({ square, piece, value: pieceValue });
+            }
+        }
+    }
+    
+    if (attackedPieces.length === 0) return 0;
+    
+    // Check if this move addresses the attack
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    let addressesAttack = false;
+    
+    // 1. Moving the attacked piece
+    for (const attacked of attackedPieces) {
+        if (attacked.square === fromSquare) {
+            addressesAttack = true;
+            break;
+        }
+    }
+    
+    // 2. Capturing the attacker
+    if (capturedPiece) {
+        addressesAttack = true;
+    }
+    
+    // 3. Blocking or defending (harder to detect, give benefit of doubt)
+    
+    if (!addressesAttack && movingPiece) {
+        const pieceType = movingPiece.toLowerCase();
+        
+        // Passive moves when under attack
+        const passivePawnMoves = ['a2a3', 'h2h3', 'a7a6', 'h7h6', 'b2b3', 'g2g3'];
+        if (passivePawnMoves.includes(move)) {
+            debugLog("[V40.37_PASSIVE]", `🚫🚫🚫 PASSIVE UNDER ATTACK: Playing ${move} when ${attackedPieces[0].piece} attacked!`);
+            score += CONFIG.v40PassiveUnderAttackPenalty || -45000000000000;
+        }
+        
+        // Non-defensive moves with high value pieces attacked
+        const highestAttackedValue = Math.max(...attackedPieces.map(a => a.value));
+        if (highestAttackedValue >= 500) {  // Queen or Rook attacked
+            // Only penalize if we're not at least threatening something
+            if (!capturedPiece) {
+                debugLog("[V40.37_PASSIVE]", `⚠️ PASSIVE: ${pieceType} move while ${highestAttackedValue >= 900 ? 'Queen' : 'Rook'} attacked!`);
+                score += (CONFIG.v40PassiveUnderAttackPenalty || -45000000000000) / 3;
+            }
+        }
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 function findAttackedPiecesV40_9(board, color) {
     const attacked = [];
     const isWhite = color === 'w';
@@ -41987,7 +42273,27 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.36: PIECE ACTIVITY REQUIREMENT — Must develop before passive moves
                 const pieceActivityRequirementScore = v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) * 500.0;
                 
-                // v40.36: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.37 ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME
+                // From Sicilian game analysis: Rd3 passive, Ka1 corner retreat
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.37: ROOK PASSIVE MOVE PROHIBITION — Don't play passive rook when attacked
+                const rookPassiveProhibitionScore = v40RookPassiveProhibitionEval(fen, move, board, activeColor, moveNumber) * 700.0;
+                
+                // v40.37: KING CORNER RETREAT PROHIBITION — Don't retreat king to corner
+                const kingCornerRetreatScore = v40KingCornerRetreatEval(fen, move, board, activeColor, moveNumber) * 900.0;
+                
+                // v40.37: DESPERATION SACRIFICE PREVENTION — Don't make losing sacrifices
+                const desperationSacrificeScore = v40DesperationSacrificePreventionEval(fen, move, board, activeColor, moveNumber) * 600.0;
+                
+                // v40.37: ULTRA QUEEN CAPTURE PROHIBITION — Even stronger
+                const ultraQueenCaptureScore = v40UltraQueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) * 1200.0;
+                
+                // v40.37: PASSIVE UNDER ATTACK PROHIBITION — No passive moves when attacked
+                const passiveUnderAttackScore = v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, moveNumber) * 800.0;
+                
+                // v40.37: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
                 // This makes v40 the ABSOLUTE D3 PROHIBITION factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 

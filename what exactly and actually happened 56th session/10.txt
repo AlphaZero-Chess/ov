@@ -1,0 +1,53 @@
+The v40.36 CONFIG is in place. Now let me implement v40.37 to address the remaining issues from the game analysis. I'll add:
+1. **ROOK PASSIVE MOVE PROHIBITION** - Don't play passive rook moves when under attack
+2. **KING CORNER RETREAT PROHIBITION** - Don't retreat king to corner when under mating attack
+3. **ENHANCED MATERIAL DESPERATION PREVENTION** - Don't make desperation sacrifices
+4. **ULTRA QUEEN CAPTURE PROHIBITION** - Even stronger prohibition
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.36: PIECE ACTIVITY REQUIREMENT - Must develop before passive moves
+    v40PieceActivityEnabled: true,
+    v40UndevelopedPiecePenalty: -5000000000000,     // 5 trillion for passive when undeveloped
+    v40DevelopmentRequirement: 3,                  // Must have 3+ pieces developed
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE" --new-str "    // v40.36: PIECE ACTIVITY REQUIREMENT - Must develop before passive moves
+    v40PieceActivityEnabled: true,
+    v40UndevelopedPiecePenalty: -5000000000000,     // 5 trillion for passive when undeveloped
+    v40DevelopmentRequirement: 3,                  // Must have 3+ pieces developed
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.37.0: ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: From Sicilian game analysis:
+    // 1. Move 17: Rd3 - Passive rook move when under attack
+    // 2. Move 21: Ka1 - King retreated to corner under mating attack
+    // 3. Move 25: Bxf7+ - Desperation sacrifice that didn't help
+    // FIX: Prohibit passive rook moves + king corner retreats
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.37: ROOK PASSIVE MOVE PROHIBITION - Don't play passive rook when attacked
+    v40RookPassiveProhibitionEnabled: true,
+    v40RookPassivePenalty: -25000000000000,         // 25 trillion for passive rook
+    v40RookPassiveSquares: ['d3', 'e3', 'd6', 'e6'],// Passive rook squares
+    
+    // v40.37: KING CORNER RETREAT PROHIBITION - Don't retreat king to corner
+    v40KingCornerRetreatEnabled: true,
+    v40KingCornerPenalty: -60000000000000,          // 60 trillion for king corner retreat
+    v40KingCornerSquares: ['a1', 'h1', 'a8', 'h8'], // Corner squares
+    
+    // v40.37: DESPERATION SACRIFICE PREVENTION - Don't make losing sacrifices
+    v40DesperationSacrificePrevEnabled: true,
+    v40DesperationSacrificePenalty: -35000000000000,// 35 trillion for desperation sacrifice
+    
+    // v40.37: ULTRA QUEEN CAPTURE PROHIBITION - Even stronger
+    v40UltraQueenCaptureEnabled: true,
+    v40UltraQueenCapturePenalty: -100000000000000,  // 100 trillion for ANY Qxd4/Qxe5
+    
+    // v40.37: PASSIVE UNDER ATTACK PROHIBITION - No passive moves when attacked
+    v40PassiveUnderAttackEnabled: true,
+    v40PassiveUnderAttackPenalty: -45000000000000,  // 45 trillion for passive when attacked
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE"
+Observation: Edit was successful.

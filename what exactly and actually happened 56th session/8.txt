@@ -1,0 +1,63 @@
+The file is already at v40.36. Now, based on the user's request, they provided a new game to analyze. Let me analyze this game and implement v40.37:
+
+The most recent game from the problem statement:
+```
+[White "AlphaZero"]
+[Black "lichess AI level 8"]
+[Result "0-1"]
+[Opening "Sicilian Defense: Closed"]
+
+1. e4 c5 2. Nc3 d6 3. Nf3 Nf6 4. d4 cxd4 5. Qxd4 e5 6. Nxe5 dxe5 7. Qe3 Nc6 8. Bc4 Nd4 9. Qd3 Bc5 10. Be3 O-O 11. O-O-O Bd7 12. Kb1 Rb8 13. Nd5 Ng4 14. Bxd4 Bxd4 15. Qf1 b5 16. Be2 b4 17. Rd3 Nf6 18. c3 bxc3 19. Nxf6+ Qxf6 20. Rxd4 Rxb2+ 21. Ka1 exd4 22. Qe1 Be6 23. Bh5 Rfb8 24. Qe2 c2 25. Bxf7+ Bxf7 26. Qxc2 Rxc2 27. f3 Rxa2#
+```
+Action: Analyzing the most recent game:
+
+GAME ANALYSIS:
+1. e4 c5 - OK, standard
+2. Nc3 d6 - OK 
+3. Nf3 Nf6 - OK
+4. d4 cxd4 - Good, opening the center
+5. Qxd4 - TERRIBLE! v40.36 should prohibit this with massive penalty. Queen captures pawn on move 5!
+6. Nxe5 - TERRIBLE! Knight captures pawn but gets recaptured dxe5
+7. Qe3 - Queen has to retreat
+8. Bc4 - Developing
+9. Qd3 - Another queen move
+10. Be3 - Developing
+11. O-O-O - TERRIBLE! Castling into danger when queenside will be attacked
+12. Kb1 - Defensive
+13. Nd5 - Knight to d5, but will be challenged
+14. Bxd4 - Bad exchange
+15. Qf1 - Passive queen retreat
+16. Be2 - Defensive bishop move
+17. Rd3 - Passive rook move
+18. c3 bxc3 - Pawn weakening
+19. Nxf6+ Qxf6 - Exchange
+20. Rxd4 - Losing exchange
+21. Ka1 - King in corner (bad)
+22. Qe1 - Passive
+23. Bh5 - Bad bishop move
+24. Qe2 - Passive
+25. Bxf7+ Bxf7 - Desperation sacrifice
+26. Qxc2 Rxc2 - Material down
+27. f3 Rxa2# - Checkmate
+
+KEY ISSUES:
+1. Move 5: Qxd4 - v40.36 should prevent this, need to verify it's working
+2. Move 6: Nxe5 - Knight sacrifice for nothing, need stronger prevention
+3. Move 11: O-O-O - Castling into danger
+4. Move 17: Rd3 - Passive rook when under attack
+5. Move 21: Ka1 - King retreat to corner under mating attack
+
+v40.36 should already address issues 1, 2, 3. But if the game still shows these moves being played, either:
+1. The penalty values are not high enough
+2. The functions are not being evaluated properly
+3. There's a bug in the function integration
+
+I should:
+1. First verify that v40.36 functions are properly integrated
+2. Increase penalty values if needed
+3. Add v40.37 to address remaining issues:
+   - ROOK PASSIVE MOVE PROHIBITION when under attack
+   - KING CORNER RETREAT PROHIBITION when under mating attack
+   - MATERIAL DESPERATION SACRIFICE PREVENTION
+   - ENHANCED QUEEN EARLY CAPTURE PROHIBITION with higher penalty
+Observation: Your thought has been logged.
