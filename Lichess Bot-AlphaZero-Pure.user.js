@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY
-// @description  TRUE AlphaZero Replica v40.33 - ABSOLUTE d3 PROHIBITION (ALL PHASES) - SICILIAN d4/f4 ATTACK - ENHANCED TACTICAL DEPTH - PIECE SAFETY SUPREME!
-// @author       AlphaZero TRUE REPLICA v40.33 ABSOLUTE D3 PROHIBITION SICILIAN MASTERY EDITION
-// @version      40.33.0-ABSOLUTE-D3-PROHIBITION-SICILIAN-MASTERY
+// @name         Lichess Bot - TRUE ALPHAZERO v40.34 ABSOLUTE D3 PROHIBITION INTEGRATION FIX
+// @description  TRUE AlphaZero Replica v40.34 - ABSOLUTE d3 PROHIBITION FULLY INTEGRATED - SICILIAN d4/f4 ATTACK - ALL v40.33 FUNCTIONS NOW IN SCORING - ENHANCED TACTICAL DEPTH!
+// @author       AlphaZero TRUE REPLICA v40.34 ABSOLUTE D3 PROHIBITION INTEGRATION FIX EDITION
+// @version      40.34.0-ABSOLUTE-D3-PROHIBITION-INTEGRATION-FIX
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -34934,6 +34934,8 @@ const OPENING_BLACKLIST = {
     
     // v26.0.0: WEAKENING PAWN MOVES - f4/g3 from lost game killed the king
     weakening: [
+        { move: /^d2d3/, beforeMove: 40, reason: "d3 - ABSOLUTELY FORBIDDEN PASSIVE MOVE (v40.34)" },
+        { move: /^e2e3/, beforeMove: 15, reason: "e3 - passive when e4 is better" },
         { move: /^f2f3/, beforeMove: 15, reason: "f3 - weakens king badly (unless forcing)" },
         { move: /^f7f6/, beforeMove: 15, reason: "f6 - weakens king badly" },
         { move: /^f2f4/, beforeMove: 20, reason: "f4 - weakens e3/g3 squares (lost game move 19)" },
@@ -41139,8 +41141,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                pieceCoordinationCheckScore + threatAnticipationScore +
                                // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
                                absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
-                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.30 ABSOLUTE OPENING MASTERY PARADIGM SHIFT
+                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore +
+                               // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
+                               absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
+                               pieceSafetySupremeScore + initiativeMaintenanceScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.33 ABSOLUTE D3 PROHIBITION PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -41183,6 +41188,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceActivitySupreme: ${pieceActivitySupremeScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🏛️🏛️ CenterControlAbsolute: ${centerControlAbsoluteScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   👁️👁️ TacticalBlindness: ${tacticalBlindnessScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚫🚫🚫 ABSOLUTE D3 PROHIBITION: ${absoluteD3ProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ♟️♟️♟️ SICILIAN MASTERY: ${sicilianMasteryScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔬🔬🔬 ENHANCED TACTICAL DEPTH: ${enhancedTacticalDepthScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ PIECE SAFETY SUPREME: ${pieceSafetySupremeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ INITIATIVE MAINTENANCE: ${initiativeMaintenanceScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
