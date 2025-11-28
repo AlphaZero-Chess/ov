@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME
-// @description  TRUE AlphaZero Replica v40.37 - NO PASSIVE ROOKS - NO KING CORNER RETREAT - NO DESPERATION SACRIFICE - ABSOLUTE ZERO BLUNDERS!
-// @author       AlphaZero TRUE REPLICA v40.37 ROOK PASSIVE & KING CORNER SUPREME EDITION
-// @version      40.37.0-ROOK-PASSIVE-KING-CORNER-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.38 GXF3 PROHIBITION & KING DANGER WALK SUPREME
+// @description  TRUE AlphaZero Replica v40.38 - NO GXF3/FXG3 EVER - NO KING DANGER WALK - FORCED MATE DEFENSE - ABSOLUTE ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.38 GXF3 PROHIBITION & MATE DEFENSE SUPREME EDITION
+// @version      40.38.0-GXF3-PROHIBITION-MATE-DEFENSE-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2426,6 +2426,42 @@ const CONFIG = {
     // v40.37: PASSIVE UNDER ATTACK PROHIBITION - No passive moves when attacked
     v40PassiveUnderAttackEnabled: true,
     v40PassiveUnderAttackPenalty: -45000000000000,  // 45 trillion for passive when attacked
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.38.0: GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: From Caro-Kann game analysis:
+    // 1. Move 14: gxf3 - TERRIBLE! Weakened king position massively
+    // 2. Move 16: Kg2 - King walked into danger on weakened g-file
+    // 3. Move 19: Qd1 - Passive queen when under mating attack
+    // 4. Move 20-21: h4, h5 - Ignored mate threats completely
+    // FIX: Prohibit gxf3/fxg3 type recaptures + king danger walks + passive under mate
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.38: GXF3/FXG3 PAWN RECAPTURE PROHIBITION - Never weaken king pawn shield
+    v40GxF3ProhibitionEnabled: true,
+    v40GxF3Penalty: -150000000000000,              // 150 trillion for gxf3/fxg3 type moves
+    
+    // v40.38: KING DANGER WALK PROHIBITION - Never walk king toward open/weak files
+    v40KingDangerWalkEnabled: true,
+    v40KingDangerWalkPenalty: -120000000000000,    // 120 trillion for king walking to danger
+    
+    // v40.38: FORCED MATE DEFENSE MODE - When mate threatened, ONLY defensive moves
+    v40ForcedMateDefenseEnabled: true,
+    v40ForcedMateDefensePenalty: -200000000000000, // 200 trillion for ignoring mate threat
+    
+    // v40.38: PAWN MOVE UNDER ATTACK PROHIBITION - No pawn push when under mating attack
+    v40PawnMoveUnderAttackEnabled: true,
+    v40PawnMoveUnderAttackPenalty: -90000000000000, // 90 trillion for pawn push under attack
+    
+    // v40.38: PASSIVE QUEEN UNDER MATE PROHIBITION - No Qd1/Qc1 when mate threatened
+    v40PassiveQueenUnderMateEnabled: true,
+    v40PassiveQueenUnderMatePenalty: -180000000000000, // 180 trillion for passive queen
+    
+    // v40.38: BISHOP USELESS SQUARE PROHIBITION - No Bh6/Ba3 type useless moves
+    v40BishopUselessSquareEnabled: true,
+    v40BishopUselessSquarePenalty: -50000000000000, // 50 trillion for useless bishop
+    v40BishopUselessSquares: ['h6', 'a6', 'h3', 'a3'],
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -26595,6 +26631,470 @@ function v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, mov
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// v40.38 GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.38: GXF3/FXG3 PAWN RECAPTURE PROHIBITION — Never weaken king pawn shield
+ * Critical fix from Caro-Kann game: gxf3 was TERRIBLE - weakened king
+ */
+function v40GxF3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40GxF3ProhibitionEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Only check pawn captures
+    if (!movingPiece || movingPiece.toLowerCase() !== 'p') return 0;
+    if (!capturedPiece) return 0;  // Must be a capture
+    
+    const isWhite = activeColor === 'w';
+    
+    // Deadly recaptures that weaken king: gxf3, gxh3, fxg3, hxg3 for white
+    // or gxf6, gxh6, fxg6, hxg6 for black
+    const deadlyRecapturesWhite = ['g2f3', 'g2h3', 'f2g3', 'h2g3', 'g3f4', 'g3h4', 'f3g4', 'h3g4'];
+    const deadlyRecapturesBlack = ['g7f6', 'g7h6', 'f7g6', 'h7g6', 'g6f5', 'g6h5', 'f6g5', 'h6g5'];
+    
+    const deadlyRecaptures = isWhite ? deadlyRecapturesWhite : deadlyRecapturesBlack;
+    
+    if (deadlyRecaptures.includes(move)) {
+        debugLog("[V40.38_GXF3]", `🚫🚫🚫 GXF3 PROHIBITION: ${move} WEAKENS KING PAWN SHIELD!`);
+        score += CONFIG.v40GxF3Penalty || -150000000000000;
+        
+        // Extra penalty if king has already castled kingside
+        const kingSquare = findKingSquare(board, activeColor);
+        if (kingSquare) {
+            const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            if ((isWhite && kingFile >= 5) || (!isWhite && kingFile >= 5)) {
+                debugLog("[V40.38_GXF3]", `💀💀💀 DOUBLE PENALTY: King on kingside, ${move} SUICIDAL!`);
+                score += (CONFIG.v40GxF3Penalty || -150000000000000);
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.38: KING DANGER WALK PROHIBITION — Never walk king toward open/weak files
+ * Critical fix from Caro-Kann game: Kg2 was SUICIDAL after gxf3
+ */
+function v40KingDangerWalkEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KingDangerWalkEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    // Only check king moves
+    if (!movingPiece || movingPiece.toLowerCase() !== 'k') return 0;
+    
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Check if target square is on a weakened file (g-file or h-file if pawn moved)
+    const toFile = toSquare.charAt(0);
+    const toRank = parseInt(toSquare.charAt(1));
+    
+    // Check if pawns are missing from the file the king is moving to
+    let pawnMissingOnFile = true;
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        if (piece.toLowerCase() !== 'p') continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const squareFile = square.charAt(0);
+        if (squareFile === toFile) {
+            pawnMissingOnFile = false;
+            break;
+        }
+    }
+    
+    // Check if there are enemy attacking pieces on that file
+    let enemyPiecesOnFile = 0;
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        const squareFile = square.charAt(0);
+        const pieceType = piece.toLowerCase();
+        
+        if (squareFile === toFile && (pieceType === 'r' || pieceType === 'q')) {
+            enemyPiecesOnFile++;
+        }
+    }
+    
+    // Walking to g-file or h-file when pawns are gone is SUICIDE
+    if ((toFile === 'g' || toFile === 'h' || toFile === 'f') && pawnMissingOnFile) {
+        debugLog("[V40.38_KINGWALK]", `🚫🚫🚫 KING DANGER WALK: K${toSquare} to WEAKENED ${toFile}-file!`);
+        score += CONFIG.v40KingDangerWalkPenalty || -120000000000000;
+        
+        if (enemyPiecesOnFile > 0) {
+            debugLog("[V40.38_KINGWALK]", `💀💀💀 EXTRA PENALTY: Enemy heavy pieces on ${toFile}-file!`);
+            score += (CONFIG.v40KingDangerWalkPenalty || -120000000000000) * enemyPiecesOnFile;
+        }
+    }
+    
+    // Check if enemy queen/rook can reach the target square easily
+    if (isSquareAttackedByColor(board, toSquare, enemyColor)) {
+        // Check what's attacking
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'q' || pieceType === 'r') {
+                debugLog("[V40.38_KINGWALK]", `⚠️ KING WALK WARNING: K${toSquare} attacked by ${pieceType}!`);
+                score += (CONFIG.v40KingDangerWalkPenalty || -120000000000000) / 2;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.38: FORCED MATE DEFENSE MODE — When mate threatened, ONLY defensive moves allowed
+ * Critical fix: Bot kept playing h4, h5 while being mated
+ */
+function v40ForcedMateDefenseEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ForcedMateDefenseEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Find our king
+    const kingSquare = findKingSquare(board, activeColor);
+    if (!kingSquare) return 0;
+    
+    // Check if we're under mating attack (queen + other pieces near king)
+    let enemyQueenNearKing = false;
+    let enemyPiecesNearKing = 0;
+    let enemyQueenSquare = null;
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare.charAt(1));
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        const distance = Math.max(Math.abs(file - kingFile), Math.abs(rank - kingRank));
+        
+        if (pieceType === 'q' && distance <= 3) {
+            enemyQueenNearKing = true;
+            enemyQueenSquare = square;
+        }
+        
+        if (distance <= 2 && pieceType !== 'k') {
+            enemyPiecesNearKing++;
+        }
+    }
+    
+    // Check if we're under a mating attack pattern
+    const underMatingAttack = enemyQueenNearKing && enemyPiecesNearKing >= 2;
+    
+    if (!underMatingAttack) return 0;
+    
+    // We're under mating attack - check if this move is defensive
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    let isDefensiveMove = false;
+    
+    // 1. King move to safety
+    if (movingPiece && movingPiece.toLowerCase() === 'k') {
+        // Check if new square is safer (less attacked)
+        const fromAttacked = isSquareAttackedByColor(board, fromSquare, enemyColor);
+        const toAttacked = isSquareAttackedByColor(board, toSquare, enemyColor);
+        if (!toAttacked || (fromAttacked && !toAttacked)) {
+            isDefensiveMove = true;
+        }
+    }
+    
+    // 2. Capturing the attacking queen
+    if (capturedPiece && capturedPiece.toLowerCase() === 'q') {
+        isDefensiveMove = true;
+    }
+    
+    // 3. Blocking check or interposing
+    if (movingPiece) {
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toRank = parseInt(toSquare.charAt(1));
+        
+        // Check if we're putting a piece between enemy queen and our king
+        if (enemyQueenSquare) {
+            const queenFile = enemyQueenSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            const queenRank = parseInt(enemyQueenSquare.charAt(1));
+            
+            // Check if move is on the line between queen and king
+            const onSameFile = toFile === queenFile && toFile === kingFile;
+            const onSameRank = toRank === queenRank && toRank === kingRank;
+            const onSameDiagonal = Math.abs(toFile - queenFile) === Math.abs(toRank - queenRank) &&
+                                   Math.abs(toFile - kingFile) === Math.abs(toRank - kingRank);
+            
+            if (onSameFile || onSameRank || onSameDiagonal) {
+                // Check if between queen and king
+                const betweenFileLow = Math.min(queenFile, kingFile);
+                const betweenFileHigh = Math.max(queenFile, kingFile);
+                const betweenRankLow = Math.min(queenRank, kingRank);
+                const betweenRankHigh = Math.max(queenRank, kingRank);
+                
+                if (toFile >= betweenFileLow && toFile <= betweenFileHigh &&
+                    toRank >= betweenRankLow && toRank <= betweenRankHigh) {
+                    isDefensiveMove = true;
+                }
+            }
+        }
+    }
+    
+    // 4. Creating escape square for king
+    if (movingPiece && movingPiece.toLowerCase() === 'p') {
+        // Pawn moves that create luft might be defensive
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toRank = parseInt(toSquare.charAt(1));
+        
+        if (Math.abs(toFile - kingFile) <= 1 && Math.abs(toRank - kingRank) <= 2) {
+            isDefensiveMove = true;
+        }
+    }
+    
+    if (!isDefensiveMove) {
+        debugLog("[V40.38_MATEDEF]", `🚫🚫🚫 FORCED MATE DEFENSE: ${move} is NOT DEFENSIVE when under mating attack!`);
+        score += CONFIG.v40ForcedMateDefensePenalty || -200000000000000;
+        
+        // Extra huge penalty for pawn pushes like h4, h5
+        if (movingPiece && movingPiece.toLowerCase() === 'p') {
+            const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            if (Math.abs(fromFile - kingFile) >= 3) {  // Pawn far from king
+                debugLog("[V40.38_MATEDEF]", `💀💀💀 PAWN PUSH WHILE BEING MATED: ${move} is SUICIDAL!`);
+                score += (CONFIG.v40ForcedMateDefensePenalty || -200000000000000);
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.38: PAWN MOVE UNDER ATTACK PROHIBITION — No pawn push when under serious attack
+ * Critical fix: Bot played h4, h5 while being mated
+ */
+function v40PawnMoveUnderAttackEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnMoveUnderAttackEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Only check pawn moves that don't capture
+    if (!movingPiece || movingPiece.toLowerCase() !== 'p') return 0;
+    if (capturedPiece) return 0;  // Pawn captures are fine
+    
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Find our king and check if under attack
+    const kingSquare = findKingSquare(board, activeColor);
+    if (!kingSquare) return 0;
+    
+    // Check if king is attacked or nearly attacked
+    const kingAttacked = isSquareAttackedByColor(board, kingSquare, enemyColor);
+    
+    // Check for enemy queen and rook proximity to king
+    let dangerLevel = 0;
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare.charAt(1));
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        const distance = Math.max(Math.abs(file - kingFile), Math.abs(rank - kingRank));
+        
+        if (pieceType === 'q' && distance <= 4) {
+            dangerLevel += 3;
+        } else if (pieceType === 'r' && distance <= 3) {
+            dangerLevel += 2;
+        } else if (pieceType === 'n' && distance <= 2) {
+            dangerLevel += 1;
+        }
+    }
+    
+    // High danger level = don't push pawns
+    if (dangerLevel >= 4 || kingAttacked) {
+        const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        
+        // Especially penalize flank pawn pushes (a, b, g, h files)
+        if (fromFile <= 1 || fromFile >= 6) {
+            debugLog("[V40.38_PAWNMOVE]", `🚫🚫🚫 PAWN MOVE UNDER ATTACK: ${move} while king in danger (level ${dangerLevel})!`);
+            score += CONFIG.v40PawnMoveUnderAttackPenalty || -90000000000000;
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.38: PASSIVE QUEEN UNDER MATE PROHIBITION — No Qd1/Qc1 type moves when mate threatened
+ * Critical fix: Qd1 was played while Black had Qh3+ leading to mate
+ */
+function v40PassiveQueenUnderMateEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PassiveQueenUnderMateEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    // Only check queen moves
+    if (!movingPiece || movingPiece.toLowerCase() !== 'q') return 0;
+    
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Passive queen squares
+    const passiveQueenSquares = isWhite 
+        ? ['d1', 'c1', 'b1', 'a1', 'e1', 'f1']
+        : ['d8', 'c8', 'b8', 'a8', 'e8', 'f8'];
+    
+    if (!passiveQueenSquares.includes(toSquare)) return 0;
+    
+    // Check if we're under mating threat
+    const kingSquare = findKingSquare(board, activeColor);
+    if (!kingSquare) return 0;
+    
+    let enemyQueenNearKing = false;
+    let matingPiecesNearKing = 0;
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare.charAt(1));
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        const distance = Math.max(Math.abs(file - kingFile), Math.abs(rank - kingRank));
+        
+        if (pieceType === 'q' && distance <= 4) {
+            enemyQueenNearKing = true;
+        }
+        if ((pieceType === 'q' || pieceType === 'r' || pieceType === 'b') && distance <= 3) {
+            matingPiecesNearKing++;
+        }
+    }
+    
+    if (enemyQueenNearKing && matingPiecesNearKing >= 2) {
+        debugLog("[V40.38_PASSIVEQ]", `🚫🚫🚫 PASSIVE QUEEN UNDER MATE: Q${toSquare} when under mating attack!`);
+        score += CONFIG.v40PassiveQueenUnderMatePenalty || -180000000000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.38: BISHOP USELESS SQUARE PROHIBITION — No Bh6/Ba3 type useless moves
+ * Critical fix: Bh6 was played when Bxd4 was available for Black
+ */
+function v40BishopUselessSquareEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40BishopUselessSquareEnabled) return 0;
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    // Only check bishop moves that don't capture
+    if (!movingPiece || movingPiece.toLowerCase() !== 'b') return 0;
+    if (capturedPiece) return 0;  // Bishop captures are fine
+    
+    const uselessSquares = CONFIG.v40BishopUselessSquares || ['h6', 'a6', 'h3', 'a3', 'h7', 'a7', 'h2', 'a2'];
+    
+    if (uselessSquares.includes(toSquare)) {
+        debugLog("[V40.38_BISHOP]", `⚠️ BISHOP USELESS SQUARE: B${toSquare} is passive/useless!`);
+        score += CONFIG.v40BishopUselessSquarePenalty || -50000000000000;
+        
+        // Extra penalty if there are better options (like capturing)
+        // Check if bishop could capture something valuable instead
+        const isWhite = activeColor === 'w';
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            const pieceValue = getPieceValueSimple(piece.toLowerCase());
+            if (pieceValue >= 300) {  // Knight or higher
+                // Check if bishop can reach this square
+                if (canBishopReach(fromSquare, square, board)) {
+                    debugLog("[V40.38_BISHOP]", `💀 MISSED CAPTURE: Could have taken ${piece} on ${square}!`);
+                    score += (CONFIG.v40BishopUselessSquarePenalty || -50000000000000) / 2;
+                }
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.38 Helper: Check if bishop can reach a target square
+ */
+function canBishopReach(fromSquare, toSquare, board) {
+    const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(fromSquare.charAt(1));
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare.charAt(1));
+    
+    // Bishop moves diagonally
+    if (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank)) return false;
+    if (fromFile === toFile && fromRank === toRank) return false;
+    
+    // Check if path is clear
+    const fileDir = fromFile < toFile ? 1 : -1;
+    const rankDir = fromRank < toRank ? 1 : -1;
+    
+    let file = fromFile + fileDir;
+    let rank = fromRank + rankDir;
+    
+    while (file !== toFile && rank !== toRank) {
+        const square = String.fromCharCode('a'.charCodeAt(0) + file) + rank;
+        if (board.get(square)) return false;  // Blocked
+        file += fileDir;
+        rank += rankDir;
+    }
+    
+    return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 function findAttackedPiecesV40_9(board, color) {
     const attacked = [];
     const isWhite = color === 'w';
@@ -42293,7 +42793,29 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.37: PASSIVE UNDER ATTACK PROHIBITION — No passive moves when attacked
                 const passiveUnderAttackScore = v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, moveNumber) * 800.0;
                 
-                // v40.37: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.38: GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.38: GXF3/FXG3 PAWN RECAPTURE PROHIBITION — Never weaken king pawn shield
+                const gxf3ProhibitionScore = v40GxF3ProhibitionEval(fen, move, board, activeColor, moveNumber) * 1500.0;
+                
+                // v40.38: KING DANGER WALK PROHIBITION — Never walk king toward open/weak files
+                const kingDangerWalkScore = v40KingDangerWalkEval(fen, move, board, activeColor, moveNumber) * 1200.0;
+                
+                // v40.38: FORCED MATE DEFENSE MODE — When mate threatened, ONLY defensive moves
+                const forcedMateDefenseScore = v40ForcedMateDefenseEval(fen, move, board, activeColor, moveNumber) * 2000.0;
+                
+                // v40.38: PAWN MOVE UNDER ATTACK PROHIBITION — No pawn push when under serious attack
+                const pawnMoveUnderAttackScore = v40PawnMoveUnderAttackEval(fen, move, board, activeColor, moveNumber) * 900.0;
+                
+                // v40.38: PASSIVE QUEEN UNDER MATE PROHIBITION — No Qd1/Qc1 when mate threatened
+                const passiveQueenUnderMateScore = v40PassiveQueenUnderMateEval(fen, move, board, activeColor, moveNumber) * 1800.0;
+                
+                // v40.38: BISHOP USELESS SQUARE PROHIBITION — No Bh6/Ba3 type useless moves
+                const bishopUselessSquareScore = v40BishopUselessSquareEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // v40.38: COMBINED v40 SCORE — 100% GXF3 PROHIBITION & MATE DEFENSE INFLUENCE
                 // This makes v40 the ABSOLUTE D3 PROHIBITION factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -42377,8 +42899,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                exchangeQualityVerificationScore + pieceActivityRequirementScore +
                                // v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME additions!
                                rookPassiveProhibitionScore + kingCornerRetreatScore + desperationSacrificeScore +
-                               ultraQueenCaptureScore + passiveUnderAttackScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.37 ROOK PASSIVE & KING CORNER PARADIGM SHIFT
+                               ultraQueenCaptureScore + passiveUnderAttackScore +
+                               // v40.38 GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME additions!
+                               gxf3ProhibitionScore + kingDangerWalkScore + forcedMateDefenseScore +
+                               pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.38 GXF3 PROHIBITION & MATE DEFENSE PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -42441,6 +42966,12 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   💣🚫 DESPERATION SACRIFICE: ${desperationSacrificeScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   👸💀 ULTRA QUEEN CAPTURE: ${ultraQueenCaptureScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🚫⚔️ PASSIVE UNDER ATTACK: ${passiveUnderAttackScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚫♟️⚔️ GXF3 PROHIBITION: ${gxf3ProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑🚶 KING DANGER WALK: ${kingDangerWalkScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💀🛡️ FORCED MATE DEFENSE: ${forcedMateDefenseScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ♟️🚫 PAWN MOVE UNDER ATTACK: ${pawnMoveUnderAttackScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸💤 PASSIVE QUEEN UNDER MATE: ${passiveQueenUnderMateScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ♗🚫 BISHOP USELESS SQUARE: ${bishopUselessSquareScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
