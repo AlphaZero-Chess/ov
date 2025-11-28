@@ -1,0 +1,64 @@
+Now let me integrate the v40.29 functions into computeCombinedScore. First let me find where to add them:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+38020|    } catch (e) {
+38021|        return false;
+38022|    }
+38023|}
+38024|
+38025|
+38026|/**
+38027| * v22.0.0 ULTIMATE: Comprehensive king safety evaluation
+38028| * Returns score 0-10 (0=very dangerous, 5=neutral, 10=very safe)
+38029| * This is the MOST CRITICAL evaluation in AlphaZero style play
+38030| */
+38031|function evaluateKingSafetyComprehensive(fen, moveCount) {
+38032|    try {
+38033|        const fenParts = fen.split(' ');
+38034|        if (fenParts.length < 2) return 5;
+38035|        
+38036|        const position = fenParts[0];
+38037|        const activeColor = fenParts[1];
+38038|        const castlingRights = fenParts[2] || '-';
+38039|        const ranks = position.split('/');
+38040|        
+38041|        let safetyScore = 5; // Start neutral
+38042|        const kingChar = activeColor === 'w' ? 'K' : 'k';
+38043|        let kingFile = -1, kingRank = -1;
+38044|        
+38045|        // Find king position
+38046|        for (let rankIdx = 0; rankIdx < 8; rankIdx++) {
+38047|            const rank = ranks[rankIdx];
+38048|            let currentFile = 0;
+38049|            for (let char of rank) {
+38050|                if (char >= '1' && char <= '8') {
+38051|                    currentFile += parseInt(char);
+38052|                } else {
+38053|                    if (char === kingChar) {
+38054|                        kingRank = 7 - rankIdx;
+38055|                        kingFile = currentFile;
+38056|                        break;
+38057|                    }
+38058|                    currentFile++;
+38059|                }
+38060|            }
+38061|            if (kingRank >= 0) break;
+38062|        }
+38063|        
+38064|        if (kingRank < 0) return 5;
+38065|        
+38066|        // CRITICAL 1: King in center after move 8 = HUGE PENALTY
+38067|        if (moveCount > 8 && gamePhase !== "endgame") {
+38068|            const centerFiles = [2, 3, 4, 5];
+38069|            if (centerFiles.includes(kingFile)) {
+38070|                safetyScore -= 4; // MASSIVE penalty
+38071|                debugLog("[KING_SAFETY]", `🚨 King stuck in center on move ${moveCount}! Penalty: -4`);
+38072|            }
+38073|        }
+38074|        
+38075|        // CRITICAL 2: Castling status
+38076|        if (gamePhase === "opening" || gamePhase === "middlegame") {
+38077|            // Check if castled (king on side files, back rank)
+38078|            const isCastled = ((activeColor === 'w' && kingRank === 0) || (activeColor === 'b' && kingRank === 7)) 
+38079|                            && (kingFile <= 2 || kingFile >= 5);
+38080|            

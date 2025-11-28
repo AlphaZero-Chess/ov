@@ -1,0 +1,4 @@
+Let me search for the exact integration point for v40.28 scores:
+Action: $ cd /app && grep -n "v40.28 ABSOLUTE SACRIFICE VERIFICATION additions" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 39597:                               // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
+Exit code: 0

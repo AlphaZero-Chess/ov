@@ -1,0 +1,50 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2049|    // v40.28.0: ABSOLUTE SACRIFICE VERIFICATION & DEEP FORCING CALCULATION
+2050|    // THE BOT MUST NEVER PLAY SPECULATIVE SACRIFICES THAT DON'T WORK!
+2051|    // From game: 9. Bxh7+ was played but attack didn't materialize
+2052|    // The sacrifice was UNSOUND - not enough pieces to continue attack!
+2053|    // ═══════════════════════════════════════════════════════════════════════════════
+2054|    
+2055|    // v40.28: ABSOLUTE SACRIFICE VERIFICATION — Never play unsound sacrifices
+2056|    v40AbsoluteSacrificeVerificationEnabled: true,
+2057|    v40UnsoundSacrificePenalty: -900000000,         // MASSIVE penalty for unsound sacrifice
+2058|    v40SacrificeWithoutSupportPenalty: -500000000,  // Penalty for sac without piece support
+2059|    v40MinAttackersForSacrifice: 3,                 // Minimum attackers needed after sacrifice
+2060|    v40SacrificeCompensationRequired: 300,          // Min positional compensation for sacrifice
+2061|    
+2062|    // v40.28: DEEP FORCING CALCULATION — See 6+ moves into forcing lines
+2063|    v40DeepForcingCalcEnabled: true,
+2064|    v40DeepForcingDepth: 6,                         // Look 6 moves deep into forcing lines
+2065|    v40ForcingLineFailPenalty: -400000000,          // Penalty if forcing line doesn't work
+2066|    v40MustHaveMateOrMaterialPenalty: -300000000,   // Penalty if sac doesn't lead to mate/material
+2067|    
+2068|    // v40.28: ATTACK COORDINATION REQUIREMENT — Pieces must be coordinated
+2069|    v40AttackCoordinationEnabled: true,
+2070|    v40InsufficientCoordinationPenalty: -600000000, // Penalty for attacking without coordination
+2071|    v40MinSupportingPiecesForAttack: 2,             // Min pieces supporting attack
+2072|    v40AttackingKingWithOneAttackerPenalty: -700000000, // Never attack king with just one piece
+2073|    
+2074|    // v40.28: PIECE SACRIFICE ANALYSIS — Verify compensation is REAL
+2075|    v40PieceSacrificeAnalysisEnabled: true,
+2076|    v40BishopSacH7Penalty: -800000000,              // Bxh7+ without follow-up is usually bad
+2077|    v40KnightSacF7Penalty: -500000000,              // Nxf7 without proper support
+2078|    v40RookSacrificeWithoutMatePathPenalty: -600000000, // Rook sac without mate path
+2079|    v40QueenSacWithoutImmediateMateRequirement: true, // Queen sac MUST lead to forced mate
+2080|    v40QueenSacWithoutMate: -1000000000,            // NEVER sacrifice queen without forced mate
+2081|    
+2082|    // v40.28: ATTACK VERIFICATION DEPTH — Verify attacks work
+2083|    v40AttackVerificationDepth: 8,                  // Verify attacks work 8 moves deep
+2084|    v40AttackMustProgressBonus: 50000,              // Bonus for attacks that make progress
+2085|    v40StalledAttackPenalty: -200000000,            // Penalty for attacks that stall
+2086|    
+2087|    // v40.28: 100% ABSOLUTE SACRIFICE VERIFICATION DOMINANCE
+2088|    v40AbsoluteSacrificeVerificationDominance: 1.0, // 100% v40.28 dominance
+2089|};
+2090|
+2091|// ═══════════════════════════════════════════════════════════════════════
+2092|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2093|// ═══════════════════════════════════════════════════════════════════════
+2094|
+2095|/**

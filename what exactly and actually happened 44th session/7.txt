@@ -1,0 +1,66 @@
+Now I have a good understanding. Let me analyze the recent game and implement v40.29 improvements. Based on the game analysis:
+
+**Recent Game Analysis (Sicilian Defense: Closed):**
+```
+1. e4 c5 2. Nc3 d6 3. d3 Nf6 4. Nf3 e5 ...
+```
+
+**Key Issues:**
+1. Move 3. d3 - Too passive, should play d4 to fight for center
+2. Move 16. c3 Nxf3+ - The bot allowed knight fork on f3
+3. The bot's pieces became uncoordinated
+4. By move 20, position collapsed due to tactical blindness
+
+Let me implement **v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY**:
+Action: $ cd /app && grep -n "CONFIG.v40" "Lichess Bot-AlphaZero-Pure.user.js" | tail -50
+Observation: 20680:            score += CONFIG.v40FortressMoveBonus || 70000000000;
+20684:            score += CONFIG.v40NonDefensiveMoveUnderAttackPenalty || -400000000000;
+20700:    if (!CONFIG.v40QueenKingsideThreatEnabled) return 0;
+20745:                        score += CONFIG.v40EnemyQueenOnH5Penalty || -200000000000;
+20748:                        score += CONFIG.v40EnemyQueenOnG5Penalty || -180000000000;
+20753:                        score += CONFIG.v40EnemyQueenOnH4Penalty || -250000000000;
+20756:                        score += CONFIG.v40EnemyQueenOnG4Penalty || -220000000000;
+20781:            score += CONFIG.v40QueenAndBishopOnKingsidePenalty || -350000000000;
+20797:    if (!CONFIG.v40DeepSacrificeCalcEnabled) return 0;
+20826:                CONFIG.v40SacrificeCalcDepth || 8
+20830:                score += CONFIG.v40ForcingLineMateFoundPenalty || -1500000000000;
+20833:                score += CONFIG.v40ForcingLineQueenWinPenalty || -800000000000;
+20836:                score += CONFIG.v40ForcingLineMaterialWinPenalty || -500000000000;
+20853:    if (!CONFIG.v40KingsideCollapseDetectionEnabled) return 0;
+20876:            score += CONFIG.v40KingsidePawnsDestroyedPenalty || -600000000000;
+20888:                score += CONFIG.v40GFileOpenToKingPenalty || -450000000000;
+20895:                score += CONFIG.v40HFileOpenToKingPenalty || -500000000000;
+20902:                score += CONFIG.v40FFileOpenToKingPenalty || -400000000000;
+20909:            score += CONFIG.v40NoKingsidePawnShieldPenalty || -550000000000;
+20915:            score += CONFIG.v40KingsideWeaknessCreatedPenalty || -350000000000;
+21256:    if (!CONFIG.v40ForcedExchangeSequenceEnabled) return 0;
+21434:    if (!CONFIG.v40KnightForkShieldEnabled) return 0;
+21590:    if (!CONFIG.v40KingExposureIndexEnabled) return 0;
+21733:    if (!CONFIG.v40AbsoluteSacrificeVerificationEnabled) return 0;
+21763:    if (attackingPieces < CONFIG.v40MinAttackersForSacrifice) {
+21764:        score += CONFIG.v40SacrificeWithoutSupportPenalty;
+21765:        debugLog("[V40.28_SAC_VERIFY]", `❌ INSUFFICIENT ATTACKERS: Only ${attackingPieces} pieces attacking (need ${CONFIG.v40MinAttackersForSacrifice})`);
+21771:        score += CONFIG.v40UnsoundSacrificePenalty;
+21779:            score += CONFIG.v40BishopSacH7Penalty;
+21785:    if (pieceType === 'q' && CONFIG.v40QueenSacWithoutImmediateMateRequirement) {
+21788:            score += CONFIG.v40QueenSacWithoutMate;
+21796:        score += CONFIG.v40ForcingLineFailPenalty;
+22059:    if (!CONFIG.v40AttackCoordinationEnabled) return 0;
+22078:    if (supportingPieces < CONFIG.v40MinSupportingPiecesForAttack) {
+22079:        score += CONFIG.v40InsufficientCoordinationPenalty;
+22080:        debugLog("[V40.28_COORD]", `❌ INSUFFICIENT COORDINATION: Only ${supportingPieces} supporting pieces (need ${CONFIG.v40MinSupportingPiecesForAttack})`);
+22086:        score += CONFIG.v40AttackingKingWithOneAttackerPenalty;
+22165:    if (!CONFIG.v40DeepForcingCalcEnabled) return 0;
+22177:    const forcingResult = v40EvaluateForcingLine(afterBoard, isWhite, CONFIG.v40DeepForcingDepth);
+22181:        score += CONFIG.v40ForcingLineFailPenalty * Math.abs(forcingResult) / 1000;
+22182:        debugLog("[V40.28_FORCING]", `❌ FORCING LINE FAILS: Result ${forcingResult} after ${CONFIG.v40DeepForcingDepth} moves`);
+22185:        score += CONFIG.v40AttackMustProgressBonus * (forcingResult / 100);
+22281:    if (!CONFIG.v40PieceSacrificeAnalysisEnabled) return 0;
+22304:                score += CONFIG.v40BishopSacH7Penalty;
+22318:                score += CONFIG.v40KnightSacF7Penalty;
+22334:                score += CONFIG.v40RookSacrificeWithoutMatePathPenalty;
+22348:    if (!CONFIG.v40DeepForcingCalcEnabled) return 0;
+22364:        score += CONFIG.v40StalledAttackPenalty * (attackIntensityBefore - attackIntensityAfter) / 10;
+22370:        score += CONFIG.v40AttackMustProgressBonus * (attackIntensityAfter - attackIntensityBefore);
+37444:        if (CONFIG.v40Enabled && fen) {
+Exit code: 0

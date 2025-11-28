@@ -1,0 +1,39 @@
+Now I need to add the v40.29 function calls and integrate them. Let me do this:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.28: ATTACK PROGRESS VERIFICATION — Attacks must progress!
+                const attackProgressScore = v40AttackProgressVerificationEval(fen, move, board, activeColor, moveNumber) * 240.0;
+                
+                // v40.28: COMBINED v40 SCORE — 100% ABSOLUTE SACRIFICE VERIFICATION INFLUENCE" --new-str "                // v40.28: ATTACK PROGRESS VERIFICATION — Attacks must progress!
+                const attackProgressScore = v40AttackProgressVerificationEval(fen, move, board, activeColor, moveNumber) * 240.0;
+                
+                // ═══════════════════════════════════════════════════════════════════════════════
+                // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY & PROPHYLAXIS SUPREME
+                // From game: Bot played passive d3, allowed Nxf3+ fork, pieces became uncoordinated
+                // THE BOT MUST: 1) Defend properly, 2) Keep pieces harmonized, 3) Anticipate threats
+                // ═══════════════════════════════════════════════════════════════════════════════
+                
+                // v40.29: DEEP DEFENSIVE AWARENESS — Know when to defend vs attack!
+                const deepDefensiveAwarenessScore = v40DeepDefensiveAwarenessEval(fen, move, board, activeColor, moveNumber) * 350.0;
+                
+                // v40.29: PIECE HARMONY — All pieces must work together!
+                const pieceHarmonyScore = v40PieceHarmonyEval(fen, move, board, activeColor, moveNumber) * 280.0;
+                
+                // v40.29: PROPHYLAXIS PRIORITY — Prevent opponent's ideas BEFORE they happen!
+                const prophylaxisPriorityScore = v40ProphylaxisPriorityEval(fen, move, board, activeColor, moveNumber) * 320.0;
+                
+                // v40.29: KNIGHT INVASION PREVENTION — Never allow enemy knight on f3/f6!
+                const knightInvasionPreventionScore = v40KnightInvasionPreventionEval(fen, move, board, activeColor, moveNumber) * 380.0;
+                
+                // v40.29: ANTI-FORK SUPREME — Never allow forks!
+                const antiForkSupremeScore = v40AntiForkSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+                
+                // v40.29: QUIET POSITION ASSESSMENT — Don't force when position is quiet!
+                const quietPositionScore = v40QuietPositionAssessmentEval(fen, move, board, activeColor, moveNumber) * 200.0;
+                
+                // v40.29: PIECE COORDINATION CHECK — All pieces must work together!
+                const pieceCoordinationCheckScore = v40PieceCoordinationCheckEval(fen, move, board, activeColor, moveNumber) * 260.0;
+                
+                // v40.29: THREAT ANTICIPATION — See threats 2-3 moves in advance!
+                const threatAnticipationScore = v40ThreatAnticipationEval(fen, move, board, activeColor, moveNumber) * 340.0;
+                
+                // v40.29: COMBINED v40 SCORE — 100% DEEP DEFENSIVE AWARENESS INFLUENCE"
+Observation: Edit was successful.

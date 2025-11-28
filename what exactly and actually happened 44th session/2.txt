@@ -1,0 +1,7 @@
+
+Action: $ cd /app && grep -n "computeCombinedScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 37418:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+38177:    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+38178:    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+38471:                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+Exit code: 0

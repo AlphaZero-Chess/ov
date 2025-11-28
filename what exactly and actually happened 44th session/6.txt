@@ -1,0 +1,114 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+22340|    return score;
+22341|}
+22342|
+22343|/**
+22344| * v40.28: ATTACK PROGRESS VERIFICATION
+22345| * Verify attacks are making progress, not stalling
+22346| */
+22347|function v40AttackProgressVerificationEval(fen, move, board, activeColor, moveNumber) {
+22348|    if (!CONFIG.v40DeepForcingCalcEnabled) return 0;
+22349|    
+22350|    let score = 0;
+22351|    const isWhite = activeColor === 'w';
+22352|    const afterBoard = simulateMoveOnBoard(board, move);
+22353|    
+22354|    // Check if we're in an attacking position
+22355|    const enemyKingSquare = findKingSquare(afterBoard, isWhite ? 'b' : 'w');
+22356|    if (!enemyKingSquare) return 0;
+22357|    
+22358|    // Calculate attack intensity before and after move
+22359|    const attackIntensityBefore = v40CalculateAttackIntensity(board, isWhite);
+22360|    const attackIntensityAfter = v40CalculateAttackIntensity(afterBoard, isWhite);
+22361|    
+22362|    // If we had an attack and it's now weaker, penalize
+22363|    if (attackIntensityBefore > 3 && attackIntensityAfter < attackIntensityBefore) {
+22364|        score += CONFIG.v40StalledAttackPenalty * (attackIntensityBefore - attackIntensityAfter) / 10;
+22365|        debugLog("[V40.28_PROGRESS]", `❌ ATTACK STALLING: Intensity dropped from ${attackIntensityBefore} to ${attackIntensityAfter}`);
+22366|    }
+22367|    
+22368|    // If attack is progressing, small bonus
+22369|    if (attackIntensityAfter > attackIntensityBefore) {
+22370|        score += CONFIG.v40AttackMustProgressBonus * (attackIntensityAfter - attackIntensityBefore);
+22371|        debugLog("[V40.28_PROGRESS]", `✅ ATTACK PROGRESSING: Intensity increased from ${attackIntensityBefore} to ${attackIntensityAfter}`);
+22372|    }
+22373|    
+22374|    return score;
+22375|}
+22376|
+22377|/**
+22378| * v40.28: Calculate attack intensity (number of pieces attacking king zone * their values)
+22379| */
+22380|function v40CalculateAttackIntensity(board, isWhite) {
+22381|    const enemyKingSquare = findKingSquare(board, isWhite ? 'b' : 'w');
+22382|    if (!enemyKingSquare) return 0;
+22383|    
+22384|    const enemyKingFile = enemyKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+22385|    const enemyKingRank = parseInt(enemyKingSquare[1]) - 1;
+22386|    
+22387|    let intensity = 0;
+22388|    
+22389|    for (const [square, piece] of board) {
+22390|        if (!piece) continue;
+22391|        const pieceIsWhite = piece === piece.toUpperCase();
+22392|        if (pieceIsWhite !== isWhite) continue;
+22393|        
+22394|        const pieceType = piece.toLowerCase();
+22395|        if (pieceType === 'k') continue;
+22396|        
+22397|        // Check if this piece attacks king zone
+22398|        if (v40PieceAttacksKingZone(board, square, piece, enemyKingFile, enemyKingRank)) {
+22399|            // Weight by piece value (queen attacks matter more than pawn attacks)
+22400|            const pieceWeight = getPieceValueSimple(pieceType) / 100;
+22401|            intensity += pieceWeight;
+22402|        }
+22403|    }
+22404|    
+22405|    return intensity;
+22406|}
+22407|
+22408|// ═══════════════════════════════════════════════════════════════════════════════
+22409|function findAttackedPiecesV40_9(board, color) {
+22410|    const attacked = [];
+22411|    const isWhite = color === 'w';
+22412|    const enemyColor = isWhite ? 'b' : 'w';
+22413|    
+22414|    for (const [square, piece] of board) {
+22415|        if (!piece) continue;
+22416|        const pieceIsWhite = piece === piece.toUpperCase();
+22417|        if (pieceIsWhite !== isWhite) continue;
+22418|        
+22419|        const pieceType = piece.toLowerCase();
+22420|        if (pieceType === 'k') continue;  // King attacks handled separately
+22421|        
+22422|        // Check if this square is attacked by enemy
+22423|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+22424|            // Check if it's adequately defended
+22425|            const isDefended = isSquareDefendedByColor(board, square, color);
+22426|            
+22427|            // If attacked by something of lower value, still need to consider
+22428|            const attackers = findAttackersOfSquare(board, square, enemyColor);
+22429|            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+22430|            const ourPieceValue = getPieceValueSimple(pieceType);
+22431|            
+22432|            // Consider it under attack if:
+22433|            // 1. Not defended at all, or
+22434|            // 2. Attacker is of lower value than our piece
+22435|            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+22436|                attacked.push({
+22437|                    square,
+22438|                    piece,
+22439|                    value: ourPieceValue,
+22440|                    lowestAttackerValue
+22441|                });
+22442|            }
+22443|        }
+22444|    }
+22445|    
+22446|    // Sort by piece value (highest first - queen, then rook, etc.)
+22447|    attacked.sort((a, b) => b.value - a.value);
+22448|    
+22449|    return attacked;
+22450|}

@@ -1,0 +1,7 @@
+Now let me look at the end of the v40.28 functions to see where to add v40.29:
+Action: $ cd /app && grep -n "v40AbsoluteSacrificeVerificationEval\|v40AttackProgressVerificationEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 21732:function v40AbsoluteSacrificeVerificationEval(fen, move, board, activeColor, moveNumber) {
+22347:function v40AttackProgressVerificationEval(fen, move, board, activeColor, moveNumber) {
+37956:                const absoluteSacrificeVerificationScore = v40AbsoluteSacrificeVerificationEval(fen, move, board, activeColor, moveNumber) * 300.0;
+37968:                const attackProgressScore = v40AttackProgressVerificationEval(fen, move, board, activeColor, moveNumber) * 240.0;
+Exit code: 0

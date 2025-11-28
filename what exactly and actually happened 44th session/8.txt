@@ -1,0 +1,8 @@
+
+Action: $ cd /app && grep -n "v40QueenSacWithoutMate\|v40DeepForcingDepth" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2064:    v40DeepForcingDepth: 6,                         // Look 6 moves deep into forcing lines
+2080:    v40QueenSacWithoutMate: -1000000000,            // NEVER sacrifice queen without forced mate
+21788:            score += CONFIG.v40QueenSacWithoutMate;
+22177:    const forcingResult = v40EvaluateForcingLine(afterBoard, isWhite, CONFIG.v40DeepForcingDepth);
+22182:        debugLog("[V40.28_FORCING]", `❌ FORCING LINE FAILS: Result ${forcingResult} after ${CONFIG.v40DeepForcingDepth} moves`);
+Exit code: 0

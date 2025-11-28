@@ -1,0 +1,1505 @@
+Now let me add the v40.29 functions right after the v40.28 functions (before findAttackedPiecesV40_9):
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    return intensity;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {" --new-str "    return intensity;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// v40.29.0: DEEP DEFENSIVE AWARENESS & PIECE HARMONY & PROPHYLAXIS SUPREME
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// From game: Bot played passive d3, allowed Nxf3+ fork, pieces became uncoordinated
+// THE BOT MUST: 1) Defend properly, 2) Keep pieces harmonized, 3) Anticipate threats
+// This version implements TRUE defensive awareness - knowing when to defend vs attack
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.29: DEEP DEFENSIVE AWARENESS
+ * Know when to defend vs when to attack - critical for proper play
+ * Detect if defense is needed and penalize attacking moves when defense is required
+ */
+function v40DeepDefensiveAwarenessEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40DeepDefensiveAwarenessEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // 1. Check if we have any pieces under threat that MUST be addressed
+    const threatenedPieces = v40FindThreatenedPieces(board, isWhite ? 'w' : 'b');
+    const majorThreats = threatenedPieces.filter(t => t.value >= 300); // Knight/Bishop or higher
+    
+    if (majorThreats.length > 0) {
+        // Defense is REQUIRED - check if move addresses it
+        const moveDefends = v40MoveAddressesThreats(move, board, afterBoard, majorThreats, isWhite);
+        
+        if (!moveDefends) {
+            // This move ignores major threats - HUGE penalty
+            score += CONFIG.v40IgnoringMajorThreatPenalty || -1000000000000;
+            debugLog(\"[V40.29_DEFENSE]\", `❌ IGNORING MAJOR THREAT: ${majorThreats.map(t => t.piece + '@' + t.square).join(', ')} - Move: ${move}`);
+        } else {
+            // Move defends properly - bonus
+            score += CONFIG.v40DefenseMovePriorityBonus || 100000000;
+            debugLog(\"[V40.29_DEFENSE]\", `✅ PROPERLY DEFENDING: ${move}`);
+        }
+    }
+    
+    // 2. Check if we're attacking when we should be defending
+    const ourThreats = v40CountThreatsToUs(afterBoard, isWhite);
+    const moveIsAttacking = v40IsMoveAttacking(move, board, afterBoard, isWhite);
+    
+    if (ourThreats > CONFIG.v40DefenseRequiredThreshold && moveIsAttacking && !v40MoveIsDefensive(move, board, afterBoard, isWhite)) {
+        score += CONFIG.v40AttackWhenDefenseNeededPenalty || -600000000000;
+        debugLog(\"[V40.29_DEFENSE]\", `❌ ATTACKING WHEN DEFENSE NEEDED: Threat level ${ourThreats}, Move: ${move}`);
+    }
+    
+    // 3. Detect if opponent is building up an attack we need to address
+    const enemyAttackStrength = v40CalculateEnemyAttackStrength(afterBoard, isWhite);
+    if (enemyAttackStrength > 5) {
+        // Enemy has strong attack - must defend
+        const movePreparesDefense = v40MovePreparesDefense(move, board, afterBoard, isWhite);
+        if (!movePreparesDefense && moveIsAttacking) {
+            score += CONFIG.v40MustDefendWhenThreatened || -800000000000;
+            debugLog(\"[V40.29_DEFENSE]\", `❌ ENEMY HAS STRONG ATTACK (${enemyAttackStrength}) - MUST DEFEND!`);
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.29: PIECE HARMONY EVALUATION
+ * All pieces must work together - reward coordination, penalize scattered pieces
+ */
+function v40PieceHarmonyEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PieceHarmonyEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // 1. Count how many of our pieces support each other
+    const coordinationScore = v40CalculatePieceCoordination(afterBoard, isWhite);
+    const beforeCoordination = v40CalculatePieceCoordination(board, isWhite);
+    
+    // Reward increasing coordination
+    if (coordinationScore > beforeCoordination) {
+        score += CONFIG.v40PiecesSupportingEachOtherBonus || 80000000;
+        debugLog(\"[V40.29_HARMONY]\", `✅ IMPROVING COORDINATION: ${beforeCoordination} → ${coordinationScore}`);
+    }
+    
+    // Penalize decreasing coordination
+    if (coordinationScore < beforeCoordination - 1) {
+        score += CONFIG.v40PiecesNotCoordinatedPenalty || -200000000;
+        debugLog(\"[V40.29_HARMONY]\", `❌ LOSING COORDINATION: ${beforeCoordination} → ${coordinationScore}`);
+    }
+    
+    // 2. Check for isolated pieces (pieces not supporting or being supported)
+    const isolatedPieces = v40CountIsolatedPieces(afterBoard, isWhite);
+    if (isolatedPieces > 2) {
+        score += CONFIG.v40ScatteredPiecesPenalty * (isolatedPieces - 2);
+        debugLog(\"[V40.29_HARMONY]\", `❌ TOO MANY ISOLATED PIECES: ${isolatedPieces}`);
+    }
+    
+    // 3. Check if we have enough pieces coordinated for attack (if attacking)
+    const moveIsAttacking = v40IsMoveAttacking(move, board, afterBoard, isWhite);
+    if (moveIsAttacking) {
+        const attackingPieces = v40CountCoordinatedAttackingPieces(afterBoard, isWhite);
+        if (attackingPieces < CONFIG.v40MinPiecesCoordinatedForAttack) {
+            score += CONFIG.v40PiecesNotCoordinatedPenalty;
+            debugLog(\"[V40.29_HARMONY]\", `❌ ATTACKING WITHOUT COORDINATION: Only ${attackingPieces} pieces coordinated`);
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.29: PROPHYLAXIS PRIORITY
+ * Prevent opponent's ideas BEFORE they happen
+ */
+function v40ProphylaxisPriorityEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ProphylaxisPriorityEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // 1. Detect opponent's potential plans/threats
+    const opponentPlans = v40DetectOpponentPlans(board, !isWhite);
+    
+    // 2. Check if our move prevents any of these plans
+    for (const plan of opponentPlans) {
+        const planStillPossible = v40IsPlanStillPossible(afterBoard, plan, !isWhite);
+        
+        if (!planStillPossible) {
+            // We prevented the plan!
+            score += CONFIG.v40PreventOpponentPlanBonus || 150000000;
+            debugLog(\"[V40.29_PROPHYLAXIS]\", `✅ PREVENTED OPPONENT PLAN: ${plan.type}`);
+        }
+    }
+    
+    // 3. Check if move allows obvious opponent threat
+    const allowedThreats = v40DetectAllowedThreats(board, afterBoard, !isWhite);
+    for (const threat of allowedThreats) {
+        if (threat.severity === 'critical') {
+            score += CONFIG.v40ThreatIgnoredPenalty || -500000000000;
+            debugLog(\"[V40.29_PROPHYLAXIS]\", `❌ IGNORING CRITICAL THREAT: ${threat.type}`);
+        } else if (threat.severity === 'major') {
+            score += CONFIG.v40AllowOpponentPlanPenalty || -400000000000;
+            debugLog(\"[V40.29_PROPHYLAXIS]\", `❌ ALLOWING MAJOR THREAT: ${threat.type}`);
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.29: KNIGHT INVASION PREVENTION
+ * Enemy knights on f3/f6/e3/e6 are devastating - prevent at all costs
+ */
+function v40KnightInvasionPreventionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40KnightInvasionPreventionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // Check current knight positions
+    const dangerousSquaresForWhite = ['f3', 'e3', 'c3', 'd3', 'g3', 'h3'];
+    const dangerousSquaresForBlack = ['f6', 'e6', 'c6', 'd6', 'g6', 'h6'];
+    const dangerousSquares = isWhite ? dangerousSquaresForWhite : dangerousSquaresForBlack;
+    
+    // Check if enemy knight is on dangerous squares after our move
+    for (const sq of dangerousSquares) {
+        const piece = afterBoard.get(sq);
+        if (piece) {
+            const pieceType = piece.toLowerCase();
+            const pieceIsEnemy = (piece === piece.toUpperCase()) !== isWhite;
+            
+            if (pieceType === 'n' && pieceIsEnemy) {
+                // Enemy knight on dangerous square!
+                if (sq === 'f3' || sq === 'f6') {
+                    score += CONFIG.v40EnemyKnightOnF3Penalty || -400000000000;
+                    debugLog(\"[V40.29_KNIGHT]\", `❌ ENEMY KNIGHT ON ${sq}! DEVASTATING!`);
+                } else if (sq === 'e3' || sq === 'e6') {
+                    score += CONFIG.v40EnemyKnightOnE3Penalty || -350000000000;
+                    debugLog(\"[V40.29_KNIGHT]\", `❌ ENEMY KNIGHT ON ${sq}! Very dangerous!`);
+                }
+            }
+        }
+    }
+    
+    // Check if our move ALLOWS knight to reach dangerous square
+    const knightCanInvade = v40CanEnemyKnightInvade(board, afterBoard, isWhite, dangerousSquares);
+    if (knightCanInvade) {
+        // Check if knight could invade before
+        const knightCouldInvadeBefore = v40CanEnemyKnightInvade(board, board, isWhite, dangerousSquares);
+        
+        if (knightCanInvade && !knightCouldInvadeBefore) {
+            score += CONFIG.v40AllowKnightInvasionPenalty || -500000000000;
+            debugLog(\"[V40.29_KNIGHT]\", `❌ MOVE ALLOWS KNIGHT INVASION!`);
+        }
+    }
+    
+    // Bonus for preventing knight invasion
+    const preventingInvasion = v40MovesPreventsKnightInvasion(move, board, afterBoard, isWhite, dangerousSquares);
+    if (preventingInvasion) {
+        score += CONFIG.v40PreventKnightInvasionBonus || 200000000;
+        debugLog(\"[V40.29_KNIGHT]\", `✅ PREVENTING KNIGHT INVASION!`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.29: ANTI-FORK SUPREME
+ * Never allow forks - especially knight forks
+ */
+function v40AntiForkSupremeEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40AntiForkSupremeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // 1. Check if our move creates fork vulnerability
+    const forkVulnerability = v40DetectForkVulnerability(afterBoard, isWhite);
+    
+    if (forkVulnerability.hasForkThreat) {
+        if (forkVulnerability.isRoyalFork) {
+            // King + Queen fork threat
+            score += CONFIG.v40RoyalForkAllowedPenalty || -1500000000000;
+            debugLog(\"[V40.29_FORK]\", `❌ ROYAL FORK THREAT ALLOWED! K+Q can be forked!`);
+        } else if (forkVulnerability.isDoubleMajor) {
+            // Two major pieces can be forked
+            score += CONFIG.v40DoubleForkAllowedPenalty || -1200000000000;
+            debugLog(\"[V40.29_FORK]\", `❌ DOUBLE MAJOR FORK THREAT! Two major pieces can be forked!`);
+        } else {
+            // Regular fork threat
+            score += CONFIG.v40KnightForkAllowedPenalty || -900000000000;
+            debugLog(\"[V40.29_FORK]\", `❌ FORK THREAT ALLOWED! Pieces can be forked!`);
+        }
+    }
+    
+    // 2. Check if move creates fork vulnerability that didn't exist before
+    const beforeFork = v40DetectForkVulnerability(board, isWhite);
+    if (forkVulnerability.hasForkThreat && !beforeFork.hasForkThreat) {
+        score += CONFIG.v40MoveCreatingForkVulnerabilityPenalty || -700000000000;
+        debugLog(\"[V40.29_FORK]\", `❌ MOVE CREATES FORK VULNERABILITY!`);
+    }
+    
+    // 3. Bonus for moves that prevent/eliminate fork threats
+    if (beforeFork.hasForkThreat && !forkVulnerability.hasForkThreat) {
+        score += CONFIG.v40ForkPreventionBonus || 300000000;
+        debugLog(\"[V40.29_FORK]\", `✅ FORK THREAT ELIMINATED!`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.29: QUIET POSITION ASSESSMENT
+ * Don't force when position is quiet - build up properly
+ */
+function v40QuietPositionAssessmentEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40QuietPositionAssessmentEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Check if position is quiet (no immediate tactics)
+    const positionIsQuiet = v40IsPositionQuiet(board, isWhite);
+    
+    if (positionIsQuiet) {
+        // In quiet positions, prefer building moves over forcing moves
+        const moveIsForcing = v40IsMoveForcing(move, board, isWhite);
+        const moveIsBuilding = v40IsMoveBuilding(move, board, isWhite, moveNumber);
+        
+        if (moveIsForcing && !v40ForcingMoveIsSound(move, board, isWhite)) {
+            score += CONFIG.v40ForcingInQuietPositionPenalty || -100000000;
+            debugLog(\"[V40.29_QUIET]\", `❌ FORCING IN QUIET POSITION: ${move}`);
+        }
+        
+        if (moveIsBuilding) {
+            score += CONFIG.v40BuildingPositionBonus || 80000000;
+            debugLog(\"[V40.29_QUIET]\", `✅ BUILDING POSITION: ${move}`);
+        }
+        
+        // In early game, development before attack
+        if (moveNumber < 12) {
+            const developmentLevel = v40CalculateDevelopmentLevel(board, isWhite);
+            if (developmentLevel < 4 && moveIsForcing) {
+                score += CONFIG.v40PrematureAttackPenalty || -300000000;
+                debugLog(\"[V40.29_QUIET]\", `❌ PREMATURE ATTACK: Dev level ${developmentLevel}, attacking too early`);
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.29: PIECE COORDINATION CHECK
+ * All pieces must work together
+ */
+function v40PieceCoordinationCheckEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PieceCoordinationCheckEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // 1. Check if all pieces are active
+    const activePieces = v40CountActivePieces(afterBoard, isWhite);
+    const totalPieces = v40CountTotalPieces(afterBoard, isWhite);
+    
+    if (activePieces === totalPieces && totalPieces > 0) {
+        score += CONFIG.v40AllPiecesActiveBonus || 200000000;
+        debugLog(\"[V40.29_COORD]\", `✅ ALL PIECES ACTIVE!`);
+    }
+    
+    // 2. Check for passive pieces
+    const passivePieces = v40CountPassivePieces(afterBoard, isWhite);
+    if (passivePieces > 0) {
+        score += CONFIG.v40PassivePiecePenalty * passivePieces;
+        debugLog(\"[V40.29_COORD]\", `❌ PASSIVE PIECES: ${passivePieces}`);
+    }
+    
+    // 3. Check if pieces defend each other
+    const mutualDefense = v40CountMutualDefense(afterBoard, isWhite);
+    if (mutualDefense >= 3) {
+        score += CONFIG.v40PiecesDefendingEachOtherBonus || 150000000;
+        debugLog(\"[V40.29_COORD]\", `✅ PIECES DEFENDING EACH OTHER: ${mutualDefense} pairs`);
+    }
+    
+    // 4. Check for piece left behind
+    const pieceLeftBehind = v40CheckPieceLeftBehind(board, afterBoard, isWhite);
+    if (pieceLeftBehind) {
+        score += CONFIG.v40NoPieceLeftBehindPenalty || -400000000;
+        debugLog(\"[V40.29_COORD]\", `❌ PIECE LEFT BEHIND!`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.29: THREAT ANTICIPATION
+ * See threats 2-3 moves in advance
+ */
+function v40ThreatAnticipationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ThreatAnticipationEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // 1. Check for threats in 2 moves
+    const threatsIn2 = v40DetectThreatsInNMoves(afterBoard, !isWhite, 2);
+    for (const threat of threatsIn2) {
+        if (threat.severity === 'critical') {
+            score += CONFIG.v40ThreatIn2MovesUnaddressedPenalty || -600000000000;
+            debugLog(\"[V40.29_ANTICIPATE]\", `❌ CRITICAL THREAT IN 2 MOVES: ${threat.type}`);
+        }
+    }
+    
+    // 2. Check for threats in 3 moves
+    const threatsIn3 = v40DetectThreatsInNMoves(afterBoard, !isWhite, 3);
+    for (const threat of threatsIn3) {
+        if (threat.severity === 'critical' && !threatsIn2.some(t => t.type === threat.type)) {
+            score += CONFIG.v40ThreatIn3MovesUnaddressedPenalty || -300000000000;
+            debugLog(\"[V40.29_ANTICIPATE]\", `❌ CRITICAL THREAT IN 3 MOVES: ${threat.type}`);
+        }
+    }
+    
+    // 3. Bonus for anticipating and preventing threats
+    const beforeThreats = v40DetectThreatsInNMoves(board, !isWhite, 2);
+    const threatsRemoved = beforeThreats.filter(bt => !threatsIn2.some(t => t.type === bt.type));
+    
+    if (threatsRemoved.length > 0) {
+        score += CONFIG.v40AnticipatingThreatBonus * threatsRemoved.length;
+        debugLog(\"[V40.29_ANTICIPATE]\", `✅ ANTICIPATED AND PREVENTED ${threatsRemoved.length} THREATS!`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.29 HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.29: Find all threatened pieces for a color
+ */
+function v40FindThreatenedPieces(board, color) {
+    const threatened = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;
+        
+        // Check if attacked
+        if (isSquareAttackedByColor(board, square, enemyColor)) {
+            // Check if defended adequately
+            const defenders = findDefendersOfSquare(board, square, color);
+            const attackers = findAttackersOfSquare(board, square, enemyColor);
+            
+            if (defenders.length < attackers.length || defenders.length === 0) {
+                threatened.push({
+                    square,
+                    piece,
+                    value: getPieceValueSimple(pieceType),
+                    attackers: attackers.length,
+                    defenders: defenders.length
+                });
+            }
+        }
+    }
+    
+    // Sort by value (highest first)
+    threatened.sort((a, b) => b.value - a.value);
+    return threatened;
+}
+
+/**
+ * v40.29: Check if move addresses threats
+ */
+function v40MoveAddressesThreats(move, board, afterBoard, threats, isWhite) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    for (const threat of threats) {
+        // Check if move is moving the threatened piece
+        if (fromSquare === threat.square) {
+            // Check if new square is safe
+            const enemyColor = isWhite ? 'b' : 'w';
+            if (!isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+                return true;
+            }
+        }
+        
+        // Check if move captures the attacker
+        const pieceOnTarget = board.get(toSquare);
+        if (pieceOnTarget) {
+            // Check if this piece was attacking our threatened piece
+            const attackers = findAttackersOfSquare(board, threat.square, isWhite ? 'b' : 'w');
+            if (attackers.some(a => a.square === toSquare)) {
+                return true;
+            }
+        }
+        
+        // Check if move blocks the attack
+        const afterThreats = v40FindThreatenedPieces(afterBoard, isWhite ? 'w' : 'b');
+        const stillThreatened = afterThreats.some(t => t.square === threat.square);
+        if (!stillThreatened) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.29: Count total threats to our position
+ */
+function v40CountThreatsToUs(board, isWhite) {
+    let threatCount = 0;
+    const ourColor = isWhite ? 'w' : 'b';
+    
+    const threatened = v40FindThreatenedPieces(board, ourColor);
+    for (const t of threatened) {
+        threatCount += t.value;
+    }
+    
+    return threatCount;
+}
+
+/**
+ * v40.29: Check if move is attacking
+ */
+function v40IsMoveAttacking(move, board, afterBoard, isWhite) {
+    const toSquare = move.substring(2, 4);
+    const pieceOnTarget = board.get(toSquare);
+    
+    // Capture is attacking
+    if (pieceOnTarget) return true;
+    
+    // Check if move attacks enemy king area
+    const enemyKingSquare = findKingSquare(afterBoard, isWhite ? 'b' : 'w');
+    if (!enemyKingSquare) return false;
+    
+    const kingFile = enemyKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(enemyKingSquare[1]) - 1;
+    
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    // Within 2 squares of enemy king
+    const dist = Math.max(Math.abs(toFile - kingFile), Math.abs(toRank - kingRank));
+    return dist <= 2;
+}
+
+/**
+ * v40.29: Check if move is defensive
+ */
+function v40MoveIsDefensive(move, board, afterBoard, isWhite) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    
+    // Check if move defends our king area
+    const ourKingSquare = findKingSquare(board, isWhite ? 'w' : 'b');
+    if (!ourKingSquare) return false;
+    
+    const kingFile = ourKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(ourKingSquare[1]) - 1;
+    
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    
+    // Moving toward our king area
+    const dist = Math.max(Math.abs(toFile - kingFile), Math.abs(toRank - kingRank));
+    if (dist <= 2) return true;
+    
+    // Check if move blocks an attack
+    const enemyColor = isWhite ? 'b' : 'w';
+    const attackersBefore = findAttackersOfSquare(board, ourKingSquare, enemyColor);
+    const attackersAfter = findAttackersOfSquare(afterBoard, ourKingSquare, enemyColor);
+    
+    return attackersAfter.length < attackersBefore.length;
+}
+
+/**
+ * v40.29: Calculate enemy attack strength on our king
+ */
+function v40CalculateEnemyAttackStrength(board, isWhite) {
+    const ourKingSquare = findKingSquare(board, isWhite ? 'w' : 'b');
+    if (!ourKingSquare) return 0;
+    
+    const enemyColor = isWhite ? 'b' : 'w';
+    let strength = 0;
+    
+    // Count pieces attacking king zone
+    const kingFile = ourKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(ourKingSquare[1]) - 1;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        const pieceIsEnemy = pieceIsWhite !== isWhite;
+        
+        if (!pieceIsEnemy) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;
+        
+        // Check if piece attacks king zone
+        const pieceFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pieceRank = parseInt(square[1]) - 1;
+        
+        // Calculate distance to king
+        const dist = Math.max(Math.abs(pieceFile - kingFile), Math.abs(pieceRank - kingRank));
+        
+        if (dist <= 3) {
+            // Near king - add to attack strength
+            const pieceValue = getPieceValueSimple(pieceType);
+            strength += pieceValue / 100;
+        }
+    }
+    
+    return strength;
+}
+
+/**
+ * v40.29: Check if move prepares defense
+ */
+function v40MovePreparesDefense(move, board, afterBoard, isWhite) {
+    // Castling is defensive
+    if (move === 'e1g1' || move === 'e1c1' || move === 'e8g8' || move === 'e8c8') {
+        return true;
+    }
+    
+    // Check if move improves king safety
+    const kingSafetyBefore = v40CalculateKingSafety(board, isWhite);
+    const kingSafetyAfter = v40CalculateKingSafety(afterBoard, isWhite);
+    
+    return kingSafetyAfter > kingSafetyBefore;
+}
+
+/**
+ * v40.29: Calculate king safety score
+ */
+function v40CalculateKingSafety(board, isWhite) {
+    const kingSquare = findKingSquare(board, isWhite ? 'w' : 'b');
+    if (!kingSquare) return 0;
+    
+    let safety = 0;
+    const ourColor = isWhite ? 'w' : 'b';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]) - 1;
+    
+    // Check pawn shield
+    const pawnShieldSquares = isWhite 
+        ? [[kingFile-1, kingRank+1], [kingFile, kingRank+1], [kingFile+1, kingRank+1]]
+        : [[kingFile-1, kingRank-1], [kingFile, kingRank-1], [kingFile+1, kingRank-1]];
+    
+    for (const [f, r] of pawnShieldSquares) {
+        if (f >= 0 && f <= 7 && r >= 0 && r <= 7) {
+            const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+            const piece = board.get(sq);
+            if (piece && piece.toLowerCase() === 'p' && (piece === piece.toUpperCase()) === isWhite) {
+                safety += 50;
+            }
+        }
+    }
+    
+    // Check defenders near king
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pieceRank = parseInt(square[1]) - 1;
+        const dist = Math.max(Math.abs(pieceFile - kingFile), Math.abs(pieceRank - kingRank));
+        
+        if (dist <= 2) {
+            safety += 20;
+        }
+    }
+    
+    // Penalize attackers near king
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        const pieceFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pieceRank = parseInt(square[1]) - 1;
+        const dist = Math.max(Math.abs(pieceFile - kingFile), Math.abs(pieceRank - kingRank));
+        
+        if (dist <= 2) {
+            safety -= 30;
+        }
+    }
+    
+    return safety;
+}
+
+/**
+ * v40.29: Calculate piece coordination score
+ */
+function v40CalculatePieceCoordination(board, isWhite) {
+    let coordination = 0;
+    const ourColor = isWhite ? 'w' : 'b';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        
+        // Check how many of our pieces this piece defends
+        const defended = v40CountPiecesDefended(board, square, piece, isWhite);
+        coordination += defended;
+    }
+    
+    return coordination;
+}
+
+/**
+ * v40.29: Count pieces defended by a piece
+ */
+function v40CountPiecesDefended(board, square, piece, isWhite) {
+    let count = 0;
+    const pieceType = piece.toLowerCase();
+    
+    for (const [targetSquare, targetPiece] of board) {
+        if (!targetPiece || targetSquare === square) continue;
+        const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+        if (targetIsWhite !== isWhite) continue;
+        
+        // Check if we can reach this square
+        if (canPieceReachSquare(board, square, piece, targetSquare)) {
+            count++;
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * v40.29: Count isolated pieces
+ */
+function v40CountIsolatedPieces(board, isWhite) {
+    let isolated = 0;
+    const ourColor = isWhite ? 'w' : 'b';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        
+        // Check if this piece is supported by any other piece
+        const isSupported = isSquareDefendedByColor(board, square, ourColor);
+        // Check if this piece supports any other piece
+        const supports = v40CountPiecesDefended(board, square, piece, isWhite);
+        
+        if (!isSupported && supports === 0) {
+            isolated++;
+        }
+    }
+    
+    return isolated;
+}
+
+/**
+ * v40.29: Count coordinated attacking pieces
+ */
+function v40CountCoordinatedAttackingPieces(board, isWhite) {
+    const enemyKingSquare = findKingSquare(board, isWhite ? 'b' : 'w');
+    if (!enemyKingSquare) return 0;
+    
+    let count = 0;
+    const kingFile = enemyKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(enemyKingSquare[1]) - 1;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') continue;
+        
+        // Check if piece attacks king zone
+        const pieceFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pieceRank = parseInt(square[1]) - 1;
+        const dist = Math.max(Math.abs(pieceFile - kingFile), Math.abs(pieceRank - kingRank));
+        
+        if (dist <= 3) {
+            count++;
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * v40.29: Detect opponent's plans
+ */
+function v40DetectOpponentPlans(board, isEnemy) {
+    const plans = [];
+    const ourColor = isEnemy ? 'b' : 'w';
+    const enemyColor = isEnemy ? 'w' : 'b';
+    
+    // Check for knight outpost plans
+    const knightOutposts = ['d5', 'e5', 'c5', 'd4', 'e4', 'c4'];
+    for (const sq of knightOutposts) {
+        const piece = board.get(sq);
+        if (!piece) {
+            // Check if enemy knight can reach this outpost
+            if (v40CanKnightReachSquare(board, sq, isEnemy)) {
+                plans.push({ type: 'knight_outpost', square: sq });
+            }
+        }
+    }
+    
+    // Check for pawn storm plans
+    const kingSquare = findKingSquare(board, ourColor);
+    if (kingSquare) {
+        const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        if (kingFile >= 5) { // King on kingside
+            // Check for enemy h/g pawn advance
+            if (v40HasPawnStormPotential(board, isEnemy, 'kingside')) {
+                plans.push({ type: 'pawn_storm', side: 'kingside' });
+            }
+        } else if (kingFile <= 2) { // King on queenside
+            if (v40HasPawnStormPotential(board, isEnemy, 'queenside')) {
+                plans.push({ type: 'pawn_storm', side: 'queenside' });
+            }
+        }
+    }
+    
+    // Check for piece infiltration
+    const infiltrationSquares = isEnemy 
+        ? ['f3', 'g3', 'h3', 'e3', 'd3', 'c3']
+        : ['f6', 'g6', 'h6', 'e6', 'd6', 'c6'];
+    
+    for (const sq of infiltrationSquares) {
+        if (v40CanEnemyPieceInfiltrate(board, sq, isEnemy)) {
+            plans.push({ type: 'infiltration', square: sq });
+        }
+    }
+    
+    return plans;
+}
+
+/**
+ * v40.29: Check if plan is still possible
+ */
+function v40IsPlanStillPossible(board, plan, isEnemy) {
+    if (plan.type === 'knight_outpost') {
+        return v40CanKnightReachSquare(board, plan.square, isEnemy);
+    }
+    if (plan.type === 'pawn_storm') {
+        return v40HasPawnStormPotential(board, isEnemy, plan.side);
+    }
+    if (plan.type === 'infiltration') {
+        return v40CanEnemyPieceInfiltrate(board, plan.square, isEnemy);
+    }
+    return true;
+}
+
+/**
+ * v40.29: Check if knight can reach square
+ */
+function v40CanKnightReachSquare(board, targetSquare, isEnemy) {
+    const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+    const targetFile = targetSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const targetRank = parseInt(targetSquare[1]) - 1;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        if (pieceType !== 'n') continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if ((pieceIsWhite && isEnemy) || (!pieceIsWhite && !isEnemy)) continue;
+        
+        // Check if knight can reach in 1-2 moves
+        const knightFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const knightRank = parseInt(square[1]) - 1;
+        
+        // Direct reach
+        for (const [df, dr] of knightMoves) {
+            if (knightFile + df === targetFile && knightRank + dr === targetRank) {
+                return true;
+            }
+        }
+        
+        // 2-move reach
+        for (const [df1, dr1] of knightMoves) {
+            const midFile = knightFile + df1;
+            const midRank = knightRank + dr1;
+            if (midFile < 0 || midFile > 7 || midRank < 0 || midRank > 7) continue;
+            
+            for (const [df2, dr2] of knightMoves) {
+                if (midFile + df2 === targetFile && midRank + dr2 === targetRank) {
+                    return true;
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.29: Check for pawn storm potential
+ */
+function v40HasPawnStormPotential(board, isEnemy, side) {
+    const files = side === 'kingside' ? [5, 6, 7] : [0, 1, 2];
+    let advancedPawns = 0;
+    
+    for (const f of files) {
+        for (let r = 0; r < 8; r++) {
+            const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+            const piece = board.get(sq);
+            if (piece && piece.toLowerCase() === 'p') {
+                const pawnIsWhite = piece === piece.toUpperCase();
+                if ((pawnIsWhite && isEnemy) || (!pawnIsWhite && !isEnemy)) {
+                    // Check if pawn is advanced
+                    const advancedRank = pawnIsWhite ? 4 : 3;
+                    if ((pawnIsWhite && r >= advancedRank) || (!pawnIsWhite && r <= advancedRank)) {
+                        advancedPawns++;
+                    }
+                }
+            }
+        }
+    }
+    
+    return advancedPawns >= 2;
+}
+
+/**
+ * v40.29: Check if enemy piece can infiltrate
+ */
+function v40CanEnemyPieceInfiltrate(board, targetSquare, isEnemy) {
+    // Check if square is controlled by enemy
+    const enemyColor = isEnemy ? 'w' : 'b';
+    return isSquareAttackedByColor(board, targetSquare, enemyColor);
+}
+
+/**
+ * v40.29: Detect allowed threats
+ */
+function v40DetectAllowedThreats(boardBefore, boardAfter, isEnemy) {
+    const threats = [];
+    
+    // Check if move allows knight fork
+    const forkBefore = v40DetectForkVulnerability(boardBefore, !isEnemy);
+    const forkAfter = v40DetectForkVulnerability(boardAfter, !isEnemy);
+    
+    if (forkAfter.hasForkThreat && !forkBefore.hasForkThreat) {
+        threats.push({ type: 'fork', severity: forkAfter.isRoyalFork ? 'critical' : 'major' });
+    }
+    
+    // Check if move allows back rank mate
+    const backRankBefore = v40DetectBackRankWeakness(boardBefore, !isEnemy);
+    const backRankAfter = v40DetectBackRankWeakness(boardAfter, !isEnemy);
+    
+    if (backRankAfter && !backRankBefore) {
+        threats.push({ type: 'back_rank', severity: 'critical' });
+    }
+    
+    // Check if move allows piece infiltration
+    const infiltrationBefore = v40DetectPieceInfiltration(boardBefore, isEnemy);
+    const infiltrationAfter = v40DetectPieceInfiltration(boardAfter, isEnemy);
+    
+    if (infiltrationAfter > infiltrationBefore) {
+        threats.push({ type: 'infiltration', severity: 'major' });
+    }
+    
+    return threats;
+}
+
+/**
+ * v40.29: Detect fork vulnerability
+ */
+function v40DetectForkVulnerability(board, isWhite) {
+    const result = { hasForkThreat: false, isRoyalFork: false, isDoubleMajor: false };
+    const ourColor = isWhite ? 'w' : 'b';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Find our valuable pieces
+    const valuablePieces = [];
+    let kingSquare = null;
+    let queenSquare = null;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        if (pieceType === 'k') {
+            kingSquare = square;
+            valuablePieces.push({ square, type: 'k', value: 10000 });
+        } else if (pieceType === 'q') {
+            queenSquare = square;
+            valuablePieces.push({ square, type: 'q', value: 900 });
+        } else if (pieceType === 'r') {
+            valuablePieces.push({ square, type: 'r', value: 500 });
+        }
+    }
+    
+    // Check if enemy knight can fork any two valuable pieces
+    const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        if (piece.toLowerCase() !== 'n') continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        const knightFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const knightRank = parseInt(square[1]) - 1;
+        
+        // Find all squares knight can reach
+        for (const [df, dr] of knightMoves) {
+            const forkFile = knightFile + df;
+            const forkRank = knightRank + dr;
+            
+            if (forkFile < 0 || forkFile > 7 || forkRank < 0 || forkRank > 7) continue;
+            
+            const forkSquare = String.fromCharCode('a'.charCodeAt(0) + forkFile) + (forkRank + 1);
+            
+            // Check if this square can fork multiple valuable pieces
+            let attackedPieces = [];
+            for (const vp of valuablePieces) {
+                const vpFile = vp.square.charCodeAt(0) - 'a'.charCodeAt(0);
+                const vpRank = parseInt(vp.square[1]) - 1;
+                
+                // Check if knight on forkSquare attacks this piece
+                for (const [ndf, ndr] of knightMoves) {
+                    if (forkFile + ndf === vpFile && forkRank + ndr === vpRank) {
+                        attackedPieces.push(vp);
+                        break;
+                    }
+                }
+            }
+            
+            if (attackedPieces.length >= 2) {
+                result.hasForkThreat = true;
+                if (attackedPieces.some(p => p.type === 'k') && attackedPieces.some(p => p.type === 'q')) {
+                    result.isRoyalFork = true;
+                }
+                if (attackedPieces.filter(p => p.value >= 500).length >= 2) {
+                    result.isDoubleMajor = true;
+                }
+            }
+        }
+    }
+    
+    return result;
+}
+
+/**
+ * v40.29: Check if enemy knight can invade
+ */
+function v40CanEnemyKnightInvade(boardBefore, boardAfter, isWhite, dangerousSquares) {
+    for (const sq of dangerousSquares) {
+        // Check if square is now accessible to enemy knight
+        const enemyColor = isWhite ? 'b' : 'w';
+        
+        // Find enemy knights
+        for (const [square, piece] of boardAfter) {
+            if (!piece) continue;
+            if (piece.toLowerCase() !== 'n') continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            // Check if knight can reach dangerous square
+            const knightFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const knightRank = parseInt(square[1]) - 1;
+            const targetFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+            const targetRank = parseInt(sq[1]) - 1;
+            
+            const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+            for (const [df, dr] of knightMoves) {
+                if (knightFile + df === targetFile && knightRank + dr === targetRank) {
+                    // Check if target square is safe for knight
+                    const ourColor = isWhite ? 'w' : 'b';
+                    if (!isSquareDefendedByColor(boardAfter, sq, ourColor)) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.29: Check if move prevents knight invasion
+ */
+function v40MovesPreventsKnightInvasion(move, boardBefore, boardAfter, isWhite, dangerousSquares) {
+    const toSquare = move.substring(2, 4);
+    
+    // Check if move controls a dangerous square
+    if (dangerousSquares.includes(toSquare)) {
+        return true;
+    }
+    
+    // Check if move blocks knight path to dangerous square
+    const couldInvadeBefore = v40CanEnemyKnightInvade(boardBefore, boardBefore, isWhite, dangerousSquares);
+    const canInvadeAfter = v40CanEnemyKnightInvade(boardBefore, boardAfter, isWhite, dangerousSquares);
+    
+    return couldInvadeBefore && !canInvadeAfter;
+}
+
+/**
+ * v40.29: Check if position is quiet
+ */
+function v40IsPositionQuiet(board, isWhite) {
+    const ourColor = isWhite ? 'w' : 'b';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Check for immediate threats
+    const ourThreats = v40FindThreatenedPieces(board, ourColor);
+    if (ourThreats.some(t => t.value >= 300)) {
+        return false;
+    }
+    
+    // Check for checks
+    const ourKingSquare = findKingSquare(board, ourColor);
+    if (ourKingSquare && isSquareAttackedByColor(board, ourKingSquare, enemyColor)) {
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.29: Check if move is forcing
+ */
+function v40IsMoveForcing(move, board, isWhite) {
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(toSquare);
+    
+    // Capture is forcing
+    if (piece) return true;
+    
+    // Check if move gives check
+    const afterBoard = simulateMoveOnBoard(board, move);
+    const enemyKingSquare = findKingSquare(afterBoard, isWhite ? 'b' : 'w');
+    if (enemyKingSquare) {
+        const ourColor = isWhite ? 'w' : 'b';
+        if (isSquareAttackedByColor(afterBoard, enemyKingSquare, ourColor)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.29: Check if move is building
+ */
+function v40IsMoveBuilding(move, board, isWhite, moveNumber) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(fromSquare);
+    
+    if (!piece) return false;
+    const pieceType = piece.toLowerCase();
+    
+    // Development moves are building
+    if (moveNumber < 15) {
+        if (pieceType === 'n' || pieceType === 'b') {
+            const fromRank = parseInt(fromSquare[1]);
+            const toRank = parseInt(toSquare[1]);
+            // Moving from back rank
+            if ((isWhite && fromRank === 1) || (!isWhite && fromRank === 8)) {
+                return true;
+            }
+        }
+    }
+    
+    // Castling is building
+    if (move === 'e1g1' || move === 'e1c1' || move === 'e8g8' || move === 'e8c8') {
+        return true;
+    }
+    
+    // Improving piece position (moving to center)
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]) - 1;
+    const centerDist = Math.abs(toFile - 3.5) + Math.abs(toRank - 3.5);
+    
+    const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(fromSquare[1]) - 1;
+    const oldCenterDist = Math.abs(fromFile - 3.5) + Math.abs(fromRank - 3.5);
+    
+    if (centerDist < oldCenterDist) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.29: Check if forcing move is sound
+ */
+function v40ForcingMoveIsSound(move, board, isWhite) {
+    const afterBoard = simulateMoveOnBoard(board, move);
+    
+    // Check material balance
+    const materialBefore = v40CalculateMaterialBalance(board, isWhite);
+    const materialAfter = v40CalculateMaterialBalance(afterBoard, isWhite);
+    
+    // If we lose material, not sound
+    if (materialAfter < materialBefore - 100) {
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * v40.29: Calculate material balance
+ */
+function v40CalculateMaterialBalance(board, isWhite) {
+    let balance = 0;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        const value = getPieceValueSimple(pieceType);
+        
+        if (pieceIsWhite === isWhite) {
+            balance += value;
+        } else {
+            balance -= value;
+        }
+    }
+    
+    return balance;
+}
+
+/**
+ * v40.29: Calculate development level
+ */
+function v40CalculateDevelopmentLevel(board, isWhite) {
+    let developed = 0;
+    const backRank = isWhite ? '1' : '8';
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        if (pieceType === 'n' || pieceType === 'b') {
+            if (square[1] !== backRank) {
+                developed++;
+            }
+        }
+    }
+    
+    // Check if castled
+    const kingSquare = findKingSquare(board, isWhite ? 'w' : 'b');
+    if (kingSquare) {
+        const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        if (kingFile === 6 || kingFile === 2) { // g or c file (castled)
+            developed += 2;
+        }
+    }
+    
+    return developed;
+}
+
+/**
+ * v40.29: Count active pieces
+ */
+function v40CountActivePieces(board, isWhite) {
+    let active = 0;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        
+        // Check if piece has good activity
+        const attacks = v40CountSquaresAttacked(board, square, piece);
+        if (attacks >= 3) {
+            active++;
+        }
+    }
+    
+    return active;
+}
+
+/**
+ * v40.29: Count squares attacked by piece
+ */
+function v40CountSquaresAttacked(board, square, piece) {
+    let count = 0;
+    const pieceType = piece.toLowerCase();
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    
+    if (pieceType === 'n') {
+        const moves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        for (const [df, dr] of moves) {
+            const nf = file + df;
+            const nr = rank + dr;
+            if (nf >= 0 && nf <= 7 && nr >= 0 && nr <= 7) {
+                count++;
+            }
+        }
+    } else if (pieceType === 'b') {
+        // Count diagonal squares
+        for (const [df, dr] of [[1,1],[1,-1],[-1,1],[-1,-1]]) {
+            for (let i = 1; i < 8; i++) {
+                const nf = file + df * i;
+                const nr = rank + dr * i;
+                if (nf < 0 || nf > 7 || nr < 0 || nr > 7) break;
+                const sq = String.fromCharCode('a'.charCodeAt(0) + nf) + (nr + 1);
+                count++;
+                if (board.get(sq)) break;
+            }
+        }
+    } else if (pieceType === 'r') {
+        // Count horizontal/vertical squares
+        for (const [df, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+            for (let i = 1; i < 8; i++) {
+                const nf = file + df * i;
+                const nr = rank + dr * i;
+                if (nf < 0 || nf > 7 || nr < 0 || nr > 7) break;
+                const sq = String.fromCharCode('a'.charCodeAt(0) + nf) + (nr + 1);
+                count++;
+                if (board.get(sq)) break;
+            }
+        }
+    } else if (pieceType === 'q') {
+        // Count all directions
+        for (const [df, dr] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+            for (let i = 1; i < 8; i++) {
+                const nf = file + df * i;
+                const nr = rank + dr * i;
+                if (nf < 0 || nf > 7 || nr < 0 || nr > 7) break;
+                const sq = String.fromCharCode('a'.charCodeAt(0) + nf) + (nr + 1);
+                count++;
+                if (board.get(sq)) break;
+            }
+        }
+    }
+    
+    return count;
+}
+
+/**
+ * v40.29: Count total pieces
+ */
+function v40CountTotalPieces(board, isWhite) {
+    let count = 0;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        count++;
+    }
+    
+    return count;
+}
+
+/**
+ * v40.29: Count passive pieces
+ */
+function v40CountPassivePieces(board, isWhite) {
+    let passive = 0;
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (pieceType === 'k' || pieceType === 'p') continue;
+        
+        const attacks = v40CountSquaresAttacked(board, square, piece);
+        if (attacks <= 2) {
+            passive++;
+        }
+    }
+    
+    return passive;
+}
+
+/**
+ * v40.29: Count mutual defense pairs
+ */
+function v40CountMutualDefense(board, isWhite) {
+    let mutualPairs = 0;
+    const pieces = [];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (pieceType === 'k') continue;
+        pieces.push({ square, piece });
+    }
+    
+    const ourColor = isWhite ? 'w' : 'b';
+    
+    for (let i = 0; i < pieces.length; i++) {
+        for (let j = i + 1; j < pieces.length; j++) {
+            const p1 = pieces[i];
+            const p2 = pieces[j];
+            
+            // Check if p1 defends p2 and p2 defends p1
+            const p1DefendsP2 = canPieceReachSquare(board, p1.square, p1.piece, p2.square);
+            const p2DefendsP1 = canPieceReachSquare(board, p2.square, p2.piece, p1.square);
+            
+            if (p1DefendsP2 && p2DefendsP1) {
+                mutualPairs++;
+            }
+        }
+    }
+    
+    return mutualPairs;
+}
+
+/**
+ * v40.29: Check if piece left behind
+ */
+function v40CheckPieceLeftBehind(boardBefore, boardAfter, isWhite) {
+    // Find pieces that became isolated after move
+    const isolatedBefore = v40CountIsolatedPieces(boardBefore, isWhite);
+    const isolatedAfter = v40CountIsolatedPieces(boardAfter, isWhite);
+    
+    return isolatedAfter > isolatedBefore + 1;
+}
+
+/**
+ * v40.29: Detect threats in N moves
+ */
+function v40DetectThreatsInNMoves(board, isEnemy, depth) {
+    const threats = [];
+    
+    // Simple threat detection based on piece positions
+    // Fork threats
+    const forkVuln = v40DetectForkVulnerability(board, !isEnemy);
+    if (forkVuln.hasForkThreat) {
+        threats.push({ type: 'fork', severity: forkVuln.isRoyalFork ? 'critical' : 'major' });
+    }
+    
+    // Back rank threats
+    const backRankWeak = v40DetectBackRankWeakness(board, !isEnemy);
+    if (backRankWeak) {
+        threats.push({ type: 'back_rank', severity: 'critical' });
+    }
+    
+    // Piece hanging threats
+    const threatened = v40FindThreatenedPieces(board, !isEnemy ? 'w' : 'b');
+    for (const t of threatened) {
+        if (t.value >= 500) {
+            threats.push({ type: 'piece_hanging', severity: 'critical', piece: t.piece });
+        } else if (t.value >= 300) {
+            threats.push({ type: 'piece_hanging', severity: 'major', piece: t.piece });
+        }
+    }
+    
+    return threats;
+}
+
+/**
+ * v40.29: Detect back rank weakness
+ */
+function v40DetectBackRankWeakness(board, isWhite) {
+    const backRank = isWhite ? '1' : '8';
+    const kingSquare = findKingSquare(board, isWhite ? 'w' : 'b');
+    
+    if (!kingSquare) return false;
+    if (kingSquare[1] !== backRank) return false;
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    
+    // Check if king has escape squares
+    const escapeRank = isWhite ? '2' : '7';
+    const escapeSquares = [
+        String.fromCharCode('a'.charCodeAt(0) + Math.max(0, kingFile - 1)) + escapeRank,
+        String.fromCharCode('a'.charCodeAt(0) + kingFile) + escapeRank,
+        String.fromCharCode('a'.charCodeAt(0) + Math.min(7, kingFile + 1)) + escapeRank
+    ];
+    
+    let hasEscape = false;
+    const ourColor = isWhite ? 'w' : 'b';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    for (const sq of escapeSquares) {
+        const piece = board.get(sq);
+        const blocked = piece && (piece === piece.toUpperCase()) === isWhite;
+        const attacked = isSquareAttackedByColor(board, sq, enemyColor);
+        
+        if (!blocked && !attacked) {
+            hasEscape = true;
+            break;
+        }
+    }
+    
+    return !hasEscape;
+}
+
+/**
+ * v40.29: Detect piece infiltration level
+ */
+function v40DetectPieceInfiltration(board, isEnemy) {
+    let infiltration = 0;
+    const isWhite = !isEnemy;
+    
+    // Check for enemy pieces in our territory
+    const ourRanks = isWhite ? [0, 1, 2, 3] : [4, 5, 6, 7];
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceType = piece.toLowerCase();
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        if (pieceType === 'p') continue;
+        
+        const rank = parseInt(square[1]) - 1;
+        if (ourRanks.includes(rank)) {
+            const pieceValue = getPieceValueSimple(pieceType);
+            infiltration += pieceValue / 100;
+        }
+    }
+    
+    return infiltration;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {"
+Observation: Edit was successful.
