@@ -1,0 +1,15 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        // Check if attacked by enemy pawn
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        // Enemy pawn attack squares (pawns attack diagonally)
+        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;" --new-str "        // Check if attacked by enemy pawn
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        // CRITICAL FIX v40.43: Enemy pawn attack squares (pawns attack diagonally)
+        // Black pawns attack DOWN (from higher ranks), White pawns attack UP
+        // For WHITE pieces, enemy black pawns are on rank+1
+        const enemyPawnRank = isWhite ? rank + 1 : rank - 1;"
+Observation: Edit was successful.

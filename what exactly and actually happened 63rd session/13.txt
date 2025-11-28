@@ -1,0 +1,173 @@
+Now let me analyze the most recent game from the problem statement. The game shows the bot (AlphaZero) playing white and losing to Lichess AI level 8:
+
+```
+1. e4 c5 2. Nc3 Nc6 3. Nf3 Nf6 4. Bb5 g6 5. d4 cxd4 6. e5 dxc3 7. exf6 cxb2 
+8. Bxb2 Qa5+ 9. Kf1 Qxb5+ 10. c4 Qxb2 11. fxe7 Bg7 12. Rc1 Qxa2 13. Qd6 Bb2 
+14. Kg1 Bxc1 15. Qd5 Ba3 16. Nd2 Qa1+ 17. Nf1 Bxe7 18. Qf3 Qc1 19. Qd3 d6 
+20. Qd2 Qxd2 21. Nxd2 Be6 22. c5 dxc5 23. f3 O-O-O 24. Nf1 Rd1 25. Kf2 b5 
+26. Ke3 Nd4 27. g3 Re1+ 28. Kd3 c4+ 29. Kc3 b4+ 30. Kxd4 Rd8# 0-1
+```
+
+Critical errors:
+1. Move 5: d4 allowed cxd4 with pawn recapture problem
+2. Move 6: e5 pushed, but allowed dxc3 - losing the knight!
+3. Move 7: exf6 - bot kept pushing instead of recapturing
+4. Move 7: cxb2 - Black captured another pawn, now has passed pawn
+5. Multiple material losses
+6. King walked into danger (Kf1, Kg1, Kf2, Ke3, Kd3, Kc3, Kxd4)
+7. Final checkmate at Kxd4, Rd8#
+
+The bot is playing terrible opening moves. Let me add a function to prevent allowing pawn captures that win material:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2300|    v40SicilianOpenBonus: 3000000000000,            // 3 trillion for Open Sicilian lines
+2301|    v40SicilianF4Attack: true,                      // Enable f4 Grand Prix Attack
+2302|    v40SicilianF4Bonus: 2000000000000,              // 2 trillion for f4 attack
+2303|    
+2304|    // v40.33: ENHANCED TACTICAL DEPTH — See deeper into complications
+2305|    v40EnhancedTacticalDepthEnabled: true,
+2306|    v40TacticalDepthMultiplier: 2.0,                // 2x tactical search depth
+2307|    v40CriticalMomentDepth: 8,                      // 8 plies in critical moments
+2308|    v40TacticalVerificationPasses: 3,               // 3 verification passes
+2309|    
+2310|    // v40.33: PIECE SAFETY SUPREME — No hanging pieces EVER
+2311|    v40PieceSafetySupremeEnabled: true,
+2312|    v40HangingPiecePenaltyAbsolute: -20000000000000, // 20 trillion for hanging piece
+2313|    v40UndefendedPieceWarning: -1000000000000,      // 1 trillion warning for weak defense
+2314|    v40AttackedPieceCheck: true,                    // Extra check for attacked pieces
+2315|    
+2316|    // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+2317|    v40InitiativeMaintenanceEnabled: true,
+2318|    v40InitiativeLossPenalty: -500000000000,        // 500 billion for losing initiative
+2319|    v40InitiativeGainBonus: 800000000000,           // 800 billion for gaining initiative
+2320|    v40PassiveMoveInInitiativePenalty: -2000000000000, // 2 trillion for passive when have initiative
+2321|    
+2322|    // ═══════════════════════════════════════════════════════════════════════════════
+2323|    // v40.35.0: MATERIAL SAFETY & PASSIVE MOVE SUPREME
+2324|    // ═══════════════════════════════════════════════════════════════════════════════
+2325|    // CRITICAL: From game analysis:
+2326|    // 1. Move 17: a3 was played - PASSIVE WASTE OF TIME when having initiative
+2327|    // 2. Qxe5 - opponent captured important central pawn with tempo
+2328|    // 3. Material losses led to inevitable checkmate
+2329|    // FIX: Absolute prohibition on passive pawn moves + material safety checks
+2330|    // ═══════════════════════════════════════════════════════════════════════════════
+2331|    
+2332|    // v40.35: PASSIVE PAWN PROHIBITION - a3/h3/a6/h6 are TOXIC
+2333|    v40PassivePawnProhibitionEnabled: true,
+2334|    v40PassivePawnMoves: ['a2a3', 'h2h3', 'a7a6', 'h7h6', 'b2b3', 'g2g3'],
+2335|    v40PassivePawnPenalty: -8000000000000,          // 8 trillion penalty for passive pawns
+2336|    v40PassivePawnMoveLimit: 30,                    // Prohibit until move 30
+2337|    
+2338|    // v40.35: MATERIAL SAFETY VERIFICATION - Don't allow pawn grabs
+2339|    v40MaterialSafetyEnabled: true,
+2340|    v40MaterialLossTolerance: 0,                    // ZERO material loss tolerance
+2341|    v40CentralPawnLossPenalty: -15000000000000,     // 15 trillion for losing central pawn
+2342|    v40FreePieceCapturePenalty: -25000000000000,    // 25 trillion for allowing free capture
+2343|    
+2344|    // v40.35: TACTICAL VERIFICATION LAYERS - Multi-pass blunder prevention
+2345|    v40TacticalVerificationEnabled: true,
+2346|    v40TacticalVerificationPasses: 5,               // 5 verification passes
+2347|    v40ThreatDetectionDepth: 6,                     // Look 6 moves ahead for threats
+2348|    v40MateDetectionDepth: 10,                      // Look 10 moves for mate threats
+2349|    
+2350|    // v40.35: CENTRAL CONTROL PRIORITY - e4/d4/e5/d5 are SACRED
+2351|    v40CentralControlEnabled: true,
+2352|    v40CentralPawnBonus: 2000000000000,             // 2 trillion for central pawns
+2353|    v40CentralPawnDefenseBonus: 1500000000000,      // 1.5 trillion for defending central pawns
+2354|    v40LoseCentralPawnPenalty: -10000000000000,     // 10 trillion for losing central pawn
+2355|    
+2356|    // v40.35: PIECE COORDINATION SUPREME - All pieces must work together
+2357|    v40PieceCoordinationEnabled: true,
+2358|    v40UncoordinatedAttackPenalty: -3000000000000,  // 3 trillion for uncoordinated play
+2359|    v40PieceHarmonyBonus: 1000000000000,            // 1 trillion for coordinated pieces
+2360|    
+2361|    // ═══════════════════════════════════════════════════════════════════════════════
+2362|    // v40.36.0: QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
+2363|    // ═══════════════════════════════════════════════════════════════════════════════
+2364|    // CRITICAL: From Sicilian game analysis:
+2365|    // 1. Move 5: Qxd4 - Queen captured pawn too early, became target
+2366|    // 2. Move 6: Nxe5 dxe5 - Knight sacrifice for nothing
+2367|    // 3. Move 11: O-O-O - Castled into danger when queenside was under attack
+2368|    // 4. Move 14: Bxd4 - Bad exchange when position was already compromised
+2369|    // FIX: Absolute queen capture prohibition + castling direction analysis
+2370|    // ═══════════════════════════════════════════════════════════════════════════════
+2371|    
+2372|    // v40.36: QUEEN CAPTURE PROHIBITION - Never capture with queen early
+2373|    v40QueenCaptureProhibitionEnabled: true,
+2374|    v40QueenCaptureMoveLimit: 15,                   // Prohibit until move 15
+2375|    v40QueenCapturePenalty: -20000000000000,        // 20 trillion penalty
+2376|    v40QueenCaptureQxd4Penalty: -50000000000000,    // 50 trillion for Qxd4 specifically
+2377|    
+2378|    // v40.36: KNIGHT SACRIFICE PREVENTION - Don't sacrifice knight for pawn
+2379|    v40KnightSacrificePreventionEnabled: true,
+2380|    v40KnightForPawnPenalty: -30000000000000,       // 30 trillion for knight sacrifice
+2381|    
+2382|    // v40.36: CASTLING DIRECTION ANALYSIS - Don't castle into danger
+2383|    v40CastlingDirectionEnabled: true,
+2384|    v40CastleIntoDangerPenalty: -40000000000000,    // 40 trillion for castling into danger
+2385|    v40QueensideCastleDangerThreshold: 2,          // If 2+ pieces attacking queenside, don't O-O-O
+2386|    v40KingsideCastleDangerThreshold: 2,           // If 2+ pieces attacking kingside, don't O-O
+2387|    
+2388|    // v40.36: EXCHANGE QUALITY VERIFICATION - Don't trade in bad positions
+2389|    v40ExchangeQualityEnabled: true,
+2390|    v40BadExchangePenalty: -15000000000000,         // 15 trillion for bad exchange
+2391|    v40ExchangeWhenLosingPenalty: -25000000000000,  // 25 trillion for trading when losing
+2392|    
+2393|    // v40.36: PIECE ACTIVITY REQUIREMENT - Must develop before passive moves
+2394|    v40PieceActivityEnabled: true,
+2395|    v40UndevelopedPiecePenalty: -5000000000000,     // 5 trillion for passive when undeveloped
+2396|    v40DevelopmentRequirement: 3,                  // Must have 3+ pieces developed
+2397|    
+2398|    // ═══════════════════════════════════════════════════════════════════════════════
+2399|    // v40.37.0: ROOK PASSIVE PROHIBITION & KING CORNER RETREAT SUPREME
+2400|    // ═══════════════════════════════════════════════════════════════════════════════
+2401|    // CRITICAL: From Sicilian game analysis:
+2402|    // 1. Move 17: Rd3 - Passive rook move when under attack
+2403|    // 2. Move 21: Ka1 - King retreated to corner under mating attack
+2404|    // 3. Move 25: Bxf7+ - Desperation sacrifice that didn't help
+2405|    // FIX: Prohibit passive rook moves + king corner retreats
+2406|    // ═══════════════════════════════════════════════════════════════════════════════
+2407|    
+2408|    // v40.37: ROOK PASSIVE MOVE PROHIBITION - Don't play passive rook when attacked
+2409|    v40RookPassiveProhibitionEnabled: true,
+2410|    v40RookPassivePenalty: -25000000000000,         // 25 trillion for passive rook
+2411|    v40RookPassiveSquares: ['d3', 'e3', 'd6', 'e6'],// Passive rook squares
+2412|    
+2413|    // v40.37: KING CORNER RETREAT PROHIBITION - Don't retreat king to corner
+2414|    v40KingCornerRetreatEnabled: true,
+2415|    v40KingCornerPenalty: -60000000000000,          // 60 trillion for king corner retreat
+2416|    v40KingCornerSquares: ['a1', 'h1', 'a8', 'h8'], // Corner squares
+2417|    
+2418|    // v40.37: DESPERATION SACRIFICE PREVENTION - Don't make losing sacrifices
+2419|    v40DesperationSacrificePrevEnabled: true,
+2420|    v40DesperationSacrificePenalty: -35000000000000,// 35 trillion for desperation sacrifice
+2421|    
+2422|    // v40.37: ULTRA QUEEN CAPTURE PROHIBITION - Even stronger
+2423|    v40UltraQueenCaptureEnabled: true,
+2424|    v40UltraQueenCapturePenalty: -100000000000000,  // 100 trillion for ANY Qxd4/Qxe5
+2425|    
+2426|    // v40.37: PASSIVE UNDER ATTACK PROHIBITION - No passive moves when attacked
+2427|    v40PassiveUnderAttackEnabled: true,
+2428|    v40PassiveUnderAttackPenalty: -45000000000000,  // 45 trillion for passive when attacked
+2429|    
+2430|    // ═══════════════════════════════════════════════════════════════════════════════
+2431|    // v40.38.0: GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME
+2432|    // ═══════════════════════════════════════════════════════════════════════════════
+2433|    // CRITICAL: From Caro-Kann game analysis:
+2434|    // 1. Move 14: gxf3 - TERRIBLE! Weakened king position massively
+2435|    // 2. Move 16: Kg2 - King walked into danger on weakened g-file
+2436|    // 3. Move 19: Qd1 - Passive queen when under mating attack
+2437|    // 4. Move 20-21: h4, h5 - Ignored mate threats completely
+2438|    // FIX: Prohibit gxf3/fxg3 type recaptures + king danger walks + passive under mate
+2439|    // ═══════════════════════════════════════════════════════════════════════════════
+2440|    
+2441|    // v40.38: GXF3/FXG3 PAWN RECAPTURE PROHIBITION - Never weaken king pawn shield
+2442|    v40GxF3ProhibitionEnabled: true,
+2443|    v40GxF3Penalty: -150000000000000,              // 150 trillion for gxf3/fxg3 type moves
+2444|    
+2445|    // v40.38: KING DANGER WALK PROHIBITION - Never walk king toward open/weak files
+2446|    v40KingDangerWalkEnabled: true,
+2447|    v40KingDangerWalkPenalty: -120000000000000,    // 120 trillion for king walking to danger
+2448|    
+2449|    // v40.38: FORCED MATE DEFENSE MODE - When mate threatened, ONLY defensive moves
+2450|    v40ForcedMateDefenseEnabled: true,

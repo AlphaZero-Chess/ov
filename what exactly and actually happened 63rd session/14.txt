@@ -1,0 +1,104 @@
+Good - there are already many protections. Let me now add additional protections for the specific patterns seen in the most recent game (allowing pawn captures that win pieces, and not protecting knights):
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2450|    v40ForcedMateDefenseEnabled: true,
+2451|    v40ForcedMateDefensePenalty: -200000000000000, // 200 trillion for ignoring mate threat
+2452|    
+2453|    // v40.38: PAWN MOVE UNDER ATTACK PROHIBITION - No pawn push when under mating attack
+2454|    v40PawnMoveUnderAttackEnabled: true,
+2455|    v40PawnMoveUnderAttackPenalty: -90000000000000, // 90 trillion for pawn push under attack
+2456|    
+2457|    // v40.38: PASSIVE QUEEN UNDER MATE PROHIBITION - No Qd1/Qc1 when mate threatened
+2458|    v40PassiveQueenUnderMateEnabled: true,
+2459|    v40PassiveQueenUnderMatePenalty: -180000000000000, // 180 trillion for passive queen
+2460|    
+2461|    // v40.38: BISHOP USELESS SQUARE PROHIBITION - No Bh6/Ba3 type useless moves
+2462|    v40BishopUselessSquareEnabled: true,
+2463|    v40BishopUselessSquarePenalty: -50000000000000, // 50 trillion for useless bishop
+2464|    v40BishopUselessSquares: ['h6', 'a6', 'h3', 'a3'],
+2465|    
+2466|    // ═══════════════════════════════════════════════════════════════════════════════
+2467|    // v40.39: PAWN CAPTURE CHAIN SUPREME - See 3+ move pawn capture chains!
+2468|    // From game: d4 was taken by cxd4, then dxc3 attacked Bb5 AND threatened b2!
+2469|    // THE BOT MUST SEE PAWN ATTACK CHAINS AND RESPOND PROPERLY!
+2470|    // ═══════════════════════════════════════════════════════════════════════════════
+2471|    
+2472|    // v40.39: PAWN CAPTURE CHAIN DETECTION - See when pawn captures lead to more captures
+2473|    v40PawnCaptureChainEnabled: true,
+2474|    v40PawnCaptureChainPenalty: -250000000000000, // 250 trillion for missing pawn chain
+2475|    
+2476|    // v40.39: PIECE UNDER PAWN ATTACK - Must respond when piece attacked by pawn
+2477|    v40PieceUnderPawnAttackEnabled: true,
+2478|    v40PieceUnderPawnAttackPenalty: -200000000000000, // 200 trillion for ignoring pawn attack
+2479|    
+2480|    // v40.39: PROMOTION THREAT DETECTION - See when enemy pawn threatens promotion
+2481|    v40PromotionThreatEnabled: true,
+2482|    v40PromotionThreatPenalty: -300000000000000, // 300 trillion for ignoring promotion threat
+2483|    
+2484|    // v40.39: RECAPTURE CHAIN AWARENESS - When we take, see if they take back creating chain
+2485|    v40RecaptureChainEnabled: true,
+2486|    v40RecaptureChainPenalty: -180000000000000, // 180 trillion for missing recapture chain
+2487|    
+2488|    // v40.39: KNIGHT/BISHOP UNDER PAWN DANGER - Must move when piece under pawn attack
+2489|    v40PieceUnderPawnDangerEnabled: true,
+2490|    v40PieceUnderPawnDangerPenalty: -220000000000000, // 220 trillion for piece under pawn attack
+2491|    
+2492|    // v40.39: PAWN FORK DETECTION - See when enemy pawn can fork pieces
+2493|    v40PawnForkDetectionEnabled: true,
+2494|    v40PawnForkDetectionPenalty: -240000000000000, // 240 trillion for missing pawn fork
+2495|    
+2496|    // ═══════════════════════════════════════════════════════════════════════════════
+2497|    // v40.40: MANDATORY RECAPTURE SUPREME - THE ULTIMATE FIX FOR PAWN CAPTURE BLINDNESS!
+2498|    // From game: After cxd4, bot played e5 instead of recapturing! Lost knight immediately!
+2499|    // After dxc3, bot played exf6 instead of saving bishop! Lost everything!
+2500|    // THE BOT MUST RECAPTURE WHEN ENEMY PAWN TAKES NEAR OUR PIECES!
+2501|    // ═══════════════════════════════════════════════════════════════════════════════
+2502|    
+2503|    // v40.40: MANDATORY RECAPTURE - When enemy pawn takes, MUST recapture or save piece
+2504|    v40MandatoryRecaptureEnabled: true,
+2505|    v40MandatoryRecapturePenalty: -500000000000000, // 500 trillion - HIGHEST priority!
+2506|    
+2507|    // v40.40: PAWN NEAR PIECE DANGER - Enemy pawn that can capture our piece next move
+2508|    v40PawnNearPieceDangerEnabled: true,
+2509|    v40PawnNearPieceDangerPenalty: -400000000000000, // 400 trillion for ignoring pawn threat
+2510|    
+2511|    // v40.40: IMMEDIATE PAWN THREAT - Pawn that currently attacks our piece
+2512|    v40ImmediatePawnThreatEnabled: true,
+2513|    v40ImmediatePawnThreatPenalty: -450000000000000, // 450 trillion for ignoring immediate threat
+2514|    
+2515|    // v40.40: PAWN CHAIN PROMOTION THREAT - Pawn that after capture threatens promotion
+2516|    v40PawnChainPromotionEnabled: true,
+2517|    v40PawnChainPromotionPenalty: -350000000000000, // 350 trillion for missing promotion chain
+2518|    
+2519|    // v40.40: MULTI-THREAT PAWN - Pawn that attacks our piece AND threatens something else
+2520|    v40MultiThreatPawnEnabled: true,
+2521|    v40MultiThreatPawnPenalty: -550000000000000, // 550 trillion for multi-threat pawn
+2522|    
+2523|    // v40.40: CAPTURE THEN ATTACK DETECTION - See cxd4, dxc3 patterns
+2524|    v40CaptureThenAttackEnabled: true,
+2525|    v40CaptureThenAttackPenalty: -480000000000000, // 480 trillion for missing capture then attack
+2526|    
+2527|    // ═══════════════════════════════════════════════════════════════════════════════
+2528|    // v40.41: PRE-MOVE PAWN THREAT SUPREME - THE ULTIMATE FIX!
+2529|    // From game: After cxd4, bot played e5 instead of Nxd4 or moving knight!
+2530|    // THE BOT MUST CHECK IF OUR PIECES ARE UNDER ATTACK BEFORE MAKING ANY MOVE!
+2531|    // ═══════════════════════════════════════════════════════════════════════════════
+2532|    
+2533|    // v40.41: PRE-MOVE PIECE UNDER PAWN ATTACK - Before any move, check if pieces are attacked
+2534|    v40PreMovePawnThreatEnabled: true,
+2535|    v40PreMovePawnThreatPenalty: -999999999999999, // 999 trillion - ABSOLUTE DEATH PENALTY
+2536|    
+2537|    // v40.41: KNIGHT UNDER PAWN ATTACK - Knight attacked by pawn MUST be addressed
+2538|    v40KnightUnderPawnEnabled: true,
+2539|    v40KnightUnderPawnPenalty: -800000000000000, // 800 trillion for ignoring knight under pawn
+2540|    
+2541|    // v40.41: BISHOP UNDER PAWN ATTACK - Bishop attacked by pawn MUST be addressed  
+2542|    v40BishopUnderPawnEnabled: true,
+2543|    v40BishopUnderPawnPenalty: -750000000000000, // 750 trillion for ignoring bishop under pawn
+2544|    
+2545|    // v40.41: ROOK UNDER PAWN ATTACK - Rook attacked by pawn MUST be addressed
+2546|    v40RookUnderPawnEnabled: true,
+2547|    v40RookUnderPawnPenalty: -850000000000000, // 850 trillion for ignoring rook under pawn
+2548|    
+2549|    // v40.41: QUEEN UNDER PAWN ATTACK - Queen attacked by pawn MUST be addressed
+2550|    v40QueenUnderPawnEnabled: true,

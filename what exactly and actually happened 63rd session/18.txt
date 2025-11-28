@@ -1,0 +1,74 @@
+Good - the v40GetPawnAttackers function has the correct pawn attack direction now. Now let me also add a new function to specifically prevent the game pattern seen - where the bot plays d4, allows cxd4, then plays e5 instead of dealing with the threat:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2550|    v40QueenUnderPawnEnabled: true,
+2551|    v40QueenUnderPawnPenalty: -950000000000000, // 950 trillion for ignoring queen under pawn
+2552|    
+2553|    // v40.41: POST-CAPTURE PAWN POSITION - After pawn captures, what does it attack?
+2554|    v40PostCapturePawnEnabled: true,
+2555|    v40PostCapturePawnPenalty: -700000000000000, // 700 trillion for missing post-capture attack
+2556|    
+2557|    // v40.41: ABSOLUTE MUST RESPOND - If ANY piece is under pawn attack, MUST respond
+2558|    v40AbsoluteMustRespondEnabled: true,
+2559|    v40AbsoluteMustRespondPenalty: -1000000000000000, // 1 QUADRILLION - INFINITY
+2560|};
+2561|
+2562|// ═══════════════════════════════════════════════════════════════════════
+2563|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2564|// ═══════════════════════════════════════════════════════════════════════
+2565|
+2566|/**
+2567| * v37: TRUE MCTS Node structure for proper tree search
+2568| */
+2569|class MCTSNode {
+2570|    constructor(move, parent = null, prior = 1.0) {
+2571|        this.move = move;
+2572|        this.parent = parent;
+2573|        this.children = new Map();
+2574|        this.visits = 0;
+2575|        this.totalValue = 0;
+2576|        this.prior = prior;           // Policy prior (P)
+2577|        this.virtualLoss = 0;
+2578|        this.isExpanded = false;
+2579|        this.isTerminal = false;
+2580|        this.depth = parent ? parent.depth + 1 : 0;
+2581|    }
+2582|    
+2583|    get value() {
+2584|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+2585|    }
+2586|    
+2587|    get ucb1Score() {
+2588|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2589|        
+2590|        const exploitation = this.value;
+2591|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+2592|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+2593|        
+2594|        return exploitation + exploration;
+2595|    }
+2596|    
+2597|    get puctScore() {
+2598|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2599|        
+2600|        const Q = this.value;
+2601|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+2602|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+2603|        
+2604|        // Apply virtual loss for diversity
+2605|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);
+2606|        
+2607|        return Q + U - virtualLossAdjustment;
+2608|    }
+2609|    
+2610|    selectChild() {
+2611|        if (this.children.size === 0) return null;
+2612|        
+2613|        let bestChild = null;
+2614|        let bestScore = -Infinity;
+2615|        
+2616|        for (const [move, child] of this.children) {
+2617|            const score = child.puctScore;
+2618|            if (score > bestScore) {
+2619|                bestScore = score;
+2620|                bestChild = child;

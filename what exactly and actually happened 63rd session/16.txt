@@ -1,0 +1,109 @@
+Good - the functions exist and are being called. Now let me verify the `v40PreMovePawnThreatEval` function is working correctly with the fixed pawn attack direction:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28235|function v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+28236|    if (!CONFIG.v40PreMovePawnThreatEnabled) return 0;
+28237|    
+28238|    let score = 0;
+28239|    const isWhite = activeColor === 'w';
+28240|    const fromSquare = move.substring(0, 2);
+28241|    const toSquare = move.substring(2, 4);
+28242|    
+28243|    // STEP 1: Find ALL our pieces currently under pawn attack
+28244|    const piecesUnderPawnAttack = v40FindPiecesUnderPawnAttack(board, activeColor);
+28245|    
+28246|    if (piecesUnderPawnAttack.length === 0) {
+28247|        return 0;  // No pieces under attack, move is OK
+28248|    }
+28249|    
+28250|    debugLog("[V40.41_PRE]", `═══════════════════════════════════════════════════════`);
+28251|    debugLog("[V40.41_PRE]", `🚨🚨🚨 PRE-MOVE CHECK: ${piecesUnderPawnAttack.length} PIECE(S) UNDER PAWN ATTACK!`);
+28252|    
+28253|    for (const attacked of piecesUnderPawnAttack) {
+28254|        debugLog("[V40.41_PRE]", `   ${attacked.pieceType.toUpperCase()}@${attacked.square} attacked by pawn(s) on ${attacked.attackers.join(', ')}`);
+28255|    }
+28256|    
+28257|    // STEP 2: Check if our move addresses ANY of the pawn threats
+28258|    let threatAddressed = false;
+28259|    let addressedHow = '';
+28260|    
+28261|    for (const attacked of piecesUnderPawnAttack) {
+28262|        // OPTION 1: Moving the attacked piece to safety
+28263|        if (fromSquare === attacked.square) {
+28264|            // Make sure we're not moving to another attacked square!
+28265|            const testBoard = simulateMove(board, move);
+28266|            if (testBoard) {
+28267|                const stillUnderAttack = v40IsSquareUnderPawnAttack(testBoard, toSquare, activeColor);
+28268|                if (!stillUnderAttack) {
+28269|                    threatAddressed = true;
+28270|                    addressedHow = `Moving ${attacked.pieceType}@${attacked.square} to ${toSquare}`;
+28271|                    debugLog("[V40.41_PRE]", `✅ ${addressedHow}`);
+28272|                    break;
+28273|                } else {
+28274|                    debugLog("[V40.41_PRE]", `⚠️ Moving ${attacked.pieceType} from ${fromSquare} to ${toSquare} - STILL UNDER ATTACK!`);
+28275|                }
+28276|            }
+28277|        }
+28278|        
+28279|        // OPTION 2: Capturing the attacking pawn
+28280|        for (const attackerSquare of attacked.attackers) {
+28281|            if (toSquare === attackerSquare) {
+28282|                threatAddressed = true;
+28283|                addressedHow = `Capturing attacker on ${attackerSquare}`;
+28284|                debugLog("[V40.41_PRE]", `✅ ${addressedHow}`);
+28285|                break;
+28286|            }
+28287|        }
+28288|        
+28289|        if (threatAddressed) break;
+28290|        
+28291|        // OPTION 3: Blocking (rare with pawns, but check if a piece blocks the diagonal)
+28292|        // For pawns, blocking is generally not possible since they attack diagonally
+28293|    }
+28294|    
+28295|    // STEP 3: If threat NOT addressed, apply DEATH PENALTY!
+28296|    if (!threatAddressed && piecesUnderPawnAttack.length > 0) {
+28297|        // Find the highest value piece under attack
+28298|        const highestValueAttacked = piecesUnderPawnAttack.reduce(
+28299|            (max, curr) => curr.pieceValue > max.pieceValue ? curr : max,
+28300|            piecesUnderPawnAttack[0]
+28301|        );
+28302|        
+28303|        debugLog("[V40.41_PRE]", `☠️☠️☠️ CRITICAL FAILURE! Move ${move} IGNORES pawn threat!`);
+28304|        debugLog("[V40.41_PRE]", `Highest value piece under attack: ${highestValueAttacked.pieceType.toUpperCase()}@${highestValueAttacked.square} (${highestValueAttacked.pieceValue}cp)`);
+28305|        debugLog("[V40.41_PRE]", `═══════════════════════════════════════════════════════`);
+28306|        
+28307|        // Apply piece-specific penalties
+28308|        const pieceType = highestValueAttacked.pieceType;
+28309|        let penalty = 0;
+28310|        
+28311|        if (pieceType === 'q') {
+28312|            penalty = CONFIG.v40QueenUnderPawnPenalty || -950000000000000;
+28313|        } else if (pieceType === 'r') {
+28314|            penalty = CONFIG.v40RookUnderPawnPenalty || -850000000000000;
+28315|        } else if (pieceType === 'b') {
+28316|            penalty = CONFIG.v40BishopUnderPawnPenalty || -750000000000000;
+28317|        } else if (pieceType === 'n') {
+28318|            penalty = CONFIG.v40KnightUnderPawnPenalty || -800000000000000;
+28319|        }
+28320|        
+28321|        // Add the absolute must respond penalty on top
+28322|        penalty += CONFIG.v40AbsoluteMustRespondPenalty || -1000000000000000;
+28323|        
+28324|        score += penalty;
+28325|    }
+28326|    
+28327|    return score;
+28328|}
+28329|
+28330|/**
+28331| * v40.41 Helper: Find all pieces under pawn attack for a given color
+28332| */
+28333|function v40FindPiecesUnderPawnAttack(board, activeColor) {
+28334|    const result = [];
+28335|    const isWhite = activeColor === 'w';
+28336|    
+28337|    for (const [square, piece] of board) {
+28338|        if (!piece) continue;
+28339|        
+28340|        const pieceIsWhite = piece === piece.toUpperCase();

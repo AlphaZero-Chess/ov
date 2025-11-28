@@ -1,0 +1,12 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        // Check if this piece is under pawn attack after our move
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;" --new-str "        // Check if this piece is under pawn attack after our move
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square.charAt(1));
+        
+        // CRITICAL FIX v40.43: Black pawns attack from higher ranks (rank+1 for white pieces)
+        const enemyPawnRank = isWhite ? rank + 1 : rank - 1;"
+Observation: Edit was successful.

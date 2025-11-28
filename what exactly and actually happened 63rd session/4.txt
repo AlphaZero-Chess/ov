@@ -1,0 +1,56 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+27548|        
+27549|        // Check if this piece is under pawn attack after our move
+27550|        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+27551|        const rank = parseInt(square.charAt(1));
+27552|        
+27553|        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+27554|        const attackerSquares = [];
+27555|        if (file > 0) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank);
+27556|        if (file < 7) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank);
+27557|        
+27558|        for (const attackerSquare of attackerSquares) {
+27559|            const attacker = testBoard.get(attackerSquare);
+27560|            if (attacker && attacker.toLowerCase() === 'p') {
+27561|                const attackerIsWhite = attacker === attacker.toUpperCase();
+27562|                if (attackerIsWhite !== isWhite) {
+27563|                    // This piece is under pawn attack after our move!
+27564|                    const pieceValue = getPieceValueSimple(pieceType);
+27565|                    
+27566|                    // Was this piece already under attack before?
+27567|                    const wasUnderAttack = checkPawnAttackOnSquare(board, square, isWhite);
+27568|                    
+27569|                    if (!wasUnderAttack && pieceValue >= 300) {
+27570|                        // Our move PUT a piece under pawn attack!
+27571|                        debugLog("[V40.39_DANGER]", `☠️ MOVE ${move} PUTS ${pieceType} on ${square} UNDER PAWN ATTACK!`);
+27572|                        score += CONFIG.v40PieceUnderPawnDangerPenalty || -220000000000000;
+27573|                    }
+27574|                }
+27575|            }
+27576|        }
+27577|    }
+27578|    
+27579|    return score;
+27580|}
+27581|
+27582|/**
+27583| * v40.39 Helper: Check if square is under pawn attack
+27584| */
+27585|function checkPawnAttackOnSquare(board, square, isWhite) {
+27586|    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+27587|    const rank = parseInt(square.charAt(1));
+27588|    
+27589|    const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+27590|    if (enemyPawnRank < 1 || enemyPawnRank > 8) return false;
+27591|    
+27592|    const attackerSquares = [];
+27593|    if (file > 0) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank);
+27594|    if (file < 7) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank);
+27595|    
+27596|    for (const attackerSquare of attackerSquares) {
+27597|        const attacker = board.get(attackerSquare);
+27598|        if (attacker && attacker.toLowerCase() === 'p') {
+27599|            const attackerIsWhite = attacker === attacker.toUpperCase();
+27600|            if (attackerIsWhite !== isWhite) {

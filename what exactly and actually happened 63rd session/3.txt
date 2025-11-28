@@ -1,0 +1,24 @@
+I found there are multiple bugs - the pawn attack direction is wrong in 4 places. Let me fix them all:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+27320|        
+27321|        // Check if attacked by enemy pawn
+27322|        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+27323|        const rank = parseInt(square.charAt(1));
+27324|        
+27325|        // Enemy pawn attack squares (pawns attack diagonally)
+27326|        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+27327|        const attackerSquares = [];
+27328|        if (file > 0) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank);
+27329|        if (file < 7) attackerSquares.push(String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank);
+27330|        
+27331|        for (const attackerSquare of attackerSquares) {
+27332|            const attacker = board.get(attackerSquare);
+27333|            if (attacker && attacker.toLowerCase() === 'p') {
+27334|                const attackerIsWhite = attacker === attacker.toUpperCase();
+27335|                if (attackerIsWhite !== isWhite) {
+27336|                    // Our piece is under pawn attack!
+27337|                    piecesUnderPawnAttack.push({
+27338|                        square,
+27339|                        piece,
+27340|                        pieceType,

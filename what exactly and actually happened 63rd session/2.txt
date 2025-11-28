@@ -1,0 +1,8 @@
+
+Action: $ cd /app && grep -n "enemyPawnRank.*rank.*-.*1\|rank.*-.*1.*enemy" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 27326:        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+27553:        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+27589:    const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+27721:        const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+28375:    const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
+Exit code: 0
