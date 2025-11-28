@@ -1,0 +1,33 @@
+
+Action: $ cd /app && grep -n "v40.22\|v40KnightInfiltration\|v40CheckSequence\|v40MustRespond" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 1162:    v40CheckSequenceEnabled: true,
+1163:    v40CheckSequencePenalty: -20000,        // Penalty if position allows check sequences
+1752:    v40CheckSequenceBonus: 200000000,               // Forcing checks
+1799:    // v40.22: KNIGHT INFILTRATION & CHECK SEQUENCE DETECTION SUPREME
+1803:    v40KnightInfiltrationEnabled: true,
+1810:    // v40.22: PERPETUAL CHECK DETECTION — Detect perpetual/mating check patterns
+1816:    // v40.22: PIECE INFILTRATION GENERAL — Any piece infiltrating our camp
+1822:    // v40.22: MUST RESPOND TO THREAT — Don't ignore immediate threats!
+1823:    v40MustRespondEnabled: true,
+8172:function v40CheckSequenceDetection(fen, move, board, activeColor) {
+8173:    if (!CONFIG.v40CheckSequenceEnabled) return 0;
+8235:            penalty -= CONFIG.v40CheckSequencePenalty || -20000;
+16330:            score += CONFIG.v40CheckSequenceBonus;
+17196:// v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE DETECTION SUPREME
+17202: * v40.22 KNIGHT INFILTRATION DETECTION: Detect knight infiltration patterns near king
+17205:function v40KnightInfiltrationEval(fen, move, board, activeColor, moveNumber) {
+17206:    if (!CONFIG.v40KnightInfiltrationEnabled) return 0;
+17331: * v40.22 Helper: Get all knight move squares
+17356: * v40.22 Helper: Find knight fork targets
+17388: * v40.22 CHECK SEQUENCE DETECTION: Detect perpetual/mating check patterns
+17390:function v40CheckSequenceDetectionEval(fen, move, board, activeColor, moveNumber) {
+17462: * v40.22 Helper: Can a piece attack a square?
+17498: * v40.22 Helper: Is path clear between two squares?
+17518: * v40.22 Helper: Get squares from which a piece could check the king
+17532: * v40.22 Helper: Detect mate in N moves (simplified)
+17586: * v40.22 MUST RESPOND TO THREAT: Don't ignore immediate threats!
+17588:function v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) {
+17589:    if (!CONFIG.v40MustRespondEnabled) return 0;
+17675: * v40.22 Helper: Count attackers on a square
+17695: * v40.22 Helper: Find hanging pieces
+Exit code: 0

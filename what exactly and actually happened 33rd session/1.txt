@@ -1,0 +1,49 @@
+The file is currently at v40.21. Based on the 32nd session files, v40.22 was partially implemented but there may be incomplete integration. Let me analyze the most recent game from the problem statement and check what's needed:
+Action: From analyzing sessions 30-32:
+
+CURRENT STATE: v40.21
+- v40.20: Pawn Promotion & Forcing Sequence
+- v40.21: Deep Pawn Chain & Forcing Line
+- v40.22: Knight Infiltration & Check Sequence (PARTIALLY DONE in session 32)
+
+From the most recent game in the problem statement:
+```
+[White "AlphaZero"]
+[Black "lichess AI level 8"]
+1. e4 e5 2. d3 Nf6 3. Nf3 Nc6 4. Be2 d5 5. exd5 Nxd5 6. O-O Bd6 7. Nc3 Nxc3 8. bxc3 O-O 
+9. Be3 Qe7 10. d4 h6 11. Rb1 b6 12. d5 Na5 13. Nd2 f5 14. Nb3 f4 15. Bc1 Nxb3 
+16. axb3 a5 17. f3 Rf5 18. Qe1 Rh5 19. Rf2 Qh4 20. Kh1 Qxh2# 
+```
+
+CRITICAL ISSUES:
+1. Move 17 (f3) - Weakening kingside when Black has active pieces
+2. Move 18 (Qe1) - Passive queen move, not addressing the attack
+3. Move 19 (Rf2) - Blocking the f-file but now Rh5 threatens Qh4-Qxh2#
+4. Move 20 (Kh1) - TOO LATE! Black already has Qxh2#
+
+The bot completely missed:
+- The rook lift Rf5-Rh5 pattern
+- The queen invasion Qe7-Qh4-Qxh2#
+- The mating attack setup
+- f3 WEAKENED the king catastrophically
+
+SESSION 32 was implementing v40.22 with:
+- Knight Infiltration Detection
+- Check Sequence Detection  
+- Must Respond To Threat
+
+But the session ended with integration incomplete. I need to:
+1. Verify v40.22 functions exist
+2. Verify they're integrated into main evaluation
+3. Update header to v40.22 if complete
+4. Potentially implement v40.23 for the new game patterns (ROOK LIFT + QUEEN MATING ATTACK)
+
+The pattern in this latest game is:
+- Rook lift: Rf5-Rh5 (attacking h2 indirectly)
+- Queen invasion: Qe7-Qh4 (threatening Qxh2#)
+- f3 weakness: Severely weakened the light squares
+
+This is different from the knight pattern in previous games. Need to implement ROOK LIFT detection and QUEEN MATING SQUARE detection.
+
+Let me check current v40.22 status first.
+Observation: Your thought has been logged.

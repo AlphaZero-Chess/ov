@@ -1,0 +1,20 @@
+I see the problem! The function declaration for `findAttackedPiecesV40_9` was cut off. After line 18720 there's orphaned code without a function declaration. Let me fix this:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    return Math.min(strength, 1.0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+    const attacked = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';" --new-str "    return Math.min(strength, 1.0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.9 Helper: Find all attacked pieces for a color
+ */
+function findAttackedPiecesV40_9(board, color) {
+    const attacked = [];
+    const isWhite = color === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';"
+Observation: Edit was successful.

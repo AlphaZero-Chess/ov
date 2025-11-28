@@ -1,0 +1,10 @@
+
+Action: $ cd /app && grep -n "knightInfiltrationScore\|checkSequenceDetectionScore\|mustRespondScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 33253:                const knightInfiltrationScore = v40KnightInfiltrationEval(fen, move, board, activeColor, moveNumber) * 60.0;
+33256:                const checkSequenceDetectionScore = v40CheckSequenceDetectionEval(fen, move, board, activeColor, moveNumber) * 55.0;
+33259:                const mustRespondScore = v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) * 50.0;
+33312:                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore;
+33368:                debugLog("[V40_INTEGRATE]", `   🏇🏇 KnightInfiltration: ${knightInfiltrationScore.toFixed(1)}`);
+33369:                debugLog("[V40_INTEGRATE]", `   🏇🏇 CheckSequenceDetection: ${checkSequenceDetectionScore.toFixed(1)}`);
+33370:                debugLog("[V40_INTEGRATE]", `   🏇🏇 MustRespond: ${mustRespondScore.toFixed(1)}`);
+Exit code: 0

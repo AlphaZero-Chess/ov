@@ -1,0 +1,5 @@
+Now let me find where to add the v40.23 functions (after the v40.22 functions):
+Action: $ cd /app && grep -n "function v40MustRespondToThreatEval\|v40.22 Helper: Is move addressing" "Lichess Bot-AlphaZero-Pure.user.js" | tail -5
+Observation: 17633:function v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) {
+17834: * v40.22 Helper: Is move addressing a threat?
+Exit code: 0

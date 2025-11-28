@@ -1,0 +1,24 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1820|    v40MultipleInfiltratorsPenalty: -900000000,     // Multiple enemy pieces infiltrating
+1821|    
+1822|    // v40.22: MUST RESPOND TO THREAT — Don't ignore immediate threats!
+1823|    v40MustRespondEnabled: true,
+1824|    v40IgnoreThreatPenalty: -1200000000,            // Ignored a serious threat
+1825|    v40GreedyWhileUnderAttackPenalty: -800000000,   // Grabbed material while under attack
+1826|    v40PassiveMoveUnderAttackPenalty: -600000000,   // Passive move when being attacked
+1827|};
+1828|
+1829|// ═══════════════════════════════════════════════════════════════════════
+1830|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1831|// ═══════════════════════════════════════════════════════════════════════
+1832|
+1833|/**
+1834| * v37: TRUE MCTS Node structure for proper tree search
+1835| */
+1836|class MCTSNode {
+1837|    constructor(move, parent = null, prior = 1.0) {
+1838|        this.move = move;
+1839|        this.parent = parent;
+1840|        this.children = new Map();
