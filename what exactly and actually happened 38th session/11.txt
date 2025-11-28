@@ -1,0 +1,13 @@
+I can see the function exists, but it may not be triggering correctly. Let me check the CONFIG values:
+Action: $ grep -n "v40F3G3Prohibition\|v40F3Move\|v40G3Move\|v40KingsidePawnPush" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 1851:    v40F3G3ProhibitionEnabled: true,
+1852:    v40F3MoveProhibitionPenalty: -3000000000,       // NEVER play f3 when enemy has active pieces
+1853:    v40G3MoveProhibitionPenalty: -2500000000,       // NEVER play g3 when enemy has active pieces
+1854:    v40KingsidePawnPushPenalty: -1500000000,        // Pushing f/g pawns near king
+18164:function v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+18165:    if (!CONFIG.v40F3G3ProhibitionEnabled) return 0;
+18210:                score += CONFIG.v40F3MoveProhibitionPenalty;
+18226:                score += CONFIG.v40G3MoveProhibitionPenalty;
+18237:                score += CONFIG.v40KingsidePawnPushPenalty;
+35762:                const f3g3ProhibitionScore = v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) * 80.0;
+Exit code: 0

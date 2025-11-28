@@ -1,0 +1,104 @@
+Now let me add the v40.26 functions. First, let me find where to add them (after v40.25 functions):
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+19920|        // Calculate initiative before
+19921|        const initBefore = v40CalculateInitiativeScore(board, activeColor);
+19922|        
+19923|        // Simulate the move
+19924|        const afterBoard = new Map(board);
+19925|        afterBoard.delete(fromSquare);
+19926|        afterBoard.set(toSquare, movingPiece);
+19927|        
+19928|        // Calculate initiative after
+19929|        const initAfter = v40CalculateInitiativeScore(afterBoard, activeColor);
+19930|        
+19931|        const initChange = initAfter - initBefore;
+19932|        
+19933|        // Check for trades that lose initiative
+19934|        if (capturedPiece && initChange < -2) {
+19935|            score += CONFIG.v40TradeThatLosesInitiativePenalty || -12000000000;
+19936|            debugLog("[V40.25_INIT]", `🚫 ${move} trade loses initiative (${initChange})`);
+19937|        }
+19938|        
+19939|        // Check for passive moves when we have initiative
+19940|        if (!capturedPiece && initBefore > 3) {
+19941|            const isPassive = v40IsMovePassive(move, board, activeColor);
+19942|            if (isPassive) {
+19943|                score += CONFIG.v40PassiveMoveInActivePosn || -8000000000;
+19944|                debugLog("[V40.25_INIT]", `🚫 Passive ${move} when we have initiative!`);
+19945|            }
+19946|        }
+19947|        
+19948|        // Bonus for gaining initiative
+19949|        if (initChange > 2) {
+19950|            score += CONFIG.v40InitiativeGainBonus || 6000000000;
+19951|            debugLog("[V40.25_INIT]", `✅ ${move} gains initiative (+${initChange})`);
+19952|        }
+19953|        
+19954|        // Bonus for forcing opponent defensive
+19955|        const forcesDefense = v40MoveForceDefense(afterBoard, activeColor);
+19956|        if (forcesDefense) {
+19957|            score += CONFIG.v40ForceOpponentDefensiveBonus || 7000000000;
+19958|            debugLog("[V40.25_INIT]", `✅ ${move} forces defensive response`);
+19959|        }
+19960|        
+19961|    } catch (e) {
+19962|        debugLog("[V40.25_INIT]", `Error: ${e.message}`);
+19963|    }
+19964|    
+19965|    return score;
+19966|}
+19967|
+19968|// ═══════════════════════════════════════════════════════════════════════════════
+19969|// v40.25 HELPER FUNCTIONS
+19970|// ═══════════════════════════════════════════════════════════════════════════════
+19971|
+19972|/** v40.25: Count total pawns on board */
+19973|function v40CountPawns(board) {
+19974|    let count = 0;
+19975|    for (const [sq, piece] of board) {
+19976|        if (piece && piece.toLowerCase() === 'p') count++;
+19977|    }
+19978|    return count;
+19979|}
+19980|
+19981|/** v40.25: Check if center pawns are blocked */
+19982|function v40AreCenterPawnsBlocked(board) {
+19983|    // Check d4/d5 and e4/e5 complex
+19984|    const dPawnWhite = board.get('d4');
+19985|    const dPawnBlack = board.get('d5');
+19986|    const ePawnWhite = board.get('e4');
+19987|    const ePawnBlack = board.get('e5');
+19988|    
+19989|    // If both d or e files have opposing pawns, center is blocked
+19990|    if (dPawnWhite === 'P' && dPawnBlack === 'p') return true;
+19991|    if (ePawnWhite === 'P' && ePawnBlack === 'p') return true;
+19992|    
+19993|    // Advanced Caro-Kann structure (e5 pawn blocking)
+19994|    if (board.get('e5') === 'P' && board.get('c6') === 'p') return true;
+19995|    
+19996|    return false;
+19997|}
+19998|
+19999|/** v40.25: Calculate simple initiative score */
+20000|function v40CalculateInitiativeScore(board, activeColor) {
+20001|    let score = 0;
+20002|    const isWhite = activeColor === 'w';
+20003|    const enemyColor = isWhite ? 'b' : 'w';
+20004|    
+20005|    // Piece activity
+20006|    for (const [sq, piece] of board) {
+20007|        if (!piece) continue;
+20008|        const pieceIsWhite = piece === piece.toUpperCase();
+20009|        const pieceType = piece.toLowerCase();
+20010|        
+20011|        if (pieceIsWhite === isWhite) {
+20012|            // Our pieces - centrality = initiative
+20013|            const file = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+20014|            const rank = parseInt(sq[1]) - 1;
+20015|            const centrality = 4 - Math.max(Math.abs(file - 3.5), Math.abs(rank - 3.5));
+20016|            
+20017|            if (pieceType === 'q') score += centrality * 0.5;
+20018|            else if (pieceType === 'r') score += centrality * 0.3;
+20019|            else if (pieceType === 'b' || pieceType === 'n') score += centrality * 0.4;
+20020|        }

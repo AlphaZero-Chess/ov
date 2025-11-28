@@ -1,0 +1,120 @@
+Let me look at the F3G3ProhibitionEval function to understand why it's not working:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+18164|function v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+18165|    if (!CONFIG.v40F3G3ProhibitionEnabled) return 0;
+18166|    
+18167|    let score = 0;
+18168|    const isWhite = activeColor === 'w';
+18169|    const enemyColor = isWhite ? 'b' : 'w';
+18170|    
+18171|    try {
+18172|        const fromSquare = move.substring(0, 2);
+18173|        const toSquare = move.substring(2, 4);
+18174|        const movingPiece = board.get(fromSquare);
+18175|        
+18176|        if (!movingPiece) return 0;
+18177|        
+18178|        // Only check pawn moves
+18179|        if (movingPiece.toLowerCase() !== 'p') return 0;
+18180|        
+18181|        const ourKing = findKing(board, activeColor);
+18182|        if (!ourKing) return 0;
+18183|        
+18184|        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+18185|        const kingRank = parseInt(ourKing[1]);
+18186|        
+18187|        // Check if this is an f3, g3, f6, or g6 move (depending on color)
+18188|        const fromFile = fromSquare[0];
+18189|        const toFile = toSquare[0];
+18190|        const toRank = parseInt(toSquare[1]);
+18191|        
+18192|        // For WHITE: f3, g3 moves (from f2 or g2 to f3 or g3)
+18193|        // For BLACK: f6, g6 moves (from f7 or g7 to f6 or g6)
+18194|        const dangerousRank = isWhite ? 3 : 6;
+18195|        const startRank = isWhite ? 2 : 7;
+18196|        
+18197|        // Is this a kingside pawn advance near our king?
+18198|        const kingFileChar = String.fromCharCode(kingFile + 'a'.charCodeAt(0));
+18199|        const isKingsidePawn = (toFile === 'f' || toFile === 'g') && 
+18200|                               Math.abs(toFile.charCodeAt(0) - kingFileChar.charCodeAt(0)) <= 2;
+18201|        
+18202|        if (isKingsidePawn && toRank === dangerousRank) {
+18203|            // CHECK: Does enemy have active pieces that can exploit this?
+18204|            const enemyHasActivePieces = hasEnemyActivePiecesV40_23(board, enemyColor);
+18205|            const enemyQueenActive = isEnemyQueenActiveV40_23(board, enemyColor, activeColor);
+18206|            const enemyHasEFilePressure = hasEFilePressureV40_23(board, enemyColor);
+18207|            
+18208|            if (toFile === 'f' && toRank === dangerousRank) {
+18209|                // f3 or f6 move - EXTREMELY DANGEROUS
+18210|                score += CONFIG.v40F3MoveProhibitionPenalty;
+18211|                debugLog("[V40.23_F3G3]", `☠️☠️☠️☠️ ${move} IS f${dangerousRank}! CATASTROPHIC KINGSIDE WEAKNESS!`);
+18212|                
+18213|                if (enemyQueenActive) {
+18214|                    score += CONFIG.v40F3WithEnemyQueenActivePenalty;
+18215|                    debugLog("[V40.23_F3G3]", `☠️☠️☠️☠️☠️ f${dangerousRank} WITH ENEMY QUEEN ACTIVE! SUICIDE!`);
+18216|                }
+18217|                
+18218|                if (enemyHasEFilePressure) {
+18219|                    score += CONFIG.v40F3WithEnemyOnEFilePenalty;
+18220|                    debugLog("[V40.23_F3G3]", `☠️☠️☠️☠️ f${dangerousRank} WITH ENEMY E-FILE PRESSURE! DISASTER!`);
+18221|                }
+18222|            }
+18223|            
+18224|            if (toFile === 'g' && toRank === dangerousRank) {
+18225|                // g3 or g6 move - DANGEROUS
+18226|                score += CONFIG.v40G3MoveProhibitionPenalty;
+18227|                debugLog("[V40.23_F3G3]", `☠️☠️☠️ ${move} IS g${dangerousRank}! WEAKENS KINGSIDE!`);
+18228|                
+18229|                if (enemyQueenActive) {
+18230|                    score += CONFIG.v40F3WithEnemyQueenActivePenalty / 2;
+18231|                    debugLog("[V40.23_F3G3]", `☠️☠️☠️☠️ g${dangerousRank} WITH ENEMY QUEEN ACTIVE! VERY BAD!`);
+18232|                }
+18233|            }
+18234|            
+18235|            // General kingside pawn push penalty
+18236|            if (enemyHasActivePieces) {
+18237|                score += CONFIG.v40KingsidePawnPushPenalty;
+18238|                debugLog("[V40.23_F3G3]", `⚠️ ${move} pushes kingside pawn with enemy active pieces!`);
+18239|            }
+18240|        }
+18241|        
+18242|    } catch (e) {
+18243|        debugLog("[V40.23_F3G3]", `Error: ${e.message}`);
+18244|    }
+18245|    
+18246|    return score;
+18247|}
+18248|
+18249|/**
+18250| * v40.23 MATING ATTACK PATTERN: Detect specific mating attack patterns
+18251| */
+18252|function v40MatingAttackPatternEval(fen, move, board, activeColor, moveNumber) {
+18253|    if (!CONFIG.v40MatingAttackEnabled) return 0;
+18254|    
+18255|    let score = 0;
+18256|    const isWhite = activeColor === 'w';
+18257|    const enemyColor = isWhite ? 'b' : 'w';
+18258|    
+18259|    try {
+18260|        const fromSquare = move.substring(0, 2);
+18261|        const toSquare = move.substring(2, 4);
+18262|        const movingPiece = board.get(fromSquare);
+18263|        
+18264|        if (!movingPiece) return 0;
+18265|        
+18266|        // Simulate our move
+18267|        const afterMove = new Map(board);
+18268|        afterMove.delete(fromSquare);
+18269|        afterMove.set(toSquare, movingPiece);
+18270|        
+18271|        // Find our king
+18272|        const ourKing = findKing(afterMove, activeColor);
+18273|        if (!ourKing) return 0;
+18274|        
+18275|        // H-FILE ASSAULT PATTERN: Rook on h-file + Queen can reach h-file
+18276|        const hFileAssault = detectHFileAssaultV40_23(afterMove, enemyColor, activeColor);
+18277|        if (hFileAssault.detected) {
+18278|            score += CONFIG.v40HFileAssaultPenalty;
+18279|            debugLog("[V40.23_MATE]", `☠️☠️☠️ H-FILE ASSAULT DETECTED! ${hFileAssault.description}`);
+18280|        }

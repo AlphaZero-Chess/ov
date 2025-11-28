@@ -1,0 +1,55 @@
+Now I have a comprehensive understanding of the codebase. Let me analyze the latest game and create a plan for v40.26:
+Action: Based on my analysis of the code and the latest game loss, I can see the following issues:
+
+GAME ANALYSIS - Caro-Kann Defense: Advance Variation, Van der Wiel Attack:
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nc3 e6 5. Nf3 Nd7 6. Be3 Bb4 7. Bd3 Ne7 8. Qd2 h6 9. O-O O-O 
+10. Qd1 c5 11. Ne2 cxd4 12. Nexd4 Bxd3 13. Qxd3 Bc5 14. c3 Bb6 15. Qe2 Ng6 
+16. Nb3 Bxe3 17. a3 Bf4 18. Nbd4 Rc8 19. Rae1 Ngxe5 20. Nxe5 Bxe5 
+21. Nc2 Bd6 22. Qf3 Nc5 23. Nb4 Qg5 24. Qe3 Qh5 25. g3 (CATASTROPHIC WEAKNESS!)
+26. Nd3 Ne4 27. f3 (ANOTHER WEAKNESS!) Bxg3 28. hxg3 Nxg3 29. Nf2 Nxf1 
+30. Qe2 Qg3+ 31. Kxf1 Rfd8 ... (checkmate follows)
+
+KEY FAILURES:
+1. **Move 19 (Ngxe5)**: Allowed Black to capture e5 pawn - should have defended
+2. **Move 25 (g3)**: CATASTROPHIC - weakened kingside while under attack!
+3. **Move 27 (f3)**: FATAL - created another weakness
+4. **Move 28 (hxg3)**: Allowed Bxg3 sacrifice
+5. **PATTERN FAILURE**: Bot played g3/f3 creating target squares when queen was already threatening
+
+The existing v40.25 has F3G3 prohibition but it's NOT working properly. The weights need to be MUCH higher and the detection needs to be improved.
+
+For v40.26, I need to implement:
+
+1. **v40.26: ABSOLUTE KINGSIDE PAWN PROHIBITION**
+   - NEVER play g3, f3, h3 when enemy queen/pieces are active on kingside
+   - Weight: 200+ (much higher than current 80)
+   - Must detect when kingside is under pressure
+
+2. **v40.26: BISHOP SACRIFICE DETECTION**
+   - Detect Bxg3, Bxf3, Bxh3 sacrifice patterns
+   - When opponent sacrifices bishop, there's ALWAYS a reason
+   - Must calculate forcing sequence after sacrifice
+
+3. **v40.26: KINGSIDE COLLAPSE PREVENTION**
+   - If g-pawn or f-pawn moves forward, check all consequences
+   - Detect when kingside shelter is being destroyed
+   - ABSOLUTE rejection of kingside-weakening moves under attack
+
+4. **v40.26: QUEEN ATTACKING PATTERN**
+   - When enemy queen is on g5/h5/h4, bot is under attack
+   - Must switch to defensive mode
+   - Only defensive/counterattacking moves allowed
+
+5. **v40.26: FORCED DEFENSE MODE**
+   - When kingside is under attack, enter "FORTRESS MODE"
+   - Only allow moves that defend the king
+   - Penalize ALL non-defensive moves
+
+6. **v40.26: DEEP SACRIFICE CALCULATION**
+   - When opponent offers piece (especially bishop), calculate WHY
+   - See 5+ moves of forcing line after sacrifice
+   - Reject moves that allow devastating sacrifices
+
+Let me implement v40.26 with these critical fixes.
+
+Observation: Your thought has been logged.

@@ -1,0 +1,104 @@
+Good, so the 37th session only had 1.txt. Let me now deeply analyze the recent game that the user provided and look at the current state of the code to understand what needs to be improved:
+Action: $ # Look at the current key functions and structure
+grep -n "v40\.\|function v40\|computeCombinedScore\|calculateMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -100
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.25 STRATEGIC MASTERY SUPREME
+3:// @description  TRUE AlphaZero Replica v40.25 - NO EARLY QUEEN TRADE - FORK DETECTION - PAWN RACE CALCULATION - PIECE PRESERVATION - NEVER LOSE MATERIAL FOR FREE!
+4:// @author       AlphaZero TRUE REPLICA v40.25 STRATEGIC MASTERY SUPREME EDITION
+14: * v40.11.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — TRANSCENDENT SUPREME EDITION
+26: * █    v40.6 ULTIMATE: TRUE PERSISTENT MCTS Tree Search, PUCT Selection (AlphaZero),      █
+834:    // v40.0.0: TRUE ALPHAZERO REPLICA — SUPERHUMAN BEAST
+843:    // v40.3: TRUE PERSISTENT MCTS — AlphaZero's Core (ULTIMATE EDITION)
+846:    v40MCTSSimulations: 50000,              // MASSIVE simulation count (10000→50000) v40.3
+847:    v40MCTSMaxDepth: 800,                   // Maximum tree depth (500→800) v40.3
+849:    v40FPUReduction: 0.20,                  // First Play Urgency reduction (0.25→0.20) v40.3
+852:    v40BackpropGamma: 0.999,                // Discount factor for backpropagation (0.998→0.999) v40.3
+854:    v40TreeReuseFraction: 0.98,             // Fraction of tree to reuse between moves (0.95→0.98) v40.3
+1011:    // v40.3.0: ULTIMATE SUPERHUMAN BEAST — NEW PARAMETERS
+1014:    // v40.3: ANTI-PASSIVITY SYSTEM — Forces Active Play
+1024:    // v40.3: DEEP HORIZON EVALUATION — True 30+ Move Planning
+1032:    // v40.3: ENHANCED MATING PATTERN LIBRARY
+1043:    // v40.3: COUNTERATTACK PRIORITY SYSTEM
+1051:    // v40.3: SPACE DOMINATION SYSTEM
+1059:    // v40.3: PIECE ACTIVITY SCORING
+1067:    // v40.3: INITIATIVE PRESERVATION
+1076:    // v40.4.0: GODLIKE ENHANCEMENTS — Addressing tactical blindspots
+1079:    // v40.4: DISCOVERED ATTACK/CHECK DETECTION — Critical for Nxg3+ → Nxe2+ patterns
+1086:    // v40.4: KNIGHT INVASION DETECTION — Prevent enemy knights from infiltrating
+1093:    // v40.4: OPENING PRINCIPLES — Enforce proper opening play
+1107:    // v40.4: QUEEN MATING PATTERNS — Enhanced Qxg2# type detection
+1113:    // v40.4: PAWN SHIELD INTEGRITY — Critical for king safety
+1121:    // v40.4: WEAK SQUARE COMPLEX — Detect color complex weaknesses
+1126:    // v40.4: TACTICAL DEPTH INCREASE
+1132:    // v40.5.0: CRITICAL TACTICAL BLINDSPOT FIXES — From Nimzowitsch Defense loss
+1135:    // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+1142:    // v40.5: HANGING PIECE DETECTION ENHANCEMENT — Prevent Bxb3 disasters
+1149:    // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+1156:    // v40.5: QUEEN TRADE ANALYSIS — Better understanding of queen exchanges
+1161:    // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+1167:    // v40.6 ULTIMATE: CRITICAL CENTER & TACTICAL BLINDSPOT FIXES
+1171:    // v40.6: CENTER PAWN PROTECTION — Prevent hanging center pawns
+1177:    // v40.6: PAWN TENSION RESOLUTION — Must recapture when pawn taken
+1183:    // v40.6: QUEEN RAID PREVENTION — Prevent enemy queen material raids
+1190:    // v40.6: TACTICAL PRIORITY — When tactics demand, override positional
+1196:    // v40.6: DEVELOPMENT SAFETY — Development must not create tactics
+1201:    // v40.6: IMMEDIATE THREAT RESPONSE — Must respond to threats
+1206:    // v40.6: ENHANCED 90% DOMINANCE — Make v40 ULTIMATE DOMINANT
+1210:    // v40.7 DIVINE: ABSOLUTE TACTICAL BLINDSPOT ELIMINATION
+1215:    // v40.7: RECAPTURE URGENCY — When material taken, MUST recapture or have reason
+1221:    // v40.7: PIECE ON ATTACKED SQUARE — Don't develop to square enemy can take
+1228:    // v40.7: MATERIAL HEMORRHAGE DETECTION — Detect when we're losing material chain
+1233:    // v40.7: ENEMY PAWN CAPTURE RESPONSE — When enemy pawn captures our piece
+1238:    // v40.7: ABSOLUTE BLUNDER CHECK — Final safety check before any move
+1243:    // v40.7: ENHANCED 95% DOMINANCE — Make v40 ABSOLUTELY DIVINE DOMINANT
+1247:    // v40.8 TRANSCENDENT: ANTI-PASSIVITY & EXCHANGE QUALITY SUPREME
+1252:    // v40.8: OPENING AGGRESSION — Prefer d4/e4 over d3/e3
+1258:    // v40.8: EXCHANGE QUALITY — Don't trade pieces that help opponent
+1264:    // v40.8: ACTIVE PIECE REQUIREMENT — All pieces must be active
+1270:    // v40.8: COUNTERPLAY GENERATION — Must create threats when attacked
+1276:    // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
+1282:    // v40.8: 97% TRANSCENDENT DOMINANCE — Make v40 ABSOLUTELY TRANSCENDENT
+1286:    // v40.9 OMNISCIENT: ATTACKED PIECE DETECTION & FORCED RESPONSE
+1292:    // v40.9: ATTACKED PIECE PRIORITY — MUST address attacked pieces
+1299:    // v40.9: PRE-MOVE THREAT SCAN — Check what's under attack BEFORE moving
+1305:    // v40.9: PIECE SAFETY ABSOLUTE — Never leave valuable pieces en prise
+1311:    // v40.9: FORCED MOVE DETECTION — Some situations REQUIRE specific responses
+1316:    // v40.9: 99% OMNISCIENT DOMINANCE — v40 is now ABSOLUTELY OMNISCIENT
+1320:    // v40.10 GODLIKE: ABSOLUTE OPENING ENFORCEMENT & SACRIFICIAL PATTERN DETECTION
+1325:    // v40.10: ABSOLUTE D4>D3 ENFORCEMENT — FINAL FIX
+1332:    // v40.10: GREEK GIFT SACRIFICE DEFENSE — Detect Bxh2+/Bxh7+ patterns
+1338:    // v40.10: KING HUNT DETECTION — Detect when king is being hunted
+1344:    // v40.10: SACRIFICIAL ATTACK PATTERN RECOGNITION
+1350:    // v40.10: CRITICAL EXCHANGE EVALUATION — Don't centralize enemy pieces
+1356:    // v40.10: MATING ATTACK AWARENESS — Detect impending mating attacks
+1362:    // v40.10: 100% GODLIKE DOMINANCE — v40 is now ABSOLUTELY GODLIKE
+1366:    // v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN DETECTION
+1372:    // v40.11: G-FILE ATTACK DETECTION — Detect enemy rooks doubling on g-file
+1378:    // v40.11: KINGSIDE ATTACK PATTERN RECOGNITION — Detect coordinated kingside attacks
+1385:    // v40.11: PASSIVE QUEENSIDE MOVE PENALTY — Don't play a3/b3/c3 when under attack
+1390:    // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
+1396:    // v40.11: QUEEN INFILTRATION ON KINGSIDE — Detect queen reaching dangerous squares
+1404:    // v40.11: PAWN STORM COUNTER — Detect and respond to f5/f4 pawn storms
+1412:    // v40.11: DEFEND KINGSIDE PRIORITY — When under attack, prioritize defense
+1419:    // v40.11: H-PAWN WEAKNESS DETECTION — h3/h6 pawn can become target
+1425:    // v40.11: G-PAWN WEAKNESS DETECTION — g3/g6 pawn can become target  
+1431:    // v40.11: 100% TRANSCENDENT SUPREME DOMINANCE
+1435:    // v40.12 PROACTIVE SUPREME: ATTACK PREVENTION CONFIG
+1437:    // Unlike v40.11 which was REACTIVE (detected attacks after setup)
+1440:    // v40.12: PROPHYLACTIC EXCHANGE EVALUATION
+1448:    // v40.12: PAWN STORM ANTICIPATION
+1456:    // v40.12: DON'T CREATE WEAKNESSES UNDER ATTACK
+1463:    // v40.12: PRESERVE KING SHELTER PIECES
+1470:    // v40.12: ATTACK TRAJECTORY PREDICTION
+1476:    // v40.12: QUEEN TRAP PREVENTION
+1482:    // v40.12: 100% PROACTIVE SUPREME DOMINANCE
+1483:    v40ProactiveSupremeDominance: 1.0,      // 100% v40.12 dominance
+1486:    // v40.13 ULTIMATE TACTICAL SUPREME: ZERO BLUNDER TACTICAL SYSTEM
+1492:    // v40.13: IMMEDIATE CAPTURE DETECTION — Before ANY move, check if it loses material
+1501:    // v40.13: RECAPTURE CHAIN CALCULATION — Check capture sequences
+1507:    // v40.13: PRE-MOVE SAFETY CHECK — Every move must pass safety check
+1512:    // v40.13: QUEEN INFILTRATION ABSOLUTE PREVENTION
+1519:    // v40.13: BASIC MATERIAL AWARENESS — Count material before/after
+1524:    // v40.13: OPENING BLUNDER PREVENTION
+1530:    // v40.13: ABSOLUTE ZERO TACTICAL OVERSIGHT
+1536:    // v40.13: 100% ULTIMATE TACTICAL SUPREME DOMINANCE
+Exit code: 0

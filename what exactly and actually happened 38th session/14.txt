@@ -1,0 +1,12 @@
+I see the issue. The detection seems okay, but the real problem in the game was:
+1. Black played Qh5 (queen threatening h-file)
+2. White played g3 (creating target)
+
+The function checks for enemy queen being "active" but it might not be detecting when the queen is specifically threatening kingside invasion via h-file.
+
+Let me now create the comprehensive v40.26 implementation. I'll add new CONFIG settings and functions:
+Action: $ # Find the last CONFIG entry and where v40.25 functions end
+grep -n "v40StrategicMasterySupremeDominance\|// v40.26\|function v40InitiativePreservationEval" "/app/Lichess Bot-AlphaZero-Pure.user.js" | tail -20
+Observation: 7108:function v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) {
+19845:function v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

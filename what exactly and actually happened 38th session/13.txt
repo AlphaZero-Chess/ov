@@ -1,0 +1,62 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+18472|function isEnemyQueenActiveV40_23(board, enemyColor, ourColor) {
+18473|    const enemyQueenChar = enemyColor === 'w' ? 'Q' : 'q';
+18474|    const ourKing = findKing(board, ourColor);
+18475|    
+18476|    for (const [sq, piece] of board) {
+18477|        if (piece === enemyQueenChar) {
+18478|            const rank = parseInt(sq[1]);
+18479|            const file = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+18480|            
+18481|            // Queen is active if:
+18482|            // 1. On an open file
+18483|            // 2. Near the center
+18484|            // 3. In an attacking position
+18485|            const isCenter = file >= 2 && file <= 5;
+18486|            const isAdvanced = (enemyColor === 'w' && rank >= 4) || (enemyColor === 'b' && rank <= 5);
+18487|            
+18488|            // Check distance to our king
+18489|            if (ourKing) {
+18490|                const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+18491|                const kingRank = parseInt(ourKing[1]);
+18492|                const distToKing = Math.abs(file - kingFile) + Math.abs(rank - kingRank);
+18493|                
+18494|                if (distToKing <= 4) {
+18495|                    return true; // Queen is close to our king
+18496|                }
+18497|            }
+18498|            
+18499|            if (isCenter || isAdvanced) {
+18500|                return true;
+18501|            }
+18502|        }
+18503|    }
+18504|    
+18505|    return false;
+18506|}
+18507|
+18508|/**
+18509| * v40.23 Helper: Does enemy have e-file pressure?
+18510| */
+18511|function hasEFilePressureV40_23(board, enemyColor) {
+18512|    const isEnemyWhite = enemyColor === 'w';
+18513|    
+18514|    for (const [sq, piece] of board) {
+18515|        if (!piece) continue;
+18516|        const pieceIsWhite = piece === piece.toUpperCase();
+18517|        if (pieceIsWhite !== isEnemyWhite) continue;
+18518|        
+18519|        const pieceType = piece.toLowerCase();
+18520|        if (pieceType !== 'r' && pieceType !== 'q') continue;
+18521|        
+18522|        // Is this rook/queen on e-file?
+18523|        if (sq[0] === 'e') {
+18524|            return true;
+18525|        }
+18526|    }
+18527|    
+18528|    return false;
+18529|}
+18530|

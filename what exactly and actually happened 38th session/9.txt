@@ -1,0 +1,11 @@
+Now let me find the current v40.25 functions and then add v40.26:
+Action: $ # Find where the v40.25 functions are defined
+grep -n "function v40NoEarlyQueenTradeEval\|function v40EnhancedForkDetection\|function v40PawnRaceCalculation\|function v40PiecePreservationAbsolute\|function v40InitiativePreservationEval\|function v40F3G3ProhibitionEval" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 7108:function v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) {
+18164:function v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+19480:function v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) {
+19563:function v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) {
+19635:function v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) {
+19771:function v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) {
+19845:function v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

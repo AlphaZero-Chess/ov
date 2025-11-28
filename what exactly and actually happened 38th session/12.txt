@@ -1,0 +1,5 @@
+I see the issue! The penalty is -3 billion but multiplied by 80.0 becomes -240 billion. This should be huge... but the game still played g3. Let me check if there's an issue with how the function is detecting the attack. The main issue is that when the game played g3 (move 25: Qh5 then g3), the enemy queen was on g5 attacking, but then went to h5. Let me look at the hasEnemyActivePiecesV40_23 helper function:
+Action: $ grep -n "function hasEnemyActivePiecesV40_23\|function isEnemyQueenActiveV40_23" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 18442:function hasEnemyActivePiecesV40_23(board, enemyColor) {
+18472:function isEnemyQueenActiveV40_23(board, enemyColor, ourColor) {
+Exit code: 0

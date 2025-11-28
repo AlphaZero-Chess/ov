@@ -1,0 +1,44 @@
+Let me find the end of the v40.25 helper functions to add v40.26 functions:
+Action: $ # Find the end of v40.25 helper functions
+grep -n "v40.25\|// v40.26\|// ═══.*MCTS\|// ═══.*v3[789]\|function v38\|class V38" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -40
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.25 STRATEGIC MASTERY SUPREME
+3:// @description  TRUE AlphaZero Replica v40.25 - NO EARLY QUEEN TRADE - FORK DETECTION - PAWN RACE CALCULATION - PIECE PRESERVATION - NEVER LOSE MATERIAL FOR FREE!
+4:// @author       AlphaZero TRUE REPLICA v40.25 STRATEGIC MASTERY SUPREME EDITION
+1910:    // v40.25: STRATEGIC MASTERY SUPREME
+1916:    // v40.25: NO EARLY QUEEN TRADE — Don't trade queens unless winning!
+1926:    // v40.25: FORK DETECTION ENHANCED — Knights are deadly!
+1936:    // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+1947:    // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+1955:    // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+1964:    // v40.26: ABSOLUTE KINGSIDE FORTRESS SUPREME — THE FINAL DEFENSE
+1970:    // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+1979:    // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+1987:    // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+1995:    // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!
+2004:    // v40.26: DEEP SACRIFICE CALCULATION — Calculate forcing lines after sacrifice!
+2012:    // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+2021:    // v40.26: 100% ABSOLUTE KINGSIDE FORTRESS SUPREME DOMINANCE
+2143:class V38MCTSNode {
+19532:// v40.25: STRATEGIC MASTERY SUPREME FUNCTIONS
+19537: * v40.25: NO EARLY QUEEN TRADE EVALUATION
+19620: * v40.25: ENHANCED FORK DETECTION
+19692: * v40.25: PAWN RACE CALCULATION
+19829: * v40.25: PIECE PRESERVATION ABSOLUTE
+19903: * v40.25: INITIATIVE PRESERVATION EVALUATION
+19969:// v40.25 HELPER FUNCTIONS
+19972:/** v40.25: Count total pawns on board */
+19981:/** v40.25: Check if center pawns are blocked */
+19999:/** v40.25: Calculate simple initiative score */
+20026:/** v40.25: Calculate material balance */
+20046:/** v40.25: Check if queen trade activates rooks */
+20073:/** v40.25: Find enemy knight fork opportunities */
+20125:/** v40.25: Find new fork squares allowed by move */
+20142:/** v40.25: Check for discovered fork pattern */
+20148:/** v40.25: Check for Nxf3+ Nxd2 pattern */
+20206:/** v40.25: Count total material on board */
+20220:/** v40.25: Find passed pawns */
+20259:/** v40.25: Check if king can intercept passed pawn (rule of the square) */
+20279:/** v40.25: Check if move is passive */
+20298:/** v40.25: Check if move forces defensive response */
+20325:/** v40.25: Get squares a piece attacks */
+Exit code: 0

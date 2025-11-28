@@ -1,0 +1,5 @@
+
+Action: $ # Find where computeCombinedScore function is
+grep -n "function computeCombinedScore" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 35322:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+Exit code: 0

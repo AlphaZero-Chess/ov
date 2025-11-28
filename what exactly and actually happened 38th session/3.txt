@@ -1,0 +1,153 @@
+Good, no syntax errors. Let me continue seeing more CONFIG and the actual functions:
+Action: $ grep -n "v40\.\|function v40\|computeCombinedScore\|calculateMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | tail -150
+Observation: 35488:                // v40.8: COUNTERPLAY GENERATION — Must create counterplay when attacked
+35491:                // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
+35495:                // v40.9 OMNISCIENT: ATTACKED PIECE DETECTION & FORCED RESPONSE
+35500:                // v40.9: ATTACKED PIECE PRIORITY — CRITICAL: Must address attacked pieces
+35503:                // v40.9: PRE-MOVE THREAT SCAN — Scan for threats before moving
+35506:                // v40.9: PIECE SAFETY ABSOLUTE — Never leave valuable pieces hanging
+35509:                // v40.9: FORCED MOVE DETECTION — Must make forced moves when required
+35513:                // v40.10 GODLIKE: ABSOLUTE OPENING ENFORCEMENT & SACRIFICE DEFENSE
+35518:                // v40.10: ABSOLUTE D4>D3 ENFORCEMENT — DEATH PENALTY for passive opening
+35521:                // v40.10: GREEK GIFT DEFENSE — Detect Bxh2+/Bxh7+ sacrifices
+35524:                // v40.10: KING HUNT DETECTION — Detect when king is being hunted
+35527:                // v40.10: CRITICAL EXCHANGE — Don't centralize enemy pieces
+35530:                // v40.10: MATING ATTACK AWARENESS — Detect impending mating attacks
+35534:                // v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN DETECTION
+35540:                // v40.11: G-FILE ATTACK DETECTION — Detect enemy rooks doubling on g-file
+35543:                // v40.11: KINGSIDE ATTACK PATTERN — Detect coordinated kingside attacks
+35546:                // v40.11: PASSIVE QUEENSIDE MOVE — Don't play a3/b3/c3 when under attack
+35549:                // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
+35552:                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms (v40.11 version)
+35555:                // v40.11: DEFEND KINGSIDE PRIORITY — Prioritize kingside defense when attacked
+35558:                // v40.11: KINGSIDE PAWN WEAKNESS — Detect h3/g3 pawn weaknesses
+35562:                // v40.12 PROACTIVE SUPREME: ATTACK PREVENTION (not just detection)
+35564:                // v40.11 was REACTIVE - v40.12 is PROACTIVE - prevents setup!
+35567:                // v40.12: PROPHYLACTIC EXCHANGE — Don't open files toward king!
+35570:                // v40.12: PAWN STORM ANTICIPATION — See storm BEFORE it arrives
+35573:                // v40.12: DON'T CREATE WEAKNESSES — h3/g3 under attack is FATAL
+35576:                // v40.12: PRESERVE KING SHELTER — Keep defenders near king
+35579:                // v40.12: ATTACK TRAJECTORY — See where pieces are AIMING
+35582:                // v40.12: QUEEN TRAP PREVENTION — Drive away infiltrating queen
+35586:                // v40.13 ULTIMATE TACTICAL SUPREME: ZERO BLUNDER TACTICAL SYSTEM
+35591:                // v40.13: IMMEDIATE MATERIAL LOSS — Check if move loses material IMMEDIATELY
+35594:                // v40.13: CAPTURE CHAIN ANALYSIS — Calculate result of capture sequences
+35597:                // v40.13: QUEEN INFILTRATION ABSOLUTE — Don't let queen eat pieces freely
+35600:                // v40.13: PRE-MOVE SAFETY CHECK — Comprehensive safety verification
+35603:                // v40.13: OPENING BLUNDER PREVENTION — No blunders in opening
+35606:                // v40.13: SIMPLE THREAT DETECTION — Don't miss simple threats
+35610:                // v40.14 ABSOLUTE ZERO BLUNDER SUPREME: THE FINAL SAFETY NET
+35615:                // v40.14: LOOK-AHEAD BLUNDER CHECK — Simulate opponent's best response
+35618:                // v40.14: TRIPLE-CHECK VERIFICATION — Run blunder check 3 times
+35621:                // v40.14: FAIL-SAFE BLUNDER REJECTION — Final safety check
+35630:                // v40.15 PIECE PRESERVATION SUPREME: DON'T ALLOW UNNECESSARY EXCHANGES
+35635:                // v40.15: PIECE PRESERVATION — Penalize moves that allow ANY trade
+35638:                // v40.15: ALL PIECES SAFETY CHECK — Ensure ALL pieces are safe after move
+35641:                // v40.15: PROPHYLAXIS MOVE — Bonus for moves that maintain defense
+35645:                // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME: NEVER ALLOW KINGSIDE DESTRUCTION
+35650:                // v40.16: FILE OPENING TOWARD KING — NEVER open files toward castled king!
+35653:                // v40.16: PAWN STORM DETECTION — See storms BEFORE they destroy you
+35656:                // v40.16: QUEEN INFILTRATION PATH — Detect Qg4-Qxg3-Qh3 sequences
+35659:                // v40.16: 3-PLY DEEP LOOK-AHEAD — Simulate forcing sequences
+35662:                // v40.16: KINGSIDE PAWN SHELTER — Never allow shelter destruction
+35665:                // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
+35668:                // v40.17: ABSOLUTE RECAPTURE — NEVER leave free pieces on the board
+35671:                // v40.17: IMMEDIATE CAPTURE DETECTION — Don't allow opponent free captures
+35674:                // v40.17: MATERIAL AWARENESS — Material is KING
+35677:                // v40.17: ANTI-PAWN-GRAB DEFENSE — Don't let pawns be taken for free
+35680:                // v40.18: KING ESCAPE ROUTE — Ensure king always has escape squares
+35683:                // v40.18: ROOK INVASION DETECTION — Detect enemy rooks on 2nd/7th rank
+35686:                // v40.18: BACK RANK WEAKNESS — Detect back rank mate threats
+35689:                // v40.18: DISCOVERED ATTACK DETECTION — Don't allow discovered attacks
+35692:                // v40.19: MATING PATTERN RECOGNITION — Detect Rook+Queen mating patterns
+35695:                // v40.19: KING CORRIDOR DEFENSE — Protect king corridor squares
+35698:                // v40.19: LUFT CREATION — Ensure king has escape squares
+35701:                // v40.19: WINNING POSITION MANAGEMENT — Don't throw away wins
+35705:                // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME
+35709:                // v40.20: PROMOTION THREAT DETECTION — Calculate ALL promotion lines 8+ moves ahead
+35712:                // v40.20: FORCING SEQUENCE CALCULATOR — See ALL forcing sequences
+35715:                // v40.20: KING WEAKENING PENALTY — NEVER weaken king under attack
+35718:                // v40.20: PIECE SAFETY ABSOLUTE — Never allow pieces to become hanging after move
+35722:                // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME
+35726:                // v40.21: DEEP PAWN CHAIN — Calculate FULL pawn promotion sequences
+35729:                // v40.21: FORCING LINE DETECTION — Calculate ALL forcing sequences
+35732:                // v40.21: QUIET MOVE DANGER — Innocent moves that lose
+35736:                // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME
+35740:                // v40.22: KNIGHT INFILTRATION — Detect knight attacks near king
+35743:                // v40.22: CHECK SEQUENCE DETECTION — Detect perpetual/mating checks
+35746:                // v40.22: MUST RESPOND TO THREAT — Don't ignore threats!
+35750:                // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME
+35755:                // v40.23: ROOK LIFT DETECTION — Detect rook lift mating patterns (Rf5-Rh5)
+35758:                // v40.23: QUEEN H-FILE INVASION — Detect queen mating on h-file (Qh4-Qxh2#)
+35761:                // v40.23: F3/G3 ABSOLUTE PROHIBITION — NEVER weaken kingside!
+35764:                // v40.23: MATING ATTACK PATTERN RECOGNITION — Specific mating patterns
+35767:                // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
+35771:                // v40.24 ABSOLUTE QUEEN SAFETY SUPREME
+35777:                // v40.24: ABSOLUTE QUEEN SAFETY — NEVER ignore queen being attacked!
+35780:                // v40.24: MUST DEFEND QUEEN — If queen attacked, move MUST defend it!
+35783:                // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+35786:                // v40.24: PRE-MOVE QUEEN SAFETY — Check queen safety BEFORE every move
+35790:                // v40.25 STRATEGIC MASTERY SUPREME: THE ULTIMATE FIXES
+35796:                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+35799:                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+35802:                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+35805:                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+35808:                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+35811:                // v40.25: COMBINED v40 SCORE — 100% STRATEGIC MASTERY SUPREME INFLUENCE
+35818:                               // v40.4 additions:
+35821:                               // v40.5 additions:
+35823:                               // v40.6 ULTIMATE additions:
+35826:                               // v40.7 DIVINE additions:
+35828:                               // v40.8 TRANSCENDENT additions:
+35831:                               // v40.9 OMNISCIENT additions:
+35833:                               // v40.10 GODLIKE additions:
+35835:                               // v40.11 TRANSCENDENT SUPREME additions:
+35838:                               // v40.12 PROACTIVE SUPREME additions:
+35841:                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+35844:                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+35846:                               // v40.15 PIECE PRESERVATION SUPREME additions:
+35848:                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+35851:                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+35853:                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+35855:                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+35857:                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+35859:                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+35861:                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+35863:                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+35865:                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+35867:                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+35872:                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.25 STRATEGIC MASTERY SUPREME EVALUATION`);
+35974:        // v40.10: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (100%)
+35996:    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+35997:    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+36290:                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+36778:// ENGINE INITIALIZATION - v40.4 GODLIKE ROBUST INITIALIZATION
+36782: * v40.4: ROBUST ENGINE INITIALIZATION WITH RETRY AND FALLBACK
+36795:            console.log(`⏳ [v40.4] Waiting for Stockfish to load... (attempt ${engineInitAttempts}/${MAX_ENGINE_INIT_ATTEMPTS})`);
+36799:            console.error('❌ [v40.4] CRITICAL: Stockfish failed to load after maximum attempts');
+36800:            console.error('❌ [v40.4] Please check the @require URL or try reloading the page');
+36801:            console.log('📋 [v40.4] Attempting fallback initialization via Web Worker...');
+36817:        // UCI options - TRUE ALPHAZERO v40.4 GODLIKE MAXIMUM POWER
+36827:        console.log("🤖 LICHESS BOT v40.4.0 - TRUE ALPHAZERO GODLIKE REPLICA");
+36833:        console.log("🔥 v40.4 FEATURES: Opening Principles, Discovered Attack Detection");
+36834:        console.log("⚔️ v40.4 FEATURES: Knight Invasion Penalties, Enhanced Queen Mating");
+36835:        console.log("🏆 v40.4 FEATURES: Pawn Shield Integrity, 80% v40 Dominance");
+36839:        console.log("✅ [v40.4] Stockfish engine initialized successfully!");
+36842:        console.error(`❌ [v40.4] Engine initialization error: ${error.message}`);
+36844:            console.log(`⏳ [v40.4] Retrying... (attempt ${engineInitAttempts}/${MAX_ENGINE_INIT_ATTEMPTS})`);
+36847:            console.error('❌ [v40.4] All initialization attempts failed');
+36854: * v40.4: FALLBACK STOCKFISH INITIALIZATION
+36858:    console.log('🔄 [v40.4] Attempting fallback Stockfish initialization...');
+36871:            console.error('❌ [v40.4] All fallback URLs exhausted. Please manually reload the page.');
+36876:        console.log(`🔄 [v40.4] Trying fallback URL ${urlIndex + 1}/${fallbackUrls.length}: ${url}`);
+36881:            console.log(`✅ [v40.4] Fallback script loaded from ${url}`);
+36887:            console.warn(`⚠️ [v40.4] Failed to load from ${url}`);
+36897:        console.log('🔄 [v40.4] Trying Web Worker approach...');
+36901:            console.log('✅ [v40.4] WebAssembly supported - attempting WASM Stockfish');
+36904:        console.log('⚠️ [v40.4] Web Worker approach not available');
+37124:    debugLog("[SCHEDULE]", `✅ All checks passed for ${colorName}, proceeding to calculateMove()`);
+37129:    calculateMove();
+37468:function calculateMove() {
+37496:        setTimeout(() => calculateMove(), Math.random() * 500 + 200);
+37779:                calculateMove();
+Exit code: 0

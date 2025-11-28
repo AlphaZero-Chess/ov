@@ -1,0 +1,78 @@
+Now I understand the structure. I'll add the v40.26 CONFIG right after v40.25 and then add the functions. Let me create a comprehensive v40.26 implementation:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+    v40InitiativePreservationEnabled: true,
+    v40TradeThatLosesInitiativePenalty: -12000000000, // Trade that loses initiative
+    v40PassiveMoveInActivePosn: -8000000000,        // Passive move when should be active
+    v40InitiativeGainBonus: 6000000000,             // Move that gains initiative
+    v40TempoGainInAttackBonus: 4000000000,          // Tempo gain during attack
+    v40ForceOpponentDefensiveBonus: 7000000000,     // Force opponent to defend
+};" --new-str "    // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+    v40InitiativePreservationEnabled: true,
+    v40TradeThatLosesInitiativePenalty: -12000000000, // Trade that loses initiative
+    v40PassiveMoveInActivePosn: -8000000000,        // Passive move when should be active
+    v40InitiativeGainBonus: 6000000000,             // Move that gains initiative
+    v40TempoGainInAttackBonus: 4000000000,          // Tempo gain during attack
+    v40ForceOpponentDefensiveBonus: 7000000000,     // Force opponent to defend
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.26: ABSOLUTE KINGSIDE FORTRESS SUPREME — THE FINAL DEFENSE
+    // From game analysis: Bot played g3 while Qh5 threatened! Then f3 made it worse!
+    // Bxg3 sacrifice destroyed everything! NEVER weaken kingside under attack!
+    // THIS IS THE ULTIMATE DEFENSIVE FIX — ABSOLUTE FORTRESS MODE!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.26: ABSOLUTE G3/F3/H3 PROHIBITION — NEVER weaken when threatened!
+    v40AbsoluteKingsideProhibitionEnabled: true,
+    v40G3UnderQueenThreatPenalty: -500000000000,    // g3 when enemy queen threatens h-file
+    v40F3UnderQueenThreatPenalty: -600000000000,    // f3 when enemy queen threatens g/h file
+    v40H3UnderQueenThreatPenalty: -400000000000,    // h3 when enemy queen is active
+    v40KingsidePawnWeakenPenalty: -300000000000,    // ANY kingside pawn push under attack
+    v40G3WithEnemyBishopPenalty: -450000000000,     // g3 with enemy dark-squared bishop
+    v40F3WithEnemyKnightPenalty: -400000000000,     // f3 with enemy knight that can reach g3
+    
+    // v40.26: BISHOP SACRIFICE DETECTION — See Bxg3/Bxh2 sacrifices BEFORE they happen!
+    v40BishopSacrificeDetectionEnabled: true,
+    v40BxG3SacrificeThreatPenalty: -800000000000,   // Bxg3 sacrifice is possible after move
+    v40BxH2SacrificeThreatPenalty: -700000000000,   // Bxh2+ Greek Gift is possible
+    v40BxF3SacrificeThreatPenalty: -600000000000,   // Bxf3 destroys king shelter
+    v40SacrificeLeadsToMatePenalty: -1000000000000, // Sacrifice leads to forced mate
+    v40IgnoreSacrificeThreatPenalty: -500000000000, // Move that ignores sacrifice threat
+    
+    // v40.26: FORCED DEFENSE MODE — When under kingside attack, ONLY defensive moves!
+    v40ForcedDefenseModeEnabled: true,
+    v40NonDefensiveMoveUnderAttackPenalty: -400000000000, // Non-defensive move when kingside under attack
+    v40DefensiveMoveBonus: 50000000000,             // Bonus for moves that defend kingside
+    v40KingsideReinforcementBonus: 60000000000,     // Bringing pieces to defend king
+    v40CounterattackBonus: 40000000000,             // Counterattack that relieves pressure
+    v40FortressMoveBonus: 70000000000,              // Move that creates fortress
+    
+    // v40.26: QUEEN ON H5/G5/H4/G4 DETECTION — Attack is IMMINENT!
+    v40QueenKingsideThreatEnabled: true,
+    v40EnemyQueenOnH5Penalty: -200000000000,        // Enemy queen on h5 is DANGER
+    v40EnemyQueenOnG5Penalty: -180000000000,        // Enemy queen on g5 threatens
+    v40EnemyQueenOnH4Penalty: -250000000000,        // Enemy queen on h4 is CRITICAL
+    v40EnemyQueenOnG4Penalty: -220000000000,        // Enemy queen on g4 is SERIOUS
+    v40QueenAndBishopOnKingsidePenalty: -350000000000, // Coordinated Q+B attack
+    v40QueenAndRookOnKingsidePenalty: -400000000000,   // Q+R mating pattern setup
+    
+    // v40.26: DEEP SACRIFICE CALCULATION — Calculate forcing lines after sacrifice!
+    v40DeepSacrificeCalcEnabled: true,
+    v40SacrificeCalcDepth: 8,                       // Calculate 8 moves after sacrifice
+    v40ForcingLineMateFoundPenalty: -1500000000000, // Mate found in forcing line
+    v40ForcingLineQueenWinPenalty: -800000000000,   // Queen win found in forcing line
+    v40ForcingLineMaterialWinPenalty: -500000000000, // Material win after sacrifice
+    v40SacrificeIgnoredBlunderPenalty: -900000000000, // Ignored sacrifice = BLUNDER
+    
+    // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+    v40KingsideCollapseDetectionEnabled: true,
+    v40KingsidePawnsDestroyedPenalty: -600000000000, // Kingside pawns being destroyed
+    v40GFileOpenToKingPenalty: -450000000000,       // G-file opens toward our king
+    v40HFileOpenToKingPenalty: -500000000000,       // H-file opens toward our king
+    v40FFileOpenToKingPenalty: -400000000000,       // F-file opens toward our king
+    v40NoKingsidePawnShieldPenalty: -550000000000,  // Lost all kingside pawn shelter
+    v40KingsideWeaknessCreatedPenalty: -350000000000, // Move creates kingside weakness
+    
+    // v40.26: 100% ABSOLUTE KINGSIDE FORTRESS SUPREME DOMINANCE
+    v40AbsoluteKingsideFortressDominance: 1.0,      // 100% v40.26 dominance
+};"
+Observation: Edit was successful.

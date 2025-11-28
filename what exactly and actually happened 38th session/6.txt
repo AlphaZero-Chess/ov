@@ -1,0 +1,382 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+35322|function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+35323|    try {
+35324|        // Get engine Q-value (normalized)
+35325|        const engine_Q = engineScore;
+35326|        
+35327|        // Get rollout Q-value (normalized, default to engine if not provided)
+35328|        const rollout_Q = rolloutScore !== undefined ? rolloutScore : engineScore;
+35329|        
+35330|        // Get policy prior (softmax of MultiPV)
+35331|        const policyPrior = computePolicyPrior(move, alternatives);
+35332|        
+35333|        // Normalize policy prior to centipawn bonus scale (-50..+50)
+35334|        // Higher probability = positive bonus, lower = negative
+35335|        const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
+35336|        
+35337|        // ═══════════════════════════════════════════════════════════════════
+35338|        // v40.1.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION — PARADIGM SHIFT
+35339|        // CRITICAL: v40 now has 55% DOMINANT INFLUENCE — this IS the superhuman
+35340|        // Add v40's deep positional/strategic/tactical evaluation
+35341|        // ═══════════════════════════════════════════════════════════════════
+35342|        let v40Bonus = 0;
+35343|        let v40DeepScore = 0;
+35344|        let v40MatingNetPenalty = 0;
+35345|        let v40FileControlBonus = 0;
+35346|        let v40InitiativeBonus = 0;
+35347|        
+35348|        if (CONFIG.v40Enabled && fen) {
+35349|            try {
+35350|                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+35351|                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+35352|                
+35353|                // v40.3: ULTIMATE Enhanced deep evaluations — MAXIMUM WEIGHTS
+35354|                const board = parseFenToBoard(fen);
+35355|                const activeColor = fen.split(' ')[1];
+35356|                const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+35357|                
+35358|                // v40.3: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+35359|                // CRITICAL: Increased to 1.5 — mating nets MUST be absolutely respected
+35360|                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 1.5;
+35361|                
+35362|                // v40.3: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+35363|                // CRITICAL: Increased to 1.0 — file control is CRUCIAL
+35364|                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 1.0;
+35365|                
+35366|                // v40.3: INITIATIVE TRACKING (prevents initiative collapse)
+35367|                // CRITICAL: Increased to 1.2 — initiative loss = position loss
+35368|                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 1.2;
+35369|                
+35370|                // v40.3: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+35371|                // CRITICAL: Multiplied by 2.0 — queen movement must be HEAVILY penalized
+35372|                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) * 2.0;
+35373|                
+35374|                // v40.3: PROPHYLACTIC BONUS (preventing opponent's plans)
+35375|                const prophylacticBonus = v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+35376|                
+35377|                // v40.3: ROOK INFILTRATION DETECTION
+35378|                const rookInfiltrationPenalty = v40RookInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+35379|                
+35380|                // v40.3: KING SAFETY CORRIDOR
+35381|                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.9;
+35382|                
+35383|                // v40.3 NEW: ANTI-PASSIVITY SYSTEM — Forces active play
+35384|                const antiPassivityBonus = v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+35385|                
+35386|                // v40.3 NEW: DEEP HORIZON EVALUATION — True 30+ move planning
+35387|                const deepHorizonBonus = v40DeepHorizonEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+35388|                
+35389|                // v40.3 NEW: SPACE DOMINATION — Territory control
+35390|                const spaceDominationBonus = v40SpaceDominationEvaluation(fen, move, board, activeColor) * 0.5;
+35391|                
+35392|                // v40.3 NEW: COUNTERATTACK PRIORITY — Active defense is best defense
+35393|                const counterattackBonus = v40CounterattackEvaluation(fen, move, board, activeColor, moveNumber) * 0.7;
+35394|                
+35395|                // v40.3 NEW: INITIATIVE PRESERVATION — Never lose the initiative
+35396|                const initiativePreservationBonus = v40InitiativePreservationEvaluation(fen, move, board, activeColor, moveNumber) * 0.6;
+35397|                
+35398|                // ═══════════════════════════════════════════════════════════════════
+35399|                // v40.4 GODLIKE: NEW TACTICAL & POSITIONAL BLINDSPOT PREVENTION
+35400|                // ═══════════════════════════════════════════════════════════════════
+35401|                
+35402|                // v40.4: OPENING PRINCIPLES — Enforce principled play (prevents d3 disasters)
+35403|                const openingPrinciplesScore = v40OpeningPrinciplesEvaluation(fen, move, board, activeColor, moveNumber) * 0.9;
+35404|                
+35405|                // v40.4: ENHANCED DISCOVERED ATTACK DETECTION — Prevents Nxg3+ type blindspots
+35406|                const discoveredAttackPenalty = v40EnhancedDiscoveredAttackDetection(fen, move, board, activeColor) * 1.0;
+35407|                
+35408|                // v40.4: KNIGHT INVASION PENALTY — Prevent enemy knight infiltration
+35409|                const knightInvasionPenalty = v40KnightInvasionPenalty(fen, move, board, activeColor) * 0.8;
+35410|                
+35411|                // v40.4: ENHANCED QUEEN MATING PATTERNS — Detect Qxg2# type mates
+35412|                const queenMatingPenalty = v40EnhancedQueenMatingPatterns(fen, move, board, activeColor) * 0.9;
+35413|                
+35414|                // v40.4: PAWN SHIELD INTEGRITY — Critical for king safety
+35415|                const pawnShieldScore = v40PawnShieldIntegrityEval(fen, move, board, activeColor) * 0.7;
+35416|                
+35417|                // ═══════════════════════════════════════════════════════════════════
+35418|                // v40.5 TRANSCENDENT: CRITICAL TACTICAL BLINDSPOT FIXES
+35419|                // Addresses: Qxb2 queen raids, hanging pieces, king corner traps, check sequences
+35420|                // ═══════════════════════════════════════════════════════════════════
+35421|                
+35422|                // v40.5: QUEEN INFILTRATION DETECTION — Prevent Qxb2 type disasters
+35423|                const queenInfiltrationScore = v40QueenInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+35424|                
+35425|                // v40.5: ENHANCED HANGING PIECE DETECTION — Prevent material losses
+35426|                const hangingPieceScore = v40EnhancedHangingPieceDetection(fen, move, board, activeColor) * 1.2;
+35427|                
+35428|                // v40.5: KING CORNER SAFETY — Prevent h1/h2 mate traps
+35429|                const kingCornerScore = v40KingCornerSafetyEval(fen, move, board, activeColor) * 0.9;
+35430|                
+35431|                // v40.5: CHECK SEQUENCE DETECTION — Prevent forcing sequences leading to mate
+35432|                const checkSequenceScore = v40CheckSequenceDetection(fen, move, board, activeColor) * 1.0;
+35433|                
+35434|                // ═══════════════════════════════════════════════════════════════════
+35435|                // v40.6 ULTIMATE: CRITICAL CENTER & TACTICAL BLINDSPOT FIXES
+35436|                // Addresses: Ne5 hanging d4, Qxd4, Qxb2 queen raid disasters
+35437|                // ═══════════════════════════════════════════════════════════════════
+35438|                
+35439|                // v40.6: CENTER PAWN PROTECTION — Prevent hanging center pawns (d4/d5/e4/e5)
+35440|                const centerPawnScore = v40CenterPawnProtection(fen, move, board, activeColor) * 1.5;
+35441|                
+35442|                // v40.6: PAWN TENSION RESOLUTION — Must recapture when pawn taken
+35443|                const pawnTensionScore = v40PawnTensionResolution(fen, move, board, activeColor, lastOpponentMove) * 1.3;
+35444|                
+35445|                // v40.6: QUEEN RAID PREVENTION — Prevent enemy queen material raids
+35446|                const queenRaidScore = v40QueenRaidPrevention(fen, move, board, activeColor) * 1.4;
+35447|                
+35448|                // v40.6: TACTICAL PRIORITY OVERRIDE — Tactics > Positional when needed
+35449|                const tacticalPriorityScore = v40TacticalPriorityOverride(fen, move, board, activeColor, moveNumber) * 1.2;
+35450|                
+35451|                // v40.6: DEVELOPMENT SAFETY — Development must not create tactics
+35452|                const devSafetyScore = v40DevelopmentSafetyCheck(fen, move, board, activeColor, moveNumber) * 1.1;
+35453|                
+35454|                // v40.6: IMMEDIATE THREAT RESPONSE — Must respond to threats
+35455|                const threatResponseScore = v40ImmediateThreatResponse(fen, move, board, activeColor, lastOpponentMove) * 1.2;
+35456|                
+35457|                // ═══════════════════════════════════════════════════════════════════
+35458|                // v40.7 DIVINE: ABSOLUTE TACTICAL BLINDSPOT ELIMINATION
+35459|                // Addresses: Nc3 to attacked square, failure to recapture, material hemorrhage
+35460|                // ═══════════════════════════════════════════════════════════════════
+35461|                
+35462|                // v40.7: RECAPTURE URGENCY — MUST recapture when material taken
+35463|                const recaptureUrgencyScore = v40RecaptureUrgency(fen, move, board, activeColor, lastOpponentMove) * 1.5;
+35464|                
+35465|                // v40.7: PIECE ON ATTACKED SQUARE — Don't move pieces to attacked squares
+35466|                const pieceOnAttackedScore = v40PieceOnAttackedSquareDetection(fen, move, board, activeColor) * 1.5;
+35467|                
+35468|                // v40.7: MATERIAL HEMORRHAGE — Detect moves leading to material loss chain
+35469|                const hemorrhageScore = v40MaterialHemorrhageDetection(fen, move, board, activeColor) * 1.3;
+35470|                
+35471|                // v40.7: ABSOLUTE BLUNDER CHECK — Final safety verification
+35472|                const blunderCheckScore = v40AbsoluteBlunderCheck(fen, move, board, activeColor) * 2.0;
+35473|                
+35474|                // ═══════════════════════════════════════════════════════════════════
+35475|                // v40.8 TRANSCENDENT: ANTI-PASSIVITY & EXCHANGE QUALITY SUPREME
+35476|                // Addresses: d3 passive moves, Qc1 passive queen, bad Nxd5 exchanges
+35477|                // ═══════════════════════════════════════════════════════════════════
+35478|                
+35479|                // v40.8: OPENING AGGRESSION — Prefer d4/e4 over passive d3/e3
+35480|                const openingAggressionScore = v40OpeningAggressionEval(fen, move, board, activeColor, moveNumber) * 1.5;
+35481|                
+35482|                // v40.8: EXCHANGE QUALITY — Don't trade pieces that help opponent
+35483|                const exchangeQualityScore = v40ExchangeQualityEval(fen, move, board, activeColor) * 1.4;
+35484|                
+35485|                // v40.8: ACTIVE PIECE REQUIREMENT — All pieces must be active
+35486|                const activePieceRequirementScore = v40ActivePieceRequirementEval(fen, move, board, activeColor, moveNumber) * 1.2;
+35487|                
+35488|                // v40.8: COUNTERPLAY GENERATION — Must create counterplay when attacked
+35489|                const counterplayGenScore = v40CounterplayGenerationEval(fen, move, board, activeColor, moveNumber) * 1.3;
+35490|                
+35491|                // v40.8: CENTRAL CONTROL SUPREME — Center control is paramount
+35492|                const centralControlSupremeScore = v40CentralControlSupremeEval(fen, move, board, activeColor, moveNumber) * 1.3;
+35493|                
+35494|                // ═══════════════════════════════════════════════════════════════════
+35495|                // v40.9 OMNISCIENT: ATTACKED PIECE DETECTION & FORCED RESPONSE
+35496|                // From Scandinavian loss: Bot played Ng3 while Queen on b5 was attacked!
+35497|                // This is THE MOST CRITICAL FIX - bot MUST address attacked pieces
+35498|                // ═══════════════════════════════════════════════════════════════════
+35499|                
+35500|                // v40.9: ATTACKED PIECE PRIORITY — CRITICAL: Must address attacked pieces
+35501|                const attackedPiecePriorityScore = v40AttackedPiecePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+35502|                
+35503|                // v40.9: PRE-MOVE THREAT SCAN — Scan for threats before moving
+35504|                const preMoveThreatScore = v40PreMoveThreatScanEval(fen, move, board, activeColor) * 2.0;
+35505|                
+35506|                // v40.9: PIECE SAFETY ABSOLUTE — Never leave valuable pieces hanging
+35507|                const pieceSafetyAbsoluteScore = v40PieceSafetyAbsoluteEval(fen, move, board, activeColor) * 2.0;
+35508|                
+35509|                // v40.9: FORCED MOVE DETECTION — Must make forced moves when required
+35510|                const forcedMoveScore = v40ForcedMoveDetectionEval(fen, move, board, activeColor) * 2.0;
+35511|                
+35512|                // ═══════════════════════════════════════════════════════════════════
+35513|                // v40.10 GODLIKE: ABSOLUTE OPENING ENFORCEMENT & SACRIFICE DEFENSE
+35514|                // From latest loss: Bot STILL played d3 instead of d4, missed Bxh2+ sacrifice
+35515|                // These are THE FINAL CRITICAL FIXES for TRUE AlphaZero performance
+35516|                // ═══════════════════════════════════════════════════════════════════
+35517|                
+35518|                // v40.10: ABSOLUTE D4>D3 ENFORCEMENT — DEATH PENALTY for passive opening
+35519|                const absoluteOpeningScore = v40AbsoluteOpeningEnforcementEval(fen, move, board, activeColor, moveNumber) * 3.0;
+35520|                
+35521|                // v40.10: GREEK GIFT DEFENSE — Detect Bxh2+/Bxh7+ sacrifices
+35522|                const greekGiftScore = v40GreekGiftDefenseEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35523|                
+35524|                // v40.10: KING HUNT DETECTION — Detect when king is being hunted
+35525|                const kingHuntScore = v40KingHuntDetectionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35526|                
+35527|                // v40.10: CRITICAL EXCHANGE — Don't centralize enemy pieces
+35528|                const criticalExchangeScore = v40CriticalExchangeEval(fen, move, board, activeColor, moveNumber) * 2.0;
+35529|                
+35530|                // v40.10: MATING ATTACK AWARENESS — Detect impending mating attacks
+35531|                const matingAttackScore = v40MatingAttackAwarenessEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35532|                
+35533|                // ═══════════════════════════════════════════════════════════════════
+35534|                // v40.11 TRANSCENDENT SUPREME: KINGSIDE ATTACK PATTERN DETECTION
+35535|                // From latest French Defense loss: Bxf6 opened g-file, f5/f4 pawn storm,
+35536|                // Queen infiltrated to g4/g3, rooks doubled on g-file - total collapse!
+35537|                // These fixes make bot recognize and defend against coordinated attacks
+35538|                // ═══════════════════════════════════════════════════════════════════
+35539|                
+35540|                // v40.11: G-FILE ATTACK DETECTION — Detect enemy rooks doubling on g-file
+35541|                const gFileAttackScore = v40GFileAttackDetectionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35542|                
+35543|                // v40.11: KINGSIDE ATTACK PATTERN — Detect coordinated kingside attacks
+35544|                const kingsideAttackPatternScore = v40KingsideAttackPatternEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35545|                
+35546|                // v40.11: PASSIVE QUEENSIDE MOVE — Don't play a3/b3/c3 when under attack
+35547|                const passiveQueensideScore = v40PassiveQueensideMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+35548|                
+35549|                // v40.11: BAD EXCHANGE FILE OPENING — Don't open files toward your king
+35550|                const badExchangeFileScore = v40BadExchangeFileOpeningEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35551|                
+35552|                // v40.11: PAWN STORM DETECTION — Detect f5/f4 pawn storms (v40.11 version)
+35553|                const pawnStormScore = v40PawnStormDetectionEvalV11(fen, move, board, activeColor, moveNumber) * 2.0;
+35554|                
+35555|                // v40.11: DEFEND KINGSIDE PRIORITY — Prioritize kingside defense when attacked
+35556|                const defendKingsideScore = v40DefendKingsidePriorityEval(fen, move, board, activeColor, moveNumber) * 2.0;
+35557|                
+35558|                // v40.11: KINGSIDE PAWN WEAKNESS — Detect h3/g3 pawn weaknesses
+35559|                const kingsidePawnWeaknessScore = v40KingsidePawnWeaknessEval(fen, move, board, activeColor, moveNumber) * 2.0;
+35560|                
+35561|                // ═══════════════════════════════════════════════════════════════════
+35562|                // v40.12 PROACTIVE SUPREME: ATTACK PREVENTION (not just detection)
+35563|                // From French Defense loss: Bot played Bxf6 allowing gxf6 opening g-file
+35564|                // v40.11 was REACTIVE - v40.12 is PROACTIVE - prevents setup!
+35565|                // ═══════════════════════════════════════════════════════════════════
+35566|                
+35567|                // v40.12: PROPHYLACTIC EXCHANGE — Don't open files toward king!
+35568|                const prophylacticExchangeScore = v40ProphylacticExchangeEval(fen, move, board, activeColor, moveNumber) * 3.0;
+35569|                
+35570|                // v40.12: PAWN STORM ANTICIPATION — See storm BEFORE it arrives
+35571|                const pawnStormAnticipationScore = v40PawnStormAnticipationEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35572|                
+35573|                // v40.12: DON'T CREATE WEAKNESSES — h3/g3 under attack is FATAL
+35574|                const dontCreateWeaknessesScore = v40DontCreateWeaknessesEval(fen, move, board, activeColor, moveNumber) * 3.0;
+35575|                
+35576|                // v40.12: PRESERVE KING SHELTER — Keep defenders near king
+35577|                const preserveKingShelterScore = v40PreserveKingShelterEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35578|                
+35579|                // v40.12: ATTACK TRAJECTORY — See where pieces are AIMING
+35580|                const attackTrajectoryScore = v40AttackTrajectoryEval(fen, move, board, activeColor, moveNumber) * 2.0;
+35581|                
+35582|                // v40.12: QUEEN TRAP PREVENTION — Drive away infiltrating queen
+35583|                const queenTrapPreventionScore = v40QueenTrapPreventionEval(fen, move, board, activeColor, moveNumber) * 2.5;
+35584|                
+35585|                // ═══════════════════════════════════════════════════════════════════
+35586|                // v40.13 ULTIMATE TACTICAL SUPREME: ZERO BLUNDER TACTICAL SYSTEM
+35587|                // From latest game: Bot played Bd3 allowing exd3, queen ate EVERYTHING
+35588|                // This is THE MOST CRITICAL FIX - ABSOLUTE ZERO simple tactical blunders!
+35589|                // ═══════════════════════════════════════════════════════════════════
+35590|                
+35591|                // v40.13: IMMEDIATE MATERIAL LOSS — Check if move loses material IMMEDIATELY
+35592|                const immediateMaterialLossScore = v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber) * 5.0;
+35593|                
+35594|                // v40.13: CAPTURE CHAIN ANALYSIS — Calculate result of capture sequences
+35595|                const captureChainScore = v40CaptureChainAnalysisEval(fen, move, board, activeColor, moveNumber) * 3.0;
+35596|                
+35597|                // v40.13: QUEEN INFILTRATION ABSOLUTE — Don't let queen eat pieces freely
+35598|                const queenInfiltrationAbsoluteScore = v40QueenInfiltrationAbsoluteEval(fen, move, board, activeColor, moveNumber) * 4.0;
+35599|                
+35600|                // v40.13: PRE-MOVE SAFETY CHECK — Comprehensive safety verification
+35601|                const preMoveSafetyScore = v40PreMoveSafetyCheckEval(fen, move, board, activeColor, moveNumber) * 4.0;
+35602|                
+35603|                // v40.13: OPENING BLUNDER PREVENTION — No blunders in opening
+35604|                const openingBlunderScore = v40OpeningBlunderPreventionEval(fen, move, board, activeColor, moveNumber) * 3.5;
+35605|                
+35606|                // v40.13: SIMPLE THREAT DETECTION — Don't miss simple threats
+35607|                const simpleThreatScore = v40SimpleThreatDetectionEval(fen, move, board, activeColor, moveNumber) * 3.0;
+35608|                
+35609|                // ═══════════════════════════════════════════════════════════════════
+35610|                // v40.14 ABSOLUTE ZERO BLUNDER SUPREME: THE FINAL SAFETY NET
+35611|                // From game analysis: Bot played Bd3 where exd3 captures bishop
+35612|                // These functions LOOK AHEAD and REJECT ANY MOVE where opponent captures
+35613|                // ═══════════════════════════════════════════════════════════════════
+35614|                
+35615|                // v40.14: LOOK-AHEAD BLUNDER CHECK — Simulate opponent's best response
+35616|                const lookAheadBlunderScore = v40LookAheadBlunderCheck(fen, move, board, activeColor, moveNumber) * 10.0;
+35617|                
+35618|                // v40.14: TRIPLE-CHECK VERIFICATION — Run blunder check 3 times
+35619|                const tripleCheckScore = v40TripleCheckBlunderVerification(fen, move, board, activeColor, moveNumber) * 5.0;
+35620|                
+35621|                // v40.14: FAIL-SAFE BLUNDER REJECTION — Final safety check
+35622|                const failSafeCheck = v40FailSafeBlunderCheck(fen, move, board, activeColor, moveNumber);
+35623|                const failSafeScore = failSafeCheck.isBlunder ? failSafeCheck.score * 10.0 : 0;
+35624|                
+35625|                if (failSafeCheck.isBlunder) {
+35626|                    debugLog("[V40.14_FAILSAFE]", `☠️☠️☠️ FAIL-SAFE TRIGGERED: ${move} is a BLUNDER! Reason: ${failSafeCheck.reason}`);
+35627|                }
+35628|                
+35629|                // ═══════════════════════════════════════════════════════════════════
+35630|                // v40.15 PIECE PRESERVATION SUPREME: DON'T ALLOW UNNECESSARY EXCHANGES
+35631|                // From game analysis: Bot played Qb1 allowing Nxd3 (even exchange)
+35632|                // Better was Qe2 which DEFENDS the bishop - piece preservation priority!
+35633|                // ═══════════════════════════════════════════════════════════════════
+35634|                
+35635|                // v40.15: PIECE PRESERVATION — Penalize moves that allow ANY trade
+35636|                const piecePreservationScore = v40PiecePreservationEval(fen, move, board, activeColor, moveNumber) * 8.0;
+35637|                
+35638|                // v40.15: ALL PIECES SAFETY CHECK — Ensure ALL pieces are safe after move
+35639|                const allPiecesSafetyScore = v40AllPiecesSafetyCheck(fen, move, board, activeColor, moveNumber) * 6.0;
+35640|                
+35641|                // v40.15: PROPHYLAXIS MOVE — Bonus for moves that maintain defense
+35642|                const prophylaxisMoveScore = v40ProphylaxisMoveEval(fen, move, board, activeColor, moveNumber) * 2.0;
+35643|                
+35644|                // ═══════════════════════════════════════════════════════════════════
+35645|                // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME: NEVER ALLOW KINGSIDE DESTRUCTION
+35646|                // From game analysis: Bot played Bxf6 gxf6 opening g-file toward castled king!
+35647|                // Then allowed f5-f4-fxg3 pawn storm destroying entire kingside!
+35648|                // ═══════════════════════════════════════════════════════════════════
+35649|                
+35650|                // v40.16: FILE OPENING TOWARD KING — NEVER open files toward castled king!
+35651|                const fileOpeningTowardKingScore = v40FileOpeningTowardKingEval(fen, move, board, activeColor, moveNumber) * 15.0;
+35652|                
+35653|                // v40.16: PAWN STORM DETECTION — See storms BEFORE they destroy you
+35654|                const pawnStormDetectionScore = v40PawnStormDetectionEval(fen, move, board, activeColor, moveNumber) * 10.0;
+35655|                
+35656|                // v40.16: QUEEN INFILTRATION PATH — Detect Qg4-Qxg3-Qh3 sequences
+35657|                const queenInfiltrationPathScore = v40QueenInfiltrationPathEval(fen, move, board, activeColor, moveNumber) * 8.0;
+35658|                
+35659|                // v40.16: 3-PLY DEEP LOOK-AHEAD — Simulate forcing sequences
+35660|                const deepLookAheadScore = v40DeepLookAheadEval(fen, move, board, activeColor, moveNumber) * 12.0;
+35661|                
+35662|                // v40.16: KINGSIDE PAWN SHELTER — Never allow shelter destruction
+35663|                const kingsidePawnShelterScore = v40KingsidePawnShelterEval(fen, move, board, activeColor, moveNumber) * 5.0;
+35664|                
+35665|                // v40.16: FORCING LINE REJECTION — Reject dangerous forcing sequences
+35666|                const forcingLineRejectionScore = v40ForcingLineRejectionEval(fen, move, board, activeColor, moveNumber) * 15.0;
+35667|                
+35668|                // v40.17: ABSOLUTE RECAPTURE — NEVER leave free pieces on the board
+35669|                const absoluteRecaptureScore = v40AbsoluteRecaptureEval(fen, move, board, activeColor, moveNumber, null) * 20.0;
+35670|                
+35671|                // v40.17: IMMEDIATE CAPTURE DETECTION — Don't allow opponent free captures
+35672|                const immediateCaptureDetectionScore = v40ImmediateCaptureDetectionEval(fen, move, board, activeColor, moveNumber) * 18.0;
+35673|                
+35674|                // v40.17: MATERIAL AWARENESS — Material is KING
+35675|                const materialAwarenessScore = v40MaterialAwarenessEval(fen, move, board, activeColor, moveNumber) * 15.0;
+35676|                
+35677|                // v40.17: ANTI-PAWN-GRAB DEFENSE — Don't let pawns be taken for free
+35678|                const antiPawnGrabScore = v40AntiPawnGrabDefenseEval(fen, move, board, activeColor, moveNumber) * 12.0;
+35679|                
+35680|                // v40.18: KING ESCAPE ROUTE — Ensure king always has escape squares
+35681|                const kingEscapeRouteScore = v40KingEscapeRouteEval(fen, move, board, activeColor, moveNumber) * 25.0;
+35682|                
+35683|                // v40.18: ROOK INVASION DETECTION — Detect enemy rooks on 2nd/7th rank
+35684|                const rookInvasionDetectionScore = v40RookInvasionDetectionEval(fen, move, board, activeColor, moveNumber) * 20.0;
+35685|                
+35686|                // v40.18: BACK RANK WEAKNESS — Detect back rank mate threats
+35687|                const backRankWeaknessScore = v40BackRankWeaknessEval(fen, move, board, activeColor, moveNumber) * 30.0;
+35688|                
+35689|                // v40.18: DISCOVERED ATTACK DETECTION — Don't allow discovered attacks
+35690|                const discoveredAttackDetectionScore = v40DiscoveredAttackDetectionEval(fen, move, board, activeColor, moveNumber) * 25.0;
+35691|                
+35692|                // v40.19: MATING PATTERN RECOGNITION — Detect Rook+Queen mating patterns
+35693|                const matingPatternScore = v40MatingPatternRecognitionEval(fen, move, board, activeColor, moveNumber) * 30.0;
+35694|                
+35695|                // v40.19: KING CORRIDOR DEFENSE — Protect king corridor squares
+35696|                const kingCorridorDefenseScore = v40KingCorridorDefenseEval(fen, move, board, activeColor, moveNumber) * 20.0;
+35697|                
+35698|                // v40.19: LUFT CREATION — Ensure king has escape squares
+35699|                const luftCreationScore = v40LuftCreationEval(fen, move, board, activeColor, moveNumber) * 25.0;
+35700|                

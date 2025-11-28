@@ -1,0 +1,4 @@
+
+Action: $ # Check for any syntax errors
+node --check "/app/Lichess Bot-AlphaZero-Pure.user.js" 2>&1 | head -30
+Observation: Exit code: 0
