@@ -1,0 +1,112 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+                               // v40.12 PROACTIVE SUPREME additions:
+                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+                               // v40.15 PIECE PRESERVATION SUPREME additions:
+                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore +
+                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+                               promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
+                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — STRATEGIC MASTERY SUPREME PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `⚔️ SUPERHUMAN BEAST v40.25 STRATEGIC MASTERY SUPREME EVALUATION`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`)" --new-str "                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+                               // v40.12 PROACTIVE SUPREME additions:
+                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+                               // v40.15 PIECE PRESERVATION SUPREME additions:
+                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore +
+                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+                               promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
+                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score +
+                               // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
+                               kingsidePawnProhibitionScore + bishopSacrificeScore + forcedDefenseModeScore + 
+                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.26 ABSOLUTE KINGSIDE FORTRESS PARADIGM SHIFT
+                
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `🏰 SUPERHUMAN BEAST v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME EVALUATION`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏰🏰🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏰🏰🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏰🏰🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏰🏰🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏰🏰🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏰🏰🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);
+                debugLog(\"[V40_INTEGRATE]\", `Move ${move}:`);
+                debugLog(\"[V40_INTEGRATE]\", `   Base v40: ${v40Score.toFixed(1)}`)"
+Observation: Edit was successful.

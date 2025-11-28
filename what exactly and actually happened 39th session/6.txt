@@ -1,0 +1,122 @@
+The v40.26 functions are NOT integrated into the computeCombinedScore. I need to add them. Let me first check what v40.26 functions exist:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+20382|function v40AbsoluteKingsidePawnProhibitionEval(fen, move, board, activeColor, moveNumber) {
+20383|    if (!CONFIG.v40AbsoluteKingsideProhibitionEnabled) return 0;
+20384|    
+20385|    let score = 0;
+20386|    const isWhite = activeColor === 'w';
+20387|    const enemyColor = isWhite ? 'b' : 'w';
+20388|    
+20389|    try {
+20390|        const fromSquare = move.substring(0, 2);
+20391|        const toSquare = move.substring(2, 4);
+20392|        const movingPiece = board.get(fromSquare);
+20393|        
+20394|        if (!movingPiece) return 0;
+20395|        
+20396|        // Only check pawn moves
+20397|        if (movingPiece.toLowerCase() !== 'p') return 0;
+20398|        
+20399|        const fromFile = fromSquare[0];
+20400|        const toFile = toSquare[0];
+20401|        const fromRank = parseInt(fromSquare[1]);
+20402|        const toRank = parseInt(toSquare[1]);
+20403|        
+20404|        // For WHITE: f3, g3, h3 are dangerous (ranks 2->3)
+20405|        // For BLACK: f6, g6, h6 are dangerous (ranks 7->6)
+20406|        const startRank = isWhite ? 2 : 7;
+20407|        const dangerRank = isWhite ? 3 : 6;
+20408|        
+20409|        // Check if this is a kingside pawn weakening move
+20410|        const isKingsidePawn = (toFile === 'f' || toFile === 'g' || toFile === 'h');
+20411|        const isWeakeningMove = isKingsidePawn && toRank === dangerRank;
+20412|        
+20413|        if (!isWeakeningMove) return 0;
+20414|        
+20415|        // CHECK: Is enemy queen threatening kingside?
+20416|        const enemyQueenPos = v40FindQueenPosition(board, enemyColor);
+20417|        const enemyQueenOnKingside = enemyQueenPos && v40IsQueenThreateningKingside(enemyQueenPos, isWhite);
+20418|        
+20419|        // CHECK: Does enemy have dark-squared bishop?
+20420|        const enemyHasDarkBishop = v40HasDarkSquaredBishop(board, enemyColor);
+20421|        
+20422|        // CHECK: Does enemy have active pieces on kingside?
+20423|        const enemyKingsideActivity = v40CountEnemyKingsideActivity(board, enemyColor, isWhite);
+20424|        
+20425|        // CHECK: Is our king castled kingside?
+20426|        const ourKing = findKing(board, activeColor);
+20427|        const isKingsideCastled = ourKing && (isWhite ? 
+20428|            (ourKing[0] >= 'f' && ourKing[0] <= 'h') : 
+20429|            (ourKing[0] >= 'f' && ourKing[0] <= 'h'));
+20430|        
+20431|        if (toFile === 'g') {
+20432|            // G3/G6 MOVE — Potentially catastrophic!
+20433|            if (enemyQueenOnKingside) {
+20434|                score += CONFIG.v40G3UnderQueenThreatPenalty || -500000000000;
+20435|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️☠️ ${move} is g${dangerRank} WITH ENEMY QUEEN ON KINGSIDE! SUICIDE!`);
+20436|            }
+20437|            
+20438|            if (enemyHasDarkBishop) {
+20439|                score += CONFIG.v40G3WithEnemyBishopPenalty || -450000000000;
+20440|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️ ${move} is g${dangerRank} WITH ENEMY DARK BISHOP! Bxg${dangerRank} SACRIFICE ENABLED!`);
+20441|            }
+20442|            
+20443|            if (enemyKingsideActivity >= 2) {
+20444|                score += CONFIG.v40KingsidePawnWeakenPenalty || -300000000000;
+20445|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️ ${move} weakens kingside with ${enemyKingsideActivity} enemy pieces active!`);
+20446|            }
+20447|        }
+20448|        
+20449|        if (toFile === 'f') {
+20450|            // F3/F6 MOVE — Even more dangerous!
+20451|            if (enemyQueenOnKingside) {
+20452|                score += CONFIG.v40F3UnderQueenThreatPenalty || -600000000000;
+20453|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️☠️☠️ ${move} is f${dangerRank} WITH ENEMY QUEEN ACTIVE! CATASTROPHIC!`);
+20454|            }
+20455|            
+20456|            // Check for knight that can exploit f3/f6
+20457|            if (v40HasKnightThatCanExploitWeakness(board, enemyColor, toSquare, isWhite)) {
+20458|                score += CONFIG.v40F3WithEnemyKnightPenalty || -400000000000;
+20459|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️ ${move} is f${dangerRank} - KNIGHT CAN EXPLOIT!`);
+20460|            }
+20461|            
+20462|            if (enemyKingsideActivity >= 1) {
+20463|                score += CONFIG.v40KingsidePawnWeakenPenalty || -300000000000;
+20464|            }
+20465|        }
+20466|        
+20467|        if (toFile === 'h') {
+20468|            // H3/H6 MOVE — Creates target
+20469|            if (enemyQueenOnKingside) {
+20470|                score += CONFIG.v40H3UnderQueenThreatPenalty || -400000000000;
+20471|                debugLog("[V40.26_FORTRESS]", `☠️☠️☠️☠️ ${move} is h${dangerRank} WITH ENEMY QUEEN! TARGET CREATED!`);
+20472|            }
+20473|        }
+20474|        
+20475|        // ABSOLUTE PROHIBITION: If under any kingside pressure, penalize ALL weakening moves
+20476|        if (isKingsideCastled && (enemyQueenOnKingside || enemyKingsideActivity >= 2)) {
+20477|            score += CONFIG.v40KingsidePawnWeakenPenalty || -300000000000;
+20478|            debugLog("[V40.26_FORTRESS]", `🚨🚨🚨 ${move} weakens kingside while castled and under pressure!`);
+20479|        }
+20480|        
+20481|    } catch (e) {
+20482|        debugLog("[V40.26_FORTRESS]", `Error: ${e.message}`);
+20483|    }
+20484|    
+20485|    return score;
+20486|}
+20487|
+20488|/**
+20489| * v40.26: BISHOP SACRIFICE DETECTION
+20490| * Detect Bxg3, Bxh2, Bxf3 sacrifice patterns BEFORE they happen
+20491| */
+20492|function v40BishopSacrificeDetectionEval(fen, move, board, activeColor, moveNumber) {
+20493|    if (!CONFIG.v40BishopSacrificeDetectionEnabled) return 0;
+20494|    
+20495|    let score = 0;
+20496|    const isWhite = activeColor === 'w';
+20497|    const enemyColor = isWhite ? 'b' : 'w';
+20498|    const enemyBishopChar = isWhite ? 'b' : 'B';
+20499|    
+20500|    try {

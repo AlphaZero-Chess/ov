@@ -1,0 +1,44 @@
+Excellent! The v40.26 functions exist. Now I need to integrate them into computeCombinedScore. Let me find where v40.25 is integrated and add v40.26 after it:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36660|                // Nxf3+ Nxd2 fork missed = CATASTROPHIC!
+36661|                // b2 vs c7 pawn race lost = GAME OVER!
+36662|                // ═══════════════════════════════════════════════════════════════════════════════
+36663|                
+36664|                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+36665|                const noEarlyQueenTradeScore = v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) * 110.0;
+36666|                
+36667|                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+36668|                const enhancedForkScore = v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) * 105.0;
+36669|                
+36670|                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+36671|                const pawnRaceScore = v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) * 100.0;
+36672|                
+36673|                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+36674|                const piecePreservationAbsoluteScore = v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) * 95.0;
+36675|                
+36676|                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+36677|                const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
+36678|                
+36679|                // v40.25: COMBINED v40 SCORE — 100% STRATEGIC MASTERY SUPREME INFLUENCE
+36680|                // This makes v40 the STRATEGIC MASTERY SUPREME factor
+36681|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+36682|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+36683|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+36684|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+36685|                               counterattackBonus + initiativePreservationBonus +
+36686|                               // v40.4 additions:
+36687|                               openingPrinciplesScore + discoveredAttackPenalty + 
+36688|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+36689|                               // v40.5 additions:
+36690|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+36691|                               // v40.6 ULTIMATE additions:
+36692|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+36693|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+36694|                               // v40.7 DIVINE additions:
+36695|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+36696|                               // v40.8 TRANSCENDENT additions:
+36697|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+36698|                               counterplayGenScore + centralControlSupremeScore +
+36699|                               // v40.9 OMNISCIENT additions:
+36700|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +

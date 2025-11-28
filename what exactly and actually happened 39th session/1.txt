@@ -1,0 +1,114 @@
+Let me check where in computeCombinedScore the v40.26 additions are integrated:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+35790|        const maxScore = Math.max(...scores);
+35791|        
+35792|        // Softmax with temperature=100 (moderate sharpness)
+35793|        const expScores = scores.map(s => Math.exp((s - maxScore) / 100));
+35794|        const sumExp = expScores.reduce((a, b) => a + b, 0);
+35795|        const probabilities = expScores.map(e => e / sumExp);
+35796|        
+35797|        const policyPrior = probabilities[moveIndex];
+35798|        
+35799|        // Clamp to min/max policy bias
+35800|        const clampedPrior = Math.max(
+35801|            TRUE_ALPHAZERO.minPolicyBias,
+35802|            Math.min(TRUE_ALPHAZERO.maxPolicyBias, policyPrior)
+35803|        );
+35804|        
+35805|        return clampedPrior;
+35806|    } catch (e) {
+35807|        debugLog("[POLICY]", "⚠️ Error computing policy:", e.message);
+35808|        return 0.1;
+35809|    }
+35810|}
+35811|
+35812|/**
+35813| * NEW v18.0.0: REMOVED elegance scoring - replaced with policy prior
+35814| * Keeping stub for compatibility
+35815| */
+35816|function computeEleganceScore(fen, move, engineEval, alternatives) {
+35817|    try {
+35818|        // v18: Elegance removed, use policy prior instead
+35819|        return computePolicyPrior(move, alternatives);
+35820|    } catch (e) {
+35821|        debugLog("[LEGACY]", "⚠️ computeEleganceScore called (deprecated in v18)");
+35822|        return 0.5;
+35823|    }
+35824|}
+35825|
+35826|/**
+35827| * NEW v18.0.0: Update trend reconciliation system
+35828| * Tracks last N evaluations and computes trend
+35829| * Disables creativity if trend declining below threshold
+35830| */
+35831|function updateTrendReconciliation(currentEval) {
+35832|    try {
+35833|        // Add to trend history
+35834|        trendHistory.push(currentEval);
+35835|        
+35836|        // Keep only last stabilizationMoves
+35837|        if (trendHistory.length > TRUE_ALPHAZERO.stabilizationMoves) {
+35838|            trendHistory.shift();
+35839|        }
+35840|        
+35841|        // Compute trend (linear regression slope approximation)
+35842|        if (trendHistory.length >= 4) {
+35843|            const n = trendHistory.length;
+35844|            const recentAvg = trendHistory.slice(-3).reduce((a, b) => a + b, 0) / 3;
+35845|            const olderAvg = trendHistory.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+35846|            const trend = recentAvg - olderAvg;
+35847|            
+35848|            evaluationTrend = trend;
+35849|            
+35850|            // Log trend status
+35851|            if (trend < TRUE_ALPHAZERO.tacticalFloorCp) {
+35852|                debugLog("[TREND]", `📉 Declining trend: ${trend.toFixed(1)}cp (below floor ${TRUE_ALPHAZERO.tacticalFloorCp}cp)`);
+35853|            }
+35854|            
+35855|            // Update debug object
+35856|            window.__AZ18_DEBUG.trendData.push({
+35857|                move: moveCount,
+35858|                eval: currentEval,
+35859|                trend: trend,
+35860|                history: [...trendHistory]
+35861|            });
+35862|        }
+35863|        
+35864|        // Update evaluation history for compatibility
+35865|        updateEvaluationHistory(currentEval);
+35866|    } catch (e) {
+35867|        debugLog("[TREND]", "⚠️ Error in trend reconciliation:", e.message);
+35868|    }
+35869|}
+35870|
+35871|/**
+35872| * NEW v18.0.0: Compute harmony score for position
+35873| * Evaluates balance of multiple positional factors
+35874| * Returns score (positive = improving, negative = declining)
+35875| */
+35876|function computeHarmonyScore(fen) {
+35877|    try {
+35878|        if (!fen) return 0;
+35879|        
+35880|        // Compute deltas for various factors
+35881|        const kingSafetyDelta = evaluateKingSafety(fen) - 0.5;
+35882|        const mobilityDelta = evaluateMobility(fen) - 0.5;
+35883|        const coordinationDelta = evaluatePieceCoordination(fen) - 0.5;
+35884|        const activityDelta = evaluatePieceActivity(fen) - 0.5;
+35885|        
+35886|        // Weighted sum (normalize to -1..+1 range)
+35887|        const harmonyScore = (
+35888|            kingSafetyDelta * 0.25 +
+35889|            mobilityDelta * 0.30 +
+35890|            coordinationDelta * 0.25 +
+35891|            activityDelta * 0.20
+35892|        );
+35893|        
+35894|        // Log harmony if significant
+35895|        if (Math.abs(harmonyScore) > 0.2) {
+35896|            debugLog("[HARMONY]", `${harmonyScore > 0 ? '✅' : '❌'} Harmony: ${harmonyScore.toFixed(3)}`);
+35897|        }
+35898|        
+35899|        // Update debug object
+35900|        window.__AZ18_DEBUG.harmonyScores.push({

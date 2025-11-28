@@ -1,0 +1,154 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+36600|                // v40.21: QUIET MOVE DANGER — Innocent moves that lose
+36601|                const quietMoveDangerScore = v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) * 35.0;
+36602|                
+36603|                // ═══════════════════════════════════════════════════════════════════
+36604|                // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME
+36605|                // From game: Bot played a3 ignoring Nh4-Nxg2-Nf3+ mating attack!
+36606|                // ═══════════════════════════════════════════════════════════════════
+36607|                
+36608|                // v40.22: KNIGHT INFILTRATION — Detect knight attacks near king
+36609|                const knightInfiltrationScore = v40KnightInfiltrationEval(fen, move, board, activeColor, moveNumber) * 60.0;
+36610|                
+36611|                // v40.22: CHECK SEQUENCE DETECTION — Detect perpetual/mating checks
+36612|                const checkSequenceDetectionScore = v40CheckSequenceDetectionEval(fen, move, board, activeColor, moveNumber) * 55.0;
+36613|                
+36614|                // v40.22: MUST RESPOND TO THREAT — Don't ignore threats!
+36615|                const mustRespondScore = v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) * 50.0;
+36616|                
+36617|                // ═══════════════════════════════════════════════════════════════════
+36618|                // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME
+36619|                // From game: Bot missed Rf5-Rh5 + Qe7-Qh4-Qxh2# mating attack!
+36620|                // The bot played f3 which CATASTROPHICALLY weakened the kingside!
+36621|                // ═══════════════════════════════════════════════════════════════════
+36622|                
+36623|                // v40.23: ROOK LIFT DETECTION — Detect rook lift mating patterns (Rf5-Rh5)
+36624|                const rookLiftScore = v40RookLiftDetectionEval(fen, move, board, activeColor, moveNumber) * 70.0;
+36625|                
+36626|                // v40.23: QUEEN H-FILE INVASION — Detect queen mating on h-file (Qh4-Qxh2#)
+36627|                const queenHFileScore = v40QueenHFileInvasionEval(fen, move, board, activeColor, moveNumber) * 75.0;
+36628|                
+36629|                // v40.23: F3/G3 ABSOLUTE PROHIBITION — NEVER weaken kingside!
+36630|                const f3g3ProhibitionScore = v40F3G3ProhibitionEval(fen, move, board, activeColor, moveNumber) * 80.0;
+36631|                
+36632|                // v40.23: MATING ATTACK PATTERN RECOGNITION — Specific mating patterns
+36633|                const matingAttackPatternScore = v40MatingAttackPatternEval(fen, move, board, activeColor, moveNumber) * 65.0;
+36634|                
+36635|                // v40.23: KINGSIDE FORTRESS — Maintain fortress around king
+36636|                const kingsideFortressScore = v40KingsideFortressEval(fen, move, board, activeColor, moveNumber) * 60.0;
+36637|                
+36638|                // ═══════════════════════════════════════════════════════════════════
+36639|                // v40.24 ABSOLUTE QUEEN SAFETY SUPREME
+36640|                // From game: Bot played Rfe1 while queen on d2 was attacked by knight on e4!
+36641|                // Then Black played Nxd2 and captured the queen FOR FREE!
+36642|                // THIS IS THE #1 BLUNDER - LOSING QUEEN WITHOUT COMPENSATION!
+36643|                // ═══════════════════════════════════════════════════════════════════
+36644|                
+36645|                // v40.24: ABSOLUTE QUEEN SAFETY — NEVER ignore queen being attacked!
+36646|                const absoluteQueenSafetyScore = v40AbsoluteQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 100.0;
+36647|                
+36648|                // v40.24: MUST DEFEND QUEEN — If queen attacked, move MUST defend it!
+36649|                const mustDefendQueenScore = v40MustDefendQueenEval(fen, move, board, activeColor, moveNumber) * 95.0;
+36650|                
+36651|                // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+36652|                const knightForkQueenScore = v40KnightForkQueenEval(fen, move, board, activeColor, moveNumber) * 90.0;
+36653|                
+36654|                // v40.24: PRE-MOVE QUEEN SAFETY — Check queen safety BEFORE every move
+36655|                const preMoveQueenSafetyScore = v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 85.0;
+36656|                
+36657|                // ═══════════════════════════════════════════════════════════════════════════════
+36658|                // v40.25 STRATEGIC MASTERY SUPREME: THE ULTIMATE FIXES
+36659|                // From game: Qxb6 queen trade in closed position = TERRIBLE!
+36660|                // Nxf3+ Nxd2 fork missed = CATASTROPHIC!
+36661|                // b2 vs c7 pawn race lost = GAME OVER!
+36662|                // ═══════════════════════════════════════════════════════════════════════════════
+36663|                
+36664|                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+36665|                const noEarlyQueenTradeScore = v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) * 110.0;
+36666|                
+36667|                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+36668|                const enhancedForkScore = v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) * 105.0;
+36669|                
+36670|                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+36671|                const pawnRaceScore = v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) * 100.0;
+36672|                
+36673|                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+36674|                const piecePreservationAbsoluteScore = v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) * 95.0;
+36675|                
+36676|                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+36677|                const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
+36678|                
+36679|                // v40.25: COMBINED v40 SCORE — 100% STRATEGIC MASTERY SUPREME INFLUENCE
+36680|                // This makes v40 the STRATEGIC MASTERY SUPREME factor
+36681|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+36682|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+36683|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+36684|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+36685|                               counterattackBonus + initiativePreservationBonus +
+36686|                               // v40.4 additions:
+36687|                               openingPrinciplesScore + discoveredAttackPenalty + 
+36688|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+36689|                               // v40.5 additions:
+36690|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+36691|                               // v40.6 ULTIMATE additions:
+36692|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+36693|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+36694|                               // v40.7 DIVINE additions:
+36695|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+36696|                               // v40.8 TRANSCENDENT additions:
+36697|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+36698|                               counterplayGenScore + centralControlSupremeScore +
+36699|                               // v40.9 OMNISCIENT additions:
+36700|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+36701|                               // v40.10 GODLIKE additions:
+36702|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+36703|                               // v40.11 TRANSCENDENT SUPREME additions:
+36704|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+36705|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+36706|                               // v40.12 PROACTIVE SUPREME additions:
+36707|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+36708|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+36709|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+36710|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+36711|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+36712|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+36713|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+36714|                               // v40.15 PIECE PRESERVATION SUPREME additions:
+36715|                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+36716|                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+36717|                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+36718|                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+36719|                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+36720|                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+36721|                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+36722|                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+36723|                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+36724|                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore +
+36725|                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+36726|                               promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
+36727|                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+36728|                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+36729|                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+36730|                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+36731|                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+36732|                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+36733|                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+36734|                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+36735|                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+36736|                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score;
+36737|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — STRATEGIC MASTERY SUPREME PARADIGM SHIFT
+36738|                
+36739|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+36740|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.25 STRATEGIC MASTERY SUPREME EVALUATION`);
+36741|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+36742|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+36743|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+36744|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+36745|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+36746|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+36747|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+36748|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+36749|                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+36750|                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);

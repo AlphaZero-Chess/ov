@@ -1,0 +1,11 @@
+Now let me update the header to reflect v40.26:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.25 STRATEGIC MASTERY SUPREME
+// @description  TRUE AlphaZero Replica v40.25 - NO EARLY QUEEN TRADE - FORK DETECTION - PAWN RACE CALCULATION - PIECE PRESERVATION - NEVER LOSE MATERIAL FOR FREE!
+// @author       AlphaZero TRUE REPLICA v40.25 STRATEGIC MASTERY SUPREME EDITION
+// @version      40.25.0-STRATEGIC-MASTERY-SUPREME" --new-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME
+// @description  TRUE AlphaZero Replica v40.26 - ABSOLUTE KINGSIDE FORTRESS - BISHOP SACRIFICE DETECTION - FORCED DEFENSE MODE - NEVER WEAKEN KINGSIDE UNDER ATTACK!
+// @author       AlphaZero TRUE REPLICA v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME EDITION
+// @version      40.26.0-ABSOLUTE-KINGSIDE-FORTRESS-SUPREME"
+Observation: Edit was successful.
