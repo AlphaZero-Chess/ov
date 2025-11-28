@@ -1,0 +1,17 @@
+Now I need to add the v40.41 scores to the v40DeepScore calculation:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.40 MANDATORY RECAPTURE SUPREME PARADIGM SHIFT" --new-str "                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore +
+                               // v40.41 PRE-MOVE PAWN THREAT SUPREME additions — THE ULTIMATE FIX!
+                               preMovePawnThreatScore + postCapturePawnScore + absoluteMustRespondScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.41 PRE-MOVE PAWN THREAT SUPREME PARADIGM SHIFT"
+Observation: Edit was successful.

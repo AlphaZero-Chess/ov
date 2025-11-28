@@ -1,0 +1,96 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28328|function v40FindPiecesUnderPawnAttack(board, activeColor) {
+28329|    const result = [];
+28330|    const isWhite = activeColor === 'w';
+28331|    
+28332|    for (const [square, piece] of board) {
+28333|        if (!piece) continue;
+28334|        
+28335|        const pieceIsWhite = piece === piece.toUpperCase();
+28336|        if (pieceIsWhite !== isWhite) continue;  // Only our pieces
+28337|        
+28338|        const pieceType = piece.toLowerCase();
+28339|        if (pieceType === 'p' || pieceType === 'k') continue;  // Skip pawns and king
+28340|        
+28341|        const attackers = v40GetPawnAttackers(board, square, activeColor);
+28342|        
+28343|        if (attackers.length > 0) {
+28344|            result.push({
+28345|                square,
+28346|                piece,
+28347|                pieceType,
+28348|                pieceValue: getPieceValueSimple(pieceType),
+28349|                attackers
+28350|            });
+28351|        }
+28352|    }
+28353|    
+28354|    // Sort by value (highest first)
+28355|    result.sort((a, b) => b.pieceValue - a.pieceValue);
+28356|    
+28357|    return result;
+28358|}
+28359|
+28360|/**
+28361| * v40.41 Helper: Get list of enemy pawns attacking a square
+28362| */
+28363|function v40GetPawnAttackers(board, square, activeColor) {
+28364|    const attackers = [];
+28365|    const isWhite = activeColor === 'w';
+28366|    
+28367|    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+28368|    const rank = parseInt(square.charAt(1));
+28369|    
+28370|    // Enemy pawn attack positions
+28371|    // If we are White, enemy black pawns attack from one rank below (rank - 1)
+28372|    // If we are Black, enemy white pawns attack from one rank above (rank + 1)
+28373|    const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+28374|    
+28375|    if (enemyPawnRank < 1 || enemyPawnRank > 8) return attackers;
+28376|    
+28377|    // Check left diagonal
+28378|    if (file > 0) {
+28379|        const leftSquare = String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank;
+28380|        const leftPiece = board.get(leftSquare);
+28381|        if (leftPiece && leftPiece.toLowerCase() === 'p') {
+28382|            const pieceIsWhite = leftPiece === leftPiece.toUpperCase();
+28383|            if (pieceIsWhite !== isWhite) {
+28384|                attackers.push(leftSquare);
+28385|            }
+28386|        }
+28387|    }
+28388|    
+28389|    // Check right diagonal
+28390|    if (file < 7) {
+28391|        const rightSquare = String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank;
+28392|        const rightPiece = board.get(rightSquare);
+28393|        if (rightPiece && rightPiece.toLowerCase() === 'p') {
+28394|            const pieceIsWhite = rightPiece === rightPiece.toUpperCase();
+28395|            if (pieceIsWhite !== isWhite) {
+28396|                attackers.push(rightSquare);
+28397|            }
+28398|        }
+28399|    }
+28400|    
+28401|    return attackers;
+28402|}
+28403|
+28404|/**
+28405| * v40.41 Helper: Check if a square is under pawn attack
+28406| */
+28407|function v40IsSquareUnderPawnAttack(board, square, activeColor) {
+28408|    const attackers = v40GetPawnAttackers(board, square, activeColor);
+28409|    return attackers.length > 0;
+28410|}
+28411|
+28412|/**
+28413| * v40.41: POST-CAPTURE PAWN POSITION EVALUATION
+28414| * After enemy pawn captures something, check what it NOW attacks
+28415| * Example: After cxd4, the d4 pawn now attacks Nc3!
+28416| */
+28417|function v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) {
+28418|    if (!CONFIG.v40PostCapturePawnEnabled) return 0;
+28419|    
+28420|    let score = 0;

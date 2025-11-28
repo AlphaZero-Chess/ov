@@ -1,0 +1,23 @@
+I see the issue! The v40.41 scores (`preMovePawnThreatScore`, `postCapturePawnScore`, `absoluteMustRespondScore`) are calculated but NOT added to the `v40DeepScore` sum! The sum ends at line 44398 with the v40.40 additions and doesn't include the v40.41 scores.
+
+Let me fix this:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+44393|                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+44394|                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+44395|                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+44396|                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+44397|                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+44398|                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore;
+44399|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.40 MANDATORY RECAPTURE SUPREME PARADIGM SHIFT
+44400|                
+44401|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+44402|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+44403|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+44404|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+44405|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+44406|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+44407|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+44408|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+44409|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+44410|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);

@@ -1,0 +1,33 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                debugLog(\"[V40_INTEGRATE]\", `   ♟️⛓️ PAWN CAPTURE CHAIN: ${pawnCaptureChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️⚔️ PIECE UNDER PAWN ATTACK: ${pieceUnderPawnAttackScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🏆 PROMOTION THREAT V39: ${promotionThreatV39Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🔄 RECAPTURE CHAIN: ${recaptureChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️☠️ PIECE UNDER PAWN DANGER: ${pieceUnderPawnDangerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🍴 PAWN FORK DETECTION: ${pawnForkDetectionScore.toFixed(1)}`);
+                // v40.40 MANDATORY RECAPTURE SUPREME debug logs
+                debugLog(\"[V40_INTEGRATE]\", `   🚨♟️ MANDATORY RECAPTURE: ${mandatoryRecaptureScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⚠️♟️ PAWN NEAR PIECE DANGER: ${pawnNearPieceDangerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🔥♟️ IMMEDIATE PAWN THREAT: ${immediatePawnThreatScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   💀♟️ MULTI-THREAT PAWN: ${multiThreatPawnScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🎯♟️ CAPTURE THEN ATTACK: ${captureThenAttackScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑♟️ PAWN CHAIN PROMOTION: ${pawnChainPromotionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);" --new-str "                debugLog(\"[V40_INTEGRATE]\", `   ♟️⛓️ PAWN CAPTURE CHAIN: ${pawnCaptureChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️⚔️ PIECE UNDER PAWN ATTACK: ${pieceUnderPawnAttackScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🏆 PROMOTION THREAT V39: ${promotionThreatV39Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🔄 RECAPTURE CHAIN: ${recaptureChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️☠️ PIECE UNDER PAWN DANGER: ${pieceUnderPawnDangerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🍴 PAWN FORK DETECTION: ${pawnForkDetectionScore.toFixed(1)}`);
+                // v40.40 MANDATORY RECAPTURE SUPREME debug logs
+                debugLog(\"[V40_INTEGRATE]\", `   🚨♟️ MANDATORY RECAPTURE: ${mandatoryRecaptureScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⚠️♟️ PAWN NEAR PIECE DANGER: ${pawnNearPieceDangerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🔥♟️ IMMEDIATE PAWN THREAT: ${immediatePawnThreatScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   💀♟️ MULTI-THREAT PAWN: ${multiThreatPawnScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🎯♟️ CAPTURE THEN ATTACK: ${captureThenAttackScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑♟️ PAWN CHAIN PROMOTION: ${pawnChainPromotionScore.toFixed(1)}`);
+                // v40.41 PRE-MOVE PAWN THREAT SUPREME debug logs
+                debugLog(\"[V40_INTEGRATE]\", `   🚨🚨🚨 PRE-MOVE PAWN THREAT: ${preMovePawnThreatScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🚨🚨🚨 POST-CAPTURE PAWN: ${postCapturePawnScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🚨🚨🚨 ABSOLUTE MUST RESPOND: ${absoluteMustRespondScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);"
+Observation: Edit was successful.

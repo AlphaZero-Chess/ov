@@ -1,0 +1,114 @@
+Now let me implement additional improvements. Looking at the game analysis, I notice the bot has issues with:
+1. Recognizing when a pawn capture creates a threat to a piece
+2. Recognizing the CURRENT position before making a move
+
+Let me view the v40PreMovePawnThreatEval function to see if it's correctly detecting the threat:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28224| * v40.41: PRE-MOVE PAWN THREAT DETECTION - THE ULTIMATE FIX!
+28225| * This function runs BEFORE making any move and checks:
+28226| * 1. Are any of our pieces currently under attack by enemy pawns?
+28227| * 2. If yes, does this move address the threat?
+28228| * 3. If move doesn't address threat, INFINITY PENALTY!
+28229| */
+28230|function v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+28231|    if (!CONFIG.v40PreMovePawnThreatEnabled) return 0;
+28232|    
+28233|    let score = 0;
+28234|    const isWhite = activeColor === 'w';
+28235|    const fromSquare = move.substring(0, 2);
+28236|    const toSquare = move.substring(2, 4);
+28237|    
+28238|    // STEP 1: Find ALL our pieces currently under pawn attack
+28239|    const piecesUnderPawnAttack = v40FindPiecesUnderPawnAttack(board, activeColor);
+28240|    
+28241|    if (piecesUnderPawnAttack.length === 0) {
+28242|        return 0;  // No pieces under attack, move is OK
+28243|    }
+28244|    
+28245|    debugLog("[V40.41_PRE]", `═══════════════════════════════════════════════════════`);
+28246|    debugLog("[V40.41_PRE]", `🚨🚨🚨 PRE-MOVE CHECK: ${piecesUnderPawnAttack.length} PIECE(S) UNDER PAWN ATTACK!`);
+28247|    
+28248|    for (const attacked of piecesUnderPawnAttack) {
+28249|        debugLog("[V40.41_PRE]", `   ${attacked.pieceType.toUpperCase()}@${attacked.square} attacked by pawn(s) on ${attacked.attackers.join(', ')}`);
+28250|    }
+28251|    
+28252|    // STEP 2: Check if our move addresses ANY of the pawn threats
+28253|    let threatAddressed = false;
+28254|    let addressedHow = '';
+28255|    
+28256|    for (const attacked of piecesUnderPawnAttack) {
+28257|        // OPTION 1: Moving the attacked piece to safety
+28258|        if (fromSquare === attacked.square) {
+28259|            // Make sure we're not moving to another attacked square!
+28260|            const testBoard = simulateMove(board, move);
+28261|            if (testBoard) {
+28262|                const stillUnderAttack = v40IsSquareUnderPawnAttack(testBoard, toSquare, activeColor);
+28263|                if (!stillUnderAttack) {
+28264|                    threatAddressed = true;
+28265|                    addressedHow = `Moving ${attacked.pieceType}@${attacked.square} to ${toSquare}`;
+28266|                    debugLog("[V40.41_PRE]", `✅ ${addressedHow}`);
+28267|                    break;
+28268|                } else {
+28269|                    debugLog("[V40.41_PRE]", `⚠️ Moving ${attacked.pieceType} from ${fromSquare} to ${toSquare} - STILL UNDER ATTACK!`);
+28270|                }
+28271|            }
+28272|        }
+28273|        
+28274|        // OPTION 2: Capturing the attacking pawn
+28275|        for (const attackerSquare of attacked.attackers) {
+28276|            if (toSquare === attackerSquare) {
+28277|                threatAddressed = true;
+28278|                addressedHow = `Capturing attacker on ${attackerSquare}`;
+28279|                debugLog("[V40.41_PRE]", `✅ ${addressedHow}`);
+28280|                break;
+28281|            }
+28282|        }
+28283|        
+28284|        if (threatAddressed) break;
+28285|        
+28286|        // OPTION 3: Blocking (rare with pawns, but check if a piece blocks the diagonal)
+28287|        // For pawns, blocking is generally not possible since they attack diagonally
+28288|    }
+28289|    
+28290|    // STEP 3: If threat NOT addressed, apply DEATH PENALTY!
+28291|    if (!threatAddressed && piecesUnderPawnAttack.length > 0) {
+28292|        // Find the highest value piece under attack
+28293|        const highestValueAttacked = piecesUnderPawnAttack.reduce(
+28294|            (max, curr) => curr.pieceValue > max.pieceValue ? curr : max,
+28295|            piecesUnderPawnAttack[0]
+28296|        );
+28297|        
+28298|        debugLog("[V40.41_PRE]", `☠️☠️☠️ CRITICAL FAILURE! Move ${move} IGNORES pawn threat!`);
+28299|        debugLog("[V40.41_PRE]", `Highest value piece under attack: ${highestValueAttacked.pieceType.toUpperCase()}@${highestValueAttacked.square} (${highestValueAttacked.pieceValue}cp)`);
+28300|        debugLog("[V40.41_PRE]", `═══════════════════════════════════════════════════════`);
+28301|        
+28302|        // Apply piece-specific penalties
+28303|        const pieceType = highestValueAttacked.pieceType;
+28304|        let penalty = 0;
+28305|        
+28306|        if (pieceType === 'q') {
+28307|            penalty = CONFIG.v40QueenUnderPawnPenalty || -950000000000000;
+28308|        } else if (pieceType === 'r') {
+28309|            penalty = CONFIG.v40RookUnderPawnPenalty || -850000000000000;
+28310|        } else if (pieceType === 'b') {
+28311|            penalty = CONFIG.v40BishopUnderPawnPenalty || -750000000000000;
+28312|        } else if (pieceType === 'n') {
+28313|            penalty = CONFIG.v40KnightUnderPawnPenalty || -800000000000000;
+28314|        }
+28315|        
+28316|        // Add the absolute must respond penalty on top
+28317|        penalty += CONFIG.v40AbsoluteMustRespondPenalty || -1000000000000000;
+28318|        
+28319|        score += penalty;
+28320|    }
+28321|    
+28322|    return score;
+28323|}
+28324|
+28325|/**
+28326| * v40.41 Helper: Find all pieces under pawn attack for a given color
+28327| */
+28328|function v40FindPiecesUnderPawnAttack(board, activeColor) {
+28329|    const result = [];
+28330|    const isWhite = activeColor === 'w';

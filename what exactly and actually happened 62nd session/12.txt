@@ -1,0 +1,44 @@
+The function looks correct. The issue might be related to how the game progresses - when the position after `cxd4` has the d4 pawn attacking Nc3, but the v40PreMovePawnThreatEval is checking the CURRENT position (before the enemy move), not after.
+
+Let me analyze the game flow more carefully:
+- Position after move 5: cxd4 - the d4 pawn now attacks Nc3
+- It's White's turn to move
+- The v40PreMovePawnThreatEval SHOULD detect that Nc3 is under attack by d4 pawn
+
+Let me check for a bug in the pawn attacker detection. The issue might be the direction of pawn attacks:
+Action: Analyzing the pawn attack detection bug:
+
+In v40GetPawnAttackers, when checking if a WHITE piece is under attack by a BLACK pawn:
+- White piece is on Nc3 (c3)
+- Black pawn is on d4
+- For white pieces (isWhite = true), enemy pawn rank = rank - 1 (one rank below)
+- c3: file = 2, rank = 3
+- enemy pawn rank = 3 - 1 = 2
+
+But wait - black pawns attack DIAGONALLY FORWARD (toward rank 1-2 from their perspective)
+A black pawn on d4 attacks c3 and e3
+
+The bug is in the logic:
+- If we are WHITE (isWhite = true), enemy BLACK pawns are on HIGHER ranks and attack DOWN
+- So a black pawn on d4 (rank 4) attacks c3 and e3 (rank 3)
+- The code uses `enemyPawnRank = isWhite ? rank - 1 : rank + 1`
+- For Nc3 (rank 3), enemyPawnRank = 3 - 1 = 2
+- But the black pawn is on rank 4, not rank 2!
+
+THE BUG: The direction is WRONG!
+- For a WHITE piece to be attacked by a BLACK pawn:
+  - The black pawn must be on rank+1 (above)
+  - Current code checks rank-1 (below) - WRONG!
+
+The correct logic should be:
+- If activeColor is 'w' (we're white), enemy BLACK pawns attack FROM rank+1
+- If activeColor is 'b' (we're black), enemy WHITE pawns attack FROM rank-1
+
+Current code:
+const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+
+Should be:
+const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
+
+This is a CRITICAL BUG that explains why the bot doesn't see pawn attacks!
+Observation: Your thought has been logged.
