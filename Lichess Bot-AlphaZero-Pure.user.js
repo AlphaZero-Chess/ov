@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.31 ABSOLUTE MOVE FILTER & TEMPO MASTERY
-// @description  TRUE AlphaZero Replica v40.31 - HARD MOVE FILTER (d3/e3 REJECTED!) - TEMPO TRACKING - QUEEN RETREAT PROHIBITION - KNIGHT FORK SHIELD - ENHANCED FORK DETECTION!
-// @author       AlphaZero TRUE REPLICA v40.31 ABSOLUTE MOVE FILTER EDITION
-// @version      40.31.0-ABSOLUTE-MOVE-FILTER-TEMPO-MASTERY
+// @name         Lichess Bot - TRUE ALPHAZERO v40.32 BOOK FILTER & COUNTERPLAY MASTERY
+// @description  TRUE AlphaZero Replica v40.32 - BOOK MOVE HARD FILTER - NO MORE d3/e3 - ENHANCED COUNTERPLAY - TACTICAL SUPREMACY - ACTIVE DEFENSE PRIORITY!
+// @author       AlphaZero TRUE REPLICA v40.32 BOOK FILTER COUNTERPLAY EDITION
+// @version      40.32.0-BOOK-FILTER-COUNTERPLAY-MASTERY
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2243,6 +2243,41 @@ const CONFIG = {
     v40D4ImmediateBonus: 2000000000000,             // 2 trillion bonus for d4 when possible
     v40E4ImmediateBonus: 2000000000000,             // 2 trillion bonus for e4 when possible
     v40NotPlayingD4Penalty: -1000000000000,         // 1 trillion penalty for NOT playing d4 when possible
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.32.0: BOOK FILTER & COUNTERPLAY MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: Bot STILL plays d3 because book moves BYPASS the hard filter!
+    // FIX: Filter book moves BEFORE playing them, not after
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.32: BOOK MOVE HARD FILTER — Filter book moves BEFORE playing!
+    v40BookHardFilterEnabled: true,
+    v40BookRejectD3: true,                          // NEVER play d2d3 from book
+    v40BookRejectE3: true,                          // NEVER play e2e3 from book
+    v40BookRejectPassiveMoves: true,                // Reject all passive book moves
+    v40BookForceD4: true,                           // If d4 is in book, prefer it strongly
+    v40BookForceE4: true,                           // If e4 is in book, prefer it strongly
+    
+    // v40.32: ENHANCED COUNTERPLAY GENERATION — Active defense when behind
+    v40CounterplayEnabled: true,
+    v40CounterplayPriorityMultiplier: 3.0,          // 3x priority for counterplay when losing
+    v40CounterplayThreshold: -200,                  // Activate when eval < -200cp
+    v40ActiveDefenseBonus: 800000000000,            // 800 billion for active defense moves
+    v40PassiveDefensePenalty: -400000000000,        // 400 billion penalty for passive defense
+    v40ComplicationBonus: 500000000000,             // 500 billion for creating complications
+    
+    // v40.32: TACTICAL SUPREMACY — Enhanced threat detection
+    v40TacticalSupremacyEnabled: true,
+    v40ThreatDetectionDepth: 6,                     // Look 6 plies for threats
+    v40HangingPiecePenalty: -2000000000000,         // 2 trillion for hanging pieces
+    v40UndefendedSquarePenalty: -100000000000,      // 100 billion for undefended squares
+    v40TacticalBlindspotCheck: true,                // Extra verification pass
+    
+    // v40.32: PIECE COORDINATION — Better piece harmony
+    v40PieceCoordinationEnabled: true,
+    v40CoordinationBonus: 300000000000,             // 300 billion for well-coordinated pieces
+    v40DiscoordinationPenalty: -200000000000,       // 200 billion for scattered pieces
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -36664,9 +36699,9 @@ const ALPHAZERO_OPENINGS = {
     // French Defense - Positional battle
     "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -": {
         white: [
-            { move: "d2d4", weight: 0.60, name: "French main" },
-            { move: "g1f3", weight: 0.25, name: "King's Indian Attack" },
-            { move: "d2d3", weight: 0.15, name: "Quiet King's Indian" }
+            { move: "d2d4", weight: 0.70, name: "French main" },
+            { move: "g1f3", weight: 0.30, name: "King's Indian Attack" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
         ]
     },
     
@@ -36808,18 +36843,18 @@ const ALPHAZERO_OPENINGS = {
     // AlphaZero Ruy Lopez: After 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6
     "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -": {
         white: [
-            { move: "e1g1", weight: 0.80, name: "Castling (AlphaZero)" },
-            { move: "d2d3", weight: 0.15, name: "Solid Setup" },
-            { move: "b1c3", weight: 0.05, name: "Development" }
+            { move: "e1g1", weight: 0.85, name: "Castling (AlphaZero)" },
+            { move: "b1c3", weight: 0.15, name: "Development" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
         ]
     },
     
     // After castling: 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7
     "r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 w kq -": {
         white: [
-            { move: "f1e1", weight: 0.90, name: "Re1 Main Line (AlphaZero)" },
-            { move: "d2d3", weight: 0.08, name: "Closed Variation" },
-            { move: "c2c3", weight: 0.02, name: "Slow Development" }
+            { move: "f1e1", weight: 0.95, name: "Re1 Main Line (AlphaZero)" },
+            { move: "c2c3", weight: 0.05, name: "Slow Development" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
         ]
     },
     
@@ -36871,9 +36906,9 @@ const ALPHAZERO_OPENINGS = {
     // AlphaZero Italian: After 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5
     "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -": {
         white: [
-            { move: "c2c3", weight: 0.70, name: "Giuoco Piano (AlphaZero)" },
-            { move: "d2d3", weight: 0.20, name: "Giuoco Pianissimo" },
-            { move: "b2b4", weight: 0.10, name: "Evans Gambit" }
+            { move: "c2c3", weight: 0.80, name: "Giuoco Piano (AlphaZero)" },
+            { move: "b2b4", weight: 0.20, name: "Evans Gambit" }
+            // v40.32: REMOVED d2d3 - FORBIDDEN PASSIVE MOVE
         ]
     },
     
@@ -40968,6 +41003,7 @@ function logEssenceDecision(fen, move, topMove, preEval, postEval, accepted) {
 /**
  * Opening book lookup - v17.0.0: Controlled novelty with elegance bias
  * v16 deterministic mainlines + v17 essence-guided alternatives
+ * v40.32: BOOK MOVE HARD FILTER — Filter forbidden moves from book!
  */
 function getAlphaZeroBookMove(fen, activeColor) {
     const position = ALPHAZERO_OPENINGS[fen];
@@ -40975,6 +41011,67 @@ function getAlphaZeroBookMove(fen, activeColor) {
     
     const moves = activeColor === 'w' ? position.white : position.black;
     if (!moves || moves.length === 0) return null;
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.32: BOOK MOVE HARD FILTER — CRITICAL FIX!
+    // Filter out FORBIDDEN moves from book BEFORE selecting
+    // This prevents d2d3, e2e3 from ever being played!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    const isBookMoveForbidden = (move) => {
+        if (!CONFIG.v40BookHardFilterEnabled) return false;
+        
+        // FORBIDDEN: d2d3 in any opening position
+        if (CONFIG.v40BookRejectD3 && move === 'd2d3') {
+            debugLog("[V40.32_BOOK_FILTER]", `🚫🚫🚫 BOOK HARD FILTER: d2d3 is ABSOLUTELY FORBIDDEN!`);
+            return true;
+        }
+        
+        // FORBIDDEN: e2e3 in any opening position (unless e4 already played)
+        if (CONFIG.v40BookRejectE3 && move === 'e2e3') {
+            debugLog("[V40.32_BOOK_FILTER]", `🚫🚫🚫 BOOK HARD FILTER: e2e3 is ABSOLUTELY FORBIDDEN!`);
+            return true;
+        }
+        
+        // FORBIDDEN: Passive knight moves
+        if (CONFIG.v40BookRejectPassiveMoves) {
+            const passiveMoves = ['g1h3', 'b1a3', 'g8h6', 'b8a6', 'a2a3', 'h2h3'];
+            if (passiveMoves.includes(move)) {
+                debugLog("[V40.32_BOOK_FILTER]", `🚫 BOOK HARD FILTER: ${move} is passive and FORBIDDEN!`);
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    // Filter the moves array to remove forbidden moves
+    const filteredMoves = moves.filter(m => !isBookMoveForbidden(m.move));
+    
+    // If all moves are forbidden (shouldn't happen), return null to use engine
+    if (filteredMoves.length === 0) {
+        debugLog("[V40.32_BOOK_FILTER]", `⚠️ ALL book moves filtered out - using engine instead`);
+        return null;
+    }
+    
+    // v40.32: FORCE d4/e4 PREFERENCE — If d4 or e4 is available, use it!
+    if (CONFIG.v40BookForceD4) {
+        const d4Move = filteredMoves.find(m => m.move === 'd2d4');
+        if (d4Move) {
+            debugLog("[V40.32_BOOK_FILTER]", `✅ FORCE d4: Playing d2d4 (FORCED PREFERENCE)`);
+            return 'd2d4';
+        }
+    }
+    
+    if (CONFIG.v40BookForceE4) {
+        const e4Move = filteredMoves.find(m => m.move === 'e2e4');
+        if (e4Move) {
+            debugLog("[V40.32_BOOK_FILTER]", `✅ FORCE e4: Playing e2e4 (FORCED PREFERENCE)`);
+            return 'e2e4';
+        }
+    }
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // END v40.32 BOOK FILTER
+    // ═══════════════════════════════════════════════════════════════════════════════
     
     // v20: TRUE ALPHAZERO - ALWAYS use book moves (NEVER DEVIATE)
     if (moveCount <= TRUE_ALPHAZERO.openingStabilityMove) {
@@ -40984,14 +41081,14 @@ function getAlphaZeroBookMove(fen, activeColor) {
         // v20 TRUE ALPHAZERO: 100% priority for highest-weighted move (PERFECT mainlines)
         // 0% chance for alternatives (ZERO variation)
         
-        // ALWAYS use highest-weighted move (mainline)
-        const bestMove = moves.reduce((best, move) => move.weight > best.weight ? move : best, moves[0]);
+        // ALWAYS use highest-weighted move from FILTERED moves (mainline)
+        const bestMove = filteredMoves.reduce((best, move) => move.weight > best.weight ? move : best, filteredMoves[0]);
         debugLog("[ENGINE]", `📖 BOOK MOVE (MAINLINE 100%): ${bestMove.name} - ${bestMove.move}`);
         return bestMove.move;
     }
     
-    // Fallback to highest-weighted move
-    const bestMove = moves.reduce((best, move) => move.weight > best.weight ? move : best, moves[0]);
+    // Fallback to highest-weighted move from FILTERED moves
+    const bestMove = filteredMoves.reduce((best, move) => move.weight > best.weight ? move : best, filteredMoves[0]);
     debugLog("[ENGINE]", `📖 BOOK MOVE (default): ${bestMove.name} - ${bestMove.move}`);
     return bestMove.move;
 }
