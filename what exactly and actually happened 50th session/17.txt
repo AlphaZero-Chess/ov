@@ -1,0 +1,90 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+24234|function v40AbsoluteOpeningProhibitionEval(fen, move, board, activeColor, moveNumber) {
+24235|    if (!CONFIG.v40AbsoluteOpeningProhibitionEnabled) return 0;
+24236|    
+24237|    let score = 0;
+24238|    const isWhite = activeColor === 'w';
+24239|    const maxMoves = CONFIG.v40MaxMovesForOpeningProhibition || 10;
+24240|    
+24241|    // Only apply in the opening (first 10 moves)
+24242|    if (moveNumber > maxMoves) return 0;
+24243|    
+24244|    const fromSquare = move.substring(0, 2);
+24245|    const toSquare = move.substring(2, 4);
+24246|    const piece = board.get(fromSquare);
+24247|    
+24248|    if (!piece) return 0;
+24249|    const pieceType = piece.toLowerCase();
+24250|    
+24251|    // Check if this is a PASSIVE d3 or e3 pawn move
+24252|    if (pieceType === 'p') {
+24253|        if (isWhite) {
+24254|            // White playing d3 when d4 is available - DISASTER
+24255|            if (toSquare === 'd3' && fromSquare === 'd2') {
+24256|                // Check if d4 is available
+24257|                const d4Piece = board.get('d4');
+24258|                const e5Piece = board.get('e5');
+24259|                if (!d4Piece) {
+24260|                    debugLog("[V40.30_OPENING]", `🚫🚫🚫 ABSOLUTE PROHIBITION: d3 is FORBIDDEN! d4 is available!`);
+24261|                    score += CONFIG.v40D3OpeningPenalty || -5000000000;
+24262|                }
+24263|            }
+24264|            // White playing e3 when e4 is better - BAD
+24265|            if (toSquare === 'e3' && fromSquare === 'e2') {
+24266|                const e4Piece = board.get('e4');
+24267|                if (!e4Piece) {
+24268|                    debugLog("[V40.30_OPENING]", `🚫🚫🚫 ABSOLUTE PROHIBITION: e3 is FORBIDDEN! e4 is better!`);
+24269|                    score += CONFIG.v40E3OpeningPenalty || -5000000000;
+24270|                }
+24271|            }
+24272|            // White playing d4 or e4 - EXCELLENT
+24273|            if (toSquare === 'd4' || toSquare === 'e4') {
+24274|                debugLog("[V40.30_OPENING]", `✅✅✅ EXCELLENT: Playing ${toSquare} - proper central control!`);
+24275|                score += CONFIG.v40MustPlayD4E4Bonus || 500000000;
+24276|            }
+24277|        } else {
+24278|            // Black playing d6 early without need - PASSIVE
+24279|            if (toSquare === 'd6' && fromSquare === 'd7' && moveNumber <= 4) {
+24280|                const d5Piece = board.get('d5');
+24281|                if (!d5Piece) {
+24282|                    debugLog("[V40.30_OPENING]", `⚠️ PASSIVE: d6 early, d5 may be better`);
+24283|                    score += CONFIG.v40PassiveOpeningMovesPenalty / 10 || -300000000;
+24284|                }
+24285|            }
+24286|            // Black playing d5 - GOOD
+24287|            if (toSquare === 'd5' || toSquare === 'e5') {
+24288|                score += CONFIG.v40MustPlayD4E4Bonus / 2 || 250000000;
+24289|            }
+24290|        }
+24291|    }
+24292|    
+24293|    // Check for passive knight development (Nc3/Nf3 before center pawns)
+24294|    if (pieceType === 'n' && moveNumber <= 4) {
+24295|        const d2Pawn = board.get('d2');
+24296|        const e2Pawn = board.get('e2');
+24297|        if (isWhite && d2Pawn && e2Pawn) {
+24298|            // Knights before both center pawns - slight penalty
+24299|            if (d2Pawn.toLowerCase() === 'p' && e2Pawn.toLowerCase() === 'p') {
+24300|                score += -50000000; // Prefer center pawns first
+24301|            }
+24302|        }
+24303|    }
+24304|    
+24305|    return score;
+24306|}
+24307|
+24308|/**
+24309| * v40.30: DEEP FORK VISION EVALUATION
+24310| * See ALL forks 1-3 moves ahead and ABSOLUTELY avoid them!
+24311| */
+24312|function v40DeepForkVisionEval(fen, move, board, activeColor, moveNumber) {
+24313|    if (!CONFIG.v40DeepForkVisionEnabled) return 0;
+24314|    
+24315|    let score = 0;
+24316|    const isWhite = activeColor === 'w';
+24317|    const afterBoard = simulateMoveOnBoard(board, move);
+24318|    
+24319|    // Check for forks in 1 move (immediate threat after our move)
+24320|    const forkIn1 = v40DetectForkThreatIn1(afterBoard, isWhite);

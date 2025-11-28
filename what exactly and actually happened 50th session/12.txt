@@ -1,0 +1,67 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+40057|function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+40058|    try {
+40059|        // Get engine Q-value (normalized)
+40060|        const engine_Q = engineScore;
+40061|        
+40062|        // Get rollout Q-value (normalized, default to engine if not provided)
+40063|        const rollout_Q = rolloutScore !== undefined ? rolloutScore : engineScore;
+40064|        
+40065|        // Get policy prior (softmax of MultiPV)
+40066|        const policyPrior = computePolicyPrior(move, alternatives);
+40067|        
+40068|        // Normalize policy prior to centipawn bonus scale (-50..+50)
+40069|        // Higher probability = positive bonus, lower = negative
+40070|        const normalizedPolicyPrior = (policyPrior - 0.1) * 250; // Map 0.1..0.25 to -25..+37.5
+40071|        
+40072|        // ═══════════════════════════════════════════════════════════════════
+40073|        // v40.1.0: TRUE ALPHAZERO SUPERHUMAN BEAST INTEGRATION — PARADIGM SHIFT
+40074|        // CRITICAL: v40 now has 55% DOMINANT INFLUENCE — this IS the superhuman
+40075|        // Add v40's deep positional/strategic/tactical evaluation
+40076|        // ═══════════════════════════════════════════════════════════════════
+40077|        let v40Bonus = 0;
+40078|        let v40DeepScore = 0;
+40079|        let v40MatingNetPenalty = 0;
+40080|        let v40FileControlBonus = 0;
+40081|        let v40InitiativeBonus = 0;
+40082|        
+40083|        if (CONFIG.v40Enabled && fen) {
+40084|            try {
+40085|                // Get v40 superhuman beast evaluation (normalized to ~100cp scale)
+40086|                const v40Score = v40SuperhumanBeastEvaluate(fen, move, 100);
+40087|                
+40088|                // v40.3: ULTIMATE Enhanced deep evaluations — MAXIMUM WEIGHTS
+40089|                const board = parseFenToBoard(fen);
+40090|                const activeColor = fen.split(' ')[1];
+40091|                const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+40092|                
+40093|                // v40.3: DEEP MATING NET DETECTION (prevents Ra1# type disasters)
+40094|                // CRITICAL: Increased to 1.5 — mating nets MUST be absolutely respected
+40095|                v40MatingNetPenalty = v40DeepMatingNetDetection(fen, move, board, activeColor) * 1.5;
+40096|                
+40097|                // v40.3: FILE CONTROL EVALUATION (prevents c-file invasion blindness)
+40098|                // CRITICAL: Increased to 1.0 — file control is CRUCIAL
+40099|                v40FileControlBonus = v40FileControlEvaluation(fen, move, board, activeColor) * 1.0;
+40100|                
+40101|                // v40.3: INITIATIVE TRACKING (prevents initiative collapse)
+40102|                // CRITICAL: Increased to 1.2 — initiative loss = position loss
+40103|                v40InitiativeBonus = v40DeepInitiativeTracking(fen, move, board, activeColor, moveNumber) * 1.2;
+40104|                
+40105|                // v40.3: QUEEN MOVEMENT PENALTY (prevents Qd1-Qd3-Qe4-Qd3 disasters)
+40106|                // CRITICAL: Multiplied by 2.0 — queen movement must be HEAVILY penalized
+40107|                const queenPenalty = v40QueenMovementPenalty(fen, move, board, activeColor, moveNumber) * 2.0;
+40108|                
+40109|                // v40.3: PROPHYLACTIC BONUS (preventing opponent's plans)
+40110|                const prophylacticBonus = v40ProphylacticEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+40111|                
+40112|                // v40.3: ROOK INFILTRATION DETECTION
+40113|                const rookInfiltrationPenalty = v40RookInfiltrationDetection(fen, move, board, activeColor) * 1.0;
+40114|                
+40115|                // v40.3: KING SAFETY CORRIDOR
+40116|                const kingSafetyCorridorPenalty = v40KingSafetyCorridorEval(fen, move, board, activeColor) * 0.9;
+40117|                
+40118|                // v40.3 NEW: ANTI-PASSIVITY SYSTEM — Forces active play
+40119|                const antiPassivityBonus = v40AntiPassivityEvaluation(fen, move, board, activeColor, moveNumber) * 0.8;
+40120|                

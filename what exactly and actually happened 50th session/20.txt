@@ -1,0 +1,23 @@
+Now let me add the v40.33 functions after the v40.30 functions. First, let me find a good insertion point:
+Action: $ cd /app && grep -n "v40.30\|v40.31" "Lichess Bot-AlphaZero-Pure.user.js" | tail -20
+Observation: 24773: * v40.30: TACTICAL BLINDNESS ELIMINATION EVALUATION
+24813: * v40.30: Find opponent tactics available after our move
+24860: * v40.30: Find our tactics with this move
+24894: * v40.30: Check if piece attacks a square
+24944: * v40.30: Check if diagonal path is blocked
+24964: * v40.30: Check if straight path is blocked
+24984: * v40.30: Check if piece is pinned
+25031: * v40.30: Find queen square for a color
+40640:                // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+40645:                // v40.30: ABSOLUTE OPENING PROHIBITION — d3/e3 are FORBIDDEN in first 10 moves!
+40648:                // v40.30: DEEP FORK VISION — See ALL forks 1-3 moves ahead!
+40651:                // v40.30: BISHOP PAIR PRESERVATION — Never trade bishop pair needlessly!
+40654:                // v40.30: PIECE ACTIVITY SUPREME — All pieces must be active by move 12!
+40657:                // v40.30: CENTER CONTROL ABSOLUTE — Must control center by move 8!
+40660:                // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics!
+40663:                // v40.30: COMBINED v40 SCORE — 100% ABSOLUTE OPENING MASTERY INFLUENCE
+40733:                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+40736:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.30 ABSOLUTE OPENING MASTERY PARADIGM SHIFT
+41203:    // v40.31: ABSOLUTE HARD MOVE FILTER — REJECT BAD MOVES BEFORE ANY SCORING
+41210:        debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+Exit code: 0

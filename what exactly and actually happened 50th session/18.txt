@@ -1,0 +1,4 @@
+I see the v40AbsoluteOpeningProhibitionEval function only applies until move 10. I need to create a v40.33 function that ALWAYS prohibits d3, not just in the opening. Let me add the v40.33 functions after the v40.30 functions:
+Action: $ cd /app && grep -n "function v40TacticalBlindnessEliminationEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 24776:function v40TacticalBlindnessEliminationEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

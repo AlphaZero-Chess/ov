@@ -1,0 +1,98 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+24776|function v40TacticalBlindnessEliminationEval(fen, move, board, activeColor, moveNumber) {
+24777|    if (!CONFIG.v40TacticalBlindnessEliminationEnabled) return 0;
+24778|    
+24779|    let score = 0;
+24780|    const isWhite = activeColor === 'w';
+24781|    const afterBoard = simulateMoveOnBoard(board, move);
+24782|    
+24783|    // Check for missed tactics that opponent can play
+24784|    const opponentTactics = v40FindOpponentTactics(afterBoard, isWhite);
+24785|    
+24786|    if (opponentTactics.hasPin) {
+24787|        debugLog("[V40.30_TACTICAL]", `⚠️ Move allows opponent PIN!`);
+24788|        score += CONFIG.v40PinMissedPenalty || -1200000000;
+24789|    }
+24790|    
+24791|    if (opponentTactics.hasDiscoveredAttack) {
+24792|        debugLog("[V40.30_TACTICAL]", `🚫 Move allows opponent DISCOVERED ATTACK!`);
+24793|        score += CONFIG.v40DiscoveredAttackMissedPenalty || -1800000000;
+24794|    }
+24795|    
+24796|    if (opponentTactics.hasDoubleAttack) {
+24797|        debugLog("[V40.30_TACTICAL]", `🚫 Move allows opponent DOUBLE ATTACK!`);
+24798|        score += CONFIG.v40DoubleAttackMissedPenalty || -1500000000;
+24799|    }
+24800|    
+24801|    // Check if WE have tactics available that we should play
+24802|    const ourTactics = v40FindOurTactics(board, move, isWhite);
+24803|    
+24804|    if (ourTactics.foundTactic) {
+24805|        debugLog("[V40.30_TACTICAL]", `✅ Move is a TACTIC! ${ourTactics.description}`);
+24806|        score += CONFIG.v40FoundTacticBonus || 800000000;
+24807|    }
+24808|    
+24809|    return score;
+24810|}
+24811|
+24812|/**
+24813| * v40.30: Find opponent tactics available after our move
+24814| */
+24815|function v40FindOpponentTactics(board, isWhite) {
+24816|    const result = { hasPin: false, hasDiscoveredAttack: false, hasDoubleAttack: false };
+24817|    const enemyColor = isWhite ? 'b' : 'w';
+24818|    
+24819|    // Check for pins on our pieces
+24820|    for (const [square, piece] of board) {
+24821|        if (!piece) continue;
+24822|        const pieceType = piece.toLowerCase();
+24823|        const pieceIsWhite = piece === piece.toUpperCase();
+24824|        if (pieceIsWhite !== isWhite) continue;
+24825|        if (pieceType === 'k') continue;
+24826|        
+24827|        // Check if piece is pinned to king
+24828|        const kingSquare = findKingSquare(board, activeColor);
+24829|        if (kingSquare && v40IsPiecePinned(board, square, kingSquare, !isWhite)) {
+24830|            result.hasPin = true;
+24831|        }
+24832|    }
+24833|    
+24834|    // Simple double attack check - enemy piece attacks 2+ of our pieces
+24835|    for (const [square, piece] of board) {
+24836|        if (!piece) continue;
+24837|        const pieceIsWhite = piece === piece.toUpperCase();
+24838|        if (pieceIsWhite === isWhite) continue;
+24839|        
+24840|        let attackedPieces = 0;
+24841|        for (const [targetSquare, targetPiece] of board) {
+24842|            if (!targetPiece) continue;
+24843|            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+24844|            if (targetIsWhite !== isWhite) continue;
+24845|            
+24846|            if (v40DoesAttackSquare(board, square, targetSquare, piece)) {
+24847|                attackedPieces++;
+24848|            }
+24849|        }
+24850|        
+24851|        if (attackedPieces >= 2) {
+24852|            result.hasDoubleAttack = true;
+24853|        }
+24854|    }
+24855|    
+24856|    return result;
+24857|}
+24858|
+24859|/**
+24860| * v40.30: Find our tactics with this move
+24861| */
+24862|function v40FindOurTactics(board, move, isWhite) {
+24863|    const result = { foundTactic: false, description: '' };
+24864|    const afterBoard = simulateMoveOnBoard(board, move);
+24865|    const toSquare = move.substring(2, 4);
+24866|    const movingPiece = board.get(move.substring(0, 2));
+24867|    
+24868|    if (!movingPiece) return result;
+24869|    
+24870|    // Check if move creates double attack

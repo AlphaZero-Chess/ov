@@ -1,0 +1,4 @@
+Now let me find the main evaluation area and add the v40.33 ABSOLUTE D3 PROHIBITION function. First let me find where the computeCombinedScore function is:
+Action: $ cd /app && grep -n "function computeCombinedScore" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 40057:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+Exit code: 0

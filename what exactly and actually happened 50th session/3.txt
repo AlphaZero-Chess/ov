@@ -1,0 +1,56 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+41008|function getAlphaZeroBookMove(fen, activeColor) {
+41009|    const position = ALPHAZERO_OPENINGS[fen];
+41010|    if (!position) return null;
+41011|    
+41012|    const moves = activeColor === 'w' ? position.white : position.black;
+41013|    if (!moves || moves.length === 0) return null;
+41014|    
+41015|    // ═══════════════════════════════════════════════════════════════════════════════
+41016|    // v40.32: BOOK MOVE HARD FILTER — CRITICAL FIX!
+41017|    // Filter out FORBIDDEN moves from book BEFORE selecting
+41018|    // This prevents d2d3, e2e3 from ever being played!
+41019|    // ═══════════════════════════════════════════════════════════════════════════════
+41020|    const isBookMoveForbidden = (move) => {
+41021|        if (!CONFIG.v40BookHardFilterEnabled) return false;
+41022|        
+41023|        // FORBIDDEN: d2d3 in any opening position
+41024|        if (CONFIG.v40BookRejectD3 && move === 'd2d3') {
+41025|            debugLog("[V40.32_BOOK_FILTER]", `🚫🚫🚫 BOOK HARD FILTER: d2d3 is ABSOLUTELY FORBIDDEN!`);
+41026|            return true;
+41027|        }
+41028|        
+41029|        // FORBIDDEN: e2e3 in any opening position (unless e4 already played)
+41030|        if (CONFIG.v40BookRejectE3 && move === 'e2e3') {
+41031|            debugLog("[V40.32_BOOK_FILTER]", `🚫🚫🚫 BOOK HARD FILTER: e2e3 is ABSOLUTELY FORBIDDEN!`);
+41032|            return true;
+41033|        }
+41034|        
+41035|        // FORBIDDEN: Passive knight moves
+41036|        if (CONFIG.v40BookRejectPassiveMoves) {
+41037|            const passiveMoves = ['g1h3', 'b1a3', 'g8h6', 'b8a6', 'a2a3', 'h2h3'];
+41038|            if (passiveMoves.includes(move)) {
+41039|                debugLog("[V40.32_BOOK_FILTER]", `🚫 BOOK HARD FILTER: ${move} is passive and FORBIDDEN!`);
+41040|                return true;
+41041|            }
+41042|        }
+41043|        
+41044|        return false;
+41045|    };
+41046|    
+41047|    // Filter the moves array to remove forbidden moves
+41048|    const filteredMoves = moves.filter(m => !isBookMoveForbidden(m.move));
+41049|    
+41050|    // If all moves are forbidden (shouldn't happen), return null to use engine
+41051|    if (filteredMoves.length === 0) {
+41052|        debugLog("[V40.32_BOOK_FILTER]", `⚠️ ALL book moves filtered out - using engine instead`);
+41053|        return null;
+41054|    }
+41055|    
+41056|    // v40.32: FORCE d4/e4 PREFERENCE — If d4 or e4 is available, use it!
+41057|    if (CONFIG.v40BookForceD4) {
+41058|        const d4Move = filteredMoves.find(m => m.move === 'd2d4');
+41059|        if (d4Move) {
+41060|            debugLog("[V40.32_BOOK_FILTER]", `✅ FORCE d4: Playing d2d4 (FORCED PREFERENCE)`);

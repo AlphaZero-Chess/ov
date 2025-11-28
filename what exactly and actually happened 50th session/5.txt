@@ -1,0 +1,25 @@
+The v40.32 book filter is already implemented. Now let me check if the v40.32 counterplay and tactical supremacy functions exist:
+Action: $ cd /app && grep -n "v40Counterplay\|v40TacticalSupremacy\|v40PieceCoordination" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 942:    v40CounterplayPriority: 12000,          // Counterplay priority (8000→12000)
+1271:    v40CounterplayGenerationEnabled: true,
+1273:    v40CounterplayBonus: 8000,              // Creating counterplay threats
+1453:    v40CounterplayBonus: 250000,            // Bonus for central counterplay during storm
+1716:    v40PieceCoordinationThreatPenalty: -350000000,  // Multiple pieces coordinating attack
+2144:    v40PieceCoordinationCheckEnabled: true,
+2263:    v40CounterplayEnabled: true,
+2264:    v40CounterplayPriorityMultiplier: 3.0,          // 3x priority for counterplay when losing
+2265:    v40CounterplayThreshold: -200,                  // Activate when eval < -200cp
+2271:    v40TacticalSupremacyEnabled: true,
+2278:    v40PieceCoordinationEnabled: true,
+3785:        const coordinationScore = v40PieceCoordinationEval(fen, candidateMove, board, activeColor);
+3916:function v40PieceCoordinationEval(fen, move, board, activeColor) {
+5125:        score += CONFIG.v40CounterplayPriority || 12000;
+10361:function v40CounterplayGenerationEval(fen, move, board, activeColor, moveNumber) {
+10362:    if (!CONFIG.v40CounterplayGenerationEnabled) return 0;
+10389:            score += CONFIG.v40CounterplayBonus || 8000;
+12749:                    score += CONFIG.v40CounterplayBonus || 200000;
+22989:function v40PieceCoordinationCheckEval(fen, move, board, activeColor, moveNumber) {
+22990:    if (!CONFIG.v40PieceCoordinationCheckEnabled) return 0;
+40184:                const counterplayGenScore = v40CounterplayGenerationEval(fen, move, board, activeColor, moveNumber) * 1.3;
+40594:                const pieceCoordinationCheckScore = v40PieceCoordinationCheckEval(fen, move, board, activeColor, moveNumber) * 260.0;
+Exit code: 0

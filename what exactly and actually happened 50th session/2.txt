@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -n "function getAlphaZeroBookMove" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 41008:function getAlphaZeroBookMove(fen, activeColor) {
+Exit code: 0

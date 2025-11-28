@@ -1,0 +1,55 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    v40TacticalBlindspotCheck: true,                // Extra verification pass
+    
+    // v40.32: PIECE COORDINATION — Better piece harmony
+    v40PieceCoordinationEnabled: true,
+    v40CoordinationBonus: 300000000000,             // 300 billion for well-coordinated pieces
+    v40DiscoordinationPenalty: -200000000000,       // 200 billion for scattered pieces
+};" --new-str "    v40TacticalBlindspotCheck: true,                // Extra verification pass
+    
+    // v40.32: PIECE COORDINATION — Better piece harmony
+    v40PieceCoordinationEnabled: true,
+    v40CoordinationBonus: 300000000000,             // 300 billion for well-coordinated pieces
+    v40DiscoordinationPenalty: -200000000000,       // 200 billion for scattered pieces
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.33.0: ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: Bot STILL plays d3 even with filters! The engine is bypassing them!
+    // FIX: Add ABSOLUTE prohibition at EVERY level - book, engine, post-processing
+    // Also: Implement proper Sicilian handling with d4/f4 attack systems
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.33: ABSOLUTE D3 PROHIBITION — d3 is NEVER acceptable
+    v40AbsoluteD3ProhibitionEnabled: true,
+    v40D3ProhibitionAllPhases: true,                // Prohibit d3 in ALL game phases
+    v40D3ProhibitionPenalty: -10000000000000,       // 10 trillion penalty for d3
+    v40D3ProhibitionMoveLimit: 40,                  // Prohibit d3 until move 40
+    
+    // v40.33: SICILIAN MASTERY — Proper anti-Sicilian systems
+    v40SicilianMasteryEnabled: true,
+    v40SicilianForceD4: true,                       // ALWAYS play d4 against Sicilian
+    v40SicilianD4Bonus: 5000000000000,              // 5 trillion bonus for d4 in Sicilian
+    v40SicilianOpenBonus: 3000000000000,            // 3 trillion for Open Sicilian lines
+    v40SicilianF4Attack: true,                      // Enable f4 Grand Prix Attack
+    v40SicilianF4Bonus: 2000000000000,              // 2 trillion for f4 attack
+    
+    // v40.33: ENHANCED TACTICAL DEPTH — See deeper into complications
+    v40EnhancedTacticalDepthEnabled: true,
+    v40TacticalDepthMultiplier: 2.0,                // 2x tactical search depth
+    v40CriticalMomentDepth: 8,                      // 8 plies in critical moments
+    v40TacticalVerificationPasses: 3,               // 3 verification passes
+    
+    // v40.33: PIECE SAFETY SUPREME — No hanging pieces EVER
+    v40PieceSafetySupremeEnabled: true,
+    v40HangingPiecePenaltyAbsolute: -20000000000000, // 20 trillion for hanging piece
+    v40UndefendedPieceWarning: -1000000000000,      // 1 trillion warning for weak defense
+    v40AttackedPieceCheck: true,                    // Extra check for attacked pieces
+    
+    // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+    v40InitiativeMaintenanceEnabled: true,
+    v40InitiativeLossPenalty: -500000000000,        // 500 billion for losing initiative
+    v40InitiativeGainBonus: 800000000000,           // 800 billion for gaining initiative
+    v40PassiveMoveInInitiativePenalty: -2000000000000, // 2 trillion for passive when have initiative
+};"
+Observation: Edit was successful.
