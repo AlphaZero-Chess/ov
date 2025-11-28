@@ -2905,6 +2905,96 @@ class V40MCTSNode {
  * 3. SIMULATION: Evaluate position (value network emulation)
  * 4. BACKPROPAGATION: Propagate value back up the tree
  */
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.31: CRITICAL FIX - simulateMoveOnBoard was UNDEFINED causing ALL v40 evals to fail!
+// This function simulates a move on the board and returns the resulting board state
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.31: CRITICAL - Simulate a move on the board and return the new board state
+ * This function was MISSING causing all v40.28+ evaluations to crash!
+ * @param {Map} board - The current board state as a Map
+ * @param {string} move - The move in UCI format (e.g., 'e2e4')
+ * @returns {Map} - The new board state after the move
+ */
+function simulateMoveOnBoard(board, move) {
+    if (!board || !move || move.length < 4) {
+        debugLog("[V40.31_SIMULATE]", `⚠️ Invalid input to simulateMoveOnBoard`);
+        return new Map(board);
+    }
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const promotion = move.length > 4 ? move.substring(4, 5) : null;
+    
+    const movingPiece = board.get(fromSquare);
+    if (!movingPiece) {
+        debugLog("[V40.31_SIMULATE]", `⚠️ No piece at ${fromSquare}`);
+        return new Map(board);
+    }
+    
+    // Create new board state
+    const newBoard = new Map(board);
+    
+    // Remove piece from source square
+    newBoard.delete(fromSquare);
+    
+    // Handle pawn promotion
+    if (promotion) {
+        const isWhite = movingPiece === movingPiece.toUpperCase();
+        const promotedPiece = isWhite ? promotion.toUpperCase() : promotion.toLowerCase();
+        newBoard.set(toSquare, promotedPiece);
+    } else {
+        // Move piece to destination
+        newBoard.set(toSquare, movingPiece);
+    }
+    
+    // Handle en passant capture
+    const pieceType = movingPiece.toLowerCase();
+    if (pieceType === 'p') {
+        const fromFile = fromSquare.charCodeAt(0);
+        const toFile = toSquare.charCodeAt(0);
+        const fromRank = parseInt(fromSquare[1]);
+        const toRank = parseInt(toSquare[1]);
+        
+        // Diagonal move without capture = en passant
+        if (Math.abs(fromFile - toFile) === 1 && !board.get(toSquare)) {
+            // Captured pawn is on the same file as toSquare but on fromRank
+            const capturedPawnSquare = String.fromCharCode(toFile) + fromRank;
+            newBoard.delete(capturedPawnSquare);
+        }
+    }
+    
+    // Handle castling
+    if (pieceType === 'k') {
+        const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        
+        if (Math.abs(toFile - fromFile) === 2) {
+            const rank = fromSquare[1];
+            
+            if (toFile > fromFile) {
+                // Kingside castling - move rook from h to f
+                const rookPiece = newBoard.get('h' + rank);
+                if (rookPiece) {
+                    newBoard.delete('h' + rank);
+                    newBoard.set('f' + rank, rookPiece);
+                }
+            } else {
+                // Queenside castling - move rook from a to d
+                const rookPiece = newBoard.get('a' + rank);
+                if (rookPiece) {
+                    newBoard.delete('a' + rank);
+                    newBoard.set('d' + rank, rookPiece);
+                }
+            }
+        }
+    }
+    
+    return newBoard;
+}
+
 function v40TrueAlphaZeroMCTS(fen, legalMoves) {
     if (!CONFIG.v40Enabled) {
         return null;
