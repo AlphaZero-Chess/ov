@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.41 PRE-MOVE PAWN THREAT SUPREME
-// @description  TRUE AlphaZero Replica v40.41 - PRE-MOVE PAWN THREAT DETECTION - PIECE UNDER ATTACK MUST RESPOND - ABSOLUTE ZERO BLUNDERS!
-// @author       AlphaZero TRUE REPLICA v40.41 PRE-MOVE THREAT SUPREME EDITION
-// @version      40.41.0-PRE-MOVE-PAWN-THREAT-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.42 INTEGRATED PAWN THREAT SUPREME
+// @description  TRUE AlphaZero Replica v40.42 - v40.41 SCORES NOW INTEGRATED INTO DEEP SCORE - ABSOLUTE ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.42 INTEGRATED THREAT SUPREME EDITION
+// @version      40.42.0-INTEGRATED-PAWN-THREAT-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -28367,10 +28367,12 @@ function v40GetPawnAttackers(board, square, activeColor) {
     const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
     const rank = parseInt(square.charAt(1));
     
-    // Enemy pawn attack positions
-    // If we are White, enemy black pawns attack from one rank below (rank - 1)
-    // If we are Black, enemy white pawns attack from one rank above (rank + 1)
-    const enemyPawnRank = isWhite ? rank - 1 : rank + 1;
+    // CRITICAL FIX v40.42: Enemy pawn attack positions
+    // Black pawns (attacking white pieces) are on HIGHER ranks and attack DOWN
+    // White pawns (attacking black pieces) are on LOWER ranks and attack UP
+    // So for WHITE pieces, enemy black pawns are on rank+1
+    // For BLACK pieces, enemy white pawns are on rank-1
+    const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
     
     if (enemyPawnRank < 1 || enemyPawnRank > 8) return attackers;
     
@@ -44395,8 +44397,10 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
                                // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
                                mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
-                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.40 MANDATORY RECAPTURE SUPREME PARADIGM SHIFT
+                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore +
+                               // v40.41 PRE-MOVE PAWN THREAT SUPREME additions — THE ULTIMATE FIX!
+                               preMovePawnThreatScore + postCapturePawnScore + absoluteMustRespondScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.41 PRE-MOVE PAWN THREAT SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -44478,6 +44482,10 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   💀♟️ MULTI-THREAT PAWN: ${multiThreatPawnScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🎯♟️ CAPTURE THEN ATTACK: ${captureThenAttackScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   👑♟️ PAWN CHAIN PROMOTION: ${pawnChainPromotionScore.toFixed(1)}`);
+                // v40.41 PRE-MOVE PAWN THREAT SUPREME debug logs
+                debugLog("[V40_INTEGRATE]", `   🚨🚨🚨 PRE-MOVE PAWN THREAT: ${preMovePawnThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚨🚨🚨 POST-CAPTURE PAWN: ${postCapturePawnScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚨🚨🚨 ABSOLUTE MUST RESPOND: ${absoluteMustRespondScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
