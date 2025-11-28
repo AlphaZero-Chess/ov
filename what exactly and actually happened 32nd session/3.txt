@@ -1,10 +1,7 @@
-
-Action: $ cd /app && grep -n "knightInfiltrationScore\|checkSequenceDetectionScore\|mustRespondScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
-Observation: 33253:                const knightInfiltrationScore = v40KnightInfiltrationEval(fen, move, board, activeColor, moveNumber) * 60.0;
-33256:                const checkSequenceDetectionScore = v40CheckSequenceDetectionEval(fen, move, board, activeColor, moveNumber) * 55.0;
-33259:                const mustRespondScore = v40MustRespondToThreatEval(fen, move, board, activeColor, moveNumber) * 50.0;
-33312:                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore;
-33368:                debugLog("[V40_INTEGRATE]", `   🏇🏇 KnightInfiltration: ${knightInfiltrationScore.toFixed(1)}`);
-33369:                debugLog("[V40_INTEGRATE]", `   🏇🏇 CheckSequenceDetection: ${checkSequenceDetectionScore.toFixed(1)}`);
-33370:                debugLog("[V40_INTEGRATE]", `   🏇🏇 MustRespond: ${mustRespondScore.toFixed(1)}`);
+Good, the v40.21 functions exist. Let me check if they're integrated and check the header:
+Action: $ cd /app && grep -n "deepPawnChainScore\|forcingLineScore\|quietMoveDangerScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 32584:                const deepPawnChainScore = v40DeepPawnChainEval(fen, move, board, activeColor, moveNumber) * 50.0;
+32587:                const forcingLineScore = v40ForcingLineDetectionEval(fen, move, board, activeColor, moveNumber) * 40.0;
+32590:                const quietMoveDangerScore = v40QuietMoveDangerEval(fen, move, board, activeColor, moveNumber) * 35.0;
+32641:                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore;
 Exit code: 0

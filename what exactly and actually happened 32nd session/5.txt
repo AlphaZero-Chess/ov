@@ -1,24 +1,21 @@
 
-Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
-Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
-1820|    v40MultipleInfiltratorsPenalty: -900000000,     // Multiple enemy pieces infiltrating
-1821|    
-1822|    // v40.22: MUST RESPOND TO THREAT — Don't ignore immediate threats!
-1823|    v40MustRespondEnabled: true,
-1824|    v40IgnoreThreatPenalty: -1200000000,            // Ignored a serious threat
-1825|    v40GreedyWhileUnderAttackPenalty: -800000000,   // Grabbed material while under attack
-1826|    v40PassiveMoveUnderAttackPenalty: -600000000,   // Passive move when being attacked
-1827|};
-1828|
-1829|// ═══════════════════════════════════════════════════════════════════════
-1830|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
-1831|// ═══════════════════════════════════════════════════════════════════════
-1832|
-1833|/**
-1834| * v37: TRUE MCTS Node structure for proper tree search
-1835| */
-1836|class MCTSNode {
-1837|    constructor(move, parent = null, prior = 1.0) {
-1838|        this.move = move;
-1839|        this.parent = parent;
-1840|        this.children = new Map();
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME
+// @description  TRUE AlphaZero Replica v40.20 - PAWN PROMOTION THREAT DETECTION - FORCING SEQUENCE CALCULATOR - KING WEAKENING PENALTY - PIECE SAFETY ABSOLUTE - NEVER MISS PROMOTIONS AGAIN
+// @author       AlphaZero TRUE REPLICA v40.20 PAWN PROMOTION SUPREME EDITION
+// @version      40.20.0-PAWN-PROMOTION-SUPREME
+// @match         *://lichess.org/*
+// @run-at        document-idle
+// @grant         none
+// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/del@refs/heads/main/stockfish1.js
+// ==/UserScript==" --new-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME
+// @description  TRUE AlphaZero Replica v40.21 - DEEP PAWN CHAIN CALCULATION - FORCING LINE DETECTION - QUIET MOVE DANGER - ABSOLUTE PROMOTION AWARENESS - FORCING SEQUENCE MASTERY
+// @author       AlphaZero TRUE REPLICA v40.21 DEEP PAWN CHAIN SUPREME EDITION
+// @version      40.21.0-DEEP-PAWN-CHAIN-SUPREME
+// @match         *://lichess.org/*
+// @run-at        document-idle
+// @grant         none
+// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/del@refs/heads/main/stockfish1.js
+// ==/UserScript=="
+Observation: Edit was successful.
