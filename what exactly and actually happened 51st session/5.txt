@@ -1,0 +1,7 @@
+The functions are NOT being called anywhere! They exist but are not integrated into the scoring system. Let me check the computeCombinedScore function:
+Action: $ grep -n "computeCombinedScore" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 40444:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+41278:    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+41279:    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+41703:                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+Exit code: 0

@@ -1,0 +1,5 @@
+I can see v40.33 has extensive d3 prohibition. Let me check why it's still not working - let me look at the actual game flow and verify the functions are being called:
+Action: $ grep -n "v40AbsoluteD3ProhibitionEval\|v40SicilianMasteryEval" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 25055:function v40AbsoluteD3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+25109:function v40SicilianMasteryEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

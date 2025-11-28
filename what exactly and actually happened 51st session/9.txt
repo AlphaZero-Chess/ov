@@ -1,0 +1,5 @@
+I can see the code is extensive. Let me check where the v40.33 functions should be integrated:
+Action: $ grep -n "v40DeepScore =" "/app/Lichess Bot-AlphaZero-Pure.user.js" | tail -5
+Observation: 40465:        let v40DeepScore = 0;
+41052:                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus +
+Exit code: 0
