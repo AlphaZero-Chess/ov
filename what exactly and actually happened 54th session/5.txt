@@ -1,0 +1,8 @@
+Let me find where the v40DeepScore is calculated and where the scores are summed up:
+Action: $ grep -n "initiativeMaintenanceScore\|absoluteD3ProhibitionScore.*1000.0\|sicilianMasteryScore.*800.0" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 41597:                const absoluteD3ProhibitionScore = v40AbsoluteD3ProhibitionEval(fen, move, board, activeColor, moveNumber) * 1000.0;
+41600:                const sicilianMasteryScore = v40SicilianMasteryEval(fen, move, board, activeColor, moveNumber) * 800.0;
+41609:                const initiativeMaintenanceScore = v40InitiativeMaintenanceEval(fen, move, board, activeColor, moveNumber) * 400.0;
+41686:                               pieceSafetySupremeScore + initiativeMaintenanceScore;
+41734:                debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ INITIATIVE MAINTENANCE: ${initiativeMaintenanceScore.toFixed(1)}`);
+Exit code: 0

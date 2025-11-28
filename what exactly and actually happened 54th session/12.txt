@@ -1,0 +1,8 @@
+The syntax is valid. Now let me check that the v40.35 functions exist in the file:
+Action: $ grep -n "function v40PassivePawnProhibitionEval\|function v40MaterialSafetyVerificationEval\|function v40TacticalVerificationLayersEval\|function v40CentralControlPriorityEval\|function v40PieceCoordinationSupremeEval" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 25481:function v40PassivePawnProhibitionEval(fen, move, board, activeColor, moveNumber) {
+25510:function v40MaterialSafetyVerificationEval(fen, move, board, activeColor, moveNumber) {
+25578:function v40TacticalVerificationLayersEval(fen, move, board, activeColor, moveNumber) {
+25816:function v40CentralControlPriorityEval(fen, move, board, activeColor, moveNumber) {
+25877:function v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

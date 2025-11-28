@@ -1,0 +1,25 @@
+The blacklist thresholds for timeWasting moves are set to 15, but the game showed a3 being played on move 17. Let me increase these thresholds to 30 to match the v40.35 config:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    timeWasting: [
+        { move: /^a2a3/, beforeMove: 15, reason: \"a3 - wastes time (lost game pattern)\" },
+        { move: /^h2h3/, beforeMove: 15, reason: \"h3 - wastes time without purpose\" },
+        { move: /^a7a6/, beforeMove: 15, reason: \"a6 - wastes time without purpose\" },
+        { move: /^h7h6/, beforeMove: 15, reason: \"h6 - wastes time without purpose\" },
+        { move: /^b2b3/, beforeMove: 12, reason: \"b3 - wastes time (lost game move 9)\" },
+        { move: /^b7b6/, beforeMove: 12, reason: \"b6 - often wastes time\" },
+        { move: /^b2b4/, beforeMove: 15, reason: \"b4 - premature wing attack\" },
+        { move: /^b7b5/, beforeMove: 15, reason: \"b5 - premature wing attack\" },
+        { move: /^a2a4/, beforeMove: 15, reason: \"a4 - wastes time (lost game move 15)\" },
+        { move: /^a7a5/, beforeMove: 15, reason: \"a5 - wastes time\" },
+    ]," --new-str "    timeWasting: [
+        { move: /^a2a3/, beforeMove: 30, reason: \"a3 - wastes time (v40.35 TOXIC)\" },
+        { move: /^h2h3/, beforeMove: 30, reason: \"h3 - wastes time (v40.35 TOXIC)\" },
+        { move: /^a7a6/, beforeMove: 30, reason: \"a6 - wastes time (v40.35 TOXIC)\" },
+        { move: /^h7h6/, beforeMove: 30, reason: \"h6 - wastes time (v40.35 TOXIC)\" },
+        { move: /^b2b3/, beforeMove: 25, reason: \"b3 - wastes time (lost game move 9)\" },
+        { move: /^b7b6/, beforeMove: 25, reason: \"b6 - often wastes time\" },
+        { move: /^b2b4/, beforeMove: 25, reason: \"b4 - premature wing attack\" },
+        { move: /^b7b5/, beforeMove: 25, reason: \"b5 - premature wing attack\" },
+        { move: /^a2a4/, beforeMove: 30, reason: \"a4 - wastes time (v40.35 TOXIC)\" },
+        { move: /^a7a5/, beforeMove: 30, reason: \"a5 - wastes time (v40.35 TOXIC)\" },
+    ],"
+Observation: Edit was successful.

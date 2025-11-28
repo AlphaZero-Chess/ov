@@ -1,0 +1,30 @@
+Now I need to add the v40.35 functions. Let me insert them after the v40.33 block:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+                const initiativeMaintenanceScore = v40InitiativeMaintenanceEval(fen, move, board, activeColor, moveNumber) * 400.0;
+                
+                // v40.33: COMBINED v40 SCORE — 100% ABSOLUTE D3 PROHIBITION INFLUENCE" --new-str "                // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+                const initiativeMaintenanceScore = v40InitiativeMaintenanceEval(fen, move, board, activeColor, moveNumber) * 400.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME — THE ULTIMATE FIX!
+                // From game analysis: Bot played a3 (passive), allowed Qxe5 (material loss)
+                // These fixes address PASSIVE PAWN MOVES and MATERIAL SAFETY
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.35: PASSIVE PAWN PROHIBITION — a3/h3/a6/h6/b3/g3 are TOXIC moves
+                const passivePawnProhibitionScore = v40PassivePawnProhibitionEval(fen, move, board, activeColor, moveNumber) * 1000.0;
+                
+                // v40.35: MATERIAL SAFETY VERIFICATION — Don't allow material loss
+                const materialSafetyScore = v40MaterialSafetyVerificationEval(fen, move, board, activeColor, moveNumber) * 800.0;
+                
+                // v40.35: TACTICAL VERIFICATION LAYERS — Multi-pass blunder prevention
+                const tacticalVerificationScore = v40TacticalVerificationLayersEval(fen, move, board, activeColor, moveNumber) * 600.0;
+                
+                // v40.35: CENTRAL CONTROL PRIORITY — e4/d4/e5/d5 are SACRED
+                const centralControlPriorityScore = v40CentralControlPriorityEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // v40.35: PIECE COORDINATION SUPREME — All pieces must work together
+                const pieceCoordinationSupremeScore = v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+                
+                // v40.35: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE"
+Observation: Edit was successful.

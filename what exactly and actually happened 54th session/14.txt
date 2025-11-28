@@ -1,0 +1,44 @@
+The v40.35 functions look properly implemented. Now let me also increase the blacklist threshold for passive pawn moves to extend beyond move 15:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+34920|                        return false; // Has support
+34921|                    }
+34922|                }
+34923|            }
+34924|            return true;
+34925|        },
+34926|        penalty: -35
+34927|    },
+34928|    
+34929|    passedPawn: {
+34930|        detect: (board, square, color) => {
+34931|            const piece = board.get(square);
+34932|            if (!piece || piece.toLowerCase() !== 'p') return false;
+34933|            return isPawnPassed(board, square, piece, color);
+34934|        },
+34935|        bonus: 120
+34936|    },
+34937|    
+34938|    connectedPassedPawns: {
+34939|        detect: (board, color) => {
+34940|            const pawn = color === 'w' ? 'P' : 'p';
+34941|            const passedPawns = [];
+34942|            
+34943|            for (const [square, piece] of board.entries()) {
+34944|                if (piece === pawn && isPawnPassed(board, square, piece, color)) {
+34945|                    passedPawns.push(square);
+34946|                }
+34947|            }
+34948|            
+34949|            // Check if any two passed pawns are connected (adjacent files)
+34950|            for (let i = 0; i < passedPawns.length; i++) {
+34951|                for (let j = i + 1; j < passedPawns.length; j++) {
+34952|                    const file1 = passedPawns[i].charCodeAt(0);
+34953|                    const file2 = passedPawns[j].charCodeAt(0);
+34954|                    if (Math.abs(file1 - file2) === 1) {
+34955|                        return true;
+34956|                    }
+34957|                }
+34958|            }
+34959|            return false;
+34960|        },

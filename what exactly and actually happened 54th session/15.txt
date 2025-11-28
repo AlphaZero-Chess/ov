@@ -1,0 +1,12 @@
+Let me find the OPENING_BLACKLIST section:
+Action: $ grep -n "OPENING_BLACKLIST\|timeWasting:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 35413:const OPENING_BLACKLIST = {
+35461:    timeWasting: [
+36893:        ...OPENING_BLACKLIST.earlyQueenMoves,
+36894:        ...OPENING_BLACKLIST.dangerousQueenMoves,
+36895:        ...OPENING_BLACKLIST.terribleKnightMoves,
+36896:        ...OPENING_BLACKLIST.timeWasting,
+36897:        ...OPENING_BLACKLIST.weakening,
+36898:        ...OPENING_BLACKLIST.earlyQueenCaptures,    // v26.0.0 NEW
+36899:        ...OPENING_BLACKLIST.doubleKnightMoves,     // v26.0.0 NEW - Nc3-Nd5 disaster
+Exit code: 0

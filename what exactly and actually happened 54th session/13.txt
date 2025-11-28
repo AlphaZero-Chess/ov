@@ -1,0 +1,63 @@
+All the v40.35 functions exist. Let me verify they have the correct implementation by viewing one of them:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+25481|function v40PassivePawnProhibitionEval(fen, move, board, activeColor, moveNumber) {
+25482|    if (!CONFIG.v40PassivePawnProhibitionEnabled) return 0;
+25483|    
+25484|    let score = 0;
+25485|    const maxMoves = CONFIG.v40PassivePawnMoveLimit || 30;
+25486|    
+25487|    if (moveNumber > maxMoves) return 0;
+25488|    
+25489|    const passiveMoves = CONFIG.v40PassivePawnMoves || ['a2a3', 'h2h3', 'a7a6', 'h7h6', 'b2b3', 'g2g3'];
+25490|    
+25491|    if (passiveMoves.includes(move)) {
+25492|        debugLog("[V40.35_PASSIVE]", `🚫🚫🚫 PASSIVE PAWN PROHIBITION: ${move} is TOXIC!`);
+25493|        debugLog("[V40.35_PASSIVE]", `🚫🚫🚫 Move ${moveNumber}: ${move} REJECTED with MASSIVE PENALTY!`);
+25494|        score += CONFIG.v40PassivePawnPenalty || -8000000000000;
+25495|        
+25496|        // Extra penalty if opponent has initiative
+25497|        const enemyInit = v40CalculateSimpleInitiative(board, activeColor !== 'w');
+25498|        if (enemyInit > 2) {
+25499|            debugLog("[V40.35_PASSIVE]", `🚫🚫🚫 EXTRA PENALTY: Playing passive when opponent has initiative!`);
+25500|            score += (CONFIG.v40PassivePawnPenalty || -8000000000000) * 2;
+25501|        }
+25502|    }
+25503|    
+25504|    return score;
+25505|}
+25506|
+25507|/**
+25508| * v40.35: MATERIAL SAFETY VERIFICATION — Don't allow material loss
+25509| */
+25510|function v40MaterialSafetyVerificationEval(fen, move, board, activeColor, moveNumber) {
+25511|    if (!CONFIG.v40MaterialSafetyEnabled) return 0;
+25512|    
+25513|    let score = 0;
+25514|    const isWhite = activeColor === 'w';
+25515|    
+25516|    // Calculate material before move
+25517|    const materialBefore = v40CalculateMaterial(board, isWhite);
+25518|    
+25519|    // Simulate the move
+25520|    const afterBoard = simulateMoveOnBoard(board, move);
+25521|    
+25522|    // Calculate material after move
+25523|    const materialAfter = v40CalculateMaterial(afterBoard, isWhite);
+25524|    
+25525|    // Check for material loss
+25526|    const materialLoss = materialBefore - materialAfter;
+25527|    
+25528|    if (materialLoss > (CONFIG.v40MaterialLossTolerance || 0)) {
+25529|        debugLog("[V40.35_MATERIAL]", `⚠️ MATERIAL LOSS DETECTED: Lost ${materialLoss} centipawns!`);
+25530|        
+25531|        // Check if it's a central pawn (e4/d4/e5/d5)
+25532|        const fromSquare = move.substring(0, 2);
+25533|        const piece = board.get(fromSquare);
+25534|        if (piece && piece.toLowerCase() === 'p') {
+25535|            if (['d4', 'd5', 'e4', 'e5'].includes(fromSquare)) {
+25536|                debugLog("[V40.35_MATERIAL]", `🚫🚫🚫 CENTRAL PAWN LOSS: Critical strategic damage!`);
+25537|                score += CONFIG.v40CentralPawnLossPenalty || -15000000000000;
+25538|            }
+25539|        }
+25540|        

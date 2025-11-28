@@ -1,0 +1,43 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+35461|    timeWasting: [
+35462|        { move: /^a2a3/, beforeMove: 15, reason: "a3 - wastes time (lost game pattern)" },
+35463|        { move: /^h2h3/, beforeMove: 15, reason: "h3 - wastes time without purpose" },
+35464|        { move: /^a7a6/, beforeMove: 15, reason: "a6 - wastes time without purpose" },
+35465|        { move: /^h7h6/, beforeMove: 15, reason: "h6 - wastes time without purpose" },
+35466|        { move: /^b2b3/, beforeMove: 12, reason: "b3 - wastes time (lost game move 9)" },
+35467|        { move: /^b7b6/, beforeMove: 12, reason: "b6 - often wastes time" },
+35468|        { move: /^b2b4/, beforeMove: 15, reason: "b4 - premature wing attack" },
+35469|        { move: /^b7b5/, beforeMove: 15, reason: "b5 - premature wing attack" },
+35470|        { move: /^a2a4/, beforeMove: 15, reason: "a4 - wastes time (lost game move 15)" },
+35471|        { move: /^a7a5/, beforeMove: 15, reason: "a5 - wastes time" },
+35472|    ],
+35473|    
+35474|    // v26.0.0: WEAKENING PAWN MOVES - f4/g3 from lost game killed the king
+35475|    weakening: [
+35476|        { move: /^d2d3/, beforeMove: 40, reason: "d3 - ABSOLUTELY FORBIDDEN PASSIVE MOVE (v40.34)" },
+35477|        { move: /^e2e3/, beforeMove: 15, reason: "e3 - passive when e4 is better" },
+35478|        { move: /^f2f3/, beforeMove: 15, reason: "f3 - weakens king badly (unless forcing)" },
+35479|        { move: /^f7f6/, beforeMove: 15, reason: "f6 - weakens king badly" },
+35480|        { move: /^f2f4/, beforeMove: 20, reason: "f4 - weakens e3/g3 squares (lost game move 19)" },
+35481|        { move: /^f7f5/, beforeMove: 20, reason: "f5 - weakens e6/g6 squares" },
+35482|        { move: /^g2g3/, beforeMove: 20, reason: "g3 - weakens dark squares" },
+35483|        { move: /^g7g6/, beforeMove: 10, reason: "g6 - only in Modern/Pirc/KID" },
+35484|        { move: /^g2g4/, beforeMove: 20, reason: "g4 - premature pawn storm" },
+35485|        { move: /^g7g5/, beforeMove: 20, reason: "g5 - premature pawn storm" },
+35486|        { move: /^h2h4/, beforeMove: 15, reason: "h4 - weakening unless attacking" },
+35487|        { move: /^h7h5/, beforeMove: 15, reason: "h5 - weakening unless attacking" },
+35488|    ],
+35489|    
+35490|    // v26.0.0: EARLY QUEEN CAPTURES - Often waste tempo
+35491|    earlyQueenCaptures: [
+35492|        { move: /^d1.d4/, beforeMove: 10, reason: "Qxd4 - Queen capture too early (lost game move 7)" },
+35493|        { move: /^d8.d5/, beforeMove: 10, reason: "Qxd5 - Queen capture too early" },
+35494|        { move: /^d1.d5/, beforeMove: 10, reason: "Qxd5 - Queen capture too early" },
+35495|        { move: /^d8.d4/, beforeMove: 10, reason: "Qxd4 - Queen capture too early" },
+35496|        { move: /^d1.e5/, beforeMove: 10, reason: "Qxe5 - Queen capture central pawn too early" },
+35497|        { move: /^d8.e4/, beforeMove: 10, reason: "Qxe4 - Queen capture central pawn too early" },
+35498|    ],
+35499|    
+35500|    // v26.0.0: DOUBLE KNIGHT MOVES - Critical from lost game (Nc3-Nd5)

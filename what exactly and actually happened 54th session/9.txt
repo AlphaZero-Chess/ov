@@ -1,0 +1,12 @@
+Now let me update the v40DeepScore calculation to include the v40.35 scores:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
+                               absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
+                               pieceSafetySupremeScore + initiativeMaintenanceScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.33 ABSOLUTE D3 PROHIBITION PARADIGM SHIFT" --new-str "                               // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
+                               absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
+                               pieceSafetySupremeScore + initiativeMaintenanceScore +
+                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+                               passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
+                               centralControlPriorityScore + pieceCoordinationSupremeScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.35 MATERIAL SAFETY PARADIGM SHIFT"
+Observation: Edit was successful.

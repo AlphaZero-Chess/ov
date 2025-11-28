@@ -1,0 +1,10 @@
+Now let me add the debug logging for the v40.35 scores:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                debugLog(\"[V40_INTEGRATE]\", `   ⚡⚡⚡ INITIATIVE MAINTENANCE: ${initiativeMaintenanceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);" --new-str "                debugLog(\"[V40_INTEGRATE]\", `   ⚡⚡⚡ INITIATIVE MAINTENANCE: ${initiativeMaintenanceScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🚫♟️ PASSIVE PAWN PROHIBITION: ${passivePawnProhibitionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   💰💰 MATERIAL SAFETY: ${materialSafetyScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🔍🔍 TACTICAL VERIFICATION: ${tacticalVerificationScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏛️⚔️ CENTRAL CONTROL PRIORITY: ${centralControlPriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🎵🎵 PIECE COORDINATION SUPREME: ${pieceCoordinationSupremeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);"
+Observation: Edit was successful.
