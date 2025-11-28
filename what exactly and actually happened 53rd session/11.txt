@@ -1,0 +1,4 @@
+
+Action: $ grep -n "function v40CalculateSimpleInitiative" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 25428:function v40CalculateSimpleInitiative(board, isWhite) {
+Exit code: 0

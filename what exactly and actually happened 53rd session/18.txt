@@ -1,0 +1,26 @@
+I see the issue - the code got concatenated incorrectly. The `findAttackedPiecesV40_9` function definition is missing. Let me fix this:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+25968|    if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) return null;
+25969|    
+25970|    return String.fromCharCode(97 + newFile) + (newRank + 1);
+25971|}
+25972|
+25973|// ═══════════════════════════════════════════════════════════════════════════════
+25974|    const attacked = [];
+25975|    const isWhite = color === 'w';
+25976|    const enemyColor = isWhite ? 'b' : 'w';
+25977|    
+25978|    for (const [square, piece] of board) {
+25979|        if (!piece) continue;
+25980|        const pieceIsWhite = piece === piece.toUpperCase();
+25981|        if (pieceIsWhite !== isWhite) continue;
+25982|        
+25983|        const pieceType = piece.toLowerCase();
+25984|        if (pieceType === 'k') continue;  // King attacks handled separately
+25985|        
+25986|        // Check if this square is attacked by enemy
+25987|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+25988|            // Check if it's adequately defended
+25989|            const isDefended = isSquareDefendedByColor(board, square, color);
+25990|            

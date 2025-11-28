@@ -1,0 +1,4 @@
+Now let me add the v40.35 evaluation functions. First, let me find where to add them:
+Action: $ grep -n "v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY FUNCTIONS" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 25087:// v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY FUNCTIONS
+Exit code: 0

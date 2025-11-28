@@ -1,0 +1,52 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+    v40InitiativeMaintenanceEnabled: true,
+    v40InitiativeLossPenalty: -500000000000,        // 500 billion for losing initiative
+    v40InitiativeGainBonus: 800000000000,           // 800 billion for gaining initiative
+    v40PassiveMoveInInitiativePenalty: -2000000000000, // 2 trillion for passive when have initiative
+};" --new-str "    // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+    v40InitiativeMaintenanceEnabled: true,
+    v40InitiativeLossPenalty: -500000000000,        // 500 billion for losing initiative
+    v40InitiativeGainBonus: 800000000000,           // 800 billion for gaining initiative
+    v40PassiveMoveInInitiativePenalty: -2000000000000, // 2 trillion for passive when have initiative
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.35.0: MATERIAL SAFETY & PASSIVE MOVE SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: From game analysis:
+    // 1. Move 17: a3 was played - PASSIVE WASTE OF TIME when having initiative
+    // 2. Qxe5 - opponent captured important central pawn with tempo
+    // 3. Material losses led to inevitable checkmate
+    // FIX: Absolute prohibition on passive pawn moves + material safety checks
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.35: PASSIVE PAWN PROHIBITION - a3/h3/a6/h6 are TOXIC
+    v40PassivePawnProhibitionEnabled: true,
+    v40PassivePawnMoves: ['a2a3', 'h2h3', 'a7a6', 'h7h6', 'b2b3', 'g2g3'],
+    v40PassivePawnPenalty: -8000000000000,          // 8 trillion penalty for passive pawns
+    v40PassivePawnMoveLimit: 30,                    // Prohibit until move 30
+    
+    // v40.35: MATERIAL SAFETY VERIFICATION - Don't allow pawn grabs
+    v40MaterialSafetyEnabled: true,
+    v40MaterialLossTolerance: 0,                    // ZERO material loss tolerance
+    v40CentralPawnLossPenalty: -15000000000000,     // 15 trillion for losing central pawn
+    v40FreePieceCapturePenalty: -25000000000000,    // 25 trillion for allowing free capture
+    
+    // v40.35: TACTICAL VERIFICATION LAYERS - Multi-pass blunder prevention
+    v40TacticalVerificationEnabled: true,
+    v40TacticalVerificationPasses: 5,               // 5 verification passes
+    v40ThreatDetectionDepth: 6,                     // Look 6 moves ahead for threats
+    v40MateDetectionDepth: 10,                      // Look 10 moves for mate threats
+    
+    // v40.35: CENTRAL CONTROL PRIORITY - e4/d4/e5/d5 are SACRED
+    v40CentralControlEnabled: true,
+    v40CentralPawnBonus: 2000000000000,             // 2 trillion for central pawns
+    v40CentralPawnDefenseBonus: 1500000000000,      // 1.5 trillion for defending central pawns
+    v40LoseCentralPawnPenalty: -10000000000000,     // 10 trillion for losing central pawn
+    
+    // v40.35: PIECE COORDINATION SUPREME - All pieces must work together
+    v40PieceCoordinationEnabled: true,
+    v40UncoordinatedAttackPenalty: -3000000000000,  // 3 trillion for uncoordinated play
+    v40PieceHarmonyBonus: 1000000000000,            // 1 trillion for coordinated pieces
+};"
+Observation: Edit was successful.

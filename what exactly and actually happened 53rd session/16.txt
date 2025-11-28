@@ -1,0 +1,53 @@
+The syntax looks fine there. Let me check if there's an issue elsewhere:
+Action: $ head -25960 "/app/Lichess Bot-AlphaZero-Pure.user.js" | tail -100 | head -50
+Observation:             // Small penalty unless it's advancing
+            const fromRank = parseInt(fromSquare[1]);
+            const toRank = parseInt(toSquare[1]);
+            const isAdvancing = isWhite ? (toRank > fromRank) : (toRank < fromRank);
+            if (!isAdvancing) {
+                score += CONFIG.v40LoseCentralPawnPenalty || -10000000000000;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.35: PIECE COORDINATION SUPREME — All pieces must work together
+ */
+function v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PieceCoordinationEnabled) return 0;
+    
+    let score = 0;
+    const afterBoard = simulateMoveOnBoard(board, move);
+    const isWhite = activeColor === 'w';
+    
+    // Count how many of our pieces support each other
+    let coordinationBefore = v40CountPieceCoordination(board, isWhite);
+    let coordinationAfter = v40CountPieceCoordination(afterBoard, isWhite);
+    
+    if (coordinationAfter > coordinationBefore) {
+        debugLog("[V40.35_COORD]", `✅ COORDINATION IMPROVED: ${coordinationBefore} → ${coordinationAfter}`);
+        score += CONFIG.v40PieceHarmonyBonus || 1000000000000;
+    } else if (coordinationAfter < coordinationBefore - 2) {
+        debugLog("[V40.35_COORD]", `⚠️ COORDINATION DROPPED: ${coordinationBefore} → ${coordinationAfter}`);
+        score += CONFIG.v40UncoordinatedAttackPenalty || -3000000000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.35 Helper: Count piece coordination
+ */
+function v40CountPieceCoordination(board, isWhite) {
+    let coordination = 0;
+    const ourPieces = [];
+    
+    // Collect our pieces
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) {
+Exit code: 0

@@ -1,0 +1,34 @@
+Let me check around line 26014:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+26000|                attacked.push({
+26001|                    square,
+26002|                    piece,
+26003|                    value: ourPieceValue,
+26004|                    lowestAttackerValue
+26005|                });
+26006|            }
+26007|        }
+26008|    }
+26009|    
+26010|    // Sort by piece value (highest first - queen, then rook, etc.)
+26011|    attacked.sort((a, b) => b.value - a.value);
+26012|    
+26013|    return attacked;
+26014|}
+26015|
+26016|/**
+26017| * v40.9 Helper: Find all hanging pieces (attacked and not defended)
+26018| */
+26019|function findHangingPiecesV40_9(board, color) {
+26020|    const hanging = [];
+26021|    const isWhite = color === 'w';
+26022|    const enemyColor = isWhite ? 'b' : 'w';
+26023|    
+26024|    for (const [square, piece] of board) {
+26025|        if (!piece) continue;
+26026|        const pieceIsWhite = piece === piece.toUpperCase();
+26027|        if (pieceIsWhite !== isWhite) continue;
+26028|        
+26029|        const pieceType = piece.toLowerCase();
+26030|        if (pieceType === 'k') continue;

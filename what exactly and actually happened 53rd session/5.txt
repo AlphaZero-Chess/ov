@@ -1,0 +1,6 @@
+
+Action: $ grep -n "function computeCombinedScore\|v40DeepScore =" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 40446:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+40467:        let v40DeepScore = 0;
+41074:                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus +
+Exit code: 0

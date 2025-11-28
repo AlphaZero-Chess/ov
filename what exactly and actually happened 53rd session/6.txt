@@ -1,0 +1,80 @@
+Now let me analyze the latest game the user provided and implement critical fixes. The game shows:
+
+1. **Move 17: a3** - This is a terrible passive move that wastes time
+2. The bot allowed Black to take the e5 pawn without adequate compensation
+3. Material losses leading to checkmate
+
+Let me implement v40.35 with comprehensive improvements:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2280|    v40DiscoordinationPenalty: -200000000000,       // 200 billion for scattered pieces
+2281|    
+2282|    // ═══════════════════════════════════════════════════════════════════════════════
+2283|    // v40.33.0: ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY SUPREME
+2284|    // ═══════════════════════════════════════════════════════════════════════════════
+2285|    // CRITICAL: Bot STILL plays d3 even with filters! The engine is bypassing them!
+2286|    // FIX: Add ABSOLUTE prohibition at EVERY level - book, engine, post-processing
+2287|    // Also: Implement proper Sicilian handling with d4/f4 attack systems
+2288|    // ═══════════════════════════════════════════════════════════════════════════════
+2289|    
+2290|    // v40.33: ABSOLUTE D3 PROHIBITION — d3 is NEVER acceptable
+2291|    v40AbsoluteD3ProhibitionEnabled: true,
+2292|    v40D3ProhibitionAllPhases: true,                // Prohibit d3 in ALL game phases
+2293|    v40D3ProhibitionPenalty: -10000000000000,       // 10 trillion penalty for d3
+2294|    v40D3ProhibitionMoveLimit: 40,                  // Prohibit d3 until move 40
+2295|    
+2296|    // v40.33: SICILIAN MASTERY — Proper anti-Sicilian systems
+2297|    v40SicilianMasteryEnabled: true,
+2298|    v40SicilianForceD4: true,                       // ALWAYS play d4 against Sicilian
+2299|    v40SicilianD4Bonus: 5000000000000,              // 5 trillion bonus for d4 in Sicilian
+2300|    v40SicilianOpenBonus: 3000000000000,            // 3 trillion for Open Sicilian lines
+2301|    v40SicilianF4Attack: true,                      // Enable f4 Grand Prix Attack
+2302|    v40SicilianF4Bonus: 2000000000000,              // 2 trillion for f4 attack
+2303|    
+2304|    // v40.33: ENHANCED TACTICAL DEPTH — See deeper into complications
+2305|    v40EnhancedTacticalDepthEnabled: true,
+2306|    v40TacticalDepthMultiplier: 2.0,                // 2x tactical search depth
+2307|    v40CriticalMomentDepth: 8,                      // 8 plies in critical moments
+2308|    v40TacticalVerificationPasses: 3,               // 3 verification passes
+2309|    
+2310|    // v40.33: PIECE SAFETY SUPREME — No hanging pieces EVER
+2311|    v40PieceSafetySupremeEnabled: true,
+2312|    v40HangingPiecePenaltyAbsolute: -20000000000000, // 20 trillion for hanging piece
+2313|    v40UndefendedPieceWarning: -1000000000000,      // 1 trillion warning for weak defense
+2314|    v40AttackedPieceCheck: true,                    // Extra check for attacked pieces
+2315|    
+2316|    // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+2317|    v40InitiativeMaintenanceEnabled: true,
+2318|    v40InitiativeLossPenalty: -500000000000,        // 500 billion for losing initiative
+2319|    v40InitiativeGainBonus: 800000000000,           // 800 billion for gaining initiative
+2320|    v40PassiveMoveInInitiativePenalty: -2000000000000, // 2 trillion for passive when have initiative
+2321|};
+2322|
+2323|// ═══════════════════════════════════════════════════════════════════════
+2324|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2325|// ═══════════════════════════════════════════════════════════════════════
+2326|
+2327|/**
+2328| * v37: TRUE MCTS Node structure for proper tree search
+2329| */
+2330|class MCTSNode {
+2331|    constructor(move, parent = null, prior = 1.0) {
+2332|        this.move = move;
+2333|        this.parent = parent;
+2334|        this.children = new Map();
+2335|        this.visits = 0;
+2336|        this.totalValue = 0;
+2337|        this.prior = prior;           // Policy prior (P)
+2338|        this.virtualLoss = 0;
+2339|        this.isExpanded = false;
+2340|        this.isTerminal = false;
+2341|        this.depth = parent ? parent.depth + 1 : 0;
+2342|    }
+2343|    
+2344|    get value() {
+2345|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+2346|    }
+2347|    
+2348|    get ucb1Score() {
+2349|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2350|        

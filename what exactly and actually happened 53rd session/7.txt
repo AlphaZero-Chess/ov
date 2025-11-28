@@ -1,0 +1,15 @@
+Now I understand the CONFIG structure. Let me implement v40.35 with critical improvements focused on the game analysis. The key issues are:
+
+1. **Passive pawn moves (a3) being played when they shouldn't**
+2. **Material loss detection not working properly**
+3. **Tactical blind spots allowing checkmate**
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.34 ABSOLUTE D3 PROHIBITION INTEGRATION FIX
+// @description  TRUE AlphaZero Replica v40.34 - ABSOLUTE d3 PROHIBITION FULLY INTEGRATED - SICILIAN d4/f4 ATTACK - ALL v40.33 FUNCTIONS NOW IN SCORING - ENHANCED TACTICAL DEPTH!
+// @author       AlphaZero TRUE REPLICA v40.34 ABSOLUTE D3 PROHIBITION INTEGRATION FIX EDITION
+// @version      40.34.0-ABSOLUTE-D3-PROHIBITION-INTEGRATION-FIX" --new-str "// ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME
+// @description  TRUE AlphaZero Replica v40.35 - MATERIAL LOSS DETECTION - PASSIVE PAWN PROHIBITION (a3/h3) - TACTICAL VERIFICATION - ZERO BLUNDERS!
+// @author       AlphaZero TRUE REPLICA v40.35 MATERIAL SAFETY PASSIVE PROHIBITION EDITION
+// @version      40.35.0-MATERIAL-SAFETY-PASSIVE-PROHIBITION-SUPREME"
+Observation: Edit was successful.

@@ -1,0 +1,74 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+25380| */
+25381|function v40InitiativeMaintenanceEval(fen, move, board, activeColor, moveNumber) {
+25382|    if (!CONFIG.v40InitiativeMaintenanceEnabled) return 0;
+25383|    
+25384|    let score = 0;
+25385|    const afterBoard = simulateMoveOnBoard(board, move);
+25386|    const isWhite = activeColor === 'w';
+25387|    
+25388|    // Calculate initiative before and after move
+25389|    const initBefore = v40CalculateSimpleInitiative(board, isWhite);
+25390|    const initAfter = v40CalculateSimpleInitiative(afterBoard, isWhite);
+25391|    
+25392|    if (initAfter < initBefore - 2) {
+25393|        debugLog("[V40.33_INITIATIVE]", `⚠️ INITIATIVE LOSS: Went from ${initBefore} to ${initAfter}!`);
+25394|        score += CONFIG.v40InitiativeLossPenalty || -500000000000;
+25395|    }
+25396|    
+25397|    if (initAfter > initBefore + 2) {
+25398|        debugLog("[V40.33_INITIATIVE]", `✅ INITIATIVE GAIN: Went from ${initBefore} to ${initAfter}!`);
+25399|        score += CONFIG.v40InitiativeGainBonus || 800000000000;
+25400|    }
+25401|    
+25402|    // Check for passive moves when we have initiative
+25403|    if (initBefore >= 3) {
+25404|        const fromSquare = move.substring(0, 2);
+25405|        const toSquare = move.substring(2, 4);
+25406|        const piece = board.get(fromSquare);
+25407|        
+25408|        if (piece) {
+25409|            const pieceType = piece.toLowerCase();
+25410|            const fromRank = parseInt(fromSquare[1]);
+25411|            const toRank = parseInt(toSquare[1]);
+25412|            
+25413|            // Retreating when having initiative is BAD
+25414|            const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+25415|            if (isRetreat && pieceType !== 'k') {
+25416|                debugLog("[V40.33_INITIATIVE]", `🚫 PASSIVE RETREAT when having initiative!`);
+25417|                score += CONFIG.v40PassiveMoveInInitiativePenalty || -2000000000000;
+25418|            }
+25419|        }
+25420|    }
+25421|    
+25422|    return score;
+25423|}
+25424|
+25425|/**
+25426| * v40.33 Helper: Calculate simple initiative score
+25427| */
+25428|function v40CalculateSimpleInitiative(board, isWhite) {
+25429|    let initiative = 0;
+25430|    const ourColor = isWhite ? 'w' : 'b';
+25431|    const enemyColor = isWhite ? 'b' : 'w';
+25432|    
+25433|    // Count threats we create
+25434|    for (const [square, piece] of board) {
+25435|        if (!piece) continue;
+25436|        const pieceIsWhite = piece === piece.toUpperCase();
+25437|        if (pieceIsWhite !== isWhite) continue;
+25438|        
+25439|        // Count attacked enemy pieces
+25440|        for (const [targetSquare, targetPiece] of board) {
+25441|            if (!targetPiece) continue;
+25442|            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+25443|            if (targetIsWhite === isWhite) continue;
+25444|            
+25445|            if (v40DoesAttackSquare(board, square, targetSquare, piece)) {
+25446|                const targetValue = getPieceValueSimple(targetPiece.toLowerCase());
+25447|                initiative += targetValue / 9; // Normalize
+25448|            }
+25449|        }
+25450|    }
