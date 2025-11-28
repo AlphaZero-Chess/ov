@@ -1,0 +1,7 @@
+Now let me find the last v40.26 function and add v40.27 functions after it:
+Action: $ grep -n "function v40KingsideCollapseDetectionEval\|v40.26: KINGSIDE COLLAPSE" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2012:    // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+20783: * v40.26: KINGSIDE COLLAPSE DETECTION
+20786:function v40KingsideCollapseDetectionEval(fen, move, board, activeColor, moveNumber) {
+36701:                // v40.26: KINGSIDE COLLAPSE PATTERN — Recognize when shelter is being destroyed!
+Exit code: 0

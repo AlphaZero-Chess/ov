@@ -1,0 +1,121 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+20783| * v40.26: KINGSIDE COLLAPSE DETECTION
+20784| * Detect when kingside pawn structure is being destroyed
+20785| */
+20786|function v40KingsideCollapseDetectionEval(fen, move, board, activeColor, moveNumber) {
+20787|    if (!CONFIG.v40KingsideCollapseDetectionEnabled) return 0;
+20788|    
+20789|    let score = 0;
+20790|    const isWhite = activeColor === 'w';
+20791|    
+20792|    try {
+20793|        const fromSquare = move.substring(0, 2);
+20794|        const toSquare = move.substring(2, 4);
+20795|        const movingPiece = board.get(fromSquare);
+20796|        
+20797|        if (!movingPiece) return 0;
+20798|        
+20799|        // Simulate our move
+20800|        const afterBoard = new Map(board);
+20801|        afterBoard.delete(fromSquare);
+20802|        afterBoard.set(toSquare, movingPiece);
+20803|        
+20804|        // Count kingside pawns before and after
+20805|        const kingsidePawnsBefore = v40CountKingsidePawns(board, activeColor);
+20806|        const kingsidePawnsAfter = v40CountKingsidePawns(afterBoard, activeColor);
+20807|        
+20808|        // Check if we've lost kingside pawns
+20809|        if (kingsidePawnsAfter < kingsidePawnsBefore) {
+20810|            score += CONFIG.v40KingsidePawnsDestroyedPenalty || -600000000000;
+20811|            debugLog("[V40.26_COLLAPSE]", `☠️☠️☠️ ${move} destroys kingside pawn shelter!`);
+20812|        }
+20813|        
+20814|        // Check for file opening toward king
+20815|        const ourKing = findKing(afterBoard, activeColor);
+20816|        if (ourKing) {
+20817|            const kingFile = ourKing[0];
+20818|            
+20819|            // Check if g-file opens toward king
+20820|            if (v40IsFileOpenToward(afterBoard, 'g', ourKing, activeColor) && 
+20821|                !v40IsFileOpenToward(board, 'g', ourKing, activeColor)) {
+20822|                score += CONFIG.v40GFileOpenToKingPenalty || -450000000000;
+20823|                debugLog("[V40.26_COLLAPSE]", `☠️☠️ ${move} opens g-file toward our king!`);
+20824|            }
+20825|            
+20826|            // Check if h-file opens toward king
+20827|            if (v40IsFileOpenToward(afterBoard, 'h', ourKing, activeColor) && 
+20828|                !v40IsFileOpenToward(board, 'h', ourKing, activeColor)) {
+20829|                score += CONFIG.v40HFileOpenToKingPenalty || -500000000000;
+20830|                debugLog("[V40.26_COLLAPSE]", `☠️☠️ ${move} opens h-file toward our king!`);
+20831|            }
+20832|            
+20833|            // Check if f-file opens toward king
+20834|            if (v40IsFileOpenToward(afterBoard, 'f', ourKing, activeColor) && 
+20835|                !v40IsFileOpenToward(board, 'f', ourKing, activeColor)) {
+20836|                score += CONFIG.v40FFileOpenToKingPenalty || -400000000000;
+20837|                debugLog("[V40.26_COLLAPSE]", `☠️☠️ ${move} opens f-file toward our king!`);
+20838|            }
+20839|        }
+20840|        
+20841|        // Check if all kingside pawns are gone
+20842|        if (kingsidePawnsAfter === 0) {
+20843|            score += CONFIG.v40NoKingsidePawnShieldPenalty || -550000000000;
+20844|            debugLog("[V40.26_COLLAPSE]", `☠️☠️☠️☠️ ${move} leaves NO kingside pawn shelter!`);
+20845|        }
+20846|        
+20847|        // Check if move creates permanent kingside weakness
+20848|        if (v40CreatesKingsideWeakness(move, board, afterBoard, activeColor)) {
+20849|            score += CONFIG.v40KingsideWeaknessCreatedPenalty || -350000000000;
+20850|            debugLog("[V40.26_COLLAPSE]", `⚠️⚠️ ${move} creates permanent kingside weakness!`);
+20851|        }
+20852|        
+20853|    } catch (e) {
+20854|        debugLog("[V40.26_COLLAPSE]", `Error: ${e.message}`);
+20855|    }
+20856|    
+20857|    return score;
+20858|}
+20859|
+20860|// ═══════════════════════════════════════════════════════════════════════════════
+20861|// v40.26 HELPER FUNCTIONS
+20862|// ═══════════════════════════════════════════════════════════════════════════════
+20863|
+20864|/** v40.26: Find queen position */
+20865|function v40FindQueenPosition(board, color) {
+20866|    const queenChar = color === 'w' ? 'Q' : 'q';
+20867|    for (const [sq, piece] of board) {
+20868|        if (piece === queenChar) return sq;
+20869|    }
+20870|    return null;
+20871|}
+20872|
+20873|/** v40.26: Check if queen is threatening kingside */
+20874|function v40IsQueenThreateningKingside(queenSquare, isWhiteKing) {
+20875|    if (!queenSquare) return false;
+20876|    const file = queenSquare[0];
+20877|    const rank = parseInt(queenSquare[1]);
+20878|    
+20879|    // Queen is threatening if on g or h file, or in advanced position
+20880|    if (file === 'g' || file === 'h') return true;
+20881|    
+20882|    // Queen advanced toward king's side
+20883|    if (isWhiteKing && rank >= 4 && (file >= 'e')) return true;
+20884|    if (!isWhiteKing && rank <= 5 && (file >= 'e')) return true;
+20885|    
+20886|    return false;
+20887|}
+20888|
+20889|/** v40.26: Check for dark-squared bishop */
+20890|function v40HasDarkSquaredBishop(board, color) {
+20891|    const bishopChar = color === 'w' ? 'B' : 'b';
+20892|    for (const [sq, piece] of board) {
+20893|        if (piece === bishopChar) {
+20894|            const file = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+20895|            const rank = parseInt(sq[1]);
+20896|            // Dark square: (file + rank) is odd
+20897|            if ((file + rank) % 2 === 1) return true;
+20898|        }
+20899|    }
+20900|    return false;

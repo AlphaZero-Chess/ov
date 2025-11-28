@@ -1,0 +1,119 @@
+Let me view the engine initialization code:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+37685| * Handles cases where window.STOCKFISH is not immediately available
+37686| */
+37687|let engineInitAttempts = 0;
+37688|const MAX_ENGINE_INIT_ATTEMPTS = 10;
+37689|const ENGINE_INIT_RETRY_DELAY = 500; // ms between retries
+37690|
+37691|function initializeChessEngine() {
+37692|    engineInitAttempts++;
+37693|    
+37694|    // Check if STOCKFISH is available
+37695|    if (typeof window.STOCKFISH !== 'function') {
+37696|        if (engineInitAttempts < MAX_ENGINE_INIT_ATTEMPTS) {
+37697|            console.log(`⏳ [v40.4] Waiting for Stockfish to load... (attempt ${engineInitAttempts}/${MAX_ENGINE_INIT_ATTEMPTS})`);
+37698|            setTimeout(initializeChessEngine, ENGINE_INIT_RETRY_DELAY);
+37699|            return;
+37700|        } else {
+37701|            console.error('❌ [v40.4] CRITICAL: Stockfish failed to load after maximum attempts');
+37702|            console.error('❌ [v40.4] Please check the @require URL or try reloading the page');
+37703|            console.log('📋 [v40.4] Attempting fallback initialization via Web Worker...');
+37704|            
+37705|            // Try fallback: load Stockfish via Web Worker from alternative source
+37706|            tryFallbackStockfishInit();
+37707|            return;
+37708|        }
+37709|    }
+37710|    
+37711|    try {
+37712|        chessEngine = window.STOCKFISH();
+37713|        
+37714|        if (!chessEngine) {
+37715|            throw new Error('STOCKFISH() returned null or undefined');
+37716|        }
+37717|        
+37718|        chessEngine.postMessage("uci");
+37719|        // UCI options - TRUE ALPHAZERO v40.4 GODLIKE MAXIMUM POWER
+37720|        chessEngine.postMessage("setoption name MultiPV value 5");          // 5 lines - ANALYZE ALL OPTIONS
+37721|        chessEngine.postMessage("setoption name Hash value 4096");          // 4GB hash - MAXIMUM memory
+37722|        chessEngine.postMessage("setoption name Threads value 8");          // 8 threads - MAXIMUM parallel power
+37723|        chessEngine.postMessage("setoption name Contempt value 0");         // Zero contempt - pure engine evaluation
+37724|        chessEngine.postMessage("setoption name Skill Level value 20");     // Maximum skill
+37725|        chessEngine.postMessage("setoption name UCI_LimitStrength value false"); // No strength limit
+37726|        chessEngine.postMessage("setoption name Minimum Thinking Time value 5000"); // 5s minimum for DEEP depth
+37727|        chessEngine.postMessage("isready");
+37728|        
+37729|        console.log("🤖 LICHESS BOT v40.4.0 - TRUE ALPHAZERO GODLIKE REPLICA");
+37730|        console.log("⚡ MISSION: PERFECT CALCULATION - SUPERHUMAN BEAST");
+37731|        console.log("🧠 DEPTHS: Base 40, Strategic 45, Endgame 50, Critical 50");
+37732|        console.log("⏱️ TIME: 30-120s thinking (MAXIMUM computation)");
+37733|        console.log("🎯 HASH: 4GB memory - PERFECT calculation trees");
+37734|        console.log("🛡️ SAFETY: 10cp drop limit - ABSOLUTE ZERO blunders");
+37735|        console.log("🔥 v40.4 FEATURES: Opening Principles, Discovered Attack Detection");
+37736|        console.log("⚔️ v40.4 FEATURES: Knight Invasion Penalties, Enhanced Queen Mating");
+37737|        console.log("🏆 v40.4 FEATURES: Pawn Shield Integrity, 80% v40 Dominance");
+37738|        console.log("📖 MCTS: 100K simulations - TRUE ALPHAZERO SEARCH");
+37739|        console.log("✅ BLUNDER DETECTION: 20-Pass Zero Blunder System");
+37740|        console.log("🎯 TARGET: 3800+ ELO - TRUE ALPHAZERO GODLIKE BEAST");
+37741|        console.log("✅ [v40.4] Stockfish engine initialized successfully!");
+37742|        
+37743|    } catch (error) {
+37744|        console.error(`❌ [v40.4] Engine initialization error: ${error.message}`);
+37745|        if (engineInitAttempts < MAX_ENGINE_INIT_ATTEMPTS) {
+37746|            console.log(`⏳ [v40.4] Retrying... (attempt ${engineInitAttempts}/${MAX_ENGINE_INIT_ATTEMPTS})`);
+37747|            setTimeout(initializeChessEngine, ENGINE_INIT_RETRY_DELAY);
+37748|        } else {
+37749|            console.error('❌ [v40.4] All initialization attempts failed');
+37750|            tryFallbackStockfishInit();
+37751|        }
+37752|    }
+37753|}
+37754|
+37755|/**
+37756| * v40.4: FALLBACK STOCKFISH INITIALIZATION
+37757| * Uses alternative loading method if primary fails
+37758| */
+37759|function tryFallbackStockfishInit() {
+37760|    console.log('🔄 [v40.4] Attempting fallback Stockfish initialization...');
+37761|    
+37762|    // Try to load Stockfish from CDN via dynamic script injection
+37763|    const fallbackUrls = [
+37764|        'https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js',
+37765|        'https://unpkg.com/stockfish.js@10.0.2/stockfish.js',
+37766|        'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js'
+37767|    ];
+37768|    
+37769|    let urlIndex = 0;
+37770|    
+37771|    function tryNextUrl() {
+37772|        if (urlIndex >= fallbackUrls.length) {
+37773|            console.error('❌ [v40.4] All fallback URLs exhausted. Please manually reload the page.');
+37774|            return;
+37775|        }
+37776|        
+37777|        const url = fallbackUrls[urlIndex];
+37778|        console.log(`🔄 [v40.4] Trying fallback URL ${urlIndex + 1}/${fallbackUrls.length}: ${url}`);
+37779|        
+37780|        const script = document.createElement('script');
+37781|        script.src = url;
+37782|        script.onload = function() {
+37783|            console.log(`✅ [v40.4] Fallback script loaded from ${url}`);
+37784|            // Reset attempts and try initialization again
+37785|            engineInitAttempts = 0;
+37786|            setTimeout(initializeChessEngine, 100);
+37787|        };
+37788|        script.onerror = function() {
+37789|            console.warn(`⚠️ [v40.4] Failed to load from ${url}`);
+37790|            urlIndex++;
+37791|            tryNextUrl();
+37792|        };
+37793|        document.head.appendChild(script);
+37794|    }
+37795|    
+37796|    // Also try Web Worker approach
+37797|    try {
+37798|        const workerUrl = 'https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.wasm.js';
+37799|        console.log('🔄 [v40.4] Trying Web Worker approach...');
+37800|        
