@@ -35459,16 +35459,16 @@ const OPENING_BLACKLIST = {
     // v25.0.0: TIME-WASTING MOVES - CRITICAL FROM LOST GAME
     // The bot played b3, a3, a4 - complete waste of time
     timeWasting: [
-        { move: /^a2a3/, beforeMove: 15, reason: "a3 - wastes time (lost game pattern)" },
-        { move: /^h2h3/, beforeMove: 15, reason: "h3 - wastes time without purpose" },
-        { move: /^a7a6/, beforeMove: 15, reason: "a6 - wastes time without purpose" },
-        { move: /^h7h6/, beforeMove: 15, reason: "h6 - wastes time without purpose" },
-        { move: /^b2b3/, beforeMove: 12, reason: "b3 - wastes time (lost game move 9)" },
-        { move: /^b7b6/, beforeMove: 12, reason: "b6 - often wastes time" },
-        { move: /^b2b4/, beforeMove: 15, reason: "b4 - premature wing attack" },
-        { move: /^b7b5/, beforeMove: 15, reason: "b5 - premature wing attack" },
-        { move: /^a2a4/, beforeMove: 15, reason: "a4 - wastes time (lost game move 15)" },
-        { move: /^a7a5/, beforeMove: 15, reason: "a5 - wastes time" },
+        { move: /^a2a3/, beforeMove: 30, reason: "a3 - wastes time (v40.35 TOXIC)" },
+        { move: /^h2h3/, beforeMove: 30, reason: "h3 - wastes time (v40.35 TOXIC)" },
+        { move: /^a7a6/, beforeMove: 30, reason: "a6 - wastes time (v40.35 TOXIC)" },
+        { move: /^h7h6/, beforeMove: 30, reason: "h6 - wastes time (v40.35 TOXIC)" },
+        { move: /^b2b3/, beforeMove: 25, reason: "b3 - wastes time (lost game move 9)" },
+        { move: /^b7b6/, beforeMove: 25, reason: "b6 - often wastes time" },
+        { move: /^b2b4/, beforeMove: 25, reason: "b4 - premature wing attack" },
+        { move: /^b7b5/, beforeMove: 25, reason: "b5 - premature wing attack" },
+        { move: /^a2a4/, beforeMove: 30, reason: "a4 - wastes time (v40.35 TOXIC)" },
+        { move: /^a7a5/, beforeMove: 30, reason: "a5 - wastes time (v40.35 TOXIC)" },
     ],
     
     // v26.0.0: WEAKENING PAWN MOVES - f4/g3 from lost game killed the king
@@ -41608,7 +41608,28 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
                 const initiativeMaintenanceScore = v40InitiativeMaintenanceEval(fen, move, board, activeColor, moveNumber) * 400.0;
                 
-                // v40.33: COMBINED v40 SCORE — 100% ABSOLUTE D3 PROHIBITION INFLUENCE
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME — THE ULTIMATE FIX!
+                // From game analysis: Bot played a3 (passive), allowed Qxe5 (material loss)
+                // These fixes address PASSIVE PAWN MOVES and MATERIAL SAFETY
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.35: PASSIVE PAWN PROHIBITION — a3/h3/a6/h6/b3/g3 are TOXIC moves
+                const passivePawnProhibitionScore = v40PassivePawnProhibitionEval(fen, move, board, activeColor, moveNumber) * 1000.0;
+                
+                // v40.35: MATERIAL SAFETY VERIFICATION — Don't allow material loss
+                const materialSafetyScore = v40MaterialSafetyVerificationEval(fen, move, board, activeColor, moveNumber) * 800.0;
+                
+                // v40.35: TACTICAL VERIFICATION LAYERS — Multi-pass blunder prevention
+                const tacticalVerificationScore = v40TacticalVerificationLayersEval(fen, move, board, activeColor, moveNumber) * 600.0;
+                
+                // v40.35: CENTRAL CONTROL PRIORITY — e4/d4/e5/d5 are SACRED
+                const centralControlPriorityScore = v40CentralControlPriorityEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // v40.35: PIECE COORDINATION SUPREME — All pieces must work together
+                const pieceCoordinationSupremeScore = v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+                
+                // v40.35: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
                 // This makes v40 the ABSOLUTE D3 PROHIBITION factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
@@ -41683,8 +41704,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore +
                                // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
                                absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
-                               pieceSafetySupremeScore + initiativeMaintenanceScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.33 ABSOLUTE D3 PROHIBITION PARADIGM SHIFT
+                               pieceSafetySupremeScore + initiativeMaintenanceScore +
+                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+                               passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
+                               centralControlPriorityScore + pieceCoordinationSupremeScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.35 MATERIAL SAFETY PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -41732,6 +41756,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🔬🔬🔬 ENHANCED TACTICAL DEPTH: ${enhancedTacticalDepthScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ PIECE SAFETY SUPREME: ${pieceSafetySupremeScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ INITIATIVE MAINTENANCE: ${initiativeMaintenanceScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚫♟️ PASSIVE PAWN PROHIBITION: ${passivePawnProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💰💰 MATERIAL SAFETY: ${materialSafetyScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔍🔍 TACTICAL VERIFICATION: ${tacticalVerificationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏛️⚔️ CENTRAL CONTROL PRIORITY: ${centralControlPriorityScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎵🎵 PIECE COORDINATION SUPREME: ${pieceCoordinationSupremeScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
