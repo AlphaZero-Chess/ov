@@ -35786,8 +35786,30 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 // v40.24: PRE-MOVE QUEEN SAFETY — Check queen safety BEFORE every move
                 const preMoveQueenSafetyScore = v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) * 85.0;
                 
-                // v40.24: COMBINED v40 SCORE — 100% ABSOLUTE QUEEN SAFETY SUPREME INFLUENCE
-                // This makes v40 the ABSOLUTE QUEEN SAFETY SUPREME factor
+                // ═══════════════════════════════════════════════════════════════════════════════
+                // v40.25 STRATEGIC MASTERY SUPREME: THE ULTIMATE FIXES
+                // From game: Qxb6 queen trade in closed position = TERRIBLE!
+                // Nxf3+ Nxd2 fork missed = CATASTROPHIC!
+                // b2 vs c7 pawn race lost = GAME OVER!
+                // ═══════════════════════════════════════════════════════════════════════════════
+                
+                // v40.25: NO EARLY QUEEN TRADE — DON'T trade queens unless clearly winning!
+                const noEarlyQueenTradeScore = v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) * 110.0;
+                
+                // v40.25: ENHANCED FORK DETECTION — Knights are DEADLY!
+                const enhancedForkScore = v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) * 105.0;
+                
+                // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+                const pawnRaceScore = v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) * 100.0;
+                
+                // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+                const piecePreservationAbsoluteScore = v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) * 95.0;
+                
+                // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+                const initiativePreservationV25Score = v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) * 90.0;
+                
+                // v40.25: COMBINED v40 SCORE — 100% STRATEGIC MASTERY SUPREME INFLUENCE
+                // This makes v40 the STRATEGIC MASTERY SUPREME factor
                 v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
                                v40InitiativeBonus + queenPenalty + prophylacticBonus + 
                                rookInfiltrationPenalty + kingSafetyCorridorPenalty +
@@ -35841,11 +35863,26 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
                                rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
                                // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
-                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — ABSOLUTE QUEEN SAFETY SUPREME PARADIGM SHIFT
+                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — STRATEGIC MASTERY SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `👑 SUPERHUMAN BEAST v40.24 ABSOLUTE QUEEN SAFETY SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.25 STRATEGIC MASTERY SUPREME EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
