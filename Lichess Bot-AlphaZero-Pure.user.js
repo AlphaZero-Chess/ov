@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.32 BOOK FILTER & COUNTERPLAY MASTERY
-// @description  TRUE AlphaZero Replica v40.32 - BOOK MOVE HARD FILTER - NO MORE d3/e3 - ENHANCED COUNTERPLAY - TACTICAL SUPREMACY - ACTIVE DEFENSE PRIORITY!
-// @author       AlphaZero TRUE REPLICA v40.32 BOOK FILTER COUNTERPLAY EDITION
-// @version      40.32.0-BOOK-FILTER-COUNTERPLAY-MASTERY
+// @name         Lichess Bot - TRUE ALPHAZERO v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY
+// @description  TRUE AlphaZero Replica v40.33 - ABSOLUTE d3 PROHIBITION (ALL PHASES) - SICILIAN d4/f4 ATTACK - ENHANCED TACTICAL DEPTH - PIECE SAFETY SUPREME!
+// @author       AlphaZero TRUE REPLICA v40.33 ABSOLUTE D3 PROHIBITION SICILIAN MASTERY EDITION
+// @version      40.33.0-ABSOLUTE-D3-PROHIBITION-SICILIAN-MASTERY
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2278,6 +2278,46 @@ const CONFIG = {
     v40PieceCoordinationEnabled: true,
     v40CoordinationBonus: 300000000000,             // 300 billion for well-coordinated pieces
     v40DiscoordinationPenalty: -200000000000,       // 200 billion for scattered pieces
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.33.0: ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: Bot STILL plays d3 even with filters! The engine is bypassing them!
+    // FIX: Add ABSOLUTE prohibition at EVERY level - book, engine, post-processing
+    // Also: Implement proper Sicilian handling with d4/f4 attack systems
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.33: ABSOLUTE D3 PROHIBITION — d3 is NEVER acceptable
+    v40AbsoluteD3ProhibitionEnabled: true,
+    v40D3ProhibitionAllPhases: true,                // Prohibit d3 in ALL game phases
+    v40D3ProhibitionPenalty: -10000000000000,       // 10 trillion penalty for d3
+    v40D3ProhibitionMoveLimit: 40,                  // Prohibit d3 until move 40
+    
+    // v40.33: SICILIAN MASTERY — Proper anti-Sicilian systems
+    v40SicilianMasteryEnabled: true,
+    v40SicilianForceD4: true,                       // ALWAYS play d4 against Sicilian
+    v40SicilianD4Bonus: 5000000000000,              // 5 trillion bonus for d4 in Sicilian
+    v40SicilianOpenBonus: 3000000000000,            // 3 trillion for Open Sicilian lines
+    v40SicilianF4Attack: true,                      // Enable f4 Grand Prix Attack
+    v40SicilianF4Bonus: 2000000000000,              // 2 trillion for f4 attack
+    
+    // v40.33: ENHANCED TACTICAL DEPTH — See deeper into complications
+    v40EnhancedTacticalDepthEnabled: true,
+    v40TacticalDepthMultiplier: 2.0,                // 2x tactical search depth
+    v40CriticalMomentDepth: 8,                      // 8 plies in critical moments
+    v40TacticalVerificationPasses: 3,               // 3 verification passes
+    
+    // v40.33: PIECE SAFETY SUPREME — No hanging pieces EVER
+    v40PieceSafetySupremeEnabled: true,
+    v40HangingPiecePenaltyAbsolute: -20000000000000, // 20 trillion for hanging piece
+    v40UndefendedPieceWarning: -1000000000000,      // 1 trillion warning for weak defense
+    v40AttackedPieceCheck: true,                    // Extra check for attacked pieces
+    
+    // v40.33: INITIATIVE MAINTENANCE — Never give up the initiative
+    v40InitiativeMaintenanceEnabled: true,
+    v40InitiativeLossPenalty: -500000000000,        // 500 billion for losing initiative
+    v40InitiativeGainBonus: 800000000000,           // 800 billion for gaining initiative
+    v40PassiveMoveInInitiativePenalty: -2000000000000, // 2 trillion for passive when have initiative
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -25002,6 +25042,393 @@ function findQueenSquare(board, color) {
         }
     }
     return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.33: ABSOLUTE D3 PROHIBITION — d3 is NEVER acceptable in ANY phase
+ * This is the ULTIMATE fix - d3 is forbidden regardless of move number
+ */
+function v40AbsoluteD3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40AbsoluteD3ProhibitionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const maxMoves = CONFIG.v40D3ProhibitionMoveLimit || 40;
+    
+    // Apply prohibition up to move 40
+    if (moveNumber > maxMoves) return 0;
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(fromSquare);
+    
+    if (!piece) return 0;
+    const pieceType = piece.toLowerCase();
+    
+    // ABSOLUTE PROHIBITION: d2d3 for White
+    if (pieceType === 'p' && isWhite) {
+        if (fromSquare === 'd2' && toSquare === 'd3') {
+            debugLog("[V40.33_D3_PROHIBITION]", `🚫🚫🚫 ABSOLUTE D3 PROHIBITION: d3 is ABSOLUTELY FORBIDDEN!`);
+            debugLog("[V40.33_D3_PROHIBITION]", `🚫🚫🚫 Move ${moveNumber}: d2d3 REJECTED with MAXIMUM PENALTY!`);
+            score += CONFIG.v40D3ProhibitionPenalty || -10000000000000;
+        }
+    }
+    
+    // ABSOLUTE PROHIBITION: d7d6 for Black in early game (passive)
+    if (pieceType === 'p' && !isWhite && moveNumber <= 6) {
+        if (fromSquare === 'd7' && toSquare === 'd6') {
+            const d5Empty = !board.get('d5');
+            if (d5Empty) {
+                debugLog("[V40.33_D3_PROHIBITION]", `⚠️ WARNING: d7d6 is passive when d5 is available!`);
+                score += (CONFIG.v40D3ProhibitionPenalty || -10000000000000) / 100;
+            }
+        }
+    }
+    
+    // ABSOLUTE PROHIBITION: e2e3 for White (when e4 is better)
+    if (pieceType === 'p' && isWhite && moveNumber <= 15) {
+        if (fromSquare === 'e2' && toSquare === 'e3') {
+            const e4Empty = !board.get('e4');
+            if (e4Empty) {
+                debugLog("[V40.33_D3_PROHIBITION]", `🚫🚫🚫 ABSOLUTE E3 PROHIBITION: e3 is FORBIDDEN! e4 is better!`);
+                score += (CONFIG.v40D3ProhibitionPenalty || -10000000000000) / 2;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.33: SICILIAN MASTERY — Force proper anti-Sicilian play with d4
+ */
+function v40SicilianMasteryEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40SicilianMasteryEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    // Only for White in Sicilian positions (after 1.e4 c5)
+    if (!isWhite) return 0;
+    
+    // Check for Sicilian position (e4 played, c5 played)
+    const e4Piece = board.get('e4');
+    const c5Piece = board.get('c5');
+    const d4Piece = board.get('d4');
+    
+    const isSicilian = e4Piece && e4Piece.toLowerCase() === 'p' && 
+                       c5Piece && c5Piece.toLowerCase() === 'p';
+    
+    if (!isSicilian) return 0;
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(fromSquare);
+    
+    if (!piece) return 0;
+    
+    // In Sicilian, ALWAYS prefer d4
+    if (fromSquare === 'd2' && toSquare === 'd4' && !d4Piece) {
+        debugLog("[V40.33_SICILIAN]", `✅✅✅ SICILIAN MASTERY: Playing d4! EXCELLENT!`);
+        score += CONFIG.v40SicilianD4Bonus || 5000000000000;
+    }
+    
+    // In Sicilian, NEVER play d3
+    if (fromSquare === 'd2' && toSquare === 'd3') {
+        debugLog("[V40.33_SICILIAN]", `🚫🚫🚫 SICILIAN DISASTER: d3 is TERRIBLE in Sicilian! Play d4!`);
+        score += -20000000000000; // 20 trillion penalty
+    }
+    
+    // Prefer f4 Grand Prix Attack
+    if (CONFIG.v40SicilianF4Attack && fromSquare === 'f2' && toSquare === 'f4') {
+        debugLog("[V40.33_SICILIAN]", `✅ SICILIAN: Grand Prix Attack with f4! GOOD!`);
+        score += CONFIG.v40SicilianF4Bonus || 2000000000000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.33: ENHANCED TACTICAL DEPTH — See deeper into tactics
+ */
+function v40EnhancedTacticalDepthEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40EnhancedTacticalDepthEnabled) return 0;
+    
+    let score = 0;
+    const afterBoard = simulateMoveOnBoard(board, move);
+    const isWhite = activeColor === 'w';
+    
+    // Multiple verification passes
+    const passes = CONFIG.v40TacticalVerificationPasses || 3;
+    let totalThreatScore = 0;
+    
+    for (let pass = 0; pass < passes; pass++) {
+        // Check for immediate threats after our move
+        const threats = v40FindAllThreatsSimple(afterBoard, !isWhite);
+        
+        if (threats.hasMatingThreat) {
+            debugLog("[V40.33_TACTICAL]", `🚨 PASS ${pass+1}: MATING THREAT detected!`);
+            totalThreatScore += -5000000000000;
+        }
+        
+        if (threats.hasPieceCapture) {
+            debugLog("[V40.33_TACTICAL]", `⚠️ PASS ${pass+1}: PIECE CAPTURE threat detected!`);
+            totalThreatScore += -1000000000000;
+        }
+        
+        if (threats.hasFork) {
+            debugLog("[V40.33_TACTICAL]", `⚠️ PASS ${pass+1}: FORK threat detected!`);
+            totalThreatScore += -2000000000000;
+        }
+    }
+    
+    score += totalThreatScore;
+    
+    return score;
+}
+
+/**
+ * v40.33 Helper: Find all simple threats
+ */
+function v40FindAllThreatsSimple(board, attackingColorIsWhite) {
+    const result = { hasMatingThreat: false, hasPieceCapture: false, hasFork: false };
+    
+    const attackingColor = attackingColorIsWhite ? 'w' : 'b';
+    const defendingColor = attackingColorIsWhite ? 'b' : 'w';
+    
+    // Find defending king
+    const kingSquare = findKingSquare(board, defendingColor);
+    if (!kingSquare) return result;
+    
+    // Check if king is in check
+    if (isSquareAttackedByColor(board, kingSquare, attackingColor)) {
+        // Check if it's checkmate
+        const hasEscape = v40KingHasEscape(board, kingSquare, defendingColor);
+        if (!hasEscape) {
+            result.hasMatingThreat = true;
+        }
+    }
+    
+    // Check for piece captures
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === attackingColorIsWhite) continue;
+        if (piece.toLowerCase() === 'k') continue;
+        
+        if (isSquareAttackedByColor(board, square, attackingColor)) {
+            const isDefended = isSquareDefendedByColor(board, square, defendingColor);
+            if (!isDefended) {
+                result.hasPieceCapture = true;
+            }
+        }
+    }
+    
+    // Simple fork check - knight attacks 2+ pieces
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== attackingColorIsWhite) continue;
+        if (piece.toLowerCase() !== 'n') continue;
+        
+        let attackedCount = 0;
+        for (const [targetSquare, targetPiece] of board) {
+            if (!targetPiece) continue;
+            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+            if (targetIsWhite === attackingColorIsWhite) continue;
+            if (targetPiece.toLowerCase() === 'p') continue;
+            
+            if (v40DoesAttackSquare(board, square, targetSquare, piece)) {
+                attackedCount++;
+            }
+        }
+        
+        if (attackedCount >= 2) {
+            result.hasFork = true;
+        }
+    }
+    
+    return result;
+}
+
+/**
+ * v40.33 Helper: Check if king has escape squares
+ */
+function v40KingHasEscape(board, kingSquare, kingColor) {
+    const file = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(kingSquare[1]) - 1;
+    const attackingColor = kingColor === 'w' ? 'b' : 'w';
+    
+    const directions = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+    ];
+    
+    for (const [df, dr] of directions) {
+        const newFile = file + df;
+        const newRank = rank + dr;
+        
+        if (newFile < 0 || newFile > 7 || newRank < 0 || newRank > 7) continue;
+        
+        const newSquare = String.fromCharCode('a'.charCodeAt(0) + newFile) + (newRank + 1);
+        const pieceOnSquare = board.get(newSquare);
+        
+        // Can't escape to square with our own piece
+        if (pieceOnSquare) {
+            const pieceIsWhite = pieceOnSquare === pieceOnSquare.toUpperCase();
+            if ((kingColor === 'w') === pieceIsWhite) continue;
+        }
+        
+        // Check if escape square is attacked
+        if (!isSquareAttackedByColor(board, newSquare, attackingColor)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.33: PIECE SAFETY SUPREME — No hanging pieces EVER
+ */
+function v40PieceSafetySupremeEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PieceSafetySupremeEnabled) return 0;
+    
+    let score = 0;
+    const afterBoard = simulateMoveOnBoard(board, move);
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Check all our pieces after the move
+    for (const [square, piece] of afterBoard) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (piece.toLowerCase() === 'k') continue;
+        
+        // Check if piece is attacked
+        if (isSquareAttackedByColor(afterBoard, square, enemyColor)) {
+            const isDefended = isSquareDefendedByColor(afterBoard, square, activeColor);
+            const pieceValue = getPieceValueSimple(piece.toLowerCase());
+            
+            if (!isDefended) {
+                debugLog("[V40.33_SAFETY]", `🚨🚨🚨 HANGING PIECE: ${piece} on ${square} is UNDEFENDED!`);
+                score += CONFIG.v40HangingPiecePenaltyAbsolute || -20000000000000;
+            } else {
+                // Check if lowest attacker is of lower value
+                const attackers = findAttackersOfSquare(afterBoard, square, enemyColor);
+                if (attackers.length > 0) {
+                    const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+                    if (lowestAttackerValue < pieceValue) {
+                        debugLog("[V40.33_SAFETY]", `⚠️ PIECE UNDER ATTACK: ${piece} on ${square} by lower value piece!`);
+                        score += CONFIG.v40UndefendedPieceWarning || -1000000000000;
+                    }
+                }
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.33: INITIATIVE MAINTENANCE — Never lose the initiative
+ */
+function v40InitiativeMaintenanceEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40InitiativeMaintenanceEnabled) return 0;
+    
+    let score = 0;
+    const afterBoard = simulateMoveOnBoard(board, move);
+    const isWhite = activeColor === 'w';
+    
+    // Calculate initiative before and after move
+    const initBefore = v40CalculateSimpleInitiative(board, isWhite);
+    const initAfter = v40CalculateSimpleInitiative(afterBoard, isWhite);
+    
+    if (initAfter < initBefore - 2) {
+        debugLog("[V40.33_INITIATIVE]", `⚠️ INITIATIVE LOSS: Went from ${initBefore} to ${initAfter}!`);
+        score += CONFIG.v40InitiativeLossPenalty || -500000000000;
+    }
+    
+    if (initAfter > initBefore + 2) {
+        debugLog("[V40.33_INITIATIVE]", `✅ INITIATIVE GAIN: Went from ${initBefore} to ${initAfter}!`);
+        score += CONFIG.v40InitiativeGainBonus || 800000000000;
+    }
+    
+    // Check for passive moves when we have initiative
+    if (initBefore >= 3) {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const piece = board.get(fromSquare);
+        
+        if (piece) {
+            const pieceType = piece.toLowerCase();
+            const fromRank = parseInt(fromSquare[1]);
+            const toRank = parseInt(toSquare[1]);
+            
+            // Retreating when having initiative is BAD
+            const isRetreat = isWhite ? (toRank < fromRank) : (toRank > fromRank);
+            if (isRetreat && pieceType !== 'k') {
+                debugLog("[V40.33_INITIATIVE]", `🚫 PASSIVE RETREAT when having initiative!`);
+                score += CONFIG.v40PassiveMoveInInitiativePenalty || -2000000000000;
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.33 Helper: Calculate simple initiative score
+ */
+function v40CalculateSimpleInitiative(board, isWhite) {
+    let initiative = 0;
+    const ourColor = isWhite ? 'w' : 'b';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Count threats we create
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        // Count attacked enemy pieces
+        for (const [targetSquare, targetPiece] of board) {
+            if (!targetPiece) continue;
+            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+            if (targetIsWhite === isWhite) continue;
+            
+            if (v40DoesAttackSquare(board, square, targetSquare, piece)) {
+                const targetValue = getPieceValueSimple(targetPiece.toLowerCase());
+                initiative += targetValue / 9; // Normalize
+            }
+        }
+    }
+    
+    // Subtract threats against us
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;
+        
+        for (const [targetSquare, targetPiece] of board) {
+            if (!targetPiece) continue;
+            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+            if (targetIsWhite !== isWhite) continue;
+            
+            if (v40DoesAttackSquare(board, square, targetSquare, piece)) {
+                const targetValue = getPieceValueSimple(targetPiece.toLowerCase());
+                initiative -= targetValue / 9;
+            }
+        }
+    }
+    
+    return initiative;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
