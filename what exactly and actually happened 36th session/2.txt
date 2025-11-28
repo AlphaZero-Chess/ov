@@ -1,0 +1,4 @@
+
+Action: $ wc -l "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 37588 /app/Lichess Bot-AlphaZero-Pure.user.js
+Exit code: 0

@@ -1,0 +1,12 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1904|    // v40.24: PRE-MOVE QUEEN SAFETY CHECK — Check queen safety BEFORE every move
+1905|    v40PreMoveQueenCheckEnabled: true,
+1906|    v40QueenLeftHangingPenalty: -90000000000,       // After our move, queen is left hanging
+1907|    v40CreateQueenThreatBonus: 2000000000,          // Our move threatens enemy queen
+1908|};
+1909|
+1910|// ═══════════════════════════════════════════════════════════════════════
+1911|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+1912|// ═══════════════════════════════════════════════════════════════════════

@@ -1,0 +1,39 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+19265|            if (!attackingBefore && attackingAfter) {
+19266|                score += CONFIG.v40CreateQueenThreatBonus || 2000000000;
+19267|                debugLog("[V40.24_PRE]", `✅ ${move} creates threat to enemy queen!`);
+19268|            }
+19269|        }
+19270|        
+19271|    } catch (e) {
+19272|        debugLog("[V40.24_PRE]", `Error: ${e.message}`);
+19273|    }
+19274|    
+19275|    return score;
+19276|}
+19277|
+19278|/**
+19279| * v40.24 Helper: Find all pieces attacking a square
+19280| */
+19281|function findAttackersOfSquareV40_24(board, targetSquare, attackingColor) {
+19282|    const attackers = [];
+19283|    const isAttackingWhite = attackingColor === 'w';
+19284|    
+19285|    for (const [sq, piece] of board) {
+19286|        if (!piece) continue;
+19287|        const pieceIsWhite = piece === piece.toUpperCase();
+19288|        if (pieceIsWhite !== isAttackingWhite) continue;
+19289|        
+19290|        if (canPieceAttackSquareV40_24(sq, piece, targetSquare, board)) {
+19291|            attackers.push({
+19292|                square: sq,
+19293|                piece: piece
+19294|            });
+19295|        }
+19296|    }
+19297|    
+19298|    return attackers;
+19299|}
+19300|

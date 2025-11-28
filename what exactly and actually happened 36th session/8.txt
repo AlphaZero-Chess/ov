@@ -1,0 +1,24 @@
+The code is extensive with many v40.x additions. Let me check what the latest game analysis tells us and implement improvements. Based on the game:
+
+```
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. Nf3 e6 5. Nc3 Ne7 6. Bd3 Bxd3 7. cxd3 Nf5 8. O-O Nd7 
+9. Qb3 Qb6 10. Qxb6 Nxb6 <-- EARLY QUEEN TRADE - GAVE UP INITIATIVE!
+...
+24. g3 Nxf3+ 25. Kg2 Nxd2 <-- LOST A PIECE (Knight took Bishop on d2)
+...
+38. c6 b2 39. c7 Kd7 40. c8=Q+ Kxc8 41. Kg2 b1=Q+ 42. Kh3 Qf1# <-- PAWN RACE LOST
+```
+
+The main issues are:
+1. **Early Queen Trade** - Qxb6 gave up all initiative in a closed position
+2. **Piece Loss** - Didn't see Nxf3+ Nxd2 fork
+3. **Pawn Race Lost** - b2 queened faster than c7
+
+Let me implement v40.25 to fix these:
+Action: $ grep -n "v40.24:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 1874:    // v40.24: ABSOLUTE QUEEN SAFETY SUPREME
+1880:    // v40.24: QUEEN UNDER ATTACK DETECTION — NEVER ignore queen being attacked!
+1890:    // v40.24: MUST DEFEND QUEEN — If queen attacked, the move MUST defend it!
+1898:    // v40.24: KNIGHT FORK DETECTION — Knights are deadly against queens!
+1904:    // v40.24: PRE-MOVE QUEEN SAFETY CHECK — Check queen safety BEFORE every move
+Exit code: 0

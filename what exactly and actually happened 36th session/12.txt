@@ -1,0 +1,73 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.24: PRE-MOVE QUEEN SAFETY CHECK — Check queen safety BEFORE every move
+    v40PreMoveQueenCheckEnabled: true,
+    v40QueenLeftHangingPenalty: -90000000000,       // After our move, queen is left hanging
+    v40CreateQueenThreatBonus: 2000000000,          // Our move threatens enemy queen
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+// ═══════════════════════════════════════════════════════════════════════" --new-str "    // v40.24: PRE-MOVE QUEEN SAFETY CHECK — Check queen safety BEFORE every move
+    v40PreMoveQueenCheckEnabled: true,
+    v40QueenLeftHangingPenalty: -90000000000,       // After our move, queen is left hanging
+    v40CreateQueenThreatBonus: 2000000000,          // Our move threatens enemy queen
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.25: STRATEGIC MASTERY SUPREME
+    // From game analysis: Bot traded queens (Qxb6) in closed position - TERRIBLE!
+    // Then lost to Nxf3+ Nxd2 fork and lost pawn race (b2 vs c7)
+    // STRATEGIC MASTERY = NO BAD QUEEN TRADES + FORK DETECTION + PAWN RACE CALC
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.25: NO EARLY QUEEN TRADE — Don't trade queens unless winning!
+    v40NoEarlyQueenTradeEnabled: true,
+    v40EarlyQueenTradePenalty: -30000000000,        // Trading queens before move 15
+    v40ClosedPositionQueenTradePenalty: -50000000000, // Queen trade in closed position
+    v40InitiativeLossQueenTradePenalty: -40000000000, // Queen trade that loses initiative
+    v40EqualQueenTradePenalty: -20000000000,        // Trading equal queens without advantage
+    v40WinningExchangeQueenTradeBonus: 10000000000, // Queen trade that wins material
+    v40EndgameQueenTradeBetter: 5000000000,         // Queen trade in winning endgame
+    v40QueenTradeActivatesRooks: 3000000000,        // If trade activates our rooks
+    
+    // v40.25: FORK DETECTION ENHANCED — Knights are deadly!
+    v40ForkDetectionEnhancedEnabled: true,
+    v40KnightForkPiecePenalty: -25000000000,        // Knight fork on any 2+ pieces
+    v40KnightForkKingQueenPenalty: -100000000000,   // Knight fork on king+queen
+    v40KnightForkKingRookPenalty: -40000000000,     // Knight fork on king+rook
+    v40KnightForkQueenRookPenalty: -30000000000,    // Knight fork on queen+rook
+    v40AllowForkSquarePenalty: -15000000000,        // Allow knight to reach fork square
+    v40PinLeadingToForkPenalty: -20000000000,       // Pin that leads to fork
+    v40DiscoveredForkPenalty: -35000000000,         // Discovered attack leading to fork
+    
+    // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+    v40PawnRaceCalcEnabled: true,
+    v40PawnRaceWinningBonus: 50000000000,           // We win pawn race to queen
+    v40PawnRaceLosingPenalty: -60000000000,         // We lose pawn race to queen
+    v40PawnRaceDraw: 0,                             // Race results in draw
+    v40PassedPawnAdvanceBonus: 8000000000,          // Advancing passed pawn
+    v40EnemyPassedPawnBlocking: 10000000000,        // Blocking enemy passed pawn
+    v40PawnPromotionThreatBonus: 20000000000,       // Our pawn threatens promotion
+    v40EnemyPromotionThreatPenalty: -25000000000,   // Enemy pawn threatens promotion
+    v40RaceCountingBonus: 5000000000,               // Per tempo advantage in race
+    
+    // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+    v40PiecePreservationAbsoluteEnabled: true,
+    v40PieceHangingAfterMovePenalty: -30000000000,  // Our piece hangs after the move
+    v40UndefendedPiecePenalty: -15000000000,        // Piece with no defender
+    v40OverloadedDefenderPenalty: -10000000000,     // Defender protecting multiple pieces
+    v40TacticalVulnerabilityPenalty: -20000000000,  // Piece tactically vulnerable
+    v40PieceSafetyCheckBonus: 5000000000,           // All pieces safe after move
+    
+    // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+    v40InitiativePreservationEnabled: true,
+    v40TradeThatLosesInitiativePenalty: -12000000000, // Trade that loses initiative
+    v40PassiveMoveInActivePosn: -8000000000,        // Passive move when should be active
+    v40InitiativeGainBonus: 6000000000,             // Move that gains initiative
+    v40TempoGainInAttackBonus: 4000000000,          // Tempo gain during attack
+    v40ForceOpponentDefensiveBonus: 7000000000,     // Force opponent to defend
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+// ═══════════════════════════════════════════════════════════════════════"
+Observation: Edit was successful.

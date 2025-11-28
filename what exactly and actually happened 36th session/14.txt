@@ -1,0 +1,79 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+19175|function v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) {
+19176|    if (!CONFIG.v40PreMoveQueenCheckEnabled) return 0;
+19177|    
+19178|    let score = 0;
+19179|    const isWhite = activeColor === 'w';
+19180|    const enemyColor = isWhite ? 'b' : 'w';
+19181|    
+19182|    try {
+19183|        const fromSquare = move.substring(0, 2);
+19184|        const toSquare = move.substring(2, 4);
+19185|        const movingPiece = board.get(fromSquare);
+19186|        
+19187|        if (!movingPiece) return 0;
+19188|        
+19189|        // Find our queen
+19190|        let ourQueenSquare = null;
+19191|        for (const [sq, piece] of board) {
+19192|            if (!piece) continue;
+19193|            const pieceIsWhite = piece === piece.toUpperCase();
+19194|            if (pieceIsWhite !== isWhite) continue;
+19195|            if (piece.toLowerCase() === 'q') {
+19196|                ourQueenSquare = sq;
+19197|                break;
+19198|            }
+19199|        }
+19200|        
+19201|        if (!ourQueenSquare) return 0;
+19202|        
+19203|        // Simulate the move
+19204|        const afterBoard = new Map(board);
+19205|        afterBoard.delete(fromSquare);
+19206|        afterBoard.set(toSquare, movingPiece);
+19207|        
+19208|        // Update queen position if we moved it
+19209|        let queenSquareAfter = ourQueenSquare;
+19210|        if (fromSquare === ourQueenSquare) {
+19211|            queenSquareAfter = toSquare;
+19212|        }
+19213|        
+19214|        // CHECK 1: Is our queen attacked BEFORE but we're not addressing it?
+19215|        const queenAttackedBefore = isSquareAttackedByColor(board, ourQueenSquare, enemyColor);
+19216|        if (queenAttackedBefore) {
+19217|            const queenStillAttacked = isSquareAttackedByColor(afterBoard, queenSquareAfter, enemyColor);
+19218|            const queenDefended = isSquareDefendedByColor(afterBoard, queenSquareAfter, activeColor);
+19219|            
+19220|            if (queenStillAttacked && !queenDefended) {
+19221|                // We haven't addressed the queen threat!
+19222|                score += CONFIG.v40QueenUnderAttackIgnorePenalty || -50000000000;
+19223|                debugLog("[V40.24_PRE]", `☠️☠️☠️ ${move} IGNORES queen under attack on ${queenSquareAfter}!`);
+19224|            }
+19225|        }
+19226|        
+19227|        // CHECK 2: Does this move EXPOSE our queen to new attacks?
+19228|        if (!queenAttackedBefore) {
+19229|            const queenAttackedAfter = isSquareAttackedByColor(afterBoard, queenSquareAfter, enemyColor);
+19230|            if (queenAttackedAfter) {
+19231|                const queenDefendedAfter = isSquareDefendedByColor(afterBoard, queenSquareAfter, activeColor);
+19232|                if (!queenDefendedAfter) {
+19233|                    score += CONFIG.v40QueenLeftHangingPenalty || -90000000000;
+19234|                    debugLog("[V40.24_PRE]", `☠️ ${move} EXPOSES queen to attack!`);
+19235|                } else {
+19236|                    // Check if queen is attacked by lower value pieces
+19237|                    const attackers = findAttackersOfSquareV40_24(afterBoard, queenSquareAfter, enemyColor);
+19238|                    for (const att of attackers) {
+19239|                        if (getPieceValueSimple(att.piece.toLowerCase()) < 9) {
+19240|                            score += CONFIG.v40QueenExposedPenalty || -5000000000;
+19241|                            debugLog("[V40.24_PRE]", `⚠️ ${move} allows queen to be attacked by ${att.piece}`);
+19242|                            break;
+19243|                        }
+19244|                    }
+19245|                }
+19246|            }
+19247|        }
+19248|        
+19249|        // CHECK 3: Does this move create a threat to enemy queen?
+19250|        let enemyQueenSquare = null;

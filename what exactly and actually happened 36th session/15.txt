@@ -1,0 +1,4 @@
+
+Action: $ grep -n "^function v40PreMoveQueenSafetyEval" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 19175:function v40PreMoveQueenSafetyEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

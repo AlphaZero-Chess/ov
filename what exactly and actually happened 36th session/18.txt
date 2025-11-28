@@ -1,0 +1,75 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+19419| * v40.24 Helper: Does move defend the queen?
+19420| */
+19421|function doesMoveDefendQueenV40_24(move, board, queenSquare, color, attackers) {
+19422|    const fromSquare = move.substring(0, 2);
+19423|    const toSquare = move.substring(2, 4);
+19424|    const movingPiece = board.get(fromSquare);
+19425|    
+19426|    if (!movingPiece) return false;
+19427|    
+19428|    // Option 1: Move the queen itself
+19429|    if (fromSquare === queenSquare) {
+19430|        // Check if destination is safe
+19431|        const afterBoard = new Map(board);
+19432|        afterBoard.delete(fromSquare);
+19433|        afterBoard.set(toSquare, movingPiece);
+19434|        
+19435|        const enemyColor = color === 'w' ? 'b' : 'w';
+19436|        if (!isSquareAttackedByColor(afterBoard, toSquare, enemyColor)) {
+19437|            return true; // Queen moved to safety
+19438|        }
+19439|    }
+19440|    
+19441|    // Option 2: Capture the attacker
+19442|    for (const attacker of attackers) {
+19443|        if (toSquare === attacker.square) {
+19444|            return true; // Capturing an attacker
+19445|        }
+19446|    }
+19447|    
+19448|    // Option 3: Block the attack
+19449|    const afterBoard = new Map(board);
+19450|    afterBoard.delete(fromSquare);
+19451|    afterBoard.set(toSquare, movingPiece);
+19452|    
+19453|    const enemyColor = color === 'w' ? 'b' : 'w';
+19454|    if (!isSquareAttackedByColor(afterBoard, queenSquare, enemyColor)) {
+19455|        return true; // Attack is blocked
+19456|    }
+19457|    
+19458|    // Option 4: Add defender
+19459|    // Check if we're adding a defender that makes the trade favorable
+19460|    const defendersBefore = findDefendersOfSquareV40_24(board, queenSquare, color);
+19461|    const defendersAfter = findDefendersOfSquareV40_24(afterBoard, queenSquare, color);
+19462|    
+19463|    if (defendersAfter.length > defendersBefore.length) {
+19464|        return true; // Added a defender
+19465|    }
+19466|    
+19467|    return false;
+19468|}
+19469|
+19470|// ═══════════════════════════════════════════════════════════════════════════════
+19471|function findAttackedPiecesV40_9(board, color) {
+19472|    const attacked = [];
+19473|    const isWhite = color === 'w';
+19474|    const enemyColor = isWhite ? 'b' : 'w';
+19475|    
+19476|    for (const [square, piece] of board) {
+19477|        if (!piece) continue;
+19478|        const pieceIsWhite = piece === piece.toUpperCase();
+19479|        if (pieceIsWhite !== isWhite) continue;
+19480|        
+19481|        const pieceType = piece.toLowerCase();
+19482|        if (pieceType === 'k') continue;  // King attacks handled separately
+19483|        
+19484|        // Check if this square is attacked by enemy
+19485|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+19486|            // Check if it's adequately defended
+19487|            const isDefended = isSquareDefendedByColor(board, square, color);
+19488|            
+19489|            // If attacked by something of lower value, still need to consider
+19490|            const attackers = findAttackersOfSquare(board, square, enemyColor);
