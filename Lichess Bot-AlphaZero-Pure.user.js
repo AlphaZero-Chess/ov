@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.28 ABSOLUTE SACRIFICE VERIFICATION
-// @description  TRUE AlphaZero Replica v40.28 - ABSOLUTE SACRIFICE VERIFICATION - DEEP FORCING CALCULATION - ATTACK COORDINATION - NEVER PLAY UNSOUND SACRIFICES!
-// @author       AlphaZero TRUE REPLICA v40.28 ABSOLUTE SACRIFICE VERIFICATION EDITION
-// @version      40.28.0-ABSOLUTE-SACRIFICE-VERIFICATION
+// @name         Lichess Bot - TRUE ALPHAZERO v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY
+// @description  TRUE AlphaZero Replica v40.29 - DEEP DEFENSIVE AWARENESS - PIECE HARMONY - ANTI-FORK SUPREME - THREAT ANTICIPATION - PROPHYLAXIS PRIORITY!
+// @author       AlphaZero TRUE REPLICA v40.29 DEEP DEFENSIVE AWARENESS EDITION
+// @version      40.29.0-DEEP-DEFENSIVE-AWARENESS
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -2156,6 +2156,61 @@ const CONFIG = {
     
     // v40.29: 100% DEEP DEFENSIVE AWARENESS DOMINANCE
     v40DeepDefensiveAwarenessDominance: 1.0,         // 100% v40.29 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.30.0: ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+    // From game: Bot STILL plays d3 instead of d4, allows knight forks, loses material
+    // THE BOT MUST: 1) NEVER play d3/e3 when d4/e4 possible, 2) SEE ALL FORKS 3 moves ahead
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.30: ABSOLUTE OPENING PROHIBITION — d3/e3 are FORBIDDEN in first 10 moves
+    v40AbsoluteOpeningProhibitionEnabled: true,
+    v40D3OpeningPenalty: -5000000000,               // MASSIVE penalty for d3 opening
+    v40E3OpeningPenalty: -5000000000,               // MASSIVE penalty for e3 opening
+    v40PassiveOpeningMovesPenalty: -3000000000,     // General passive opening moves
+    v40MustPlayD4E4Bonus: 500000000,                // MASSIVE bonus for d4/e4
+    v40D4E4AbsolutePreference: true,                // ALWAYS prefer d4/e4
+    v40MaxMovesForOpeningProhibition: 10,           // Apply prohibition in first 10 moves
+    
+    // v40.30: DEEP FORK VISION — See ALL forks 3 moves ahead
+    v40DeepForkVisionEnabled: true,
+    v40ForkIn1Penalty: -10000000000,                // Fork in 1 move is DISASTER
+    v40ForkIn2Penalty: -5000000000,                 // Fork in 2 moves is TERRIBLE
+    v40ForkIn3Penalty: -2000000000,                 // Fork in 3 moves is DANGEROUS
+    v40PreventForkBonus: 800000000,                 // Bonus for preventing fork
+    v40MoveAllowsForkPenalty: -8000000000,          // Move that allows fork
+    v40KnightForkSquaresVigilance: true,            // Watch all knight fork squares
+    
+    // v40.30: BISHOP PAIR PRESERVATION — Never trade bishop needlessly
+    v40BishopPairPreservationEnabled: true,
+    v40TradeLastBishopPenalty: -400000000,          // Don't trade last bishop
+    v40BishopPairBonus: 200000000,                  // Bonus for keeping bishop pair
+    v40GivingUpBishopPairPenalty: -300000000,       // Penalty for giving up pair
+    
+    // v40.30: PIECE ACTIVITY SUPREME — All pieces must be active by move 12
+    v40PieceActivitySupremeEnabled: true,
+    v40UndevelopedPieceByMove10Penalty: -600000000, // Piece undeveloped by move 10
+    v40UndevelopedPieceByMove12Penalty: -800000000, // Piece undeveloped by move 12
+    v40AllPiecesActiveBonus: 400000000,             // All pieces active
+    v40IdlePiecePenalty: -250000000,                // Idle piece penalty
+    
+    // v40.30: CENTER CONTROL ABSOLUTE — Must control center by move 8
+    v40CenterControlAbsoluteEnabled: true,
+    v40NoCenterControlByMove8Penalty: -1000000000,  // No center by move 8 is BAD
+    v40StrongCenterBonus: 500000000,                // Strong center control
+    v40WeakCenterPenalty: -400000000,               // Weak center
+    v40CentralOutpostBonus: 300000000,              // Knight/bishop on central outpost
+    
+    // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics
+    v40TacticalBlindnessEliminationEnabled: true,
+    v40MissedTacticPenalty: -2000000000,            // Penalty for missing tactic
+    v40FoundTacticBonus: 800000000,                 // Bonus for finding tactic
+    v40DoubleAttackMissedPenalty: -1500000000,      // Missing double attack
+    v40PinMissedPenalty: -1200000000,               // Missing pin
+    v40DiscoveredAttackMissedPenalty: -1800000000,  // Missing discovered attack
+    
+    // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
+    v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -39626,11 +39681,15 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore +
                                // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
                                absoluteSacrificeVerificationScore + attackCoordinationScore + deepForcingCalcScore +
-                               pieceSacrificeAnalysisScore + attackProgressScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.28 ABSOLUTE SACRIFICE VERIFICATION PARADIGM SHIFT
+                               pieceSacrificeAnalysisScore + attackProgressScore +
+                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+                               pieceCoordinationCheckScore + threatAnticipationScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.29 DEEP DEFENSIVE AWARENESS PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
-                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.28 ABSOLUTE SACRIFICE VERIFICATION EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
                 debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
@@ -39656,6 +39715,14 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🎯🎯 DeepForcingCalc: ${deepForcingCalcScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceSacrificeAnalysis: ${pieceSacrificeAnalysisScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackProgress: ${attackProgressScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ DeepDefensiveAwareness: ${deepDefensiveAwarenessScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎵🎵🎵 PieceHarmony: ${pieceHarmonyScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔮🔮🔮 ProphylaxisPriority: ${prophylaxisPriorityScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴🐴🐴 KnightInvasionPrevention: ${knightInvasionPreventionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ AntiForkSupreme: ${antiForkSupremeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🌿🌿🌿 QuietPosition: ${quietPositionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🤝🤝🤝 PieceCoordinationCheck: ${pieceCoordinationCheckScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔭🔭🔭 ThreatAnticipation: ${threatAnticipationScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
