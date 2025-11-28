@@ -1,0 +1,13 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                debugLog(\"[V40_INTEGRATE]\", `   ♗🚫 BISHOP USELESS SQUARE: ${bishopUselessSquareScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);" --new-str "                debugLog(\"[V40_INTEGRATE]\", `   ♗🚫 BISHOP USELESS SQUARE: ${bishopUselessSquareScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️⛓️ PAWN CAPTURE CHAIN: ${pawnCaptureChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️⚔️ PIECE UNDER PAWN ATTACK: ${pieceUnderPawnAttackScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🏆 PROMOTION THREAT V39: ${promotionThreatV39Score.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🔄 RECAPTURE CHAIN: ${recaptureChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️☠️ PIECE UNDER PAWN DANGER: ${pieceUnderPawnDangerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ♟️🍴 PAWN FORK DETECTION: ${pawnForkDetectionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);"
+Observation: Edit was successful.

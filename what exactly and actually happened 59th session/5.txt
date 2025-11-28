@@ -1,0 +1,5 @@
+Now let me update the header and add v40.39 functions. First, let me check the CONFIG section to add v40.39 settings:
+Action: $ cd /app && grep -n "v40BishopUselessSquareEnabled" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2462:    v40BishopUselessSquareEnabled: true,
+27027:    if (!CONFIG.v40BishopUselessSquareEnabled) return 0;
+Exit code: 0

@@ -1,0 +1,64 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+2450|    v40ForcedMateDefenseEnabled: true,
+2451|    v40ForcedMateDefensePenalty: -200000000000000, // 200 trillion for ignoring mate threat
+2452|    
+2453|    // v40.38: PAWN MOVE UNDER ATTACK PROHIBITION - No pawn push when under mating attack
+2454|    v40PawnMoveUnderAttackEnabled: true,
+2455|    v40PawnMoveUnderAttackPenalty: -90000000000000, // 90 trillion for pawn push under attack
+2456|    
+2457|    // v40.38: PASSIVE QUEEN UNDER MATE PROHIBITION - No Qd1/Qc1 when mate threatened
+2458|    v40PassiveQueenUnderMateEnabled: true,
+2459|    v40PassiveQueenUnderMatePenalty: -180000000000000, // 180 trillion for passive queen
+2460|    
+2461|    // v40.38: BISHOP USELESS SQUARE PROHIBITION - No Bh6/Ba3 type useless moves
+2462|    v40BishopUselessSquareEnabled: true,
+2463|    v40BishopUselessSquarePenalty: -50000000000000, // 50 trillion for useless bishop
+2464|    v40BishopUselessSquares: ['h6', 'a6', 'h3', 'a3'],
+2465|};
+2466|
+2467|// ═══════════════════════════════════════════════════════════════════════
+2468|// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+2469|// ═══════════════════════════════════════════════════════════════════════
+2470|
+2471|/**
+2472| * v37: TRUE MCTS Node structure for proper tree search
+2473| */
+2474|class MCTSNode {
+2475|    constructor(move, parent = null, prior = 1.0) {
+2476|        this.move = move;
+2477|        this.parent = parent;
+2478|        this.children = new Map();
+2479|        this.visits = 0;
+2480|        this.totalValue = 0;
+2481|        this.prior = prior;           // Policy prior (P)
+2482|        this.virtualLoss = 0;
+2483|        this.isExpanded = false;
+2484|        this.isTerminal = false;
+2485|        this.depth = parent ? parent.depth + 1 : 0;
+2486|    }
+2487|    
+2488|    get value() {
+2489|        return this.visits > 0 ? this.totalValue / this.visits : 0;
+2490|    }
+2491|    
+2492|    get ucb1Score() {
+2493|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2494|        
+2495|        const exploitation = this.value;
+2496|        const exploration = CONFIG.v37MCTSExplorationConstant * 
+2497|            Math.sqrt(Math.log(this.parent.visits) / (this.visits + 1));
+2498|        
+2499|        return exploitation + exploration;
+2500|    }
+2501|    
+2502|    get puctScore() {
+2503|        if (!this.parent || this.parent.visits === 0) return Infinity;
+2504|        
+2505|        const Q = this.value;
+2506|        const U = CONFIG.v37MCTSPUCTConstant * this.prior * 
+2507|            Math.sqrt(this.parent.visits) / (1 + this.visits);
+2508|        
+2509|        // Apply virtual loss for diversity
+2510|        const virtualLossAdjustment = this.virtualLoss * CONFIG.v37MCTSVirtualLoss / (this.visits + 1);

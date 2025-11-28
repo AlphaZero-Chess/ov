@@ -1,0 +1,33 @@
+
+Action: $ cd /app && grep -n "function v40" "Lichess Bot-AlphaZero-Pure.user.js" | tail -30
+Observation: 25533:function v40CalculateSimpleInitiative(board, isWhite) {
+25586:function v40PassivePawnProhibitionEval(fen, move, board, activeColor, moveNumber) {
+25615:function v40MaterialSafetyVerificationEval(fen, move, board, activeColor, moveNumber) {
+25664:function v40CalculateMaterial(board, isWhite) {
+25683:function v40TacticalVerificationLayersEval(fen, move, board, activeColor, moveNumber) {
+25734:function v40DetectForkThreats(board, color) {
+25775:function v40DetectPinThreats(board, color) {
+25830:function v40DetectBackRankWeakness(board, isWhite) {
+25872:function v40DetectMateThreats(board, color, depth) {
+25921:function v40CentralControlPriorityEval(fen, move, board, activeColor, moveNumber) {
+25982:function v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) {
+26007:function v40CountPieceCoordination(board, isWhite) {
+26086:function v40QueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26118:function v40KnightSacrificePreventionEval(fen, move, board, activeColor, moveNumber) {
+26155:function v40CastlingDirectionEval(fen, move, board, activeColor, moveNumber) {
+26227:function v40CountSideAttackers(board, color, side) {
+26261:function v40ExchangeQualityEval(fen, move, board, activeColor, moveNumber) {
+26317:function v40PieceActivityRequirementEval(fen, move, board, activeColor, moveNumber) {
+26344:function v40CountDevelopedPieces(board, isWhite) {
+26387:function v40RookPassiveProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26439:function v40KingCornerRetreatEval(fen, move, board, activeColor, moveNumber) {
+26487:function v40DesperationSacrificePreventionEval(fen, move, board, activeColor, moveNumber) {
+26528:function v40UltraQueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26562:function v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26641:function v40GxF3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26685:function v40KingDangerWalkEval(fen, move, board, activeColor, moveNumber) {
+26767:function v40ForcedMateDefenseEval(fen, move, board, activeColor, moveNumber) {
+26898:function v40PawnMoveUnderAttackEval(fen, move, board, activeColor, moveNumber) {
+26964:function v40PassiveQueenUnderMateEval(fen, move, board, activeColor, moveNumber) {
+27026:function v40BishopUselessSquareEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

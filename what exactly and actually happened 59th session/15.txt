@@ -1,0 +1,12 @@
+Now let me update the score calculation to include the v40.39 scores:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.38 GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME additions!
+                               gxf3ProhibitionScore + kingDangerWalkScore + forcedMateDefenseScore +
+                               pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.38 GXF3 PROHIBITION & MATE DEFENSE PARADIGM SHIFT" --new-str "                               // v40.38 GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME additions!
+                               gxf3ProhibitionScore + kingDangerWalkScore + forcedMateDefenseScore +
+                               pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore +
+                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.39 PAWN CAPTURE CHAIN SUPREME PARADIGM SHIFT"
+Observation: Edit was successful.

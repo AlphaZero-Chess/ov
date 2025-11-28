@@ -1,0 +1,41 @@
+Now let me add v40.39 CONFIG settings:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.38: BISHOP USELESS SQUARE PROHIBITION - No Bh6/Ba3 type useless moves
+    v40BishopUselessSquareEnabled: true,
+    v40BishopUselessSquarePenalty: -50000000000000, // 50 trillion for useless bishop
+    v40BishopUselessSquares: ['h6', 'a6', 'h3', 'a3'],
+};" --new-str "    // v40.38: BISHOP USELESS SQUARE PROHIBITION - No Bh6/Ba3 type useless moves
+    v40BishopUselessSquareEnabled: true,
+    v40BishopUselessSquarePenalty: -50000000000000, // 50 trillion for useless bishop
+    v40BishopUselessSquares: ['h6', 'a6', 'h3', 'a3'],
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.39: PAWN CAPTURE CHAIN SUPREME - See 3+ move pawn capture chains!
+    // From game: d4 was taken by cxd4, then dxc3 attacked Bb5 AND threatened b2!
+    // THE BOT MUST SEE PAWN ATTACK CHAINS AND RESPOND PROPERLY!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.39: PAWN CAPTURE CHAIN DETECTION - See when pawn captures lead to more captures
+    v40PawnCaptureChainEnabled: true,
+    v40PawnCaptureChainPenalty: -250000000000000, // 250 trillion for missing pawn chain
+    
+    // v40.39: PIECE UNDER PAWN ATTACK - Must respond when piece attacked by pawn
+    v40PieceUnderPawnAttackEnabled: true,
+    v40PieceUnderPawnAttackPenalty: -200000000000000, // 200 trillion for ignoring pawn attack
+    
+    // v40.39: PROMOTION THREAT DETECTION - See when enemy pawn threatens promotion
+    v40PromotionThreatEnabled: true,
+    v40PromotionThreatPenalty: -300000000000000, // 300 trillion for ignoring promotion threat
+    
+    // v40.39: RECAPTURE CHAIN AWARENESS - When we take, see if they take back creating chain
+    v40RecaptureChainEnabled: true,
+    v40RecaptureChainPenalty: -180000000000000, // 180 trillion for missing recapture chain
+    
+    // v40.39: KNIGHT/BISHOP UNDER PAWN DANGER - Must move when piece under pawn attack
+    v40PieceUnderPawnDangerEnabled: true,
+    v40PieceUnderPawnDangerPenalty: -220000000000000, // 220 trillion for piece under pawn attack
+    
+    // v40.39: PAWN FORK DETECTION - See when enemy pawn can fork pieces
+    v40PawnForkDetectionEnabled: true,
+    v40PawnForkDetectionPenalty: -240000000000000, // 240 trillion for missing pawn fork
+};"
+Observation: Edit was successful.

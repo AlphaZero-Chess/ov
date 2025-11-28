@@ -1,0 +1,24 @@
+Now let me add v40.39 functions after the v40.38 functions:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+27090|            }
+27091|        }
+27092|    }
+27093|    
+27094|    return score;
+27095|}
+27096|
+27097|/**
+27098| * v40.38 Helper: Check if bishop can reach a target square
+27099| */
+27100|function canBishopReach(fromSquare, toSquare, board) {
+27101|    const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+27102|    const fromRank = parseInt(fromSquare.charAt(1));
+27103|    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+27104|    const toRank = parseInt(toSquare.charAt(1));
+27105|    
+27106|    // Bishop moves diagonally
+27107|    if (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank)) return false;
+27108|    if (fromFile === toFile && fromRank === toRank) return false;
+27109|    
+27110|    // Check if path is clear

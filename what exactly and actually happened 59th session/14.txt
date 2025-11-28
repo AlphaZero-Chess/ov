@@ -1,0 +1,35 @@
+Now I need to add the v40.39 function calls and integrate them into the score calculation. Let me add them after the v40.38 section:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.38: BISHOP USELESS SQUARE PROHIBITION — No Bh6/Ba3 type useless moves
+                const bishopUselessSquareScore = v40BishopUselessSquareEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // v40.38: COMBINED v40 SCORE — 100% GXF3 PROHIBITION & MATE DEFENSE INFLUENCE
+                // This makes v40 the ABSOLUTE D3 PROHIBITION factor" --new-str "                // v40.38: BISHOP USELESS SQUARE PROHIBITION — No Bh6/Ba3 type useless moves
+                const bishopUselessSquareScore = v40BishopUselessSquareEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.39: PAWN CAPTURE CHAIN SUPREME — THE ULTIMATE TACTICAL FIX!
+                // From game: After cxd4, White played e5 instead of recapturing!
+                // Then dxc3 attacked Bb5 AND threatened cxb2 promotion!
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.39: PAWN CAPTURE CHAIN DETECTION — See pawn capture chains 3+ moves deep!
+                const pawnCaptureChainScore = v40PawnCaptureChainEval(fen, move, board, activeColor, moveNumber) * 2500.0;
+                
+                // v40.39: PIECE UNDER PAWN ATTACK — Must respond when piece attacked by pawn!
+                const pieceUnderPawnAttackScore = v40PieceUnderPawnAttackEval(fen, move, board, activeColor, moveNumber) * 2000.0;
+                
+                // v40.39: PROMOTION THREAT DETECTION — See promotion threats!
+                const promotionThreatV39Score = v40PromotionThreatEval(fen, move, board, activeColor, moveNumber) * 3000.0;
+                
+                // v40.39: RECAPTURE CHAIN AWARENESS — See recapture chains!
+                const recaptureChainScore = v40RecaptureChainEval(fen, move, board, activeColor, moveNumber) * 1800.0;
+                
+                // v40.39: PIECE UNDER PAWN DANGER — Don't put pieces under pawn attack!
+                const pieceUnderPawnDangerScore = v40PieceUnderPawnDangerEval(fen, move, board, activeColor, moveNumber) * 2200.0;
+                
+                // v40.39: PAWN FORK DETECTION — See pawn fork threats!
+                const pawnForkDetectionScore = v40PawnForkDetectionEval(fen, move, board, activeColor, moveNumber) * 2400.0;
+                
+                // v40.39: COMBINED v40 SCORE — 100% PAWN CAPTURE CHAIN SUPREME INFLUENCE
+                // This makes v40 the ABSOLUTE TACTICAL SUPREME factor"
+Observation: Edit was successful.
