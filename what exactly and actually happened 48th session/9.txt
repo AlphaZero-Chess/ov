@@ -1,0 +1,8 @@
+
+Action: $ cd /app && grep -n "d3OpeningPenalty\|D3OpeningPenalty\|v40D3" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 1327:    v40D3WhenD4PossiblePenalty: -1000000,   // ABSOLUTE DEATH PENALTY for d3 when d4 is possible
+2168:    v40D3OpeningPenalty: -5000000000,               // MASSIVE penalty for d3 opening
+11132:                        score += CONFIG.v40D3WhenD4PossiblePenalty || -1000000;
+11165:                        score += CONFIG.v40D3WhenD4PossiblePenalty || -1000000;
+24154:                    score += CONFIG.v40D3OpeningPenalty || -5000000000;
+Exit code: 0

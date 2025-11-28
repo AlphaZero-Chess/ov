@@ -1,0 +1,5 @@
+The current version is v40.30. I can see that v40.31 has started with a critical fix for `simulateMoveOnBoard`. Let me check what was done in v40.31 so far and continue:
+Action: $ cd /app && grep -n "v40\.31" "Lichess Bot-AlphaZero-Pure.user.js" | head -50
+Observation: 2910:// v40.31: CRITICAL FIX - simulateMoveOnBoard was UNDEFINED causing ALL v40 evals to fail!
+2915: * v40.31: CRITICAL - Simulate a move on the board and return the new board state
+Exit code: 0

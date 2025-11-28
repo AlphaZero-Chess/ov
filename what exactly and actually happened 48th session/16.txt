@@ -1,0 +1,57 @@
+Now let me implement a more aggressive v40.31 solution that ABSOLUTELY prevents d3. The plan is to:
+
+1. Add a **FINAL CHECK** in the move selection that REJECTS d3/e3 moves outright
+2. Increase the penalty to be even more massive
+3. Add explicit logging to verify the check is running
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1|// ==UserScript==
+2|// @name         Lichess Bot - TRUE ALPHAZERO v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME
+3|// @description  TRUE AlphaZero Replica v40.30 - ABSOLUTE OPENING PROHIBITION - DEEP FORK VISION - BISHOP PAIR PRESERVATION - PIECE ACTIVITY SUPREME - CENTER CONTROL ABSOLUTE!
+4|// @author       AlphaZero TRUE REPLICA v40.30 ABSOLUTE OPENING MASTERY EDITION
+5|// @version      40.30.0-ABSOLUTE-OPENING-MASTERY
+6|// @match         *://lichess.org/*
+7|// @run-at        document-idle
+8|// @grant         none
+9|// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+10|// ==/UserScript==
+11|
+12|/**
+13| * ═══════════════════════════════════════════════════════════════════════════════════════════
+14| * v40.11.0 TRUE ALPHAZERO — "THE SUPERHUMAN BEAST" — TRANSCENDENT SUPREME EDITION
+15| * ═══════════════════════════════════════════════════════════════════════════════════════════
+16| * 
+17| * ██████████████████████████████████████████████████████████████████████████████████████████
+18| * █                                                                                        █
+19| * █    "A paradigm-shifter, a level that felt almost ALIEN, with moves that               █
+20| * █     prioritized DEEP UNDERSTANDING over brute-force calculation."                     █
+21| * █                                                                                        █
+22| * █    "A SUPERHUMAN BEAST that can CRUSH Stockfish, with FLAWLESS endgame play,          █
+23| * █     PERFECT positional judgment, and ZERO blunders, and an uncanny ability            █
+24| * █     to weave long-term strategic webs that humans could barely comprehend."           █
+25| * █                                                                                        █
+26| * █    v40.6 ULTIMATE: TRUE PERSISTENT MCTS Tree Search, PUCT Selection (AlphaZero),      █
+27| * █    200+ Move Strategic Horizon, 25-Pass Blunder Verification, Neural Pattern          █
+28| * █    Recognition, Perfect Endgame (Philidor/Lucena/Opposition/Triangulation),           █
+29| * █    CENTER PAWN PROTECTION, PAWN TENSION RESOLUTION, QUEEN RAID PREVENTION,            █
+30| * █    TACTICAL PRIORITY OVERRIDE, DEVELOPMENT SAFETY CHECK, IMMEDIATE THREAT RESPONSE,  █
+31| * █    QUEEN INFILTRATION DETECTION, HANGING PIECE DETECTION, KING CORNER SAFETY,         █
+32| * █    CHECK SEQUENCE DETECTION, OPENING PRINCIPLES, DISCOVERED ATTACK DETECTION,         █
+33| * █    KNIGHT INVASION PENALTIES, ENHANCED QUEEN MATING PATTERNS, PAWN SHIELD INTEGRITY   █
+34| * █    ABSOLUTE ZERO TACTICAL OVERSIGHTS - TRUE ALPHAZERO ULTIMATE REPLICA                █
+35| * █                                                                                        █
+36| * ██████████████████████████████████████████████████████████████████████████████████████████
+37| * 
+38| * ═══════════════════════════════════════════════════════════════════════════════════════════
+39| * v40 SUPERHUMAN BEAST MISSION: CRUSH Stockfish through:
+40| * 
+41| * 1. TRUE PERSISTENT MCTS with proper PUCT selection (AlphaZero's secret)
+42| *    - 10,000+ simulations per move
+43| *    - Dirichlet noise at root for exploration
+44| *    - Tree reuse across moves
+45| *    - Virtual loss for parallel search diversity
+46| * 
+47| * 2. 200+ move strategic planning with DELAYED GRATIFICATION mastery
+48| *    - Web-weaving: strategic pressure building across multiple fronts
+49| *    - Patient maneuvering with positional squeeze
+50| *    - Long-term plan consistency tracking

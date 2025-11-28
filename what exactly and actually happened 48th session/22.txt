@@ -1,0 +1,240 @@
+Found the key function - `applyAlphaZeroLogic`. Let me look at it more:
+Action: $ cd /app && sed -n '41064,41300p' "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: function applyAlphaZeroLogic(bestMove, alternatives) {
+    // Don't be creative if we only have one option
+    if (alternatives.length < 2) {
+        return bestMove;
+    }
+    
+    // NEW v6.0.0: Update tactical and critical flags
+    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+    const currentEval = alternatives[0].score;
+    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);
+    
+    // Update evaluation history
+    updateEvaluationHistory(currentEval);
+    
+    // ═══════════════════════════════════════════════════════════════
+    // NEW v17.0.0: ALPHAZERO ESSENCE MODE OVERLAY
+    // ═══════════════════════════════════════════════════════════════
+    
+    // ═══════════════════════════════════════════════════════════════
+    // NEW v18.0.0: TRUE ALPHAZERO Q+POLICY ARCHITECTURE
+    // ═══════════════════════════════════════════════════════════════
+    
+    if (TRUE_ALPHAZERO.enabled && alternatives.length >= 2) {
+        // Update trend reconciliation
+        updateTrendReconciliation(currentEval);
+        
+        // Check trend floor
+        const trendOK = checkTrendFloor();
+        
+        if (trendOK && !positionIsTactical && !positionIsCritical) {
+            trueAlphaAttempted++;
+            
+            debugLog("[TRUE_AZ]", `🎯 TRUE ALPHAZERO mode active (attempt #${trueAlphaAttempted})`);
+            
+            // Evaluate top N candidates with Q+Policy merge
+            const N = Math.min(4, alternatives.length);
+            const candidatesWithQPolicy = [];
+            
+            for (let i = 0; i < N; i++) {
+                const candidate = alternatives[i];
+                const engine_Q = candidate.score;
+                
+                // For now, use engine score as rollout (async rollouts would be full implementation)
+                const rollout_Q = engine_Q; // TODO: implement async playouts
+                
+                // Compute combined Q+Policy score
+                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+                
+                // Compute harmony for sacrifice validation
+                const harmony = computeHarmonyScore(currentFen);
+                
+                candidatesWithQPolicy.push({
+                    move: candidate.move,
+                    engineScore: engine_Q,
+                    rolloutScore: rollout_Q,
+                    combinedScore: combinedScore,
+                    policyPrior: computePolicyPrior(candidate.move, alternatives),
+                    harmony: harmony
+                });
+            }
+            
+            // Sort by combined score (deterministic argmax, no temperature sampling)
+            candidatesWithQPolicy.sort((a, b) => b.combinedScore - a.combinedScore);
+            
+            debugLog("[TRUE_AZ]", `Top Q+Policy candidates:`);
+            for (let i = 0; i < Math.min(3, candidatesWithQPolicy.length); i++) {
+                const c = candidatesWithQPolicy[i];
+                debugLog("[TRUE_AZ]", `  ${i+1}. ${c.move}: Q=${c.engineScore.toFixed(1)}cp, rollout=${c.rolloutScore.toFixed(1)}cp, policy=${c.policyPrior.toFixed(3)}, combined=${c.combinedScore.toFixed(1)}cp`);
+            }
+            
+            // Select best (argmax - deterministic)
+            const selectedCandidate = candidatesWithQPolicy[0];
+            const selectedMove = selectedCandidate.move;
+            
+            debugLog("[TRUE_AZ]", `🎯 Selected top Q+Policy: ${selectedMove}`);
+            
+            // ABSOLUTE SAFETY CHECK
+            const engineTopScore = alternatives[0].score;
+            const safetyPassed = checkAbsoluteSafety(engineTopScore, selectedCandidate.combinedScore, selectedMove);
+            
+            if (!safetyPassed) {
+                trueAlphaRejected++;
+                debugLog("[TRUE_AZ]", `❌ SAFETY LIMIT exceeded - forcing engine top move`);
+                
+                // Log to debug
+                window.__AZ18_DEBUG.decisions.push({
+                    move: moveCount,
+                    attempted: selectedMove,
+                    forced: alternatives[0].move,
+                    reason: 'safety_drop_limit_exceeded',
+                    evalDrop: engineTopScore - selectedCandidate.combinedScore
+                });
+                
+                // FORCE engine top move
+                return alternatives[0].move;
+            }
+            
+            // Check if sacrifice
+            const isSacrifice = selectedCandidate.engineScore < currentEval - 100;
+            
+            if (isSacrifice) {
+                debugLog("[SACRIFICE_V3]", `🎯 Sacrifice detected: ${selectedMove}`);
+                
+                // v18 SACRIFICE SYSTEM v3 - RIGOROUS VALIDATION
+                const rolloutAdvantage = selectedCandidate.rolloutScore - selectedCandidate.engineScore;
+                const harmonyOK = selectedCandidate.harmony > TRUE_ALPHAZERO.minHarmonyScore;
+                const trendPositive = evaluationTrend > 0;
+                const compensationOK = rolloutAdvantage > TRUE_ALPHAZERO.sacrificeMinCompensation;
+                
+                debugLog("[SACRIFICE_V3]", `  Rollout advantage: ${rolloutAdvantage.toFixed(1)}cp (need ${TRUE_ALPHAZERO.sacrificeMinCompensation}cp)`);
+                debugLog("[SACRIFICE_V3]", `  Harmony: ${selectedCandidate.harmony.toFixed(3)} (need >${TRUE_ALPHAZERO.minHarmonyScore})`);
+                debugLog("[SACRIFICE_V3]", `  Trend: ${evaluationTrend.toFixed(1)}cp (need >0)`);
+                
+                if (!compensationOK || !harmonyOK || !trendPositive) {
+                    trueAlphaRejected++;
+                    debugLog("[SACRIFICE_V3]", `❌ Sacrifice rejected - insufficient compensation`);
+                    
+                    window.__AZ18_DEBUG.failures.push({
+                        move: moveCount,
+                        sacrifice: selectedMove,
+                        rolloutAdv: rolloutAdvantage,
+                        harmony: selectedCandidate.harmony,
+                        trend: evaluationTrend,
+                        reason: 'sacrifice_validation_failed'
+                    });
+                    
+                    // Force engine top
+                    return alternatives[0].move;
+                }
+                
+                debugLog("[SACRIFICE_V3]", `✅ Sacrifice validated - compensation sufficient`);
+            }
+            
+            // Final tactical validation
+            if (validateMoveSafety(selectedMove, alternatives, currentEval)) {
+                const safetyCheck = detectHangingPieces(selectedMove, alternatives);
+                
+                if (safetyCheck.safe) {
+                    trueAlphaAccepted++;
+                    const acceptRate = (trueAlphaAccepted / trueAlphaAttempted * 100).toFixed(1);
+                    debugLog("[TRUE_AZ]", `✅ TRUE ALPHAZERO move accepted: ${selectedMove} (rate: ${acceptRate}%)`);
+                    
+                    window.__AZ18_DEBUG.decisions.push({
+                        move: moveCount,
+                        selected: selectedMove,
+                        engineTop: alternatives[0].move,
+                        combinedScore: selectedCandidate.combinedScore,
+                        accepted: true
+                    });
+                    
+                    return selectedMove;
+                } else {
+                    trueAlphaRejected++;
+                    debugLog("[TRUE_AZ]", `❌ Move ${selectedMove} failed hanging check: ${safetyCheck.hangingPiece}`);
+                    return alternatives[0].move;
+                }
+            } else {
+                trueAlphaRejected++;
+                debugLog("[TRUE_AZ]", `❌ Move ${selectedMove} failed safety validation`);
+                return alternatives[0].move;
+            }
+        } else {
+            if (!trendOK) debugLog("[TRUE_AZ]", "❌ Trend below floor - using engine");
+            if (positionIsTactical) debugLog("[TRUE_AZ]", "❌ Tactical position - using engine");
+            if (positionIsCritical) debugLog("[TRUE_AZ]", "❌ Critical position - using engine");
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // FALLBACK TO v16 LOGIC (if essence disabled or failed)
+    // ═══════════════════════════════════════════════════════════════
+    
+    // NEW v11.0.0: Check for PASSIVE opening moves (avoid d3, Nh3, etc.)
+    if (moveCount <= 10 && isPassiveOpeningMove(bestMove, moveCount)) {
+        debugLog("[ENGINE]", `🚫 PASSIVE MOVE DETECTED: ${bestMove} - seeking AGGRESSIVE alternative!`);
+        
+        // Find first non-passive alternative
+        for (let i = 1; i < Math.min(alternatives.length, 4); i++) {
+            const altMove = alternatives[i].move;
+            if (!isPassiveOpeningMove(altMove, moveCount) && validateMoveForPosition(altMove, currentFen)) {
+                const scoreDiff = Math.abs(alternatives[0].score - alternatives[i].score);
+                // Accept if within 50cp (aggressive play priority)
+                if (scoreDiff < 50) {
+                    debugLog("[ENGINE]", `⚔️ Using AGGRESSIVE alternative: ${altMove} (avoiding passive ${bestMove})`);
+                    return altMove;
+                }
+            }
+        }
+        
+        debugLog("[ENGINE]", `⚠️ No aggressive alternatives within 50cp, reluctantly playing ${bestMove}`);
+    }
+    
+    // NEW v10.0.0: CRITICAL - Validate best move is safe (no hanging pieces)
+    const bestMoveSafety = detectHangingPieces(bestMove, alternatives);
+    if (!bestMoveSafety.safe) {
+        debugLog("[ENGINE]", `🚨 CRITICAL: Best move ${bestMove} leaves pieces hanging!`);
+        debugLog("[ENGINE]", `   Eval drop: ${bestMoveSafety.evaluation}cp`);
+        
+        // Find first safe alternative
+        for (let i = 1; i < Math.min(alternatives.length, 5); i++) {
+            const altMove = alternatives[i].move;
+            const altSafety = detectHangingPieces(altMove, alternatives);
+            
+            if (altSafety.safe && validateMoveForPosition(altMove, currentFen)) {
+                debugLog("[ENGINE]", `✅ Using safe alternative: ${altMove} (avoiding blunder)`);
+                return altMove;
+            }
+        }
+        
+        debugLog("[ENGINE]", `⚠️ No safe alternatives found, playing best despite risk`);
+    }
+    
+    // NEW v5.0.0: Check for repetition in current position
+    const currentRepetitionCount = wouldCauseRepetition(currentFen);
+    if (currentRepetitionCount >= 1) {
+        debugLog("[REPETITION]", `🚫 Position repeated ${currentRepetitionCount + 1} times - AVOIDING REPETITION!`);
+    }
+    
+    const topScore = alternatives[0].score;
+    const secondScore = alternatives[1].score;
+    const scoreDiff = Math.abs(topScore - secondScore);
+    
+    // NEW v6.0.0: Check if best move is forcing
+    const bestMoveIsForcing = isForcingMove(bestMove, topScore, alternatives);
+    
+    // STRENGTH FOCUSED: Prioritize best moves in all positions
+    // Only allow alternatives if very close and safe
+    if (Math.abs(topScore) > 300 || positionIsCritical || positionIsTactical) {
+        debugLog("[ENGINE]", `🎯 Critical/Tactical/Winning position - playing best move`);
+        return bestMove;
+    }
+    
+    // Force best move in tactical positions
+    if (bestMoveIsForcing) {
+        debugLog("[ENGINE]", `⚡ Forcing move - playing best: ${bestMove}`);
+        return bestMove;
+    }
+Exit code: 0

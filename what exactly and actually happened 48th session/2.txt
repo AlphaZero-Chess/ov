@@ -1,0 +1,5 @@
+
+Action: $ cd /app && grep -n "@version\|@name" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME
+5:// @version      40.30.0-ABSOLUTE-OPENING-MASTERY
+Exit code: 0

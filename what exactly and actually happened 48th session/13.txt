@@ -1,0 +1,92 @@
+I can see the evaluation is adding dozens of scores together. The key issue is that while `absoluteOpeningProhibitionScore` applies the d3 penalty, other functions might be giving d3 positive scores that overwhelm it.
+
+The critical problem is: **The d3 penalty of -5,000,000,000 × 500 = -2.5 trillion should be IMPOSSIBLE to overcome by other scores**, but it seems like either:
+1. The condition isn't matching (function returning 0)
+2. The function has an error
+3. Other scores are giving d3 such massive bonuses that even 2.5T isn't enough
+
+Let me check the function more carefully:
+Action: $ cd /app && sed -n '24118,24200p' "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: // v40.30.0: ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+// From game: Bot STILL plays d3 instead of d4, allows knight forks, loses material
+// THE BOT MUST: 1) NEVER play d3/e3 when d4/e4 possible, 2) SEE ALL FORKS 3 moves ahead
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.30: ABSOLUTE OPENING PROHIBITION EVALUATION
+ * d3/e3 are ABSOLUTELY FORBIDDEN in the first 10 moves!
+ */
+function v40AbsoluteOpeningProhibitionEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40AbsoluteOpeningProhibitionEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const maxMoves = CONFIG.v40MaxMovesForOpeningProhibition || 10;
+    
+    // Only apply in the opening (first 10 moves)
+    if (moveNumber > maxMoves) return 0;
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const piece = board.get(fromSquare);
+    
+    if (!piece) return 0;
+    const pieceType = piece.toLowerCase();
+    
+    // Check if this is a PASSIVE d3 or e3 pawn move
+    if (pieceType === 'p') {
+        if (isWhite) {
+            // White playing d3 when d4 is available - DISASTER
+            if (toSquare === 'd3' && fromSquare === 'd2') {
+                // Check if d4 is available
+                const d4Piece = board.get('d4');
+                const e5Piece = board.get('e5');
+                if (!d4Piece) {
+                    debugLog("[V40.30_OPENING]", `🚫🚫🚫 ABSOLUTE PROHIBITION: d3 is FORBIDDEN! d4 is available!`);
+                    score += CONFIG.v40D3OpeningPenalty || -5000000000;
+                }
+            }
+            // White playing e3 when e4 is better - BAD
+            if (toSquare === 'e3' && fromSquare === 'e2') {
+                const e4Piece = board.get('e4');
+                if (!e4Piece) {
+                    debugLog("[V40.30_OPENING]", `🚫🚫🚫 ABSOLUTE PROHIBITION: e3 is FORBIDDEN! e4 is better!`);
+                    score += CONFIG.v40E3OpeningPenalty || -5000000000;
+                }
+            }
+            // White playing d4 or e4 - EXCELLENT
+            if (toSquare === 'd4' || toSquare === 'e4') {
+                debugLog("[V40.30_OPENING]", `✅✅✅ EXCELLENT: Playing ${toSquare} - proper central control!`);
+                score += CONFIG.v40MustPlayD4E4Bonus || 500000000;
+            }
+        } else {
+            // Black playing d6 early without need - PASSIVE
+            if (toSquare === 'd6' && fromSquare === 'd7' && moveNumber <= 4) {
+                const d5Piece = board.get('d5');
+                if (!d5Piece) {
+                    debugLog("[V40.30_OPENING]", `⚠️ PASSIVE: d6 early, d5 may be better`);
+                    score += CONFIG.v40PassiveOpeningMovesPenalty / 10 || -300000000;
+                }
+            }
+            // Black playing d5 - GOOD
+            if (toSquare === 'd5' || toSquare === 'e5') {
+                score += CONFIG.v40MustPlayD4E4Bonus / 2 || 250000000;
+            }
+        }
+    }
+    
+    // Check for passive knight development (Nc3/Nf3 before center pawns)
+    if (pieceType === 'n' && moveNumber <= 4) {
+        const d2Pawn = board.get('d2');
+        const e2Pawn = board.get('e2');
+        if (isWhite && d2Pawn && e2Pawn) {
+            // Knights before both center pawns - slight penalty
+            if (d2Pawn.toLowerCase() === 'p' && e2Pawn.toLowerCase() === 'p') {
+                score += -50000000; // Prefer center pawns first
+            }
+        }
+    }
+    
+    return score;
+}
+Exit code: 0

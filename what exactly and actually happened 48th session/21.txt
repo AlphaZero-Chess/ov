@@ -1,0 +1,33 @@
+Now let me find the location where moves are being filtered/selected to add the hard filter:
+Action: $ cd /app && grep -n "bestMove\|selectBestMove\|chooseBestMove\|selectMove" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 2491:        let bestMove = null;
+2497:                bestMove = move;
+2501:        return bestMove;
+2878:            let bestMove = null;
+2884:                    bestMove = move;
+2887:            return bestMove;
+3096:        const bestMove = v40MCTSRoot.getBestMove(temperature < 0.5 ? 0 : temperature);
+3105:        debugLog("[V40_MCTS]", `🎯 Selected move: ${bestMove}`);
+3108:        return bestMove;
+35172:            return { bestMove: bestNonKing.move, reason: 'non_king_better' };
+35187:                return { bestMove: nonKingMoves[0].move, reason: 'king_too_vulnerable' };
+35192:        return { bestMove: safestKingMove.move, reason: 'safest_king_move' };
+36997:let bestMove;
+38264:        const bestMove = alternatives[0].move;
+38265:        if (moveAddressesQueenThreat(bestMove, threatInfo, fen)) {
+38266:            return bestMove;
+40988:        const bestMove = moves.reduce((best, move) => move.weight > best.weight ? move : best, moves[0]);
+40989:        debugLog("[ENGINE]", `📖 BOOK MOVE (MAINLINE 100%): ${bestMove.name} - ${bestMove.move}`);
+40990:        return bestMove.move;
+40994:    const bestMove = moves.reduce((best, move) => move.weight > best.weight ? move : best, moves[0]);
+40995:    debugLog("[ENGINE]", `📖 BOOK MOVE (default): ${bestMove.name} - ${bestMove.move}`);
+40996:    return bestMove.move;
+41064:function applyAlphaZeroLogic(bestMove, alternatives) {
+41067:        return bestMove;
+41237:    if (moveCount <= 10 && isPassiveOpeningMove(bestMove, moveCount)) {
+41238:        debugLog("[ENGINE]", `🚫 PASSIVE MOVE DETECTED: ${bestMove} - seeking AGGRESSIVE alternative!`);
+41247:                    debugLog("[ENGINE]", `⚔️ Using AGGRESSIVE alternative: ${altMove} (avoiding passive ${bestMove})`);
+41253:        debugLog("[ENGINE]", `⚠️ No aggressive alternatives within 50cp, reluctantly playing ${bestMove}`);
+41257:    const bestMoveSafety = detectHangingPieces(bestMove, alternatives);
+41258:    if (!bestMoveSafety.safe) {
+Exit code: 0

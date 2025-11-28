@@ -1,0 +1,63 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    v40StrongCenterBonus: 500000000,                // Strong center control
+    v40WeakCenterPenalty: -400000000,               // Weak center
+    v40CentralOutpostBonus: 300000000,              // Knight/bishop on central outpost
+    
+    // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics
+    v40TacticalBlindnessEliminationEnabled: true,
+    v40MissedTacticPenalty: -2000000000,            // Penalty for missing tactic
+    v40FoundTacticBonus: 800000000,                 // Bonus for finding tactic
+    v40DoubleAttackMissedPenalty: -1500000000,      // Missing double attack
+    v40PinMissedPenalty: -1200000000,               // Missing pin
+    v40DiscoveredAttackMissedPenalty: -1800000000,  // Missing discovered attack
+    
+    // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
+    v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
+};" --new-str "    v40StrongCenterBonus: 500000000,                // Strong center control
+    v40WeakCenterPenalty: -400000000,               // Weak center
+    v40CentralOutpostBonus: 300000000,              // Knight/bishop on central outpost
+    
+    // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics
+    v40TacticalBlindnessEliminationEnabled: true,
+    v40MissedTacticPenalty: -2000000000,            // Penalty for missing tactic
+    v40FoundTacticBonus: 800000000,                 // Bonus for finding tactic
+    v40DoubleAttackMissedPenalty: -1500000000,      // Missing double attack
+    v40PinMissedPenalty: -1200000000,               // Missing pin
+    v40DiscoveredAttackMissedPenalty: -1800000000,  // Missing discovered attack
+    
+    // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
+    v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.31.0: ABSOLUTE MOVE FILTER & TEMPO MASTERY SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // From game analysis: Bot STILL plays d3, Qd2-Qd1 tempo waste, allows Nxf3+ forks
+    // CRITICAL FIX: HARD FILTER that REJECTS bad moves BEFORE scoring
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.31: HARD MOVE FILTER — Rejects moves outright, not just penalizes
+    v40HardMoveFilterEnabled: true,
+    v40RejectD3InOpening: true,                     // HARD REJECT d2d3 in first 10 moves
+    v40RejectE3InOpening: true,                     // HARD REJECT e2e3 in first 10 moves  
+    v40RejectQueenRetreatEarly: true,               // HARD REJECT queen retreat before move 10
+    
+    // v40.31: TEMPO TRACKING — Track and punish tempo waste
+    v40TempoTrackingEnabled: true,
+    v40TempoWastePenalty: -500000000000,            // 500 billion penalty per wasted tempo
+    v40QueenRetreatPenalty: -800000000000,          // 800 billion for queen retreat
+    v40SamePieceTwicePenalty: -300000000000,        // 300 billion for moving same piece twice early
+    v40MaxEarlyMoveNumber: 12,                      // \"Early\" is moves 1-12
+    
+    // v40.31: ENHANCED KNIGHT FORK DETECTION — See forks 3+ moves ahead
+    v40EnhancedForkDetectionEnabled: true,
+    v40KnightForkIn2Penalty: -1000000000000,        // 1 trillion for fork in 2
+    v40KnightForkIn3Penalty: -500000000000,         // 500 billion for fork in 3
+    v40RoyalForkMultiplier: 5.0,                    // 5x penalty for K+Q fork
+    
+    // v40.31: ABSOLUTE D4 PREFERENCE — d4 must be played if d-pawn is on d2
+    v40AbsoluteD4PreferenceEnabled: true,
+    v40D4ImmediateBonus: 2000000000000,             // 2 trillion bonus for d4 when possible
+    v40E4ImmediateBonus: 2000000000000,             // 2 trillion bonus for e4 when possible
+    v40NotPlayingD4Penalty: -1000000000000,         // 1 trillion penalty for NOT playing d4 when possible
+};"
+Observation: Edit was successful.

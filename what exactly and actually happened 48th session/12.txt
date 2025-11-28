@@ -1,0 +1,215 @@
+I found the issue! The `v40AbsoluteOpeningProhibitionEval` returns `-5000000000`, then it's multiplied by `500.0`, giving `-2,500,000,000,000` (2.5 trillion). This SHOULD be enough to prevent d3, but let me check if it's actually being executed. 
+
+The issue might be in the Stockfish engine overriding everything, or the move might not match the condition. Let me trace through the logic:
+
+In the game position after `1. e4 c5 2. Nc3`, when the bot considers `d2d3`:
+- `fromSquare = 'd2'` ✓
+- `toSquare = 'd3'` ✓
+- The pawn IS on d2 ✓
+
+Wait - after `1. e4`, the pawn on e2 has moved to e4! So `fromSquare = 'd2'` and `toSquare = 'd3'` - this IS the d3 move. The check `board.get('d4')` should return null (empty), so the penalty SHOULD apply.
+
+Let me check if there's an issue with how the score is being applied in the final calculation:
+Action: $ cd /app && sed -n '40500,40700p' "Lichess Bot-AlphaZero-Pure.user.js"
+Observation:                 const attackProgressScore = v40AttackProgressVerificationEval(fen, move, board, activeColor, moveNumber) * 240.0;
+                
+                // ═══════════════════════════════════════════════════════════════════════════════
+                // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY & PROPHYLAXIS SUPREME
+                // From game: Bot played passive d3, allowed Nxf3+ fork, pieces became uncoordinated
+                // THE BOT MUST: 1) Defend properly, 2) Keep pieces harmonized, 3) Anticipate threats
+                // ═══════════════════════════════════════════════════════════════════════════════
+                
+                // v40.29: DEEP DEFENSIVE AWARENESS — Know when to defend vs attack!
+                const deepDefensiveAwarenessScore = v40DeepDefensiveAwarenessEval(fen, move, board, activeColor, moveNumber) * 350.0;
+                
+                // v40.29: PIECE HARMONY — All pieces must work together!
+                const pieceHarmonyScore = v40PieceHarmonyEval(fen, move, board, activeColor, moveNumber) * 280.0;
+                
+                // v40.29: PROPHYLAXIS PRIORITY — Prevent opponent's ideas BEFORE they happen!
+                const prophylaxisPriorityScore = v40ProphylaxisPriorityEval(fen, move, board, activeColor, moveNumber) * 320.0;
+                
+                // v40.29: KNIGHT INVASION PREVENTION — Never allow enemy knight on f3/f6!
+                const knightInvasionPreventionScore = v40KnightInvasionPreventionEval(fen, move, board, activeColor, moveNumber) * 380.0;
+                
+                // v40.29: ANTI-FORK SUPREME — Never allow forks!
+                const antiForkSupremeScore = v40AntiForkSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+                
+                // v40.29: QUIET POSITION ASSESSMENT — Don't force when position is quiet!
+                const quietPositionScore = v40QuietPositionAssessmentEval(fen, move, board, activeColor, moveNumber) * 200.0;
+                
+                // v40.29: PIECE COORDINATION CHECK — All pieces must work together!
+                const pieceCoordinationCheckScore = v40PieceCoordinationCheckEval(fen, move, board, activeColor, moveNumber) * 260.0;
+                
+                // v40.29: THREAT ANTICIPATION — See threats 2-3 moves in advance!
+                const threatAnticipationScore = v40ThreatAnticipationEval(fen, move, board, activeColor, moveNumber) * 340.0;
+                
+                // ═══════════════════════════════════════════════════════════════════════════════
+                // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+                // From game: Bot STILL plays d3, allows knight forks, loses material
+                // THE BOT MUST: 1) NEVER play d3/e3, 2) SEE ALL FORKS 3 moves ahead
+                // ═══════════════════════════════════════════════════════════════════════════════
+                
+                // v40.30: ABSOLUTE OPENING PROHIBITION — d3/e3 are FORBIDDEN in first 10 moves!
+                const absoluteOpeningProhibitionScore = v40AbsoluteOpeningProhibitionEval(fen, move, board, activeColor, moveNumber) * 500.0;
+                
+                // v40.30: DEEP FORK VISION — See ALL forks 1-3 moves ahead!
+                const deepForkVisionScore = v40DeepForkVisionEval(fen, move, board, activeColor, moveNumber) * 450.0;
+                
+                // v40.30: BISHOP PAIR PRESERVATION — Never trade bishop pair needlessly!
+                const bishopPairPreservationScore = v40BishopPairPreservationEval(fen, move, board, activeColor, moveNumber) * 200.0;
+                
+                // v40.30: PIECE ACTIVITY SUPREME — All pieces must be active by move 12!
+                const pieceActivitySupremeScore = v40PieceActivitySupremeEval(fen, move, board, activeColor, moveNumber) * 350.0;
+                
+                // v40.30: CENTER CONTROL ABSOLUTE — Must control center by move 8!
+                const centerControlAbsoluteScore = v40CenterControlAbsoluteEval(fen, move, board, activeColor, moveNumber) * 400.0;
+                
+                // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics!
+                const tacticalBlindnessScore = v40TacticalBlindnessEliminationEval(fen, move, board, activeColor, moveNumber) * 380.0;
+                
+                // v40.30: COMBINED v40 SCORE — 100% ABSOLUTE OPENING MASTERY INFLUENCE
+                // This makes v40 the ABSOLUTE SACRIFICE VERIFICATION factor
+                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+                               counterattackBonus + initiativePreservationBonus +
+                               // v40.4 additions:
+                               openingPrinciplesScore + discoveredAttackPenalty + 
+                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+                               // v40.5 additions:
+                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+                               // v40.6 ULTIMATE additions:
+                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+                               // v40.7 DIVINE additions:
+                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+                               // v40.8 TRANSCENDENT additions:
+                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+                               counterplayGenScore + centralControlSupremeScore +
+                               // v40.9 OMNISCIENT additions:
+                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+                               // v40.10 GODLIKE additions:
+                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+                               // v40.11 TRANSCENDENT SUPREME additions:
+                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+                               // v40.12 PROACTIVE SUPREME additions:
+                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+                               // v40.15 PIECE PRESERVATION SUPREME additions:
+                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+                               absoluteRecaptureScore + immediateCaptureDetectionScore + materialAwarenessScore + antiPawnGrabScore +
+                               // v40.18 KING ESCAPE & TACTICAL COMBINATION SUPREME additions:
+                               kingEscapeRouteScore + rookInvasionDetectionScore + backRankWeaknessScore + discoveredAttackDetectionScore +
+                               // v40.19 MATING PATTERN & PIECE COORDINATION SUPREME additions:
+                               matingPatternScore + kingCorridorDefenseScore + luftCreationScore + winningPositionScore +
+                               // v40.20 PAWN PROMOTION & FORCING SEQUENCE SUPREME additions:
+                               promotionThreatScore + forcingSequenceScore + kingWeakeningScore + pieceSafetyV40Score +
+                               // v40.21 DEEP PAWN CHAIN & FORCING LINE SUPREME additions:
+                               deepPawnChainScore + forcingLineScore + quietMoveDangerScore +
+                               // v40.22 KNIGHT INFILTRATION & CHECK SEQUENCE SUPREME additions:
+                               knightInfiltrationScore + checkSequenceDetectionScore + mustRespondScore +
+                               // v40.23 ROOK LIFT & QUEEN MATING ATTACK SUPREME additions:
+                               rookLiftScore + queenHFileScore + f3g3ProhibitionScore + matingAttackPatternScore + kingsideFortressScore +
+                               // v40.24 ABSOLUTE QUEEN SAFETY SUPREME additions:
+                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score +
+                               // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
+                               kingsidePawnProhibitionScore + bishopSacrificeScore + forcedDefenseModeScore + 
+                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore +
+                               // v40.27 ABSOLUTE TACTICAL SUPREMACY additions:
+                               forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore +
+                               // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
+                               absoluteSacrificeVerificationScore + attackCoordinationScore + deepForcingCalcScore +
+                               pieceSacrificeAnalysisScore + attackProgressScore +
+                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+                               pieceCoordinationCheckScore + threatAnticipationScore +
+                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.30 ABSOLUTE OPENING MASTERY PARADIGM SHIFT
+                
+                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ ForcedExchangeSequence: ${forcedExchangeSequenceScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KnightForkShield: ${knightForkShieldScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KingExposureIndex: ${kingExposureIndexScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎯🎯 AbsoluteSacrificeVerification: ${absoluteSacrificeVerificationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackCoordination: ${attackCoordinationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎯🎯 DeepForcingCalc: ${deepForcingCalcScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceSacrificeAnalysis: ${pieceSacrificeAnalysisScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackProgress: ${attackProgressScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ DeepDefensiveAwareness: ${deepDefensiveAwarenessScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎵🎵🎵 PieceHarmony: ${pieceHarmonyScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔮🔮🔮 ProphylaxisPriority: ${prophylaxisPriorityScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴🐴🐴 KnightInvasionPrevention: ${knightInvasionPreventionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ AntiForkSupreme: ${antiForkSupremeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🌿🌿🌿 QuietPosition: ${quietPositionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🤝🤝🤝 PieceCoordinationCheck: ${pieceCoordinationCheckScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔭🔭🔭 ThreatAnticipation: ${threatAnticipationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚫🎯 AbsoluteOpeningProhibition: ${absoluteOpeningProhibitionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🐴🔮 DeepForkVision: ${deepForkVisionScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ♗♗ BishopPairPreservation: ${bishopPairPreservationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceActivitySupreme: ${pieceActivitySupremeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏛️🏛️ CenterControlAbsolute: ${centerControlAbsoluteScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👁️👁️ TacticalBlindness: ${tacticalBlindnessScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⭐ ImmediateMaterialLoss: ${immediateMaterialLossScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⭐ CaptureChain: ${captureChainScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⭐ QueenInfiltrationAbsolute: ${queenInfiltrationAbsoluteScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⭐ PreMoveSafety: ${preMoveSafetyScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⭐ OpeningBlunder: ${openingBlunderScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⭐ SimpleThreat: ${simpleThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 LookAheadBlunder: ${lookAheadBlunderScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 TripleCheck: ${tripleCheckScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🔥🔥 FailSafe: ${failSafeScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ PiecePreservation: ${piecePreservationScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ AllPiecesSafety: ${allPiecesSafetyScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ ProphylaxisMove: ${prophylaxisMoveScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🏰🏰 FileOpeningTowardKing: ${fileOpeningTowardKingScore.toFixed(1)}`);
+Exit code: 0

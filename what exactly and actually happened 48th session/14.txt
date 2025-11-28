@@ -1,0 +1,27 @@
+I see the issue! Looking at the game:
+```
+1. e4 c5 2. Nc3 d6 3. d3
+```
+
+After moves 1-2, the board state is:
+- White pawn on e4 (moved from e2)
+- White knight on c3
+- Black pawn on c5
+- Black pawn on d6
+
+On move 3, the bot plays `d2d3`. The function checks:
+- `fromSquare = 'd2'` ✓
+- `toSquare = 'd3'` ✓  
+- `pieceType = 'p'` ✓ (pawn is on d2)
+- `isWhite = true` ✓
+- `board.get('d4')` = null (d4 is empty) ✓
+
+So the penalty SHOULD apply! The issue must be one of:
+1. `CONFIG.v40AbsoluteOpeningProhibitionEnabled` is false
+2. The score is being overwhelmed
+
+Let me check the config and then also check if there's a bug in how scores get combined:
+Action: $ cd /app && grep -n "v40AbsoluteOpeningProhibitionEnabled" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2167:    v40AbsoluteOpeningProhibitionEnabled: true,
+24128:    if (!CONFIG.v40AbsoluteOpeningProhibitionEnabled) return 0;
+Exit code: 0

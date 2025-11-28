@@ -1,0 +1,34 @@
+
+Action: $ cd /app && sed -n '2200,2230p' "Lichess Bot-AlphaZero-Pure.user.js"
+Observation:     v40StrongCenterBonus: 500000000,                // Strong center control
+    v40WeakCenterPenalty: -400000000,               // Weak center
+    v40CentralOutpostBonus: 300000000,              // Knight/bishop on central outpost
+    
+    // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics
+    v40TacticalBlindnessEliminationEnabled: true,
+    v40MissedTacticPenalty: -2000000000,            // Penalty for missing tactic
+    v40FoundTacticBonus: 800000000,                 // Bonus for finding tactic
+    v40DoubleAttackMissedPenalty: -1500000000,      // Missing double attack
+    v40PinMissedPenalty: -1200000000,               // Missing pin
+    v40DiscoveredAttackMissedPenalty: -1800000000,  // Missing discovered attack
+    
+    // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
+    v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * v37: TRUE MCTS Node structure for proper tree search
+ */
+class MCTSNode {
+    constructor(move, parent = null, prior = 1.0) {
+        this.move = move;
+        this.parent = parent;
+        this.children = new Map();
+        this.visits = 0;
+        this.totalValue = 0;
+        this.prior = prior;           // Policy prior (P)
+Exit code: 0

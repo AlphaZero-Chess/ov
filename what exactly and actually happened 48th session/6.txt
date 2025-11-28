@@ -1,0 +1,53 @@
+
+Action: $ cd /app && sed -n '2910,2960p' "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: // v40.31: CRITICAL FIX - simulateMoveOnBoard was UNDEFINED causing ALL v40 evals to fail!
+// This function simulates a move on the board and returns the resulting board state
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.31: CRITICAL - Simulate a move on the board and return the new board state
+ * This function was MISSING causing all v40.28+ evaluations to crash!
+ * @param {Map} board - The current board state as a Map
+ * @param {string} move - The move in UCI format (e.g., 'e2e4')
+ * @returns {Map} - The new board state after the move
+ */
+function simulateMoveOnBoard(board, move) {
+    if (!board || !move || move.length < 4) {
+        debugLog("[V40.31_SIMULATE]", `⚠️ Invalid input to simulateMoveOnBoard`);
+        return new Map(board);
+    }
+    
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const promotion = move.length > 4 ? move.substring(4, 5) : null;
+    
+    const movingPiece = board.get(fromSquare);
+    if (!movingPiece) {
+        debugLog("[V40.31_SIMULATE]", `⚠️ No piece at ${fromSquare}`);
+        return new Map(board);
+    }
+    
+    // Create new board state
+    const newBoard = new Map(board);
+    
+    // Remove piece from source square
+    newBoard.delete(fromSquare);
+    
+    // Handle pawn promotion
+    if (promotion) {
+        const isWhite = movingPiece === movingPiece.toUpperCase();
+        const promotedPiece = isWhite ? promotion.toUpperCase() : promotion.toLowerCase();
+        newBoard.set(toSquare, promotedPiece);
+    } else {
+        // Move piece to destination
+        newBoard.set(toSquare, movingPiece);
+    }
+    
+    // Handle en passant capture
+    const pieceType = movingPiece.toLowerCase();
+    if (pieceType === 'p') {
+        const fromFile = fromSquare.charCodeAt(0);
+        const toFile = toSquare.charCodeAt(0);
+        const fromRank = parseInt(fromSquare[1]);
+        const toRank = parseInt(toSquare[1]);
+Exit code: 0

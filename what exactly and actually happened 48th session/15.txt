@@ -1,0 +1,8 @@
+Config is enabled. Let me check if maybe there's a JavaScript precision issue with large numbers, or look for any d4 bonus that might outweigh the d3 penalty:
+Action: $ cd /app && grep -n "toSquare === 'd3'\|toSquare === 'd4'\|d4Bonus\|d3.*bonus\|d3.*penalty" "Lichess Bot-AlphaZero-Pure.user.js" | head -40
+Observation: 5137:// - Qd1-Qd3-Qe4-Qd3 disaster → Queen movement penalty
+11125:                if (fromSquare === 'd2' && toSquare === 'd3') {
+11149:                if (toSquare === 'd4' && fromSquare === 'd2') {
+24148:            if (toSquare === 'd3' && fromSquare === 'd2') {
+24166:            if (toSquare === 'd4' || toSquare === 'e4') {
+Exit code: 0

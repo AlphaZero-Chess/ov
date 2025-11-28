@@ -1,0 +1,84 @@
+I see there are two different penalty configs being used. The v40AbsoluteOpeningProhibitionEval at line 24154 uses `-5000000000` but line 11132 only uses `-1000000`. Let me check what function is at line 11132:
+Action: $ cd /app && sed -n '11100,11180p' "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: /**
+ * v40.10 GODLIKE: ABSOLUTE D4>D3 ENFORCEMENT
+ * CRITICAL: This function ensures bot NEVER plays d3 when d4 is possible
+ * The penalty is so severe that no other evaluation can override it
+ */
+function v40AbsoluteOpeningEnforcementEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40AbsoluteOpeningEnforcementEnabled) return 0;
+    if (moveNumber > 15) return 0;  // Opening only
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const pieceType = movingPiece.toLowerCase();
+        
+        // ABSOLUTE RULE: If pawn move to d3/e3 (for white) or d6/e6 (for black)
+        if (pieceType === 'p') {
+            if (isWhite) {
+                // CHECK: Is this d2-d3 when d2-d4 is possible?
+                if (fromSquare === 'd2' && toSquare === 'd3') {
+                    // Is d4 blocked or is there a reason to not play d4?
+                    const d4Blocked = board.has('d4');
+                    const d4Attacked = isSquareAttackedByColor(board, 'd4', 'b');
+                    
+                    if (!d4Blocked) {
+                        // d4 is NOT blocked - playing d3 is ABSOLUTE DEATH
+                        score += CONFIG.v40D3WhenD4PossiblePenalty || -1000000;
+                        debugLog("[V40.10_GODLIKE]", `☠️☠️☠️ ABSOLUTE DEATH PENALTY: d3 when d4 is possible! (-1000000)`);
+                        debugLog("[V40.10_GODLIKE]", `   NEVER play d3 when d4 is available!`);
+                    }
+                }
+                
+                // CHECK: Is this e2-e3 when e2-e4 is possible?
+                if (fromSquare === 'e2' && toSquare === 'e3') {
+                    const e4Blocked = board.has('e4');
+                    
+                    if (!e4Blocked) {
+                        score += CONFIG.v40E3WhenE4PossiblePenalty || -1000000;
+                        debugLog("[V40.10_GODLIKE]", `☠️☠️☠️ ABSOLUTE DEATH PENALTY: e3 when e4 is possible! (-1000000)`);
+                    }
+                }
+                
+                // BONUS: Playing d4 or e4 gets MASSIVE bonus
+                if (toSquare === 'd4' && fromSquare === 'd2') {
+                    score += CONFIG.v40D4BonusMultiplier || 100000;
+                    debugLog("[V40.10_GODLIKE]", `✅✅✅ EXCELLENT: d4 central pawn advance! (+100000)`);
+                }
+                
+                if (toSquare === 'e4' && fromSquare === 'e2') {
+                    score += CONFIG.v40E4BonusMultiplier || 100000;
+                    debugLog("[V40.10_GODLIKE]", `✅✅✅ EXCELLENT: e4 central pawn advance! (+100000)`);
+                }
+                
+            } else {
+                // Black side
+                if (fromSquare === 'd7' && toSquare === 'd6') {
+                    const d5Blocked = board.has('d5');
+                    
+                    if (!d5Blocked) {
+                        score += CONFIG.v40D3WhenD4PossiblePenalty || -1000000;
+                        debugLog("[V40.10_GODLIKE]", `☠️☠️☠️ ABSOLUTE DEATH PENALTY: d6 when d5 is possible! (-1000000)`);
+                    }
+                }
+                
+                if (fromSquare === 'e7' && toSquare === 'e6') {
+                    const e5Blocked = board.has('e5');
+                    
+                    if (!e5Blocked && !board.has('e4')) {
+                        // Only penalty if e4 is not controlled by white pawn
+                        score += CONFIG.v40E3WhenE4PossiblePenalty / 2 || -500000;
+                        debugLog("[V40.10_GODLIKE]", `⚠️ PENALTY: e6 when e5 might be possible`);
+                    }
+                }
+                
+                if (toSquare === 'd5' && fromSquare === 'd7') {
+Exit code: 0

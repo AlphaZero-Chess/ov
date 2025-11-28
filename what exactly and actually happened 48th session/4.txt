@@ -1,0 +1,33 @@
+
+Action: $ cd /app && grep -n "v40\.30\|v40\.31" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME
+3:// @description  TRUE AlphaZero Replica v40.30 - ABSOLUTE OPENING PROHIBITION - DEEP FORK VISION - BISHOP PAIR PRESERVATION - PIECE ACTIVITY SUPREME - CENTER CONTROL ABSOLUTE!
+4:// @author       AlphaZero TRUE REPLICA v40.30 ABSOLUTE OPENING MASTERY EDITION
+2161:    // v40.30.0: ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+2166:    // v40.30: ABSOLUTE OPENING PROHIBITION — d3/e3 are FORBIDDEN in first 10 moves
+2175:    // v40.30: DEEP FORK VISION — See ALL forks 3 moves ahead
+2184:    // v40.30: BISHOP PAIR PRESERVATION — Never trade bishop needlessly
+2190:    // v40.30: PIECE ACTIVITY SUPREME — All pieces must be active by move 12
+2197:    // v40.30: CENTER CONTROL ABSOLUTE — Must control center by move 8
+2204:    // v40.30: TACTICAL BLINDNESS ELIMINATION — See ALL tactics
+2212:    // v40.30: 100% ABSOLUTE OPENING MASTERY DOMINANCE
+2213:    v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
+2910:// v40.31: CRITICAL FIX - simulateMoveOnBoard was UNDEFINED causing ALL v40 evals to fail!
+2915: * v40.31: CRITICAL - Simulate a move on the board and return the new board state
+24118:// v40.30.0: ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME & DEEP THREAT VISION
+24124: * v40.30: ABSOLUTE OPENING PROHIBITION EVALUATION
+24202: * v40.30: DEEP FORK VISION EVALUATION
+24256: * v40.30: Detect fork threat that can happen in 1 move
+24352: * v40.30: Detect fork threat that can happen in 2 moves
+24445: * v40.30: BISHOP PAIR PRESERVATION EVALUATION
+24491: * v40.30: PIECE ACTIVITY SUPREME EVALUATION
+24560: * v40.30: CENTER CONTROL ABSOLUTE EVALUATION
+24637: * v40.30: Check if square is defended by pawn
+24666: * v40.30: TACTICAL BLINDNESS ELIMINATION EVALUATION
+24706: * v40.30: Find opponent tactics available after our move
+24753: * v40.30: Find our tactics with this move
+24787: * v40.30: Check if piece attacks a square
+24837: * v40.30: Check if diagonal path is blocked
+24857: * v40.30: Check if straight path is blocked
+24877: * v40.30: Check if piece is pinned
+Exit code: 0

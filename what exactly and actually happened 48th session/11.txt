@@ -1,0 +1,10 @@
+I see the issue! There are **two separate functions** checking for d3:
+1. `v40AbsoluteOpeningEnforcementEval` (line 11105) with `-1000000` penalty
+2. `v40AbsoluteOpeningProhibitionEval` (line 24124) with `-5000000000` penalty
+
+The smaller penalty might be getting applied instead of the larger one. Also, the critical issue is that the penalties are being **added to other bonuses** which might overwhelm them. Let me check the computeCombinedScore to see the scoring weights:
+Action: $ cd /app && grep -n "absoluteOpeningEnforcementScore\|absoluteOpeningProhibitionScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 40539:                const absoluteOpeningProhibitionScore = v40AbsoluteOpeningProhibitionEval(fen, move, board, activeColor, moveNumber) * 500.0;
+40627:                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+40666:                debugLog("[V40_INTEGRATE]", `   🚫🎯 AbsoluteOpeningProhibition: ${absoluteOpeningProhibitionScore.toFixed(1)}`);
+Exit code: 0

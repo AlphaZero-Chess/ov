@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -n "^function v40IsPiecePinned" "Lichess Bot-AlphaZero-Pure.user.js" | head -3
+Observation: 24911:function v40IsPiecePinned(board, pieceSquare, kingSquare, enemyIsWhite) {
+Exit code: 0

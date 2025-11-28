@@ -1,0 +1,94 @@
+Excellent! The v40.31 critical fix for `simulateMoveOnBoard` has been implemented. Now let me analyze the most recent game the user provided and continue implementing v40.31 improvements:
+Action: $ cd /app && sed -n '2960,3050p' "Lichess Bot-AlphaZero-Pure.user.js"
+Observation:         
+        // Diagonal move without capture = en passant
+        if (Math.abs(fromFile - toFile) === 1 && !board.get(toSquare)) {
+            // Captured pawn is on the same file as toSquare but on fromRank
+            const capturedPawnSquare = String.fromCharCode(toFile) + fromRank;
+            newBoard.delete(capturedPawnSquare);
+        }
+    }
+    
+    // Handle castling
+    if (pieceType === 'k') {
+        const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        
+        if (Math.abs(toFile - fromFile) === 2) {
+            const rank = fromSquare[1];
+            
+            if (toFile > fromFile) {
+                // Kingside castling - move rook from h to f
+                const rookPiece = newBoard.get('h' + rank);
+                if (rookPiece) {
+                    newBoard.delete('h' + rank);
+                    newBoard.set('f' + rank, rookPiece);
+                }
+            } else {
+                // Queenside castling - move rook from a to d
+                const rookPiece = newBoard.get('a' + rank);
+                if (rookPiece) {
+                    newBoard.delete('a' + rank);
+                    newBoard.set('d' + rank, rookPiece);
+                }
+            }
+        }
+    }
+    
+    return newBoard;
+}
+
+function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+    if (!CONFIG.v40Enabled) {
+        return null;
+    }
+    
+    debugLog("[V40_MCTS]", "═══════════════════════════════════════════════════════════════");
+    debugLog("[V40_MCTS]", "🦁 TRUE ALPHAZERO MCTS — SUPERHUMAN BEAST MODE ACTIVATED");
+    debugLog("[V40_MCTS]", "═══════════════════════════════════════════════════════════════");
+    
+    try {
+        const board = parseFenToBoard(fen);
+        const activeColor = fen.split(' ')[1];
+        const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+        
+        // Step 1: Initialize or reuse tree
+        v40InitializeOrReuseTree(fen, legalMoves);
+        
+        // Step 2: Run MCTS simulations
+        const numSimulations = CONFIG.v40MCTSSimulations || 10000;
+        
+        debugLog("[V40_MCTS]", `🔄 Running ${numSimulations} MCTS simulations...`);
+        
+        for (let sim = 0; sim < numSimulations; sim++) {
+            // Selection: Traverse tree using PUCT
+            let node = v40MCTSRoot;
+            const path = [node];
+            
+            while (node.isExpanded && !node.isTerminal) {
+                node.addVirtualLoss();
+                node = node.selectChild();
+                if (!node) break;
+                path.push(node);
+            }
+            
+            // Expansion: Expand if not terminal
+            if (node && !node.isTerminal && !node.isExpanded) {
+                // Get legal moves for this position (simplified - use root moves for now)
+                const moves = node === v40MCTSRoot ? legalMoves : getLegalMovesForNode(node, fen, board);
+                if (moves && moves.length > 0) {
+                    node.expand(moves, null, node === v40MCTSRoot);
+                }
+            }
+            
+            // Simulation: Evaluate position using value network emulation
+            let value = 0;
+            if (node) {
+                value = v40ValueNetworkEmulation(fen, node.move, board, activeColor, moveNumber);
+            }
+            
+            // Backpropagation: Propagate value up the tree
+            for (let i = path.length - 1; i >= 0; i--) {
+                path[i].removeVirtualLoss();
+            }
+Exit code: 0

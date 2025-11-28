@@ -1,0 +1,4 @@
+Now let me add the v40.31 CONFIG parameters:
+Action: $ cd /app && grep -n "v40AbsoluteOpeningMasteryDominance" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2213:    v40AbsoluteOpeningMasteryDominance: 1.0,        // 100% v40.30 dominance
+Exit code: 0
