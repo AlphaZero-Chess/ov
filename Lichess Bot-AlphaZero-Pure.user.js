@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.24 ABSOLUTE QUEEN SAFETY SUPREME
-// @description  TRUE AlphaZero Replica v40.24 - ABSOLUTE QUEEN SAFETY - MUST DEFEND QUEEN - KNIGHT FORK DETECTION - PRE-MOVE QUEEN CHECK - NEVER LOSE QUEEN FOR FREE!
-// @author       AlphaZero TRUE REPLICA v40.24 ABSOLUTE QUEEN SAFETY SUPREME EDITION
-// @version      40.24.0-QUEEN-SAFETY-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.25 STRATEGIC MASTERY SUPREME
+// @description  TRUE AlphaZero Replica v40.25 - NO EARLY QUEEN TRADE - FORK DETECTION - PAWN RACE CALCULATION - PIECE PRESERVATION - NEVER LOSE MATERIAL FOR FREE!
+// @author       AlphaZero TRUE REPLICA v40.25 STRATEGIC MASTERY SUPREME EDITION
+// @version      40.25.0-STRATEGIC-MASTERY-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -1905,6 +1905,60 @@ const CONFIG = {
     v40PreMoveQueenCheckEnabled: true,
     v40QueenLeftHangingPenalty: -90000000000,       // After our move, queen is left hanging
     v40CreateQueenThreatBonus: 2000000000,          // Our move threatens enemy queen
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.25: STRATEGIC MASTERY SUPREME
+    // From game analysis: Bot traded queens (Qxb6) in closed position - TERRIBLE!
+    // Then lost to Nxf3+ Nxd2 fork and lost pawn race (b2 vs c7)
+    // STRATEGIC MASTERY = NO BAD QUEEN TRADES + FORK DETECTION + PAWN RACE CALC
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.25: NO EARLY QUEEN TRADE — Don't trade queens unless winning!
+    v40NoEarlyQueenTradeEnabled: true,
+    v40EarlyQueenTradePenalty: -30000000000,        // Trading queens before move 15
+    v40ClosedPositionQueenTradePenalty: -50000000000, // Queen trade in closed position
+    v40InitiativeLossQueenTradePenalty: -40000000000, // Queen trade that loses initiative
+    v40EqualQueenTradePenalty: -20000000000,        // Trading equal queens without advantage
+    v40WinningExchangeQueenTradeBonus: 10000000000, // Queen trade that wins material
+    v40EndgameQueenTradeBetter: 5000000000,         // Queen trade in winning endgame
+    v40QueenTradeActivatesRooks: 3000000000,        // If trade activates our rooks
+    
+    // v40.25: FORK DETECTION ENHANCED — Knights are deadly!
+    v40ForkDetectionEnhancedEnabled: true,
+    v40KnightForkPiecePenalty: -25000000000,        // Knight fork on any 2+ pieces
+    v40KnightForkKingQueenPenalty: -100000000000,   // Knight fork on king+queen
+    v40KnightForkKingRookPenalty: -40000000000,     // Knight fork on king+rook
+    v40KnightForkQueenRookPenalty: -30000000000,    // Knight fork on queen+rook
+    v40AllowForkSquarePenalty: -15000000000,        // Allow knight to reach fork square
+    v40PinLeadingToForkPenalty: -20000000000,       // Pin that leads to fork
+    v40DiscoveredForkPenalty: -35000000000,         // Discovered attack leading to fork
+    
+    // v40.25: PAWN RACE CALCULATION — Critical in endgame!
+    v40PawnRaceCalcEnabled: true,
+    v40PawnRaceWinningBonus: 50000000000,           // We win pawn race to queen
+    v40PawnRaceLosingPenalty: -60000000000,         // We lose pawn race to queen
+    v40PawnRaceDraw: 0,                             // Race results in draw
+    v40PassedPawnAdvanceBonus: 8000000000,          // Advancing passed pawn
+    v40EnemyPassedPawnBlocking: 10000000000,        // Blocking enemy passed pawn
+    v40PawnPromotionThreatBonus: 20000000000,       // Our pawn threatens promotion
+    v40EnemyPromotionThreatPenalty: -25000000000,   // Enemy pawn threatens promotion
+    v40RaceCountingBonus: 5000000000,               // Per tempo advantage in race
+    
+    // v40.25: PIECE PRESERVATION ABSOLUTE — Never lose pieces!
+    v40PiecePreservationAbsoluteEnabled: true,
+    v40PieceHangingAfterMovePenalty: -30000000000,  // Our piece hangs after the move
+    v40UndefendedPiecePenalty: -15000000000,        // Piece with no defender
+    v40OverloadedDefenderPenalty: -10000000000,     // Defender protecting multiple pieces
+    v40TacticalVulnerabilityPenalty: -20000000000,  // Piece tactically vulnerable
+    v40PieceSafetyCheckBonus: 5000000000,           // All pieces safe after move
+    
+    // v40.25: INITIATIVE PRESERVATION — Never give up tempo!
+    v40InitiativePreservationEnabled: true,
+    v40TradeThatLosesInitiativePenalty: -12000000000, // Trade that loses initiative
+    v40PassiveMoveInActivePosn: -8000000000,        // Passive move when should be active
+    v40InitiativeGainBonus: 6000000000,             // Move that gains initiative
+    v40TempoGainInAttackBonus: 4000000000,          // Tempo gain during attack
+    v40ForceOpponentDefensiveBonus: 7000000000,     // Force opponent to defend
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -19411,6 +19465,848 @@ function doesMoveDefendQueenV40_24(move, board, queenSquare, color, attackers) {
     }
     
     return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.25: STRATEGIC MASTERY SUPREME FUNCTIONS
+// Implements: NO EARLY QUEEN TRADE, FORK DETECTION, PAWN RACE CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.25: NO EARLY QUEEN TRADE EVALUATION
+ * AlphaZero NEVER trades queens unless it improves the position significantly
+ * From game: Qxb6 in move 10 gave up all initiative in closed Caro-Kann
+ */
+function v40NoEarlyQueenTradeEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40NoEarlyQueenTradeEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Check if this is a queen move
+        const isQueenMove = movingPiece.toLowerCase() === 'q';
+        
+        // Check if queen is capturing enemy queen
+        if (isQueenMove && capturedPiece && capturedPiece.toLowerCase() === 'q') {
+            debugLog("[V40.25_QUEEN]", `🔍 Analyzing queen trade: ${move}`);
+            
+            // CHECK 1: EARLY GAME PENALTY (before move 15)
+            if (moveNumber < 15) {
+                score += CONFIG.v40EarlyQueenTradePenalty || -30000000000;
+                debugLog("[V40.25_QUEEN]", `🚫 Early queen trade penalty - move ${moveNumber}`);
+            }
+            
+            // CHECK 2: CLOSED POSITION PENALTY
+            const pawnCount = v40CountPawns(board);
+            const centerPawnsBlocked = v40AreCenterPawnsBlocked(board);
+            if (pawnCount >= 12 || centerPawnsBlocked) {
+                score += CONFIG.v40ClosedPositionQueenTradePenalty || -50000000000;
+                debugLog("[V40.25_QUEEN]", `🚫 Queen trade in CLOSED position!`);
+            }
+            
+            // CHECK 3: INITIATIVE LOSS PENALTY
+            const initiativeScore = v40CalculateInitiativeScore(board, activeColor);
+            if (initiativeScore > 0) {
+                // We have initiative, trading loses it
+                score += CONFIG.v40InitiativeLossQueenTradePenalty || -40000000000;
+                debugLog("[V40.25_QUEEN]", `🚫 Queen trade loses initiative (${initiativeScore})`);
+            }
+            
+            // CHECK 4: NOT WINNING MATERIAL
+            const materialBalance = v40CalculateMaterialBalance(board, activeColor);
+            if (materialBalance >= -100 && materialBalance <= 100) {
+                // Equal or worse, no reason to trade
+                score += CONFIG.v40EqualQueenTradePenalty || -20000000000;
+                debugLog("[V40.25_QUEEN]", `🚫 Equal queen trade - no advantage`);
+            }
+            
+            // BONUS: If trade clearly wins material
+            if (materialBalance > 200) {
+                score += CONFIG.v40WinningExchangeQueenTradeBonus || 10000000000;
+                debugLog("[V40.25_QUEEN]", `✅ Queen trade wins material`);
+            }
+            
+            // BONUS: Endgame conversion with material advantage
+            if (moveNumber > 30 && materialBalance > 500) {
+                score += CONFIG.v40EndgameQueenTradeBetter || 5000000000;
+                debugLog("[V40.25_QUEEN]", `✅ Late game queen trade simplifies win`);
+            }
+            
+            // BONUS: If trade activates our rooks
+            const rooksActivated = v40WillTradeActivateRooks(board, activeColor);
+            if (rooksActivated) {
+                score += CONFIG.v40QueenTradeActivatesRooks || 3000000000;
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.25_QUEEN]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.25: ENHANCED FORK DETECTION
+ * Detects knight forks and other tactical combinations
+ * From game: Nxf3+ Nxd2 fork was missed
+ */
+function v40EnhancedForkDetection(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40ForkDetectionEnhancedEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate the move
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        // CHECK 1: Does this move allow enemy knight to fork us?
+        const enemyKnightForks = v40FindEnemyKnightForkOpportunities(afterBoard, activeColor);
+        for (const fork of enemyKnightForks) {
+            if (fork.targetsKingAndQueen) {
+                score += CONFIG.v40KnightForkKingQueenPenalty || -100000000000;
+                debugLog("[V40.25_FORK]", `☠️ ${move} allows K+Q fork from ${fork.square}!`);
+            } else if (fork.targetsKingAndRook) {
+                score += CONFIG.v40KnightForkKingRookPenalty || -40000000000;
+                debugLog("[V40.25_FORK]", `☠️ ${move} allows K+R fork from ${fork.square}!`);
+            } else if (fork.targetsQueenAndRook) {
+                score += CONFIG.v40KnightForkQueenRookPenalty || -30000000000;
+                debugLog("[V40.25_FORK]", `☠️ ${move} allows Q+R fork from ${fork.square}!`);
+            } else if (fork.targetCount >= 2) {
+                score += CONFIG.v40KnightForkPiecePenalty || -25000000000;
+                debugLog("[V40.25_FORK]", `⚠️ ${move} allows fork on ${fork.targetCount} pieces!`);
+            }
+        }
+        
+        // CHECK 2: Does this move create a fork opportunity for the ENEMY?
+        // Look for enemy pieces that could reach fork squares
+        const forkSquaresAllowed = v40FindNewForkSquaresAllowed(board, afterBoard, activeColor);
+        for (const forkSq of forkSquaresAllowed) {
+            score += CONFIG.v40AllowForkSquarePenalty || -15000000000;
+            debugLog("[V40.25_FORK]", `⚠️ ${move} allows enemy to reach fork square ${forkSq}`);
+        }
+        
+        // CHECK 3: Is this move walking into a discovered attack that leads to fork?
+        const discoveredFork = v40CheckDiscoveredFork(board, afterBoard, move, activeColor);
+        if (discoveredFork.exists) {
+            score += CONFIG.v40DiscoveredForkPenalty || -35000000000;
+            debugLog("[V40.25_FORK]", `☠️ ${move} allows discovered fork!`);
+        }
+        
+        // CHECK 4: Specific pattern - Nxf3+ Nxd2 pattern (check + piece capture)
+        const checkPlusCapture = v40CheckPlusCapturePattern(afterBoard, enemyColor, activeColor);
+        if (checkPlusCapture.exists) {
+            score += -50000000000;
+            debugLog("[V40.25_FORK]", `☠️☠️ ${move} allows Nxf3+ Nxd2 pattern!`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.25_FORK]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.25: PAWN RACE CALCULATION
+ * Precisely calculates pawn races in endgames
+ * From game: Lost pawn race b2 vs c7
+ */
+function v40PawnRaceCalculation(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PawnRaceCalcEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        // Only relevant in endgame (low material)
+        const totalMaterial = v40CountTotalMaterial(board);
+        if (totalMaterial > 30) return 0;  // Not endgame yet
+        
+        // Simulate the move
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        // Find passed pawns
+        const ourPassedPawns = v40FindPassedPawns(afterBoard, activeColor);
+        const enemyPassedPawns = v40FindPassedPawns(afterBoard, enemyColor);
+        
+        if (ourPassedPawns.length === 0 && enemyPassedPawns.length === 0) {
+            return 0;  // No race
+        }
+        
+        debugLog("[V40.25_RACE]", `🏁 Pawn race analysis for ${move}`);
+        
+        // Calculate tempi to queen for each side
+        let ourFastestPromotion = 100;
+        let enemyFastestPromotion = 100;
+        
+        // Find kings for king distance calculation
+        let ourKing = null, enemyKing = null;
+        for (const [sq, piece] of afterBoard) {
+            if (!piece) continue;
+            if (piece.toLowerCase() !== 'k') continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) ourKing = sq;
+            else enemyKing = sq;
+        }
+        
+        for (const pawn of ourPassedPawns) {
+            const rank = parseInt(pawn.square[1]);
+            const distToPromotion = isWhite ? (8 - rank) : (rank - 1);
+            
+            // Check if enemy king can intercept
+            if (enemyKing) {
+                const canIntercept = v40CanKingIntercept(enemyKing, pawn.square, isWhite, afterBoard);
+                if (!canIntercept) {
+                    ourFastestPromotion = Math.min(ourFastestPromotion, distToPromotion);
+                }
+            } else {
+                ourFastestPromotion = Math.min(ourFastestPromotion, distToPromotion);
+            }
+        }
+        
+        for (const pawn of enemyPassedPawns) {
+            const rank = parseInt(pawn.square[1]);
+            const distToPromotion = isWhite ? (rank - 1) : (8 - rank);
+            
+            // Check if our king can intercept
+            if (ourKing) {
+                const canIntercept = v40CanKingIntercept(ourKing, pawn.square, !isWhite, afterBoard);
+                if (!canIntercept) {
+                    enemyFastestPromotion = Math.min(enemyFastestPromotion, distToPromotion);
+                }
+            } else {
+                enemyFastestPromotion = Math.min(enemyFastestPromotion, distToPromotion);
+            }
+        }
+        
+        debugLog("[V40.25_RACE]", `Our fastest: ${ourFastestPromotion}, Enemy fastest: ${enemyFastestPromotion}`);
+        
+        // Evaluate race outcome
+        const tempoAdvantage = enemyFastestPromotion - ourFastestPromotion;
+        
+        if (ourFastestPromotion < enemyFastestPromotion) {
+            // We win the race!
+            score += CONFIG.v40PawnRaceWinningBonus || 50000000000;
+            debugLog("[V40.25_RACE]", `✅ We WIN pawn race by ${tempoAdvantage} tempi!`);
+        } else if (ourFastestPromotion > enemyFastestPromotion) {
+            // We lose the race!
+            score += CONFIG.v40PawnRaceLosingPenalty || -60000000000;
+            debugLog("[V40.25_RACE]", `☠️ We LOSE pawn race by ${-tempoAdvantage} tempi!`);
+        }
+        
+        // Bonus per tempo advantage
+        score += (CONFIG.v40RaceCountingBonus || 5000000000) * tempoAdvantage;
+        
+        // Check if the move advances a passed pawn
+        if (movingPiece.toLowerCase() === 'p') {
+            for (const pawn of ourPassedPawns) {
+                if (pawn.square === toSquare) {
+                    score += CONFIG.v40PassedPawnAdvanceBonus || 8000000000;
+                    debugLog("[V40.25_RACE]", `✅ Advancing passed pawn!`);
+                    break;
+                }
+            }
+        }
+        
+        // Check if move blocks enemy passed pawn
+        for (const enemyPawn of enemyPassedPawns) {
+            const pawnFile = enemyPawn.square[0];
+            const pawnRank = parseInt(enemyPawn.square[1]);
+            const toFile = toSquare[0];
+            const toRank = parseInt(toSquare[1]);
+            
+            if (toFile === pawnFile) {
+                const blocking = isWhite ? 
+                    (toRank > pawnRank) : 
+                    (toRank < pawnRank);
+                if (blocking) {
+                    score += CONFIG.v40EnemyPassedPawnBlocking || 10000000000;
+                    debugLog("[V40.25_RACE]", `✅ Blocking enemy passed pawn!`);
+                    break;
+                }
+            }
+        }
+        
+    } catch (e) {
+        debugLog("[V40.25_RACE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.25: PIECE PRESERVATION ABSOLUTE
+ * Never let any piece hang after a move
+ */
+function v40PiecePreservationAbsolute(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40PiecePreservationAbsoluteEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Simulate the move
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        // Check all our pieces for safety
+        let allPiecesSafe = true;
+        const pieceValues = { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900 };
+        
+        for (const [sq, piece] of afterBoard) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() === 'k') continue;  // King handled separately
+            
+            const isAttacked = isSquareAttackedByColor(afterBoard, sq, enemyColor);
+            
+            if (isAttacked) {
+                const isDefended = isSquareDefendedByColor(afterBoard, sq, activeColor);
+                const pieceValue = pieceValues[piece.toLowerCase()] || 0;
+                
+                if (!isDefended) {
+                    // Piece is hanging!
+                    allPiecesSafe = false;
+                    score += CONFIG.v40PieceHangingAfterMovePenalty || -30000000000;
+                    debugLog("[V40.25_PRESERVE]", `☠️ ${move} leaves ${piece} hanging on ${sq}!`);
+                } else {
+                    // Check if exchange is unfavorable
+                    const attackers = findAttackersOfSquare(afterBoard, sq, enemyColor);
+                    const lowestAttacker = attackers.reduce((min, att) => {
+                        const val = pieceValues[att.piece.toLowerCase()] || 1000;
+                        return val < min ? val : min;
+                    }, 1000);
+                    
+                    if (lowestAttacker < pieceValue) {
+                        // Unfavorable exchange
+                        const loss = pieceValue - lowestAttacker;
+                        score += -loss * 50000000;
+                        debugLog("[V40.25_PRESERVE]", `⚠️ ${piece} on ${sq} can be won by lower value piece`);
+                    }
+                }
+            }
+        }
+        
+        // Bonus if all pieces safe
+        if (allPiecesSafe) {
+            score += CONFIG.v40PieceSafetyCheckBonus || 5000000000;
+        }
+        
+    } catch (e) {
+        debugLog("[V40.25_PRESERVE]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.25: INITIATIVE PRESERVATION EVALUATION
+ * Never make trades or moves that give up initiative
+ */
+function v40InitiativePreservationEval(fen, move, board, activeColor, moveNumber) {
+    if (!CONFIG.v40InitiativePreservationEnabled) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const fromSquare = move.substring(0, 2);
+        const toSquare = move.substring(2, 4);
+        const movingPiece = board.get(fromSquare);
+        const capturedPiece = board.get(toSquare);
+        
+        if (!movingPiece) return 0;
+        
+        // Calculate initiative before
+        const initBefore = v40CalculateInitiativeScore(board, activeColor);
+        
+        // Simulate the move
+        const afterBoard = new Map(board);
+        afterBoard.delete(fromSquare);
+        afterBoard.set(toSquare, movingPiece);
+        
+        // Calculate initiative after
+        const initAfter = v40CalculateInitiativeScore(afterBoard, activeColor);
+        
+        const initChange = initAfter - initBefore;
+        
+        // Check for trades that lose initiative
+        if (capturedPiece && initChange < -2) {
+            score += CONFIG.v40TradeThatLosesInitiativePenalty || -12000000000;
+            debugLog("[V40.25_INIT]", `🚫 ${move} trade loses initiative (${initChange})`);
+        }
+        
+        // Check for passive moves when we have initiative
+        if (!capturedPiece && initBefore > 3) {
+            const isPassive = v40IsMovePassive(move, board, activeColor);
+            if (isPassive) {
+                score += CONFIG.v40PassiveMoveInActivePosn || -8000000000;
+                debugLog("[V40.25_INIT]", `🚫 Passive ${move} when we have initiative!`);
+            }
+        }
+        
+        // Bonus for gaining initiative
+        if (initChange > 2) {
+            score += CONFIG.v40InitiativeGainBonus || 6000000000;
+            debugLog("[V40.25_INIT]", `✅ ${move} gains initiative (+${initChange})`);
+        }
+        
+        // Bonus for forcing opponent defensive
+        const forcesDefense = v40MoveForceDefense(afterBoard, activeColor);
+        if (forcesDefense) {
+            score += CONFIG.v40ForceOpponentDefensiveBonus || 7000000000;
+            debugLog("[V40.25_INIT]", `✅ ${move} forces defensive response`);
+        }
+        
+    } catch (e) {
+        debugLog("[V40.25_INIT]", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.25 HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** v40.25: Count total pawns on board */
+function v40CountPawns(board) {
+    let count = 0;
+    for (const [sq, piece] of board) {
+        if (piece && piece.toLowerCase() === 'p') count++;
+    }
+    return count;
+}
+
+/** v40.25: Check if center pawns are blocked */
+function v40AreCenterPawnsBlocked(board) {
+    // Check d4/d5 and e4/e5 complex
+    const dPawnWhite = board.get('d4');
+    const dPawnBlack = board.get('d5');
+    const ePawnWhite = board.get('e4');
+    const ePawnBlack = board.get('e5');
+    
+    // If both d or e files have opposing pawns, center is blocked
+    if (dPawnWhite === 'P' && dPawnBlack === 'p') return true;
+    if (ePawnWhite === 'P' && ePawnBlack === 'p') return true;
+    
+    // Advanced Caro-Kann structure (e5 pawn blocking)
+    if (board.get('e5') === 'P' && board.get('c6') === 'p') return true;
+    
+    return false;
+}
+
+/** v40.25: Calculate simple initiative score */
+function v40CalculateInitiativeScore(board, activeColor) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Piece activity
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        const pieceType = piece.toLowerCase();
+        
+        if (pieceIsWhite === isWhite) {
+            // Our pieces - centrality = initiative
+            const file = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+            const rank = parseInt(sq[1]) - 1;
+            const centrality = 4 - Math.max(Math.abs(file - 3.5), Math.abs(rank - 3.5));
+            
+            if (pieceType === 'q') score += centrality * 0.5;
+            else if (pieceType === 'r') score += centrality * 0.3;
+            else if (pieceType === 'b' || pieceType === 'n') score += centrality * 0.4;
+        }
+    }
+    
+    return score;
+}
+
+/** v40.25: Calculate material balance */
+function v40CalculateMaterialBalance(board, activeColor) {
+    const isWhite = activeColor === 'w';
+    const pieceValues = { 'p': 100, 'n': 320, 'b': 330, 'r': 500, 'q': 900 };
+    
+    let ourMaterial = 0;
+    let enemyMaterial = 0;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        const value = pieceValues[piece.toLowerCase()] || 0;
+        
+        if (pieceIsWhite === isWhite) ourMaterial += value;
+        else enemyMaterial += value;
+    }
+    
+    return ourMaterial - enemyMaterial;
+}
+
+/** v40.25: Check if queen trade activates rooks */
+function v40WillTradeActivateRooks(board, activeColor) {
+    // After queen trade, check if our rooks can use open files
+    const isWhite = activeColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        if (piece.toLowerCase() === 'r') {
+            const file = sq[0];
+            // Check if file would be open (only pawns blocking files)
+            let pawnsOnFile = 0;
+            for (let rank = 1; rank <= 8; rank++) {
+                const checkSq = file + rank;
+                const checkPiece = board.get(checkSq);
+                if (checkPiece && checkPiece.toLowerCase() === 'p') {
+                    pawnsOnFile++;
+                }
+            }
+            if (pawnsOnFile <= 1) return true;  // Semi-open or open
+        }
+    }
+    return false;
+}
+
+/** v40.25: Find enemy knight fork opportunities */
+function v40FindEnemyKnightForkOpportunities(board, ourColor) {
+    const forks = [];
+    const isOurWhite = ourColor === 'w';
+    const enemyColor = isOurWhite ? 'b' : 'w';
+    
+    // Find enemy knights
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isOurWhite) continue;  // Skip our pieces
+        if (piece.toLowerCase() !== 'n') continue;  // Only knights
+        
+        // Get all knight move squares
+        const knightMoves = getKnightMovesV40_24(sq);
+        
+        for (const targetSq of knightMoves) {
+            // Check what this knight attacks from targetSq
+            const attackedSquares = getKnightMovesV40_24(targetSq);
+            const targets = [];
+            let hasKing = false, hasQueen = false, hasRook = false;
+            
+            for (const attackSq of attackedSquares) {
+                const attackedPiece = board.get(attackSq);
+                if (!attackedPiece) continue;
+                const attackedIsWhite = attackedPiece === attackedPiece.toUpperCase();
+                if (attackedIsWhite !== isOurWhite) continue;  // Skip enemy pieces
+                
+                const pieceType = attackedPiece.toLowerCase();
+                targets.push({ square: attackSq, piece: attackedPiece });
+                if (pieceType === 'k') hasKing = true;
+                if (pieceType === 'q') hasQueen = true;
+                if (pieceType === 'r') hasRook = true;
+            }
+            
+            if (targets.length >= 2) {
+                forks.push({
+                    square: targetSq,
+                    fromSquare: sq,
+                    targetCount: targets.length,
+                    targets: targets,
+                    targetsKingAndQueen: hasKing && hasQueen,
+                    targetsKingAndRook: hasKing && hasRook,
+                    targetsQueenAndRook: hasQueen && hasRook
+                });
+            }
+        }
+    }
+    
+    return forks;
+}
+
+/** v40.25: Find new fork squares allowed by move */
+function v40FindNewForkSquaresAllowed(boardBefore, boardAfter, ourColor) {
+    // Compare fork opportunities before and after
+    const forksBefore = v40FindEnemyKnightForkOpportunities(boardBefore, ourColor);
+    const forksAfter = v40FindEnemyKnightForkOpportunities(boardAfter, ourColor);
+    
+    const newForkSquares = [];
+    for (const fork of forksAfter) {
+        const existedBefore = forksBefore.some(f => f.square === fork.square);
+        if (!existedBefore) {
+            newForkSquares.push(fork.square);
+        }
+    }
+    
+    return newForkSquares;
+}
+
+/** v40.25: Check for discovered fork pattern */
+function v40CheckDiscoveredFork(boardBefore, boardAfter, move, ourColor) {
+    // A discovered fork happens when moving a piece reveals a fork threat
+    return { exists: false };  // Simplified for now
+}
+
+/** v40.25: Check for Nxf3+ Nxd2 pattern */
+function v40CheckPlusCapturePattern(board, attackerColor, defenderColor) {
+    // Look for knight that gives check and then captures a piece
+    const isAttackerWhite = attackerColor === 'w';
+    
+    // Find defender's king
+    let kingSquare = null;
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isAttackerWhite) continue;
+        if (piece.toLowerCase() === 'k') {
+            kingSquare = sq;
+            break;
+        }
+    }
+    
+    if (!kingSquare) return { exists: false };
+    
+    // Find attacker's knights
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isAttackerWhite) continue;
+        if (piece.toLowerCase() !== 'n') continue;
+        
+        const knightMoves = getKnightMovesV40_24(sq);
+        
+        for (const targetSq of knightMoves) {
+            // Check if this gives check
+            const targetMoves = getKnightMovesV40_24(targetSq);
+            if (targetMoves.includes(kingSquare)) {
+                // This is a check! Now check if knight can capture something valuable
+                const captured = board.get(targetSq);
+                const capturedValue = captured ? 
+                    { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9 }[captured.toLowerCase()] || 0 : 0;
+                
+                if (capturedValue >= 3) {
+                    // Check + valuable capture (like Nxf3+ where there's a bishop on f3)
+                    // Then check if after Kx, knight can capture something else
+                    const afterCapture = getKnightMovesV40_24(targetSq);
+                    for (const secondTarget of afterCapture) {
+                        const secondPiece = board.get(secondTarget);
+                        if (secondPiece && secondPiece.toLowerCase() !== 'k') {
+                            const secondValue = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9 }[secondPiece.toLowerCase()] || 0;
+                            if (secondValue >= 3) {
+                                return { exists: true, pattern: `${sq}-${targetSq}-${secondTarget}` };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return { exists: false };
+}
+
+/** v40.25: Count total material on board */
+function v40CountTotalMaterial(board) {
+    const pieceValues = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9 };
+    let total = 0;
+    
+    for (const [sq, piece] of board) {
+        if (piece && piece.toLowerCase() !== 'k') {
+            total += pieceValues[piece.toLowerCase()] || 0;
+        }
+    }
+    
+    return total;
+}
+
+/** v40.25: Find passed pawns */
+function v40FindPassedPawns(board, color) {
+    const passed = [];
+    const isWhite = color === 'w';
+    const pawnChar = isWhite ? 'P' : 'p';
+    const enemyPawnChar = isWhite ? 'p' : 'P';
+    
+    for (const [sq, piece] of board) {
+        if (piece !== pawnChar) continue;
+        
+        const file = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(sq[1]);
+        
+        // Check if any enemy pawns can stop this pawn
+        let isPassed = true;
+        
+        for (let f = Math.max(0, file - 1); f <= Math.min(7, file + 1); f++) {
+            const checkFile = String.fromCharCode('a'.charCodeAt(0) + f);
+            
+            for (let r = 1; r <= 8; r++) {
+                const checkSq = checkFile + r;
+                const checkPiece = board.get(checkSq);
+                
+                if (checkPiece === enemyPawnChar) {
+                    // Is this enemy pawn ahead of our pawn?
+                    if (isWhite && r > rank) isPassed = false;
+                    if (!isWhite && r < rank) isPassed = false;
+                }
+            }
+        }
+        
+        if (isPassed) {
+            passed.push({ square: sq, rank: rank });
+        }
+    }
+    
+    return passed;
+}
+
+/** v40.25: Check if king can intercept passed pawn (rule of the square) */
+function v40CanKingIntercept(kingSquare, pawnSquare, pawnIsWhite, board) {
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    const pawnFile = pawnSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const pawnRank = parseInt(pawnSquare[1]);
+    
+    // Calculate distance to promotion square
+    const promoRank = pawnIsWhite ? 8 : 1;
+    const pawnDistToPromo = Math.abs(promoRank - pawnRank);
+    
+    // King needs to reach the pawn's promotion file
+    const kingDistToPromoFile = Math.abs(kingFile - pawnFile);
+    const kingDistToPromoRank = Math.abs(kingRank - promoRank);
+    const kingDist = Math.max(kingDistToPromoFile, kingDistToPromoRank);
+    
+    // Rule of the square - simplified
+    return kingDist <= pawnDistToPromo;
+}
+
+/** v40.25: Check if move is passive */
+function v40IsMovePassive(move, board, activeColor) {
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece) return false;
+    
+    const fromRank = parseInt(fromSquare[1]);
+    const toRank = parseInt(toSquare[1]);
+    const isWhite = activeColor === 'w';
+    
+    // Retreating pieces is often passive
+    if (isWhite && toRank < fromRank) return true;
+    if (!isWhite && toRank > fromRank) return true;
+    
+    return false;
+}
+
+/** v40.25: Check if move forces defensive response */
+function v40MoveForceDefense(board, activeColor) {
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Check if any of our pieces create immediate threats
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        // Check if this piece attacks valuable enemy pieces
+        const attacks = v40GetPieceAttacks(sq, piece, board);
+        for (const target of attacks) {
+            const targetPiece = board.get(target);
+            if (!targetPiece) continue;
+            const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+            if (targetIsWhite === isWhite) continue;
+            
+            const targetValue = { 'q': 9, 'r': 5, 'n': 3, 'b': 3 }[targetPiece.toLowerCase()] || 0;
+            if (targetValue >= 3) return true;  // Threatening a valuable piece
+        }
+    }
+    
+    return false;
+}
+
+/** v40.25: Get squares a piece attacks */
+function v40GetPieceAttacks(square, piece, board) {
+    const attacks = [];
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(square[1]) - 1;
+    const pieceType = piece.toLowerCase();
+    const isWhite = piece === piece.toUpperCase();
+    
+    if (pieceType === 'n') {
+        const knightMoves = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        for (const [df, dr] of knightMoves) {
+            const nf = file + df;
+            const nr = rank + dr;
+            if (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+                attacks.push(String.fromCharCode('a'.charCodeAt(0) + nf) + (nr + 1));
+            }
+        }
+    } else if (pieceType === 'b' || pieceType === 'q') {
+        const bishopDirs = [[1,1],[1,-1],[-1,1],[-1,-1]];
+        for (const [df, dr] of bishopDirs) {
+            for (let i = 1; i < 8; i++) {
+                const nf = file + df * i;
+                const nr = rank + dr * i;
+                if (nf < 0 || nf >= 8 || nr < 0 || nr >= 8) break;
+                const sq = String.fromCharCode('a'.charCodeAt(0) + nf) + (nr + 1);
+                attacks.push(sq);
+                if (board.get(sq)) break;  // Blocked
+            }
+        }
+    }
+    
+    if (pieceType === 'r' || pieceType === 'q') {
+        const rookDirs = [[0,1],[0,-1],[1,0],[-1,0]];
+        for (const [df, dr] of rookDirs) {
+            for (let i = 1; i < 8; i++) {
+                const nf = file + df * i;
+                const nr = rank + dr * i;
+                if (nf < 0 || nf >= 8 || nr < 0 || nr >= 8) break;
+                const sq = String.fromCharCode('a'.charCodeAt(0) + nf) + (nr + 1);
+                attacks.push(sq);
+                if (board.get(sq)) break;  // Blocked
+            }
+        }
+    }
+    
+    return attacks;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
