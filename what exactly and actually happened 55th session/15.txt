@@ -1,0 +1,7 @@
+Now let me integrate the v40.36 functions into the computeCombinedScore function:
+Action: $ grep -n "pieceCoordinationSupremeScore\|v40.35: COMBINED v40 SCORE" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 41968:                const pieceCoordinationSupremeScore = v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+41970:                // v40.35: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+42048:                               centralControlPriorityScore + pieceCoordinationSupremeScore;
+42101:                debugLog("[V40_INTEGRATE]", `   🎵🎵 PIECE COORDINATION SUPREME: ${pieceCoordinationSupremeScore.toFixed(1)}`);
+Exit code: 0

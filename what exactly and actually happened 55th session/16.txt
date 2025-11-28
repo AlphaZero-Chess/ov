@@ -1,0 +1,49 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+41965|                const centralControlPriorityScore = v40CentralControlPriorityEval(fen, move, board, activeColor, moveNumber) * 500.0;
+41966|                
+41967|                // v40.35: PIECE COORDINATION SUPREME — All pieces must work together
+41968|                const pieceCoordinationSupremeScore = v40PieceCoordinationSupremeEval(fen, move, board, activeColor, moveNumber) * 400.0;
+41969|                
+41970|                // v40.35: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+41971|                // This makes v40 the ABSOLUTE D3 PROHIBITION factor
+41972|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+41973|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+41974|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+41975|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+41976|                               counterattackBonus + initiativePreservationBonus +
+41977|                               // v40.4 additions:
+41978|                               openingPrinciplesScore + discoveredAttackPenalty + 
+41979|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+41980|                               // v40.5 additions:
+41981|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+41982|                               // v40.6 ULTIMATE additions:
+41983|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+41984|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+41985|                               // v40.7 DIVINE additions:
+41986|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+41987|                               // v40.8 TRANSCENDENT additions:
+41988|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+41989|                               counterplayGenScore + centralControlSupremeScore +
+41990|                               // v40.9 OMNISCIENT additions:
+41991|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+41992|                               // v40.10 GODLIKE additions:
+41993|                               absoluteOpeningScore + greekGiftScore + kingHuntScore + criticalExchangeScore + matingAttackScore +
+41994|                               // v40.11 TRANSCENDENT SUPREME additions:
+41995|                               gFileAttackScore + kingsideAttackPatternScore + passiveQueensideScore + 
+41996|                               badExchangeFileScore + pawnStormScore + defendKingsideScore + kingsidePawnWeaknessScore +
+41997|                               // v40.12 PROACTIVE SUPREME additions:
+41998|                               prophylacticExchangeScore + pawnStormAnticipationScore + dontCreateWeaknessesScore +
+41999|                               preserveKingShelterScore + attackTrajectoryScore + queenTrapPreventionScore +
+42000|                               // v40.13 ULTIMATE TACTICAL SUPREME additions:
+42001|                               immediateMaterialLossScore + captureChainScore + queenInfiltrationAbsoluteScore +
+42002|                               preMoveSafetyScore + openingBlunderScore + simpleThreatScore +
+42003|                               // v40.14 ABSOLUTE ZERO BLUNDER SUPREME additions:
+42004|                               lookAheadBlunderScore + tripleCheckScore + failSafeScore +
+42005|                               // v40.15 PIECE PRESERVATION SUPREME additions:
+42006|                               piecePreservationScore + allPiecesSafetyScore + prophylaxisMoveScore +
+42007|                               // v40.16 CATASTROPHIC KINGSIDE DEFENSE SUPREME additions:
+42008|                               fileOpeningTowardKingScore + pawnStormDetectionScore + queenInfiltrationPathScore +
+42009|                               deepLookAheadScore + kingsidePawnShelterScore + forcingLineRejectionScore +
+42010|                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:

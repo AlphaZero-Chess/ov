@@ -1,0 +1,10 @@
+Now add the debug logging for v40.36:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                debugLog(\"[V40_INTEGRATE]\", `   🎵🎵 PIECE COORDINATION SUPREME: ${pieceCoordinationSupremeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);" --new-str "                debugLog(\"[V40_INTEGRATE]\", `   🎵🎵 PIECE COORDINATION SUPREME: ${pieceCoordinationSupremeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👸🚫 QUEEN CAPTURE PROHIBITION: ${queenCaptureProhibitionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🐴🚫 KNIGHT SACRIFICE PREVENTION: ${knightSacrificePreventionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🏰🚫 CASTLING DIRECTION: ${castlingDirectionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🔄🚫 EXCHANGE QUALITY VERIFICATION: ${exchangeQualityVerificationScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   📍🚫 PIECE ACTIVITY REQUIREMENT: ${pieceActivityRequirementScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);"
+Observation: Edit was successful.

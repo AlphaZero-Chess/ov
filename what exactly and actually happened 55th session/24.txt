@@ -1,0 +1,4 @@
+
+Action: $ grep -n "earlyQueenCaptures:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -3
+Observation: 35829:    earlyQueenCaptures: [
+Exit code: 0

@@ -1,0 +1,42 @@
+Now let me analyze the most recent game from the problem statement deeply and implement the fixes:
+Action: $ grep -n "v40.35\|v40.36\|v40.37" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -50
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME
+3:// @description  TRUE AlphaZero Replica v40.35 - MATERIAL LOSS DETECTION - PASSIVE PAWN PROHIBITION (a3/h3) - TACTICAL VERIFICATION - ZERO BLUNDERS!
+4:// @author       AlphaZero TRUE REPLICA v40.35 MATERIAL SAFETY PASSIVE PROHIBITION EDITION
+2323:    // v40.35.0: MATERIAL SAFETY & PASSIVE MOVE SUPREME
+2332:    // v40.35: PASSIVE PAWN PROHIBITION - a3/h3/a6/h6 are TOXIC
+2338:    // v40.35: MATERIAL SAFETY VERIFICATION - Don't allow pawn grabs
+2344:    // v40.35: TACTICAL VERIFICATION LAYERS - Multi-pass blunder prevention
+2350:    // v40.35: CENTRAL CONTROL PRIORITY - e4/d4/e5/d5 are SACRED
+2356:    // v40.35: PIECE COORDINATION SUPREME - All pieces must work together
+25474:// v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME FUNCTIONS
+25478: * v40.35: PASSIVE PAWN PROHIBITION — a3/h3/a6/h6/b3/g3 are TOXIC moves
+25508: * v40.35: MATERIAL SAFETY VERIFICATION — Don't allow material loss
+25557: * v40.35 Helper: Calculate total material for a side
+25576: * v40.35: TACTICAL VERIFICATION LAYERS — Multi-pass blunder prevention
+25627: * v40.35 Helper: Detect fork threats
+25668: * v40.35 Helper: Detect pin threats
+25723: * v40.35 Helper: Detect back rank weakness
+25765: * v40.35 Helper: Detect mate threats
+25814: * v40.35: CENTRAL CONTROL PRIORITY — e4/d4/e5/d5 are SACRED
+25875: * v40.35: PIECE COORDINATION SUPREME — All pieces must work together
+25900: * v40.35 Helper: Count piece coordination
+25931: * v40.35 Helper: Check if two squares are on same line
+25944: * v40.35 Helper: Get direction between two squares
+25959: * v40.35 Helper: Get square beyond in a direction
+35462:        { move: /^a2a3/, beforeMove: 30, reason: "a3 - wastes time (v40.35 TOXIC)" },
+35463:        { move: /^h2h3/, beforeMove: 30, reason: "h3 - wastes time (v40.35 TOXIC)" },
+35464:        { move: /^a7a6/, beforeMove: 30, reason: "a6 - wastes time (v40.35 TOXIC)" },
+35465:        { move: /^h7h6/, beforeMove: 30, reason: "h6 - wastes time (v40.35 TOXIC)" },
+35470:        { move: /^a2a4/, beforeMove: 30, reason: "a4 - wastes time (v40.35 TOXIC)" },
+35471:        { move: /^a7a5/, beforeMove: 30, reason: "a5 - wastes time (v40.35 TOXIC)" },
+41612:                // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME — THE ULTIMATE FIX!
+41617:                // v40.35: PASSIVE PAWN PROHIBITION — a3/h3/a6/h6/b3/g3 are TOXIC moves
+41620:                // v40.35: MATERIAL SAFETY VERIFICATION — Don't allow material loss
+41623:                // v40.35: TACTICAL VERIFICATION LAYERS — Multi-pass blunder prevention
+41626:                // v40.35: CENTRAL CONTROL PRIORITY — e4/d4/e5/d5 are SACRED
+41629:                // v40.35: PIECE COORDINATION SUPREME — All pieces must work together
+41632:                // v40.35: COMBINED v40 SCORE — 100% MATERIAL SAFETY & PASSIVE PROHIBITION INFLUENCE
+41708:                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+41711:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.35 MATERIAL SAFETY PARADIGM SHIFT
+Exit code: 0

@@ -1,0 +1,24 @@
+Now let me also add the early queen capture moves to the OPENING_BLACKLIST to make them have higher penalties:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+35525| * Fully implements all neural patterns
+35526| */
+35527|function evaluateNeuralPatterns(fen) {
+35528|    let patternScore = 0;
+35529|    
+35530|    try {
+35531|        const board = parseFenToBoard(fen);
+35532|        const activeColor = fen.split(' ')[1];
+35533|        const position = fen.split(' ')[0];
+35534|        
+35535|        // Determine if endgame
+35536|        const totalPieces = (position.match(/[NBRQnbrq]/g) || []).length;
+35537|        const isEndgame = totalPieces <= 6;
+35538|        
+35539|        // Evaluate all patterns for both colors
+35540|        for (const color of ['w', 'b']) {
+35541|            const multiplier = color === activeColor ? 1 : -1;
+35542|            
+35543|            // Pawn structure
+35544|            for (let file = 0; file < 8; file++) {
+35545|                if (NEURAL_PATTERNS.doubledPawns.detect(board, file, color)) {

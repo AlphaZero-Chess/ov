@@ -1,0 +1,12 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+                               passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
+                               centralControlPriorityScore + pieceCoordinationSupremeScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.35 MATERIAL SAFETY PARADIGM SHIFT" --new-str "                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+                               passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
+                               centralControlPriorityScore + pieceCoordinationSupremeScore +
+                               // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME additions!
+                               queenCaptureProhibitionScore + knightSacrificePreventionScore + castlingDirectionScore +
+                               exchangeQualityVerificationScore + pieceActivityRequirementScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.36 QUEEN CAPTURE & CASTLING PARADIGM SHIFT"
+Observation: Edit was successful.

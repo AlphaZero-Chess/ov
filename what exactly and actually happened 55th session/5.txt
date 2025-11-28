@@ -1,0 +1,4 @@
+
+Action: $ grep -n "function getSquareBeyond\|// ═══════════════.*v40.9" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 25961:function getSquareBeyond(square, direction) {
+Exit code: 0

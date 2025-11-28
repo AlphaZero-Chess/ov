@@ -1,0 +1,21 @@
+Now let me add the v40.36 functions. First, let me find where to add them:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+25968| * v40.35 Helper: Check if two squares are on same line
+25969| */
+25970|function isOnSameLine(sq1, sq2) {
+25971|    const f1 = sq1[0].charCodeAt(0) - 97;
+25972|    const r1 = parseInt(sq1[1]) - 1;
+25973|    const f2 = sq2[0].charCodeAt(0) - 97;
+25974|    const r2 = parseInt(sq2[1]) - 1;
+25975|    
+25976|    // Same file, rank, or diagonal
+25977|    return f1 === f2 || r1 === r2 || Math.abs(f1 - f2) === Math.abs(r1 - r2);
+25978|}
+25979|
+25980|/**
+25981| * v40.35 Helper: Get direction between two squares
+25982| */
+25983|function getLineDirection(sq1, sq2) {
+25984|    const f1 = sq1[0].charCodeAt(0) - 97;
+25985|    const r1 = parseInt(sq1[1]) - 1;

@@ -1,0 +1,6 @@
+Now let me add the v40.36 CONFIG settings and functions:
+Action: $ grep -n "v40PassivePawnProhibitionEnabled\|v40.35.0:" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2323:    // v40.35.0: MATERIAL SAFETY & PASSIVE MOVE SUPREME
+2333:    v40PassivePawnProhibitionEnabled: true,
+25482:    if (!CONFIG.v40PassivePawnProhibitionEnabled) return 0;
+Exit code: 0

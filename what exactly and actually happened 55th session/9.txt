@@ -1,0 +1,54 @@
+Now I need to add the v40.36 CONFIG settings and functions. Let me insert them after the v40.35 settings:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.35: PIECE COORDINATION SUPREME - All pieces must work together
+    v40PieceCoordinationEnabled: true,
+    v40UncoordinatedAttackPenalty: -3000000000000,  // 3 trillion for uncoordinated play
+    v40PieceHarmonyBonus: 1000000000000,            // 1 trillion for coordinated pieces
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE" --new-str "    // v40.35: PIECE COORDINATION SUPREME - All pieces must work together
+    v40PieceCoordinationEnabled: true,
+    v40UncoordinatedAttackPenalty: -3000000000000,  // 3 trillion for uncoordinated play
+    v40PieceHarmonyBonus: 1000000000000,            // 1 trillion for coordinated pieces
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.36.0: QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CRITICAL: From Sicilian game analysis:
+    // 1. Move 5: Qxd4 - Queen captured pawn too early, became target
+    // 2. Move 6: Nxe5 dxe5 - Knight sacrifice for nothing
+    // 3. Move 11: O-O-O - Castled into danger when queenside was under attack
+    // 4. Move 14: Bxd4 - Bad exchange when position was already compromised
+    // FIX: Absolute queen capture prohibition + castling direction analysis
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.36: QUEEN CAPTURE PROHIBITION - Never capture with queen early
+    v40QueenCaptureProhibitionEnabled: true,
+    v40QueenCaptureMoveLimit: 15,                   // Prohibit until move 15
+    v40QueenCapturePenalty: -20000000000000,        // 20 trillion penalty
+    v40QueenCaptureQxd4Penalty: -50000000000000,    // 50 trillion for Qxd4 specifically
+    
+    // v40.36: KNIGHT SACRIFICE PREVENTION - Don't sacrifice knight for pawn
+    v40KnightSacrificePreventionEnabled: true,
+    v40KnightForPawnPenalty: -30000000000000,       // 30 trillion for knight sacrifice
+    
+    // v40.36: CASTLING DIRECTION ANALYSIS - Don't castle into danger
+    v40CastlingDirectionEnabled: true,
+    v40CastleIntoDangerPenalty: -40000000000000,    // 40 trillion for castling into danger
+    v40QueensideCastleDangerThreshold: 2,          // If 2+ pieces attacking queenside, don't O-O-O
+    v40KingsideCastleDangerThreshold: 2,           // If 2+ pieces attacking kingside, don't O-O
+    
+    // v40.36: EXCHANGE QUALITY VERIFICATION - Don't trade in bad positions
+    v40ExchangeQualityEnabled: true,
+    v40BadExchangePenalty: -15000000000000,         // 15 trillion for bad exchange
+    v40ExchangeWhenLosingPenalty: -25000000000000,  // 25 trillion for trading when losing
+    
+    // v40.36: PIECE ACTIVITY REQUIREMENT - Must develop before passive moves
+    v40PieceActivityEnabled: true,
+    v40UndevelopedPiecePenalty: -5000000000000,     // 5 trillion for passive when undeveloped
+    v40DevelopmentRequirement: 3,                  // Must have 3+ pieces developed
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// v37.0.0: TRANSCENDENT MCTS TREE STRUCTURE"
+Observation: Edit was successful.
