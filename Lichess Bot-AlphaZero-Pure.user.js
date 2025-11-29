@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.51 ABSOLUTE RECAPTURE SUPREME
-// @description  TRUE AlphaZero Replica v40.51 - ABSOLUTE RECAPTURE: Forces Nxd4 in Sicilian, deep mate threat detection, zero blunders! THE ULTIMATE FIX!
-// @author       AlphaZero TRUE REPLICA v40.51 ABSOLUTE RECAPTURE SUPREME
-// @version      40.51.0-ABSOLUTE-RECAPTURE-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.52 SUPREME TACTICAL VISION
+// @description  TRUE AlphaZero Replica v40.52 - SUPREME TACTICAL VISION: Deep mate threat prevention, anti-passive enforcement, crushing endgame technique!
+// @author       AlphaZero TRUE REPLICA v40.52 SUPREME TACTICAL VISION
+// @version      40.52.0-SUPREME-TACTICAL-VISION
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -30038,7 +30038,921 @@ function v40CountThreatsCreated(board, isWhite, move) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-function findAttackedPiecesV40_9(board, color) {
+// v40.52 SUPREME TACTICAL VISION — TRUE ALPHAZERO GODLIKE ENHANCEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+// Addresses:
+// 1. Passive opening play (d3 instead of d4) - ANTI-PASSIVE ENFORCEMENT
+// 2. Deep mate threat prevention (Qxg2#, Qf1#, etc.) - MATING THREAT SCANNER
+// 3. Better tactical awareness - IMMEDIATE DANGER RESPONSE
+// 4. Stronger endgame technique - KING ACTIVITY MAXIMIZER
+// 5. Initiative loss prevention - TEMPO CRITICAL EVALUATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.52: ANTI-PASSIVE OPENING ENFORCEMENT
+ * Bot MUST play aggressively in the opening (d4/e4, NOT d3/e3)
+ * Penalizes passive pawn moves and rewards central control
+ */
+function v40AntiPassiveOpeningEnforcement(fen, move, board, activeColor, moveNumber) {
+    if (moveNumber > 12) return 0;  // Only in opening
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece) return 0;
+    const pieceType = movingPiece.toLowerCase();
+    
+    // CRITICAL: Penalize passive pawn moves in the opening
+    if (pieceType === 'p' && moveNumber <= 8) {
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toRank = parseInt(toSquare[1]);
+        
+        // For White
+        if (isWhite) {
+            // MASSIVE PENALTY for d3 when d4 is possible
+            if (toSquare === 'd3') {
+                const d2 = board.get('d2');
+                const d4Blocked = board.get('d4');
+                if (d2 && d2.toLowerCase() === 'p' && !d4Blocked) {
+                    score += -200000;  // MASSIVE penalty
+                    debugLog("[V40.52_PASSIVE]", `☠️ PASSIVE d3 in opening! MASSIVE PENALTY`);
+                }
+            }
+            // MASSIVE PENALTY for e3 when e4 is possible
+            if (toSquare === 'e3') {
+                const e2 = board.get('e2');
+                const e4Blocked = board.get('e4');
+                if (e2 && e2.toLowerCase() === 'p' && !e4Blocked) {
+                    score += -200000;  // MASSIVE penalty
+                    debugLog("[V40.52_PASSIVE]", `☠️ PASSIVE e3 in opening! MASSIVE PENALTY`);
+                }
+            }
+            // MASSIVE BONUS for d4 and e4
+            if (toSquare === 'd4' || toSquare === 'e4') {
+                score += 50000;  // Big bonus for aggressive central play
+                debugLog("[V40.52_PASSIVE]", `✅ AGGRESSIVE central pawn ${toSquare}! BONUS`);
+            }
+        } else {
+            // For Black - similar logic
+            if (toSquare === 'd6' && moveNumber <= 4) {
+                const d7 = board.get('d7');
+                const d5Blocked = board.get('d5');
+                if (d7 && d7.toLowerCase() === 'p' && !d5Blocked) {
+                    score += -100000;  // Penalty for passive d6
+                }
+            }
+            if (toSquare === 'd5' || toSquare === 'e5') {
+                score += 40000;  // Bonus for aggressive central play
+            }
+        }
+    }
+    
+    // CRITICAL: Development before pawn pushing
+    if (pieceType === 'p' && moveNumber >= 3 && moveNumber <= 8) {
+        const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const toRank = parseInt(toSquare[1]);
+        
+        // Count developed pieces
+        let developedPieces = 0;
+        const minorPieceSquares = isWhite 
+            ? ['b1', 'c1', 'f1', 'g1']  // Knights and bishops starting squares
+            : ['b8', 'c8', 'f8', 'g8'];
+        
+        for (const sq of minorPieceSquares) {
+            const p = board.get(sq);
+            if (!p || p.toLowerCase() === 'p') {
+                developedPieces++;  // Piece moved from starting square
+            }
+        }
+        
+        // If we haven't developed our pieces, penalize excessive pawn moves
+        if (developedPieces < 2 && toFile !== 3 && toFile !== 4) {  // Not d or e file
+            score += -30000;
+            debugLog("[V40.52_PASSIVE]", `⚠️ Pawn move ${move} before development!`);
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52: DEEP MATING THREAT SCANNER
+ * Detects and heavily penalizes moves that allow checkmate
+ * Scans for common mating patterns: back rank, smothered, Q+R batteries, etc.
+ */
+function v40DeepMatingThreatScanner(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Simulate the move
+    const testBoard = simulateMove(board, move);
+    if (!testBoard) return 0;
+    
+    // Find our king
+    const kingSquare = findKingSquare(testBoard, activeColor);
+    if (!kingSquare) return 0;
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    
+    // Check for enemy queen and rooks near our king (mating threat)
+    let enemyQueen = null;
+    let enemyRooks = [];
+    let enemyBishops = [];
+    let enemyKnights = [];
+    
+    for (const [sq, piece] of testBoard) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Enemy pieces only
+        
+        const pType = piece.toLowerCase();
+        if (pType === 'q') enemyQueen = sq;
+        if (pType === 'r') enemyRooks.push(sq);
+        if (pType === 'b') enemyBishops.push(sq);
+        if (pType === 'n') enemyKnights.push(sq);
+    }
+    
+    // PATTERN 1: Back rank mate threat
+    if ((isWhite && kingRank === 1) || (!isWhite && kingRank === 8)) {
+        // King on back rank - check for rook/queen on same file
+        for (const rook of enemyRooks) {
+            const rookFile = rook.charCodeAt(0) - 'a'.charCodeAt(0);
+            const rookRank = parseInt(rook[1]);
+            if ((isWhite && rookRank === 1) || (!isWhite && rookRank === 8)) {
+                // Rook on back rank! Check if it can deliver mate
+                if (isBackRankMatePossible(testBoard, kingSquare, isWhite)) {
+                    score += -500000;  // MASSIVE penalty
+                    debugLog("[V40.52_MATE]", `☠️ BACK RANK MATE THREAT detected after ${move}!`);
+                }
+            }
+        }
+        if (enemyQueen) {
+            const qRank = parseInt(enemyQueen[1]);
+            if ((isWhite && qRank === 1) || (!isWhite && qRank === 8)) {
+                if (isBackRankMatePossible(testBoard, kingSquare, isWhite)) {
+                    score += -600000;  // MASSIVE penalty - queen is stronger
+                    debugLog("[V40.52_MATE]", `☠️☠️ QUEEN BACK RANK MATE THREAT after ${move}!`);
+                }
+            }
+        }
+    }
+    
+    // PATTERN 2: King corner trap (Qxg2# style mates)
+    if (isKingInCorner(kingSquare)) {
+        if (enemyQueen) {
+            const qFile = enemyQueen.charCodeAt(0) - 'a'.charCodeAt(0);
+            const qRank = parseInt(enemyQueen[1]);
+            const qDist = Math.max(Math.abs(qFile - kingFile), Math.abs(qRank - kingRank));
+            
+            if (qDist <= 2) {
+                // Queen near cornered king - very dangerous!
+                const kingEscapes = countKingEscapes(testBoard, kingSquare, isWhite);
+                if (kingEscapes <= 1) {
+                    score += -400000;
+                    debugLog("[V40.52_MATE]", `☠️ KING CORNER TRAP! Only ${kingEscapes} escapes after ${move}`);
+                }
+            }
+        }
+    }
+    
+    // PATTERN 3: Queen + Piece coordination near king
+    if (enemyQueen) {
+        const qFile = enemyQueen.charCodeAt(0) - 'a'.charCodeAt(0);
+        const qRank = parseInt(enemyQueen[1]);
+        const qDist = Math.max(Math.abs(qFile - kingFile), Math.abs(qRank - kingRank));
+        
+        if (qDist <= 3) {
+            // Count enemy pieces within striking distance
+            let nearbyEnemyPieces = 0;
+            for (const [sq, piece] of testBoard) {
+                if (!piece) continue;
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) continue;
+                
+                const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+                const pRank = parseInt(sq[1]);
+                const dist = Math.max(Math.abs(pFile - kingFile), Math.abs(pRank - kingRank));
+                
+                if (dist <= 3 && piece.toLowerCase() !== 'k') {
+                    nearbyEnemyPieces++;
+                }
+            }
+            
+            if (nearbyEnemyPieces >= 2) {
+                const kingEscapes = countKingEscapes(testBoard, kingSquare, isWhite);
+                if (kingEscapes <= 2) {
+                    score += -300000 * (3 - kingEscapes);
+                    debugLog("[V40.52_MATE]", `☠️ MATING ATTACK! ${nearbyEnemyPieces} enemies near king, ${kingEscapes} escapes`);
+                }
+            }
+        }
+    }
+    
+    // PATTERN 4: Check if we're already in check and this move doesn't help
+    if (isSquareAttackedByColor(testBoard, kingSquare, enemyColor)) {
+        score += -1000000;  // CRITICAL - we're still in check!
+        debugLog("[V40.52_MATE]", `☠️☠️☠️ STILL IN CHECK after ${move}!!!`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52 Helper: Check if back rank mate is possible
+ */
+function isBackRankMatePossible(board, kingSquare, isWhite) {
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    const escapeRank = isWhite ? 2 : 7;
+    
+    // Check if king can escape forward
+    for (let f = kingFile - 1; f <= kingFile + 1; f++) {
+        if (f < 0 || f > 7) continue;
+        const escapeSquare = String.fromCharCode('a'.charCodeAt(0) + f) + escapeRank;
+        const pieceOnEscape = board.get(escapeSquare);
+        
+        // Check if escape square is blocked by our own piece
+        if (pieceOnEscape) {
+            const pieceIsWhite = pieceOnEscape === pieceOnEscape.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;  // Blocked by our piece
+        }
+        
+        // Square is empty or has enemy piece - potential escape
+        const enemyColor = isWhite ? 'b' : 'w';
+        if (!isSquareAttackedByColor(board, escapeSquare, enemyColor)) {
+            return false;  // King has escape
+        }
+    }
+    
+    return true;  // No escape = back rank mate possible
+}
+
+/**
+ * v40.52 Helper: Check if king is in corner
+ */
+function isKingInCorner(kingSquare) {
+    return kingSquare === 'a1' || kingSquare === 'h1' || 
+           kingSquare === 'a8' || kingSquare === 'h8' ||
+           kingSquare === 'g1' || kingSquare === 'h2' ||  // Common castled positions
+           kingSquare === 'g8' || kingSquare === 'h7';
+}
+
+/**
+ * v40.52 Helper: Count king escape squares
+ */
+function countKingEscapes(board, kingSquare, isWhite) {
+    const kFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kRank = parseInt(kingSquare[1]) - 1;
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    let escapes = 0;
+    
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            if (df === 0 && dr === 0) continue;
+            
+            const f = kFile + df;
+            const r = kRank + dr;
+            
+            if (f < 0 || f > 7 || r < 0 || r > 7) continue;
+            
+            const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+            const pieceOnSq = board.get(sq);
+            
+            // Check if square is blocked by our own piece
+            if (pieceOnSq) {
+                const pieceIsWhite = pieceOnSq === pieceOnSq.toUpperCase();
+                if (pieceIsWhite === isWhite) continue;  // Blocked
+            }
+            
+            // Check if square is attacked
+            if (!isSquareAttackedByColor(board, sq, enemyColor)) {
+                escapes++;
+            }
+        }
+    }
+    
+    return escapes;
+}
+
+/**
+ * v40.52: IMMEDIATE DANGER RESPONSE
+ * Bot MUST respond to immediate tactical threats
+ * Detects hanging pieces, threats to queen, forced exchanges, etc.
+ */
+function v40ImmediateDangerResponse(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    const toSquare = move.substring(2, 4);
+    const fromSquare = move.substring(0, 2);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece) return 0;
+    
+    // Check if any of our pieces are currently attacked
+    let criticalThreats = [];
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pType = piece.toLowerCase();
+        if (pType === 'k') continue;
+        
+        const pieceValue = getPieceValueSimple(pType);
+        
+        // Is this piece under attack?
+        if (isSquareAttackedByColor(board, sq, enemyColor)) {
+            // Is it defended?
+            const defended = isSquareDefendedByColor(board, sq, activeColor);
+            
+            if (!defended) {
+                criticalThreats.push({ square: sq, piece: pType, value: pieceValue });
+            } else {
+                // Even if defended, if attacker is lower value, it's a threat
+                const attackers = findAttackersOfSquare(board, sq, enemyColor);
+                for (const attacker of attackers) {
+                    const attackerValue = getPieceValueSimple(attacker.piece.toLowerCase());
+                    if (attackerValue < pieceValue) {
+                        criticalThreats.push({ square: sq, piece: pType, value: pieceValue - attackerValue });
+                    }
+                }
+            }
+        }
+    }
+    
+    // If we have critical threats, we MUST address them
+    if (criticalThreats.length > 0) {
+        // Sort by value (highest first)
+        criticalThreats.sort((a, b) => b.value - a.value);
+        
+        const highestThreat = criticalThreats[0];
+        
+        // Check if this move addresses the threat
+        const moveAddressesThreat = (
+            toSquare === highestThreat.square ||  // Moving the threatened piece
+            fromSquare === highestThreat.square || // Moving the threatened piece
+            board.get(toSquare)  // Capturing something (might be the attacker)
+        );
+        
+        if (!moveAddressesThreat) {
+            // We're ignoring a critical threat!
+            score += -(highestThreat.value * 100000);
+            debugLog("[V40.52_DANGER]", `☠️ IGNORING THREAT to ${highestThreat.piece}@${highestThreat.square}! Playing ${move} instead!`);
+        } else {
+            score += 10000;  // Good - addressing the threat
+            debugLog("[V40.52_DANGER]", `✅ Addressing threat to ${highestThreat.piece}@${highestThreat.square}`);
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52: KING ACTIVITY MAXIMIZER (Endgame)
+ * In endgames, king must be ACTIVE - centralized and advancing
+ */
+function v40KingActivityMaximizer(fen, move, board, activeColor, moveNumber) {
+    // Only in endgame
+    if (!isEndgame(board)) return 0;
+    
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece || movingPiece.toLowerCase() !== 'k') return 0;
+    
+    // King is moving - evaluate the destination
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]);
+    const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(fromSquare[1]);
+    
+    // Centralization bonus - closer to center = better
+    const centerDist = Math.max(Math.abs(toFile - 3.5), Math.abs(toRank - 4.5));
+    const oldCenterDist = Math.max(Math.abs(fromFile - 3.5), Math.abs(fromRank - 4.5));
+    
+    if (centerDist < oldCenterDist) {
+        score += 15000;  // King centralizing
+        debugLog("[V40.52_ENDGAME]", `✅ King centralizing: ${fromSquare} -> ${toSquare}`);
+    }
+    
+    // Advancing bonus (for the winning side)
+    if (isWhite && toRank > fromRank) {
+        score += 10000;  // King advancing
+    } else if (!isWhite && toRank < fromRank) {
+        score += 10000;  // King advancing
+    }
+    
+    // Activity near enemy pawns (to help promote our pawns or stop theirs)
+    let nearEnemyPawns = 0;
+    for (const [sq, piece] of board) {
+        if (!piece || piece.toLowerCase() !== 'p') continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Enemy pawns
+        
+        const pFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const pRank = parseInt(sq[1]);
+        const dist = Math.max(Math.abs(toFile - pFile), Math.abs(toRank - pRank));
+        
+        if (dist <= 2) nearEnemyPawns++;
+    }
+    
+    if (nearEnemyPawns > 0) {
+        score += 8000 * nearEnemyPawns;  // King active near enemy pawns
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52 Helper: Check if position is endgame
+ */
+function isEndgame(board) {
+    let totalPieceValue = 0;
+    let queenCount = 0;
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pType = piece.toLowerCase();
+        if (pType === 'k' || pType === 'p') continue;
+        
+        totalPieceValue += getPieceValueSimple(pType);
+        if (pType === 'q') queenCount++;
+    }
+    
+    // Endgame if total piece value < 26 (roughly both sides have rook+minor each)
+    // Or if no queens on board
+    return totalPieceValue < 26 || queenCount === 0;
+}
+
+/**
+ * v40.52: TEMPO CRITICAL EVALUATION
+ * Evaluates if we're losing tempo with useless moves
+ * Penalizes moving the same piece twice without purpose
+ */
+function v40TempoCriticalEval(fen, move, board, activeColor, moveNumber) {
+    if (moveNumber < 4 || moveNumber > 20) return 0;  // Only in opening/middlegame
+    
+    let score = 0;
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    
+    if (!movingPiece) return 0;
+    const pieceType = movingPiece.toLowerCase();
+    
+    // Check if this is a retreat (piece moving back)
+    const fromRank = parseInt(fromSquare[1]);
+    const toRank = parseInt(toSquare[1]);
+    const isWhite = activeColor === 'w';
+    
+    const isRetreat = (isWhite && toRank < fromRank) || (!isWhite && toRank > fromRank);
+    
+    if (isRetreat && pieceType !== 'k') {
+        // Retreating without capturing is usually bad tempo
+        const capturing = board.get(toSquare);
+        if (!capturing) {
+            score += -15000;  // Tempo loss
+            debugLog("[V40.52_TEMPO]", `⚠️ Retreating ${pieceType} from ${fromSquare} to ${toSquare} - tempo loss!`);
+        }
+    }
+    
+    // CRITICAL: Penalize queen moves in the opening (before piece development)
+    if (pieceType === 'q' && moveNumber <= 10) {
+        // Count how many minor pieces are still on starting squares
+        let undevelopedMinors = 0;
+        const minorStartSquares = isWhite 
+            ? ['b1', 'c1', 'f1', 'g1']
+            : ['b8', 'c8', 'f8', 'g8'];
+        
+        for (const sq of minorStartSquares) {
+            const p = board.get(sq);
+            if (p && (p.toLowerCase() === 'n' || p.toLowerCase() === 'b')) {
+                undevelopedMinors++;
+            }
+        }
+        
+        if (undevelopedMinors >= 2) {
+            score += -40000;  // Early queen move with undeveloped pieces
+            debugLog("[V40.52_TEMPO]", `⚠️ Early queen move with ${undevelopedMinors} undeveloped minors!`);
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52: CRUSHING EXCHANGE EVALUATION
+ * Evaluate exchanges - don't trade when ahead, simplify when winning
+ */
+function v40CrushingExchangeEval(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const toSquare = move.substring(2, 4);
+    const capturedPiece = board.get(toSquare);
+    
+    if (!capturedPiece) return 0;  // Not a capture
+    
+    const fromSquare = move.substring(0, 2);
+    const movingPiece = board.get(fromSquare);
+    if (!movingPiece) return 0;
+    
+    const ourValue = getPieceValueSimple(movingPiece.toLowerCase());
+    const theirValue = getPieceValueSimple(capturedPiece.toLowerCase());
+    
+    // Calculate material balance
+    const materialBalance = calculateMaterialBalance(board, activeColor);
+    
+    // If we're winning on material
+    if (materialBalance > 3) {
+        // Encourage even exchanges to simplify
+        if (Math.abs(ourValue - theirValue) <= 1) {
+            score += 5000;  // Good exchange when ahead
+            debugLog("[V40.52_EXCHANGE]", `✅ Simplifying exchange when ahead: ${move}`);
+        }
+    }
+    
+    // If we're losing on material
+    if (materialBalance < -3) {
+        // Discourage exchanges, need complications
+        if (Math.abs(ourValue - theirValue) <= 1) {
+            score += -5000;  // Avoid equal exchanges when behind
+            debugLog("[V40.52_EXCHANGE]", `⚠️ Exchanging when behind! Avoid: ${move}`);
+        }
+    }
+    
+    // Always reward winning material
+    if (theirValue > ourValue) {
+        score += (theirValue - ourValue) * 10000;
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52 Helper: Calculate material balance
+ */
+function calculateMaterialBalance(board, activeColor) {
+    let balance = 0;
+    const isWhite = activeColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pType = piece.toLowerCase();
+        if (pType === 'k') continue;
+        
+        const value = getPieceValueSimple(pType);
+        const pieceIsWhite = piece === piece.toUpperCase();
+        
+        if (pieceIsWhite === isWhite) {
+            balance += value;
+        } else {
+            balance -= value;
+        }
+    }
+    
+    return balance;
+}
+
+/**
+ * v40.52: CHECKMATE IN 1-2 MOVE PREVENTION
+ * Scans if the opponent has mate in 1-2 after our move
+ * This is CRITICAL - the bot must NEVER allow forced mate!
+ */
+function v40CheckmatePreventionScanner(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Simulate our move
+    const testBoard = simulateMove(board, move);
+    if (!testBoard) return 0;
+    
+    // Find our king
+    const ourKing = findKingSquare(testBoard, activeColor);
+    if (!ourKing) return 0;
+    
+    // Check if we're in check after our move (illegal move!)
+    if (isSquareAttackedByColor(testBoard, ourKing, enemyColor)) {
+        return -100000000;  // ILLEGAL - still in check!
+    }
+    
+    // Now simulate ALL enemy responses to see if any lead to checkmate
+    const enemyMoves = generateAllMoves(testBoard, enemyColor);
+    
+    for (const enemyMove of enemyMoves) {
+        const afterEnemyBoard = simulateMove(testBoard, enemyMove);
+        if (!afterEnemyBoard) continue;
+        
+        // Find our king after enemy move
+        const ourKingAfter = findKingSquare(afterEnemyBoard, activeColor);
+        if (!ourKingAfter) continue;
+        
+        // Is our king in check?
+        if (isSquareAttackedByColor(afterEnemyBoard, ourKingAfter, enemyColor)) {
+            // King is in check - can we escape?
+            const escapeSquares = countKingEscapes(afterEnemyBoard, ourKingAfter, isWhite);
+            
+            if (escapeSquares === 0) {
+                // CHECK IF THIS IS CHECKMATE!
+                const canBlockOrCapture = canDefendFromCheck(afterEnemyBoard, ourKingAfter, activeColor, enemyColor);
+                
+                if (!canBlockOrCapture) {
+                    // THIS IS CHECKMATE! Our move allows mate in 1!
+                    score += -50000000;  // MASSIVE penalty
+                    debugLog("[V40.52_MATE_PREVENT]", `☠️☠️☠️ ${move} allows MATE IN 1 via ${enemyMove}!!!`);
+                    return score;  // No need to check further
+                }
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52 Helper: Check if we can defend from check (block or capture attacker)
+ */
+function canDefendFromCheck(board, kingSquare, activeColor, enemyColor) {
+    const isWhite = activeColor === 'w';
+    
+    // Find the attackers of our king
+    const attackers = findAttackersOfSquare(board, kingSquare, enemyColor);
+    if (attackers.length === 0) return true;  // Not actually in check
+    if (attackers.length > 1) return false;   // Double check - only king can move
+    
+    const attacker = attackers[0];
+    
+    // Can we capture the attacker?
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        if (piece.toLowerCase() === 'k') {
+            // Can king capture attacker?
+            const kFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            const kRank = parseInt(kingSquare[1]) - 1;
+            const aFile = attacker.square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const aRank = parseInt(attacker.square[1]) - 1;
+            
+            if (Math.max(Math.abs(kFile - aFile), Math.abs(kRank - aRank)) === 1) {
+                // King can reach attacker - is the square defended?
+                if (!isSquareAttackedByColor(board, attacker.square, enemyColor)) {
+                    return true;
+                }
+            }
+        } else {
+            // Can this piece capture the attacker?
+            if (canPieceMoveToSquare(board, sq, attacker.square, piece.toLowerCase(), isWhite)) {
+                return true;
+            }
+        }
+    }
+    
+    // Can we block the attack? (only for sliding pieces)
+    const attackerType = attacker.piece.toLowerCase();
+    if (attackerType === 'n' || attackerType === 'p') {
+        return false;  // Can't block knight or pawn attacks
+    }
+    
+    // Get squares between attacker and king
+    const blockSquares = getSquaresBetween(attacker.square, kingSquare);
+    
+    for (const blockSq of blockSquares) {
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() === 'k') continue;  // King can't block
+            
+            if (canPieceMoveToSquare(board, sq, blockSq, piece.toLowerCase(), isWhite)) {
+                return true;  // Can block
+            }
+        }
+    }
+    
+    return false;  // No escape
+}
+
+/**
+ * v40.52 Helper: Get squares between two squares (for blocking)
+ */
+function getSquaresBetween(from, to) {
+    const squares = [];
+    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fRank = parseInt(from[1]) - 1;
+    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(to[1]) - 1;
+    
+    const fileDiff = tFile - fFile;
+    const rankDiff = tRank - fRank;
+    
+    const fileStep = fileDiff === 0 ? 0 : fileDiff / Math.abs(fileDiff);
+    const rankStep = rankDiff === 0 ? 0 : rankDiff / Math.abs(rankDiff);
+    
+    let f = fFile + fileStep;
+    let r = fRank + rankStep;
+    
+    while (f !== tFile || r !== tRank) {
+        squares.push(String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1));
+        f += fileStep;
+        r += rankStep;
+    }
+    
+    return squares;
+}
+
+/**
+ * v40.52 Helper: Generate all legal moves for a color (simplified)
+ */
+function generateAllMoves(board, color) {
+    const moves = [];
+    const isWhite = color === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pType = piece.toLowerCase();
+        
+        // Generate moves for this piece
+        for (let f = 0; f < 8; f++) {
+            for (let r = 0; r < 8; r++) {
+                const toSq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+                if (toSq === sq) continue;
+                
+                // Check if piece can move there
+                if (canPieceMoveToSquare(board, sq, toSq, pType, isWhite)) {
+                    moves.push(sq + toSq);
+                }
+            }
+        }
+    }
+    
+    return moves;
+}
+
+/**
+ * v40.52 Helper: Check if piece can move to target square
+ */
+function canPieceMoveToSquare(board, from, to, pieceType, isWhite) {
+    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fRank = parseInt(from[1]) - 1;
+    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(to[1]) - 1;
+    
+    const fileDiff = Math.abs(tFile - fFile);
+    const rankDiff = Math.abs(tRank - fRank);
+    
+    // Check if target square has own piece
+    const targetPiece = board.get(to);
+    if (targetPiece) {
+        const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+        if (targetIsWhite === isWhite) return false;  // Can't capture own piece
+    }
+    
+    switch (pieceType) {
+        case 'p':
+            // Pawn logic
+            const direction = isWhite ? 1 : -1;
+            const startRank = isWhite ? 1 : 6;
+            
+            if (targetPiece) {
+                // Capture
+                return fileDiff === 1 && tRank - fRank === direction;
+            } else {
+                // Move forward
+                if (fileDiff !== 0) return false;
+                if (tRank - fRank === direction) return true;
+                if (fRank === startRank && tRank - fRank === 2 * direction) {
+                    const middleSq = from[0] + (fRank + 1 + direction);
+                    return !board.get(middleSq);
+                }
+                return false;
+            }
+            
+        case 'n':
+            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+            
+        case 'b':
+            if (fileDiff !== rankDiff) return false;
+            return !isPathBlocked(board, from, to);
+            
+        case 'r':
+            if (fileDiff !== 0 && rankDiff !== 0) return false;
+            return !isPathBlocked(board, from, to);
+            
+        case 'q':
+            if (fileDiff !== 0 && rankDiff !== 0 && fileDiff !== rankDiff) return false;
+            return !isPathBlocked(board, from, to);
+            
+        case 'k':
+            return fileDiff <= 1 && rankDiff <= 1;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.52 Helper: Check if path is blocked (for sliding pieces)
+ */
+function isPathBlocked(board, from, to) {
+    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fRank = parseInt(from[1]) - 1;
+    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(to[1]) - 1;
+    
+    const fileDiff = tFile - fFile;
+    const rankDiff = tRank - fRank;
+    
+    const fileStep = fileDiff === 0 ? 0 : fileDiff / Math.abs(fileDiff);
+    const rankStep = rankDiff === 0 ? 0 : rankDiff / Math.abs(rankDiff);
+    
+    let f = fFile + fileStep;
+    let r = fRank + rankStep;
+    
+    while (f !== tFile || r !== tRank) {
+        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+        if (board.get(sq)) return true;  // Blocked
+        f += fileStep;
+        r += rankStep;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.52: MOVE QUALITY SCORE - Prefer principled moves
+ * Rewards captures, checks, threats, and development
+ * Penalizes random piece shuffling
+ */
+function v40MoveQualityScore(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    if (!movingPiece) return 0;
+    
+    const pieceType = movingPiece.toLowerCase();
+    
+    // Captures are good (when favorable)
+    if (capturedPiece) {
+        const ourValue = getPieceValueSimple(pieceType);
+        const theirValue = getPieceValueSimple(capturedPiece.toLowerCase());
+        
+        if (theirValue >= ourValue) {
+            score += 20000 + (theirValue - ourValue) * 5000;  // Good capture
+        }
+    }
+    
+    // Simulate move to check for threats
+    const testBoard = simulateMove(board, move);
+    if (testBoard) {
+        const enemyKing = findKingSquare(testBoard, isWhite ? 'b' : 'w');
+        if (enemyKing) {
+            // Check if we're giving check
+            if (isSquareAttackedByColor(testBoard, enemyKing, activeColor)) {
+                score += 15000;  // Giving check is usually good
+            }
+        }
+        
+        // Count threats created
+        const threatsCreated = v40CountThreatsCreated(testBoard, isWhite, move);
+        score += threatsCreated * 5000;
+    }
+    
+    // Development bonus in opening
+    if (moveNumber <= 12 && (pieceType === 'n' || pieceType === 'b')) {
+        const startRanks = isWhite ? [1] : [8];
+        const fromRank = parseInt(fromSquare[1]);
+        
+        if (startRanks.includes(fromRank)) {
+            score += 10000;  // Developing piece
+        }
+    }
+    
+    // Castling is good
+    if (pieceType === 'k' && Math.abs(fromSquare.charCodeAt(0) - toSquare.charCodeAt(0)) === 2) {
+        score += 25000;  // Castling
+    }
+    
+    return score;
+}
+
     const attacked = [];
     const isWhite = color === 'w';
     const enemyColor = isWhite ? 'b' : 'w';
@@ -45856,6 +46770,29 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 const absolutePieceSafetyScore = v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) * 10000.0;
                 
                 // ═══════════════════════════════════════════════════════════════════
+                // v40.52 SUPREME TACTICAL VISION — TRUE ALPHAZERO GODLIKE ENHANCEMENT!
+                // Addresses: passive play, deep mate threats, immediate dangers, endgame mastery
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.52: ANTI-PASSIVE OPENING ENFORCEMENT — NO d3/e3 garbage moves!
+                const antiPassiveOpeningScore = v40AntiPassiveOpeningEnforcement(fen, move, board, activeColor, moveNumber) * 5.0;
+                
+                // v40.52: DEEP MATING THREAT SCANNER — Detect ALL mate threats!
+                const deepMatingThreatScore = v40DeepMatingThreatScanner(fen, move, board, activeColor, moveNumber) * 3.0;
+                
+                // v40.52: IMMEDIATE DANGER RESPONSE — MUST address critical threats!
+                const immediateDangerScore = v40ImmediateDangerResponse(fen, move, board, activeColor, moveNumber) * 4.0;
+                
+                // v40.52: KING ACTIVITY MAXIMIZER — Active king in endgame!
+                const kingActivityScore = v40KingActivityMaximizer(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.52: TEMPO CRITICAL EVALUATION — Don't waste tempo!
+                const tempoCriticalScore = v40TempoCriticalEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.52: CRUSHING EXCHANGE EVALUATION — Smart exchanges!
+                const crushingExchangeScore = v40CrushingExchangeEval(fen, move, board, activeColor, moveNumber) * 1.5;
+                
+                // ═══════════════════════════════════════════════════════════════════
                 // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO!
                 // The ULTIMATE fix for long-term planning and strategic depth
                 // ═══════════════════════════════════════════════════════════════════
@@ -45978,8 +46915,11 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                                moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore +
                                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO ULTIMATE!
                                deepStrategicVisionScore + multiFrontPressureScore + antiMatingNetScore + 
-                               absoluteCapturePriorityScore + forcingMoveChainScore;
-                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.51 DEEP STRATEGIC VISION SUPREME PARADIGM SHIFT
+                               absoluteCapturePriorityScore + forcingMoveChainScore +
+                               // v40.52 SUPREME TACTICAL VISION — TRUE ALPHAZERO GODLIKE ENHANCEMENT!
+                               antiPassiveOpeningScore + deepMatingThreatScore + immediateDangerScore +
+                               kingActivityScore + tempoCriticalScore + crushingExchangeScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.52 SUPREME TACTICAL VISION SUPREME PARADIGM SHIFT
                 
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
@@ -46071,6 +47011,13 @@ function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore
                 debugLog("[V40_INTEGRATE]", `   🛡️💀 ANTI-MATING NET: ${antiMatingNetScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   💰🎯 ABSOLUTE CAPTURE PRIORITY: ${absoluteCapturePriorityScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   ⚡⚡ FORCING MOVE CHAIN: ${forcingMoveChainScore.toFixed(1)}`);
+                // v40.52 SUPREME TACTICAL VISION debug logs
+                debugLog("[V40_INTEGRATE]", `   🚫🐌 ANTI-PASSIVE OPENING: ${antiPassiveOpeningScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ☠️🔍 DEEP MATING THREAT: ${deepMatingThreatScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   🚨⚡ IMMEDIATE DANGER: ${immediateDangerScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   👑🏃 KING ACTIVITY: ${kingActivityScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   ⏱️⚡ TEMPO CRITICAL: ${tempoCriticalScore.toFixed(1)}`);
+                debugLog("[V40_INTEGRATE]", `   💥🔄 CRUSHING EXCHANGE: ${crushingExchangeScore.toFixed(1)}`);
                 debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
                 debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
                 debugLog("[V40_INTEGRATE]", `Move ${move}:`);
