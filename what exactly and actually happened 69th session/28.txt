@@ -1,0 +1,4 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: Failed to execute tool mcp_view_file: Server error '502 Bad Gateway' for url 'http://envcore.int-worker.emergentagent.com/api/v1/env/proxy/tools/mcp?env_key=b577dba4-5f32-4002-a602-cbc983f9d12b&port=8010'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502

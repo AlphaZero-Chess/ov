@@ -1,0 +1,20 @@
+Let me look at the recent game patterns to understand what's going wrong. The bot is consistently getting mated. Let me check if there's a mate detection/prevention system:
+Action: $ grep -n "mateThreat\|checkThreat\|preventMate\|mateIn" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 342:    checkmateThreatDepth: 40,       // v36: NEW - Look 40 moves for mate threats
+1642:    v40DeepLookAheadCheckmateThreatPenalty: -50000000, // If checkmate possible in 3 plies
+18334:        const mateIn = detectMateInV40_22(afterMove, enemyColor, 3);
+18335:        if (mateIn.found) {
+18337:            debugLog("[V40.22_CHECK]", `☠️☠️☠️ After ${move}, opponent has MATE IN ${mateIn.depth}!`);
+21455:                debugLog("[V40.26_DEEP]", `☠️☠️☠️☠️☠️ ${move} allows sacrifice on ${target.targetSquare} LEADING TO MATE in ${result.mateIn} moves!`);
+21817:        mateIn: 0
+25880:    const mateThreats = v40DetectMateThreats(afterBoard, activeColor, CONFIG.v40MateDetectionDepth || 10);
+25881:    if (mateThreats.length > 0) {
+25883:        score -= mateThreats.length * 10000000000000; // Huge penalty for mate threats
+39567:    const mateThreat = detectImmediateMateThreat(fen, board, activeColor);
+39568:    if (mateThreat.threatened) {
+39574:            details: mateThreat
+44207:                    const mateIn = parseInt(mateMatch[1]);
+44208:                    score = mateIn > 0 ? 10000 : -10000;
+46520:                    const mateIn = parseInt(mateMatch[1]);
+46521:                    score = mateIn > 0 ? (10000 - Math.abs(mateIn)) : (-10000 + Math.abs(mateIn));
+Exit code: 0

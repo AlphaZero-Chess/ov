@@ -1,0 +1,41 @@
+Now let me implement a much stronger fix that generates capture moves ourselves if Stockfish doesn't suggest them:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        // If we MUST recapture, find the best capture move
+        if (mustRecaptureCentralSq) {
+            // Find ALL moves that capture the central pawn
+            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+            
+            if (captureMovesAll.length > 0) {
+                // Use the highest-scored capture move
+                bestMove = captureMovesAll[0].move;
+                debugLog(\"[V40.48_FILTER]\", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+                bestMoveWasRejected = false;
+            } else {
+                debugLog(\"[V40.48_FILTER]\", `⚠️ No capture move found for ${mustRecaptureCentralSq} in alternatives!`);
+            }
+        }" --new-str "        // If we MUST recapture, find the best capture move
+        if (mustRecaptureCentralSq) {
+            // Find ALL moves that capture the central pawn
+            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+            
+            if (captureMovesAll.length > 0) {
+                // Use the highest-scored capture move
+                bestMove = captureMovesAll[0].move;
+                debugLog(\"[V40.49_FILTER]\", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+                bestMoveWasRejected = false;
+            } else {
+                // v40.49: CRITICAL FIX - Generate capture move ourselves if Stockfish didn't suggest it!
+                debugLog(\"[V40.49_FILTER]\", `⚠️ No capture in alternatives! Generating capture move...`);
+                
+                // Find which of our pieces can capture the central pawn
+                const generatedCapture = v40GenerateCaptureMove(filterBoard, mustRecaptureCentralSq, isWhiteToMove ? 'w' : 'b');
+                
+                if (generatedCapture) {
+                    bestMove = generatedCapture;
+                    debugLog(\"[V40.49_FILTER]\", `✅ GENERATED RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+                    bestMoveWasRejected = false;
+                } else {
+                    debugLog(\"[V40.49_FILTER]\", `❌ Could not generate capture move for ${mustRecaptureCentralSq}!`);
+                }
+            }
+        }"
+Observation: Edit was successful.

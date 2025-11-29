@@ -1,0 +1,6 @@
+
+Action: $ grep -n "function.*AlphaZero.*Move\|function.*selectMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 3407:function v40TrueAlphaZeroMCTS(fen, legalMoves) {
+45570:function getAlphaZeroBookMove(fen, activeColor) {
+45723:function applyAlphaZeroLogic(bestMove, alternatives) {
+Exit code: 0

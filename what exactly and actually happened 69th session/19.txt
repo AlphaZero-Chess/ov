@@ -1,0 +1,94 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+47230|function calculateMove() {
+47231|    // Safety checks
+47232|    if (!chessEngine) {
+47233|        debugLog("[ENGINE]", "❌ Engine not initialized");
+47234|        return;
+47235|    }
+47236|    
+47237|    if (!currentFen) {
+47238|        debugLog("[ENGINE]", "❌ No FEN position");
+47239|        return;
+47240|    }
+47241|    
+47242|    if (calculationLock) {
+47243|        debugLog("[ENGINE]", "❌ Already calculating");
+47244|        return;
+47245|    }
+47246|    
+47247|    if (!webSocketWrapper || webSocketWrapper.readyState !== 1) {
+47248|        debugLog("[ENGINE]", "❌ WebSocket not ready");
+47249|        return;
+47250|    }
+47251|    
+47252|    // Check for excessive rejections - reset and add randomness
+47253|    if (rejectionCount > 5) {
+47254|        debugLog("[ENGINE]", `⚠️ Too many rejections (${rejectionCount}) - forcing full reset`);
+47255|        lastRejectedMove = null;
+47256|        rejectionCount = 0;
+47257|        // Add small delay to break any timing-related issues
+47258|        setTimeout(() => calculateMove(), Math.random() * 500 + 200);
+47259|        return;
+47260|    }
+47261|    
+47262|    // Extract active color from FEN to know which side to play
+47263|    const fenActiveColor = getActiveColorFromFen(currentFen);
+47264|    if (!fenActiveColor) {
+47265|        debugLog("[ENGINE]", "❌ Cannot extract active color from FEN");
+47266|        return;
+47267|    }
+47268|    
+47269|    const isWhite = (fenActiveColor === 'w');
+47270|    const colorName = isWhite ? 'White' : 'Black';
+47271|    
+47272|    // ═══════════════════════════════════════════════════════════════════
+47273|    // v31.0.0 CRITICAL: PRE-CALCULATION SAFETY SCAN - ZERO BLUNDERS
+47274|    // This MUST run before ANY engine calculation to detect immediate threats
+47275|    // Fixes: Nxc3→Nxd1 blunder where bot played Bd3 ignoring Queen attack
+47276|    // ═══════════════════════════════════════════════════════════════════
+47277|    
+47278|    debugLog("[ENGINE]", "═══════════════════════════════════════════════════════════════");
+47279|    debugLog("[ENGINE]", "🔍 v31.0.0 PRE-CALCULATION CRITICAL SAFETY SCAN STARTING");
+47280|    debugLog("[ENGINE]", "═══════════════════════════════════════════════════════════════");
+47281|    
+47282|    const preSafetyResult = preMoveCalculationSafetyScan(currentFen);
+47283|    
+47284|    // If there's a CRITICAL threat (Queen under attack), force defensive mode
+47285|    if (preSafetyResult.hasCriticalThreat && preSafetyResult.threatLevel >= 3) {
+47286|        debugLog("[ENGINE]", "🚨🚨🚨 EMERGENCY MODE ACTIVATED - QUEEN UNDER DIRECT ATTACK!");
+47287|        debugLog("[ENGINE]", `   Threat: ${preSafetyResult.details}`);
+47288|        debugLog("[ENGINE]", `   Forced defense moves: ${preSafetyResult.forcedDefenseMoves.join(', ')}`);
+47289|        
+47290|        // If we have forced defense moves, try the best one
+47291|        if (preSafetyResult.forcedDefenseMoves.length > 0) {
+47292|            const emergencyMove = preSafetyResult.forcedDefenseMoves[0];
+47293|            
+47294|            // Validate the emergency move format
+47295|            if (emergencyMove && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(emergencyMove)) {
+47296|                debugLog("[ENGINE]", `🛡️ EMERGENCY: Playing forced defensive move: ${emergencyMove}`);
+47297|                
+47298|                // Still use the engine to verify, but prioritize defense
+47299|                // We'll mark this as emergency so the engine handler knows
+47300|                window.__EMERGENCY_DEFENSE_MODE = true;
+47301|                window.__EMERGENCY_DEFENSE_MOVES = preSafetyResult.forcedDefenseMoves;
+47302|                window.__EMERGENCY_THREAT = preSafetyResult;
+47303|            }
+47304|        }
+47305|    } else if (preSafetyResult.hasCriticalThreat && preSafetyResult.threatLevel >= 2) {
+47306|        debugLog("[ENGINE]", "⚠️ DEFENSIVE MODE - Critical threat detected");
+47307|        window.__DEFENSIVE_MODE = true;
+47308|        window.__DEFENSIVE_THREAT = preSafetyResult;
+47309|    } else {
+47310|        // Clear any previous emergency state
+47311|        window.__EMERGENCY_DEFENSE_MODE = false;
+47312|        window.__DEFENSIVE_MODE = false;
+47313|    }
+47314|    
+47315|    // ═══════════════════════════════════════════════════════════════════
+47316|    // END v31.0.0 PRE-CALCULATION SAFETY SCAN
+47317|    // ═══════════════════════════════════════════════════════════════════
+47318|    
+47319|    // Set calculation lock and track color
+47320|    calculationLock = true;

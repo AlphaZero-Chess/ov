@@ -1,0 +1,6 @@
+
+Action: $ grep -n "v40MustRecaptureModeEnabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 2602:    v40MustRecaptureModeEnabled: true,
+29075:                if (moveNumber <= 10 && CONFIG.v40MustRecaptureModeEnabled) {
+45737:            if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+Exit code: 0

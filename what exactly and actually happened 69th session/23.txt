@@ -1,0 +1,5 @@
+
+Action: $ grep -n "applyAlphaZeroLogic" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 45723:function applyAlphaZeroLogic(bestMove, alternatives) {
+47980:                const alphaMove = applyAlphaZeroLogic(bestMove, multiPVLines);
+Exit code: 0

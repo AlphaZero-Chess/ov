@@ -1,0 +1,134 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+47320|    calculationLock = true;
+47321|    calculationStartTime = Date.now();
+47322|    currentCalculatingColor = fenActiveColor;
+47323|    debugLog("[LOCK]", `🔒 Calculation lock SET for ${colorName}`);
+47324|    
+47325|    // Clear position ready flag for this color (we're now calculating)
+47326|    if (isWhite) {
+47327|        whitePositionReady = false;
+47328|    } else {
+47329|        blackPositionReady = false;
+47330|    }
+47331|    
+47332|    debugLog("[ENGINE]", "🎯 Starting calculation...");
+47333|    debugLog("[ENGINE]", `  Color: ${colorName}`);
+47334|    debugLog("[ENGINE]", `  FEN: ${currentFen}`);
+47335|    
+47336|    // Opening book first - BUT SKIP IF IN EMERGENCY MODE
+47337|    const fenKey = currentFen.split(' ').slice(0, 4).join(' ');
+47338|    const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
+47339|    
+47340|    // v31.0.0: Never use book moves when there's a critical threat!
+47341|    if (bookMove && gamePhase === "opening" && !window.__EMERGENCY_DEFENSE_MODE && !preSafetyResult.hasCriticalThreat) {
+47342|        const thinkTime = Math.random() * 900 + 500;
+47343|        
+47344|        debugLog("[ENGINE]", `📖 Book move: ${bookMove} (${(thinkTime/1000).toFixed(1)}s)`);
+47345|        
+47346|        setTimeout(() => {
+47347|            bestMove = bookMove;
+47348|            calculationLock = false;
+47349|            calculationStartTime = 0;
+47350|            currentCalculatingColor = null;
+47351|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+47352|            sendMove(bookMove);
+47353|        }, thinkTime);
+47354|        
+47355|        return;
+47356|    }
+47357|    
+47358|    // v31.0.0: If book move would be used but there's a threat, skip book and use engine
+47359|    if (bookMove && preSafetyResult.hasCriticalThreat) {
+47360|        debugLog("[ENGINE]", `⚠️ SKIPPING book move ${bookMove} due to critical threat - using engine`);
+47361|    }
+47362|    
+47363|    // Engine calculation
+47364|    const isStrategic = isStrategicPosition(currentFen);
+47365|    const depth = getStrategicDepth(gamePhase, isStrategic, timeRemaining);
+47366|    const thinkTime = getAlphaZeroThinkTime(gamePhase, isStrategic, timeRemaining);
+47367|    
+47368|    debugLog("[ENGINE]", `🧠 Depth ${depth}, Time ${(thinkTime/1000).toFixed(1)}s, Strategic: ${isStrategic}`);
+47369|    
+47370|    multiPVLines = [];
+47371|    
+47372|    // Send position to engine with explicit logging
+47373|    const fenCommand = "position fen " + currentFen;
+47374|    debugLog("[ENGINE]", `📤 Sending to Stockfish: ${fenCommand}`);
+47375|    chessEngine.postMessage(fenCommand);
+47376|    
+47377|    // Calculate intelligent movetime
+47378|    let intelligentMoveTime = Math.floor(thinkTime);
+47379|    
+47380|    if (timeRemaining < 10000) intelligentMoveTime = Math.min(intelligentMoveTime, 4000);
+47381|    else if (timeRemaining < 20000) intelligentMoveTime = Math.min(intelligentMoveTime, 6000);
+47382|    else if (timeRemaining < 35000) intelligentMoveTime = Math.min(intelligentMoveTime, 8000);
+47383|    else intelligentMoveTime = Math.min(intelligentMoveTime, 10000);
+47384|    
+47385|    if (isStrategic && timeRemaining > 25000) {
+47386|        intelligentMoveTime = Math.min(intelligentMoveTime * 1.2, 12000);
+47387|    }
+47388|    
+47389|    chessEngine.postMessage(`go depth ${depth} movetime ${intelligentMoveTime}`);
+47390|    debugLog("[ENGINE]", `⏱️ Command: go depth ${depth} movetime ${intelligentMoveTime}`);
+47391|    
+47392|    // Safety timeout
+47393|    const safetyTimeout = intelligentMoveTime + 2000;
+47394|    
+47395|    if (calculationTimeout) {
+47396|        clearTimeout(calculationTimeout);
+47397|    }
+47398|    
+47399|    calculationTimeout = setTimeout(() => {
+47400|        if (calculationLock) {
+47401|            debugLog("[ENGINE]", "⚠️ Safety timeout reached, forcing stop");
+47402|            chessEngine.postMessage("stop");
+47403|            
+47404|            if (multiPVLines.length > 0) {
+47405|                debugLog("[ENGINE]", "🔄 Using best available move from partial calculation");
+47406|                const emergencyMove = multiPVLines[0].move;
+47407|                calculationLock = false;
+47408|                calculationStartTime = 0;
+47409|                currentCalculatingColor = null;
+47410|                debugLog("[LOCK]", "🔓 Calculation lock RELEASED (timeout)");
+47411|                sendMove(emergencyMove);
+47412|            } else {
+47413|                debugLog("[ENGINE]", "❌ No moves available from engine");
+47414|                calculationLock = false;
+47415|                calculationStartTime = 0;
+47416|                currentCalculatingColor = null;
+47417|                debugLog("[LOCK]", "🔓 Calculation lock RELEASED (no moves)");
+47418|            }
+47419|        }
+47420|    }, safetyTimeout);
+47421|}
+47422|
+47423|/**
+47424| * Validate if a move makes sense for the current position
+47425| */
+47426|/**
+47427| * NEW v7.0.0: Enhanced move validation with position improvement checks
+47428| * Validates not just legality but also strategic soundness
+47429| */
+47430|function validateMoveForPosition(move, fen, moveScore, bestScore) {
+47431|    // Extract the 'from' square
+47432|    const fromSquare = move.substring(0, 2);
+47433|    const fromFile = fromSquare.charCodeAt(0) - 'a'.charCodeAt(0); // 0-7
+47434|    const fromRank = parseInt(fromSquare[1]) - 1; // 0-7
+47435|    
+47436|    // Parse FEN to get board state
+47437|    const fenParts = fen.split(' ');
+47438|    const boardPart = fenParts[0];
+47439|    const activeColor = fenParts[1]; // 'w' or 'b'
+47440|    
+47441|    // Convert FEN board to 2D array
+47442|    const rows = boardPart.split('/').reverse(); // FEN is from rank 8 to 1, reverse it
+47443|    
+47444|    if (fromRank < 0 || fromRank >= rows.length) {
+47445|        debugLog("[VALIDATE]", `❌ Invalid rank: ${fromRank}`);
+47446|        return false;
+47447|    }
+47448|    
+47449|    let currentFile = 0;
+47450|    let pieceAtFrom = null;

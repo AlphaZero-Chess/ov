@@ -1,0 +1,8 @@
+Now let me analyze the test games more deeply to identify other issues. Looking at the games, the bot is getting mated very quickly. Let me check the checkmate detection and king safety:
+Action: $ grep -n "detectCheckmate\|isKingInCheck\|kingIsSafe\|detectMateThreats" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 22619:        if (isKingInCheck(afterBoard, isWhite ? 'b' : 'w')) {
+22655:        if (isKingInCheck(afterBoard, isWhite ? 'b' : 'w')) {
+22727:    if (isKingInCheck(boardAfter, isWhite ? 'b' : 'w')) {
+22821:    if (isKingInCheck(boardAfter, isWhite ? 'b' : 'w')) {
+22852:        if (isKingInCheck(board, isWhite ? 'b' : 'w')) {
+Exit code: 0

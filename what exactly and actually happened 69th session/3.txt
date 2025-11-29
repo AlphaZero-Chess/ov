@@ -1,0 +1,29 @@
+Good, the config is enabled. Now let me check if the issue is that Stockfish doesn't include the capture move in alternatives. Let me enhance the code to generate legal capture moves ourselves:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45925|        
+45926|        // If we MUST recapture, find the best capture move
+45927|        if (mustRecaptureCentralSq) {
+45928|            // Find ALL moves that capture the central pawn
+45929|            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+45930|            
+45931|            if (captureMovesAll.length > 0) {
+45932|                // Use the highest-scored capture move
+45933|                bestMove = captureMovesAll[0].move;
+45934|                debugLog("[V40.48_FILTER]", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+45935|                bestMoveWasRejected = false;
+45936|            } else {
+45937|                debugLog("[V40.48_FILTER]", `⚠️ No capture move found for ${mustRecaptureCentralSq} in alternatives!`);
+45938|            }
+45939|        }
+45940|        
+45941|        // v40.47 fallback: If bestMove was rejected and no alternative found
+45942|        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+45943|            debugLog("[V40.48_FILTER]", `🚨 ALL moves filtered! Using original best move as fallback.`);
+45944|            // Keep the original bestMove as last resort
+45945|        }
+45946|        
+45947|        alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;
+45948|        
+45949|        debugLog("[V40.47_FILTER]", `═══════════════════════════════════════════════════════`);
+45950|    }

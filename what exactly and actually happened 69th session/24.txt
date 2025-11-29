@@ -1,0 +1,49 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+47975|            }
+47976|            
+47977|            // Apply AlphaZero logic (only if not already overridden by safety check)
+47978|            if (finalMove === bestMove && multiPVLines.length > 1 && !queenThreat.underAttack && holisticEval.kingSafety >= 3) {
+47979|                debugLog("[ENGINE]", `🔍 MultiPV: ${multiPVLines.map(l => `${l.move}(${l.score})`).join(', ')}`);
+47980|                const alphaMove = applyAlphaZeroLogic(bestMove, multiPVLines);
+47981|                
+47982|                // v21.0.0: Validate AlphaZero move with SUPREME safety
+47983|                const alphaCheck = supremeSafetyValidation(alphaMove, multiPVLines, currentFen);
+47984|                if (alphaCheck.safe && !isCatastrophicBlunder(alphaMove, multiPVLines)) {
+47985|                    finalMove = alphaMove;
+47986|                } else {
+47987|                    debugLog("[SUPREME]", `🛡️ AlphaZero move ${alphaMove} failed safety, keeping ${finalMove}`);
+47988|                }
+47989|                
+47990|                // Validate selected move
+47991|                if (!finalMove || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(finalMove)) {
+47992|                    debugLog("[ENGINE]", "❌ Invalid move from logic, using bestMove");
+47993|                    finalMove = bestMove;
+47994|                }
+47995|            }
+47996|            
+47997|            // v21.0.0: FINAL SUPREME CHECK before sending
+47998|            const finalCheck = supremeSafetyValidation(finalMove, multiPVLines, currentFen);
+47999|            if (!finalCheck.safe && finalCheck.suggestedMove) {
+48000|                debugLog("[SUPREME]", `🛡️ FINAL CHECK failed for ${finalMove}, using ${finalCheck.suggestedMove}`);
+48001|                finalMove = finalCheck.suggestedMove;
+48002|            }
+48003|            
+48004|            // v23.0.0: PERFECT ENDGAME CONVERSION
+48005|            if (gamePhase === 'endgame' && multiPVLines.length > 0 && multiPVLines[0].score > 150) {
+48006|                const endgameMove = ensurePerfectEndgameConversion(currentFen, multiPVLines, multiPVLines[0].score);
+48007|                if (endgameMove && endgameMove !== finalMove) {
+48008|                    debugLog("[ENDGAME]", `👑 Endgame conversion: ${finalMove} → ${endgameMove}`);
+48009|                    finalMove = endgameMove;
+48010|                }
+48011|            }
+48012|            
+48013|            // v23.0.0: CHECK BLACKLIST ONE FINAL TIME
+48014|            if (isBlacklistedMove(finalMove, moveCount)) {
+48015|                debugLog("[BLACKLIST]", `🚫 FINAL CHECK: ${finalMove} is blacklisted!`);
+48016|                // Find first non-blacklisted move
+48017|                for (const line of multiPVLines) {
+48018|                    if (!isBlacklistedMove(line.move, moveCount)) {
+48019|                        finalMove = line.move;
+48020|                        debugLog("[BLACKLIST]", `   Using alternative: ${finalMove}`);

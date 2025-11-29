@@ -1,0 +1,66 @@
+There is mate detection. Let me check the `v40DetectMateThreats` function:
+Action: $ grep -n "function v40DetectMateThreats\|function detectImmediateMateThreat" "/app/Lichess Bot-AlphaZero-Pure.user.js" -A 30 | head -70
+Observation: 26030:function v40DetectMateThreats(board, color, depth) {
+26031-    const threats = [];
+26032-    const isWhite = color === 'w';
+26033-    const enemyColor = isWhite ? 'b' : 'w';
+26034-    
+26035-    // Simple mate threat detection: look for enemy pieces converging on king
+26036-    let kingSquare = null;
+26037-    for (const [square, piece] of board) {
+26038-        if (!piece) continue;
+26039-        const pieceType = piece.toLowerCase();
+26040-        const pieceIsWhite = piece === piece.toUpperCase();
+26041-        if (pieceType === 'k' && pieceIsWhite === isWhite) {
+26042-            kingSquare = square;
+26043-            break;
+26044-        }
+26045-    }
+26046-    
+26047-    if (!kingSquare) return threats;
+26048-    
+26049-    // Count attackers near king
+26050-    let attackersNearKing = 0;
+26051-    const kingFile = kingSquare[0].charCodeAt(0) - 97;
+26052-    const kingRank = parseInt(kingSquare[1]) - 1;
+26053-    
+26054-    for (const [square, piece] of board) {
+26055-        if (!piece) continue;
+26056-        const pieceIsWhite = piece === piece.toUpperCase();
+26057-        if (pieceIsWhite === isWhite) continue;
+26058-        
+26059-        const file = square[0].charCodeAt(0) - 97;
+26060-        const rank = parseInt(square[1]) - 1;
+--
+39676:function detectImmediateMateThreat(fen, board, activeColor) {
+39677-    try {
+39678-        const enemyColor = activeColor === 'w' ? 'b' : 'w';
+39679-        const ourKing = findKingPosition(board, activeColor);
+39680-        
+39681-        if (!ourKing) return { threatened: false };
+39682-        
+39683-        const kingFile = ourKing.charCodeAt(0) - 'a'.charCodeAt(0);
+39684-        const kingRank = parseInt(ourKing[1]);
+39685-        
+39686-        // Find enemy Queen
+39687-        let enemyQueenSquare = null;
+39688-        for (const [square, piece] of board.entries()) {
+39689-            const isEnemy = (activeColor === 'w') ? 
+39690-                piece === piece.toLowerCase() : 
+39691-                piece === piece.toUpperCase();
+39692-            if (isEnemy && piece.toLowerCase() === 'q') {
+39693-                enemyQueenSquare = square;
+39694-                break;
+39695-            }
+39696-        }
+39697-        
+39698-        if (!enemyQueenSquare) return { threatened: false };
+39699-        
+39700-        // Check common mating squares based on king position
+39701-        const mateSquares = [];
+39702-        
+39703-        // If king is on g1/g8 (castled kingside), h2/h7/h1/h8 are dangerous
+39704-        if (ourKing === 'g1' || ourKing === 'h1') {
+39705-            mateSquares.push('h2', 'h1', 'g2');
+39706-        }
+Exit code: 0

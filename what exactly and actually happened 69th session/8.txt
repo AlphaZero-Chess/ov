@@ -1,0 +1,62 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    
+    return false;
+}
+
+/**
+ * v40.44 Helper: Check if piece can legally move from -> to
+ */
+function canPieceMove(board, from, to, pieceType, isWhite) {
+    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);" --new-str "    
+    return false;
+}
+
+/**
+ * v40.49 CRITICAL: Generate a capture move for a target square
+ * This is used when Stockfish doesn't suggest the capture move but we MUST capture!
+ * Returns the best capture move in UCI format (e.g., \"f3d4\")
+ */
+function v40GenerateCaptureMove(board, targetSquare, activeColor) {
+    const isWhite = activeColor === 'w';
+    const captureMoves = [];
+    
+    // Priority order: Q > R > B > N > P (lower value pieces preferred for captures)
+    // Actually for equal exchanges, we want to capture with LOWEST value piece
+    const piecePriority = { 'p': 1, 'n': 2, 'b': 3, 'r': 4, 'q': 5, 'k': 6 };
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        
+        // Check if this piece can capture the target
+        if (canPieceMove(board, square, targetSquare, pieceType, pieceIsWhite)) {
+            captureMoves.push({
+                from: square,
+                to: targetSquare,
+                move: square + targetSquare,
+                pieceType: pieceType,
+                priority: piecePriority[pieceType] || 10
+            });
+        }
+    }
+    
+    if (captureMoves.length === 0) {
+        return null;
+    }
+    
+    // Sort by priority (prefer capturing with lower-value pieces)
+    captureMoves.sort((a, b) => a.priority - b.priority);
+    
+    // Return the best capture move (lowest value piece)
+    return captureMoves[0].move;
+}
+
+/**
+ * v40.44 Helper: Check if piece can legally move from -> to
+ */
+function canPieceMove(board, from, to, pieceType, isWhite) {
+    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);"
+Observation: Edit was successful.

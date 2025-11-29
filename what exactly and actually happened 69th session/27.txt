@@ -1,0 +1,6 @@
+I see the issue! The filter at line 45730 only runs when `moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)`. Let me check what `moveCount` is set to:
+Action: $ grep -n "^let moveCount\|^var moveCount\|moveCount = " "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 40019:        const moveCount = pieceMovementHistory[pieceKey];
+41328:let moveCount = 0;
+47028:    moveCount = Math.floor((currentWsV + 1) / 2);
+Exit code: 0

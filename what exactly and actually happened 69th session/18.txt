@@ -1,0 +1,10 @@
+The rules look correct. The issue might be that the filter is not being applied in all code paths. Let me check where `selectAlphaZeroMove` is called and if the filter is actually being executed:
+Action: $ grep -n "selectAlphaZeroMove\|calculateMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 41537:    // Immediately call calculateMove
+41538:    setTimeout(() => calculateMove(), 100);
+46886:    debugLog("[SCHEDULE]", `✅ All checks passed for ${colorName}, proceeding to calculateMove()`);
+46891:    calculateMove();
+47230:function calculateMove() {
+47258:        setTimeout(() => calculateMove(), Math.random() * 500 + 200);
+47541:                calculateMove();
+Exit code: 0
