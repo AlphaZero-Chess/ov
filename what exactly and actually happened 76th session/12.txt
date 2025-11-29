@@ -1,0 +1,4 @@
+Now let me also remove the duplicate `findAttackedPiecesV40_9` function that was after the orphaned code:
+Action: $ grep -n "function findAttackedPiecesV40_9" "/app/Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 30963:function findAttackedPiecesV40_9(board, color) {
+Exit code: 0

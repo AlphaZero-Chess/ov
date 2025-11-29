@@ -1,0 +1,74 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30750|function getSquaresBetween(from, to) {
+30751|    const squares = [];
+30752|    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+30753|    const fRank = parseInt(from[1]) - 1;
+30754|    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+30755|    const tRank = parseInt(to[1]) - 1;
+30756|    
+30757|    const fileDiff = tFile - fFile;
+30758|    const rankDiff = tRank - fRank;
+30759|    
+30760|    const fileStep = fileDiff === 0 ? 0 : fileDiff / Math.abs(fileDiff);
+30761|    const rankStep = rankDiff === 0 ? 0 : rankDiff / Math.abs(rankDiff);
+30762|    
+30763|    let f = fFile + fileStep;
+30764|    let r = fRank + rankStep;
+30765|    
+30766|    while (f !== tFile || r !== tRank) {
+30767|        squares.push(String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1));
+30768|        f += fileStep;
+30769|        r += rankStep;
+30770|    }
+30771|    
+30772|    return squares;
+30773|}
+30774|
+30775|/**
+30776| * v40.52 Helper: Generate all legal moves for a color (simplified)
+30777| */
+30778|function generateAllMoves(board, color) {
+30779|    const moves = [];
+30780|    const isWhite = color === 'w';
+30781|    
+30782|    for (const [sq, piece] of board) {
+30783|        if (!piece) continue;
+30784|        const pieceIsWhite = piece === piece.toUpperCase();
+30785|        if (pieceIsWhite !== isWhite) continue;
+30786|        
+30787|        const pType = piece.toLowerCase();
+30788|        
+30789|        // Generate moves for this piece
+30790|        for (let f = 0; f < 8; f++) {
+30791|            for (let r = 0; r < 8; r++) {
+30792|                const toSq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+30793|                if (toSq === sq) continue;
+30794|                
+30795|                // Check if piece can move there
+30796|                if (canPieceMoveToSquare(board, sq, toSq, pType, isWhite)) {
+30797|                    moves.push(sq + toSq);
+30798|                }
+30799|            }
+30800|        }
+30801|    }
+30802|    
+30803|    return moves;
+30804|}
+30805|
+30806|/**
+30807| * v40.52 Helper: Check if piece can move to target square
+30808| */
+30809|function canPieceMoveToSquare(board, from, to, pieceType, isWhite) {
+30810|    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+30811|    const fRank = parseInt(from[1]) - 1;
+30812|    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+30813|    const tRank = parseInt(to[1]) - 1;
+30814|    
+30815|    const fileDiff = Math.abs(tFile - fFile);
+30816|    const rankDiff = Math.abs(tRank - fRank);
+30817|    
+30818|    // Check if target square has own piece
+30819|    const targetPiece = board.get(to);
+30820|    if (targetPiece) {

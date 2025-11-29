@@ -1,0 +1,74 @@
+The error is not at line 30996 itself - the issue is likely a syntax error earlier in the file that causes this error to appear here. Let me check the v40.52 functions that were added:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30550|    
+30551|    return score;
+30552|}
+30553|
+30554|/**
+30555| * v40.52: CRUSHING EXCHANGE EVALUATION
+30556| * Evaluate exchanges - don't trade when ahead, simplify when winning
+30557| */
+30558|function v40CrushingExchangeEval(fen, move, board, activeColor, moveNumber) {
+30559|    let score = 0;
+30560|    const toSquare = move.substring(2, 4);
+30561|    const capturedPiece = board.get(toSquare);
+30562|    
+30563|    if (!capturedPiece) return 0;  // Not a capture
+30564|    
+30565|    const fromSquare = move.substring(0, 2);
+30566|    const movingPiece = board.get(fromSquare);
+30567|    if (!movingPiece) return 0;
+30568|    
+30569|    const ourValue = getPieceValueSimple(movingPiece.toLowerCase());
+30570|    const theirValue = getPieceValueSimple(capturedPiece.toLowerCase());
+30571|    
+30572|    // Calculate material balance
+30573|    const materialBalance = calculateMaterialBalance(board, activeColor);
+30574|    
+30575|    // If we're winning on material
+30576|    if (materialBalance > 3) {
+30577|        // Encourage even exchanges to simplify
+30578|        if (Math.abs(ourValue - theirValue) <= 1) {
+30579|            score += 5000;  // Good exchange when ahead
+30580|            debugLog("[V40.52_EXCHANGE]", `✅ Simplifying exchange when ahead: ${move}`);
+30581|        }
+30582|    }
+30583|    
+30584|    // If we're losing on material
+30585|    if (materialBalance < -3) {
+30586|        // Discourage exchanges, need complications
+30587|        if (Math.abs(ourValue - theirValue) <= 1) {
+30588|            score += -5000;  // Avoid equal exchanges when behind
+30589|            debugLog("[V40.52_EXCHANGE]", `⚠️ Exchanging when behind! Avoid: ${move}`);
+30590|        }
+30591|    }
+30592|    
+30593|    // Always reward winning material
+30594|    if (theirValue > ourValue) {
+30595|        score += (theirValue - ourValue) * 10000;
+30596|    }
+30597|    
+30598|    return score;
+30599|}
+30600|
+30601|/**
+30602| * v40.52 Helper: Calculate material balance
+30603| */
+30604|function calculateMaterialBalance(board, activeColor) {
+30605|    let balance = 0;
+30606|    const isWhite = activeColor === 'w';
+30607|    
+30608|    for (const [sq, piece] of board) {
+30609|        if (!piece) continue;
+30610|        const pType = piece.toLowerCase();
+30611|        if (pType === 'k') continue;
+30612|        
+30613|        const value = getPieceValueSimple(pType);
+30614|        const pieceIsWhite = piece === piece.toUpperCase();
+30615|        
+30616|        if (pieceIsWhite === isWhite) {
+30617|            balance += value;
+30618|        } else {
+30619|            balance -= value;
+30620|        }

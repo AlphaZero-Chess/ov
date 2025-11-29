@@ -1,0 +1,74 @@
+Let me continue viewing to find the syntax error:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30680|}
+30681|
+30682|/**
+30683| * v40.52 Helper: Check if we can defend from check (block or capture attacker)
+30684| */
+30685|function canDefendFromCheck(board, kingSquare, activeColor, enemyColor) {
+30686|    const isWhite = activeColor === 'w';
+30687|    
+30688|    // Find the attackers of our king
+30689|    const attackers = findAttackersOfSquare(board, kingSquare, enemyColor);
+30690|    if (attackers.length === 0) return true;  // Not actually in check
+30691|    if (attackers.length > 1) return false;   // Double check - only king can move
+30692|    
+30693|    const attacker = attackers[0];
+30694|    
+30695|    // Can we capture the attacker?
+30696|    for (const [sq, piece] of board) {
+30697|        if (!piece) continue;
+30698|        const pieceIsWhite = piece === piece.toUpperCase();
+30699|        if (pieceIsWhite !== isWhite) continue;
+30700|        
+30701|        if (piece.toLowerCase() === 'k') {
+30702|            // Can king capture attacker?
+30703|            const kFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+30704|            const kRank = parseInt(kingSquare[1]) - 1;
+30705|            const aFile = attacker.square.charCodeAt(0) - 'a'.charCodeAt(0);
+30706|            const aRank = parseInt(attacker.square[1]) - 1;
+30707|            
+30708|            if (Math.max(Math.abs(kFile - aFile), Math.abs(kRank - aRank)) === 1) {
+30709|                // King can reach attacker - is the square defended?
+30710|                if (!isSquareAttackedByColor(board, attacker.square, enemyColor)) {
+30711|                    return true;
+30712|                }
+30713|            }
+30714|        } else {
+30715|            // Can this piece capture the attacker?
+30716|            if (canPieceMoveToSquare(board, sq, attacker.square, piece.toLowerCase(), isWhite)) {
+30717|                return true;
+30718|            }
+30719|        }
+30720|    }
+30721|    
+30722|    // Can we block the attack? (only for sliding pieces)
+30723|    const attackerType = attacker.piece.toLowerCase();
+30724|    if (attackerType === 'n' || attackerType === 'p') {
+30725|        return false;  // Can't block knight or pawn attacks
+30726|    }
+30727|    
+30728|    // Get squares between attacker and king
+30729|    const blockSquares = getSquaresBetween(attacker.square, kingSquare);
+30730|    
+30731|    for (const blockSq of blockSquares) {
+30732|        for (const [sq, piece] of board) {
+30733|            if (!piece) continue;
+30734|            const pieceIsWhite = piece === piece.toUpperCase();
+30735|            if (pieceIsWhite !== isWhite) continue;
+30736|            if (piece.toLowerCase() === 'k') continue;  // King can't block
+30737|            
+30738|            if (canPieceMoveToSquare(board, sq, blockSq, piece.toLowerCase(), isWhite)) {
+30739|                return true;  // Can block
+30740|            }
+30741|        }
+30742|    }
+30743|    
+30744|    return false;  // No escape
+30745|}
+30746|
+30747|/**
+30748| * v40.52 Helper: Get squares between two squares (for blocking)
+30749| */
+30750|function getSquaresBetween(from, to) {

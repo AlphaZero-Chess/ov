@@ -1,0 +1,100 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30900|function v40MoveQualityScore(fen, move, board, activeColor, moveNumber) {
+30901|    let score = 0;
+30902|    const isWhite = activeColor === 'w';
+30903|    const fromSquare = move.substring(0, 2);
+30904|    const toSquare = move.substring(2, 4);
+30905|    const movingPiece = board.get(fromSquare);
+30906|    const capturedPiece = board.get(toSquare);
+30907|    
+30908|    if (!movingPiece) return 0;
+30909|    
+30910|    const pieceType = movingPiece.toLowerCase();
+30911|    
+30912|    // Captures are good (when favorable)
+30913|    if (capturedPiece) {
+30914|        const ourValue = getPieceValueSimple(pieceType);
+30915|        const theirValue = getPieceValueSimple(capturedPiece.toLowerCase());
+30916|        
+30917|        if (theirValue >= ourValue) {
+30918|            score += 20000 + (theirValue - ourValue) * 5000;  // Good capture
+30919|        }
+30920|    }
+30921|    
+30922|    // Simulate move to check for threats
+30923|    const testBoard = simulateMove(board, move);
+30924|    if (testBoard) {
+30925|        const enemyKing = findKingSquare(testBoard, isWhite ? 'b' : 'w');
+30926|        if (enemyKing) {
+30927|            // Check if we're giving check
+30928|            if (isSquareAttackedByColor(testBoard, enemyKing, activeColor)) {
+30929|                score += 15000;  // Giving check is usually good
+30930|            }
+30931|        }
+30932|        
+30933|        // Count threats created
+30934|        const threatsCreated = v40CountThreatsCreated(testBoard, isWhite, move);
+30935|        score += threatsCreated * 5000;
+30936|    }
+30937|    
+30938|    // Development bonus in opening
+30939|    if (moveNumber <= 12 && (pieceType === 'n' || pieceType === 'b')) {
+30940|        const startRanks = isWhite ? [1] : [8];
+30941|        const fromRank = parseInt(fromSquare[1]);
+30942|        
+30943|        if (startRanks.includes(fromRank)) {
+30944|            score += 10000;  // Developing piece
+30945|        }
+30946|    }
+30947|    
+30948|    // Castling is good
+30949|    if (pieceType === 'k' && Math.abs(fromSquare.charCodeAt(0) - toSquare.charCodeAt(0)) === 2) {
+30950|        score += 25000;  // Castling
+30951|    }
+30952|    
+30953|    return score;
+30954|}
+30955|
+30956|    const attacked = [];
+30957|    const isWhite = color === 'w';
+30958|    const enemyColor = isWhite ? 'b' : 'w';
+30959|    
+30960|    for (const [square, piece] of board) {
+30961|        if (!piece) continue;
+30962|        const pieceIsWhite = piece === piece.toUpperCase();
+30963|        if (pieceIsWhite !== isWhite) continue;
+30964|        
+30965|        const pieceType = piece.toLowerCase();
+30966|        if (pieceType === 'k') continue;  // King attacks handled separately
+30967|        
+30968|        // Check if this square is attacked by enemy
+30969|        if (isSquareAttackedByColor(board, square, enemyColor)) {
+30970|            // Check if it's adequately defended
+30971|            const isDefended = isSquareDefendedByColor(board, square, color);
+30972|            
+30973|            // If attacked by something of lower value, still need to consider
+30974|            const attackers = findAttackersOfSquare(board, square, enemyColor);
+30975|            const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
+30976|            const ourPieceValue = getPieceValueSimple(pieceType);
+30977|            
+30978|            // Consider it under attack if:
+30979|            // 1. Not defended at all, or
+30980|            // 2. Attacker is of lower value than our piece
+30981|            if (!isDefended || lowestAttackerValue < ourPieceValue) {
+30982|                attacked.push({
+30983|                    square,
+30984|                    piece,
+30985|                    value: ourPieceValue,
+30986|                    lowestAttackerValue
+30987|                });
+30988|            }
+30989|        }
+30990|    }
+30991|    
+30992|    // Sort by piece value (highest first - queen, then rook, etc.)
+30993|    attacked.sort((a, b) => b.value - a.value);
+30994|    
+30995|    return attacked;
+30996|}

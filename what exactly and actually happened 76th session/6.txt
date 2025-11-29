@@ -1,0 +1,64 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30620|        }
+30621|    }
+30622|    
+30623|    return balance;
+30624|}
+30625|
+30626|/**
+30627| * v40.52: CHECKMATE IN 1-2 MOVE PREVENTION
+30628| * Scans if the opponent has mate in 1-2 after our move
+30629| * This is CRITICAL - the bot must NEVER allow forced mate!
+30630| */
+30631|function v40CheckmatePreventionScanner(fen, move, board, activeColor, moveNumber) {
+30632|    let score = 0;
+30633|    const isWhite = activeColor === 'w';
+30634|    const enemyColor = isWhite ? 'b' : 'w';
+30635|    
+30636|    // Simulate our move
+30637|    const testBoard = simulateMove(board, move);
+30638|    if (!testBoard) return 0;
+30639|    
+30640|    // Find our king
+30641|    const ourKing = findKingSquare(testBoard, activeColor);
+30642|    if (!ourKing) return 0;
+30643|    
+30644|    // Check if we're in check after our move (illegal move!)
+30645|    if (isSquareAttackedByColor(testBoard, ourKing, enemyColor)) {
+30646|        return -100000000;  // ILLEGAL - still in check!
+30647|    }
+30648|    
+30649|    // Now simulate ALL enemy responses to see if any lead to checkmate
+30650|    const enemyMoves = generateAllMoves(testBoard, enemyColor);
+30651|    
+30652|    for (const enemyMove of enemyMoves) {
+30653|        const afterEnemyBoard = simulateMove(testBoard, enemyMove);
+30654|        if (!afterEnemyBoard) continue;
+30655|        
+30656|        // Find our king after enemy move
+30657|        const ourKingAfter = findKingSquare(afterEnemyBoard, activeColor);
+30658|        if (!ourKingAfter) continue;
+30659|        
+30660|        // Is our king in check?
+30661|        if (isSquareAttackedByColor(afterEnemyBoard, ourKingAfter, enemyColor)) {
+30662|            // King is in check - can we escape?
+30663|            const escapeSquares = countKingEscapes(afterEnemyBoard, ourKingAfter, isWhite);
+30664|            
+30665|            if (escapeSquares === 0) {
+30666|                // CHECK IF THIS IS CHECKMATE!
+30667|                const canBlockOrCapture = canDefendFromCheck(afterEnemyBoard, ourKingAfter, activeColor, enemyColor);
+30668|                
+30669|                if (!canBlockOrCapture) {
+30670|                    // THIS IS CHECKMATE! Our move allows mate in 1!
+30671|                    score += -50000000;  // MASSIVE penalty
+30672|                    debugLog("[V40.52_MATE_PREVENT]", `☠️☠️☠️ ${move} allows MATE IN 1 via ${enemyMove}!!!`);
+30673|                    return score;  // No need to check further
+30674|                }
+30675|            }
+30676|        }
+30677|    }
+30678|    
+30679|    return score;
+30680|}
