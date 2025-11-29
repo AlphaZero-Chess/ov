@@ -1,0 +1,104 @@
+
+Action: $ grep -n "function canPieceCapture" "/app/Lichess Bot-AlphaZero-Pure.user.js" -A 100 | head -120
+Observation: 28857:function canPieceCapture(board, targetSquare, activeColor) {
+28858-    const isWhite = activeColor === 'w';
+28859-    
+28860-    for (const [square, piece] of board) {
+28861-        if (!piece) continue;
+28862-        const pieceIsWhite = piece === piece.toUpperCase();
+28863-        if (pieceIsWhite !== isWhite) continue;
+28864-        
+28865-        const pieceType = piece.toLowerCase();
+28866-        
+28867-        // Check if this piece can capture the target
+28868-        if (canPieceMove(board, square, targetSquare, pieceType, pieceIsWhite)) {
+28869-            return true;
+28870-        }
+28871-    }
+28872-    
+28873-    return false;
+28874-}
+28875-
+28876-/**
+28877- * v40.44 Helper: Check if piece can legally move from -> to
+28878- */
+28879-function canPieceMove(board, from, to, pieceType, isWhite) {
+28880-    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+28881-    const fromRank = parseInt(from.charAt(1)) - 1;
+28882-    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+28883-    const toRank = parseInt(to.charAt(1)) - 1;
+28884-    
+28885-    const fileDiff = Math.abs(toFile - fromFile);
+28886-    const rankDiff = Math.abs(toRank - fromRank);
+28887-    
+28888-    switch (pieceType) {
+28889-        case 'n':  // Knight
+28890-            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+28891-            
+28892-        case 'b':  // Bishop
+28893-            if (fileDiff !== rankDiff) return false;
+28894-            return !isPathBlockedDiagonal(board, from, to);
+28895-            
+28896-        case 'r':  // Rook
+28897-            if (fileDiff !== 0 && rankDiff !== 0) return false;
+28898-            return !isPathBlockedStraight(board, from, to);
+28899-            
+28900-        case 'q':  // Queen
+28901-            if (fileDiff === rankDiff) return !isPathBlockedDiagonal(board, from, to);
+28902-            if (fileDiff === 0 || rankDiff === 0) return !isPathBlockedStraight(board, from, to);
+28903-            return false;
+28904-            
+28905-        case 'p':  // Pawn
+28906-            const pawnDir = isWhite ? 1 : -1;
+28907-            // Pawn capture: diagonal, one square
+28908-            if (fileDiff === 1 && (toRank - fromRank) === pawnDir) {
+28909-                return true;  // Can capture
+28910-            }
+28911-            return false;
+28912-            
+28913-        case 'k':  // King
+28914-            return fileDiff <= 1 && rankDiff <= 1;
+28915-    }
+28916-    
+28917-    return false;
+28918-}
+28919-
+28920-/**
+28921- * v40.44 Helper: Is diagonal path blocked?
+28922- */
+28923-function isPathBlockedDiagonal(board, from, to) {
+28924-    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+28925-    const fromRank = parseInt(from.charAt(1)) - 1;
+28926-    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+28927-    const toRank = parseInt(to.charAt(1)) - 1;
+28928-    
+28929-    const fileDir = toFile > fromFile ? 1 : -1;
+28930-    const rankDir = toRank > fromRank ? 1 : -1;
+28931-    
+28932-    let f = fromFile + fileDir;
+28933-    let r = fromRank + rankDir;
+28934-    
+28935-    while (f !== toFile && r !== toRank) {
+28936-        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+28937-        if (board.get(sq)) return true;
+28938-        f += fileDir;
+28939-        r += rankDir;
+28940-    }
+28941-    
+28942-    return false;
+28943-}
+28944-
+28945-/**
+28946- * v40.44 Helper: Is straight path blocked?
+28947- */
+28948-function isPathBlockedStraight(board, from, to) {
+28949-    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+28950-    const fromRank = parseInt(from.charAt(1)) - 1;
+28951-    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+28952-    const toRank = parseInt(to.charAt(1)) - 1;
+28953-    
+28954-    if (fromFile === toFile) {
+28955-        // Vertical
+28956-        const dir = toRank > fromRank ? 1 : -1;
+28957-        for (let r = fromRank + dir; r !== toRank; r += dir) {
+Exit code: 0

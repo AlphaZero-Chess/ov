@@ -1,0 +1,10 @@
+Good, `getPieceValue` and `isSquareDefended` exist. Let me check for `v40GetPawnAttackersOfSquare`:
+Action: $ grep -n "v40GetPawnAttackersOfSquare\|GetPawnAttackers" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 28409:        const attackers = v40GetPawnAttackers(board, square, activeColor);
+28431:function v40GetPawnAttackers(board, square, activeColor) {
+28478:    const attackers = v40GetPawnAttackers(board, square, activeColor);
+28553:    const attackers = v40GetPawnAttackers(board, pieceSquare, activeColor);
+28761:        const attackers = v40GetPawnAttackers(board, square, activeColor);
+28996:        const attackers = v40GetPawnAttackers(board, sq, activeColor);
+45832:                    const pawnAttackers = v40GetPawnAttackersOfSquare(filterBoard, toSquare, enemyColor);
+Exit code: 0

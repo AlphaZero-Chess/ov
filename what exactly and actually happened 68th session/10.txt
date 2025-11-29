@@ -1,0 +1,43 @@
+Now let me add more critical improvements. Looking at the test games, the bot is still making many other mistakes. Let me implement additional fixes:
+
+1. **Anti-Blunder System**: Detect when a move loses material immediately
+2. **Capture Priority**: Always consider captures first
+3. **Piece Safety**: Don't move pieces to attacked squares
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45815|                }
+45816|            }
+45817|            
+45818|            return false;
+45819|        };
+45820|        
+45821|        // Check if bestMove should be rejected
+45822|        let bestMoveWasRejected = false;
+45823|        if (shouldRejectMove(bestMove)) {
+45824|            debugLog("[V40.47_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+45825|            bestMoveWasRejected = true;
+45826|            
+45827|            // Find first alternative that passes the filter
+45828|            for (let i = 1; i < alternatives.length; i++) {
+45829|                const altMove = alternatives[i].move;
+45830|                if (!shouldRejectMove(altMove)) {
+45831|                    debugLog("[V40.47_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+45832|                    bestMove = altMove;
+45833|                    bestMoveWasRejected = false;
+45834|                    break;
+45835|                }
+45836|            }
+45837|        }
+45838|        
+45839|        // Also filter ALL alternatives to remove bad moves from consideration
+45840|        const filteredAlternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+45841|        
+45842|        // v40.48 ULTIMATE RECAPTURE FIX: ALWAYS prioritize central pawn captures
+45843|        // This runs REGARDLESS of whether bestMove was rejected or not!
+45844|        const isWhiteToMove = currentFen.includes(' w ');
+45845|        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4'] : ['d5', 'e5'];
+45846|        
+45847|        // Check if there's an enemy central pawn that MUST be captured
+45848|        let mustRecaptureCentralSq = null;
+45849|        for (const centralSq of centralPawnSquares) {
+45850|            const piece = filterBoard.get(centralSq);

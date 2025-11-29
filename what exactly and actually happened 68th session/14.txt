@@ -1,0 +1,8 @@
+Now I need to add the helper functions that are used in the new rules. Let me check if they exist:
+Action: $ grep -n "function v40GetPawnAttackersOfSquare\|function isSquareDefended\|function getPieceValue" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 8841:function getPieceValueSimple(pieceType) {
+9876:function isSquareDefended(board, square, color) {
+10351:function isSquareDefendedByColor(board, square, defendingColor) {
+39166:function isSquareDefended(square, fen, defendingColor, board) {
+42504:function getPieceValue(piece) {
+Exit code: 0

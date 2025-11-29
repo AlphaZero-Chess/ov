@@ -1,0 +1,41 @@
+The `canPieceCapture` function looks correct - it checks if ANY piece of the active color can capture the target. The knight movement logic at line 28890 is correct: `(fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2)`.
+
+Let me trace through the specific game to understand why Ne2 was played instead of Nxd4:
+Action: $ cat << 'EOF'
+After move 4...cxd4:
+- Position: Knight on f3, Knight on c3, Black pawn on d4
+- For Nf3 to capture d4:
+  - from = f3, to = d4
+  - fromFile = 5 (f), toFile = 3 (d) -> fileDiff = 2
+  - fromRank = 2 (3-1), toRank = 3 (4-1) -> rankDiff = 1
+  - Knight check: (2===2 && 1===1) = TRUE ✓
+
+So canPieceCapture('d4', 'w') should return TRUE.
+
+The issue might be:
+1. The board isn't parsed correctly
+2. The filter condition isn't being hit
+3. The alternative loop isn't finding Nxd4
+4. Some other code is overriding the filter
+
+Let me check if the board parsing is correct...
+EOF
+
+Observation: After move 4...cxd4:
+- Position: Knight on f3, Knight on c3, Black pawn on d4
+- For Nf3 to capture d4:
+  - from = f3, to = d4
+  - fromFile = 5 (f), toFile = 3 (d) -> fileDiff = 2
+  - fromRank = 2 (3-1), toRank = 3 (4-1) -> rankDiff = 1
+  - Knight check: (2===2 && 1===1) = TRUE ✓
+
+So canPieceCapture('d4', 'w') should return TRUE.
+
+The issue might be:
+1. The board isn't parsed correctly
+2. The filter condition isn't being hit
+3. The alternative loop isn't finding Nxd4
+4. Some other code is overriding the filter
+
+Let me check if the board parsing is correct...
+Exit code: 0

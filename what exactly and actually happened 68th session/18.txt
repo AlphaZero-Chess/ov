@@ -1,0 +1,23 @@
+Now let me verify the `isSquareDefended` function signature matches what I'm calling. Let me check:
+Action: $ grep -n "function isSquareDefended" "/app/Lichess Bot-AlphaZero-Pure.user.js" -A 5 | head -20
+Observation: 9876:function isSquareDefended(board, square, color) {
+9877-    const isWhite = color === 'w';
+9878-    
+9879-    for (const [sq, piece] of board) {
+9880-        if (!piece || sq === square) continue;
+9881-        
+--
+10351:function isSquareDefendedByColor(board, square, defendingColor) {
+10352-    return isSquareAttackedByColor(board, square, defendingColor);
+10353-}
+10354-
+10355-/**
+10356- * v40.7 Helper: Get squares attacked by enemy pawns
+--
+39166:function isSquareDefended(square, fen, defendingColor, board) {
+39167-    const targetFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+39168-    const targetRank = parseInt(square[1]) - 1;
+39169-    
+39170-    for (const [pieceSquare, piece] of board.entries()) {
+39171-        if (!piece) continue;
+Exit code: 0

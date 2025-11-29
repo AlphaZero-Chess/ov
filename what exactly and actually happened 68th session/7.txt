@@ -1,0 +1,78 @@
+I see the issue now. The v40.47 fallback at lines 45844-45870 searches for recaptures ONLY when `filteredAlternatives.length === 0`. But the issue is that `filteredAlternatives.length` might NOT be 0 - there might be moves that pass the filter but they're not the best moves.
+
+The REAL issue is that when an enemy pawn is on d4/e4, the bot should PRIORITIZE the capture, not just filter out non-captures. Let me implement v40.48 with a more aggressive approach:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "        // v40.47 CRITICAL FIX: If bestMove was rejected and no alternative found, 
+        // search through ALL legal moves to find a valid recapture!
+        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+            debugLog(\"[V40.47_FILTER]\", `🚨 ALL moves filtered! Searching for valid recapture...`);
+            
+            // Find the central square that needs recapturing
+            const isWhite = currentFen.includes(' w ');
+            const centralSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+            
+            for (const centralSq of centralSquares) {
+                const piece = filterBoard.get(centralSq);
+                if (!piece || piece.toLowerCase() !== 'p') continue;
+                
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) continue;
+                
+                // Found enemy pawn - find a piece that can capture it
+                for (const alt of alternatives) {
+                    const toSq = alt.move.substring(2, 4);
+                    if (toSq === centralSq) {
+                        debugLog(\"[V40.47_FILTER]\", `✅ FORCE RECAPTURE: ${alt.move} captures ${centralSq}!`);
+                        bestMove = alt.move;
+                        bestMoveWasRejected = false;
+                        break;
+                    }
+                }
+                if (!bestMoveWasRejected) break;
+            }
+        }
+        
+        alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;" --new-str "        // v40.48 ULTIMATE RECAPTURE FIX: ALWAYS prioritize central pawn captures
+        // This runs REGARDLESS of whether bestMove was rejected or not!
+        const isWhiteToMove = currentFen.includes(' w ');
+        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4'] : ['d5', 'e5'];
+        
+        // Check if there's an enemy central pawn that MUST be captured
+        let mustRecaptureCentralSq = null;
+        for (const centralSq of centralPawnSquares) {
+            const piece = filterBoard.get(centralSq);
+            if (!piece || piece.toLowerCase() !== 'p') continue;
+            
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhiteToMove) continue; // Our pawn, skip
+            
+            // Enemy pawn on our central square! Check if we can capture it
+            if (canPieceCapture(filterBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+                mustRecaptureCentralSq = centralSq;
+                debugLog(\"[V40.48_FILTER]\", `🎯 ENEMY PAWN ON ${centralSq} - MUST RECAPTURE!`);
+                break;
+            }
+        }
+        
+        // If we MUST recapture, find the best capture move
+        if (mustRecaptureCentralSq) {
+            // Find ALL moves that capture the central pawn
+            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+            
+            if (captureMovesAll.length > 0) {
+                // Use the highest-scored capture move
+                bestMove = captureMovesAll[0].move;
+                debugLog(\"[V40.48_FILTER]\", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+                bestMoveWasRejected = false;
+            } else {
+                debugLog(\"[V40.48_FILTER]\", `⚠️ No capture move found for ${mustRecaptureCentralSq} in alternatives!`);
+            }
+        }
+        
+        // v40.47 fallback: If bestMove was rejected and no alternative found
+        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+            debugLog(\"[V40.48_FILTER]\", `🚨 ALL moves filtered! Using original best move as fallback.`);
+            // Keep the original bestMove as last resort
+        }
+        
+        alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;"
+Observation: Edit was successful.

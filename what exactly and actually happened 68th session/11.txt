@@ -1,0 +1,74 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45850|            const piece = filterBoard.get(centralSq);
+45851|            if (!piece || piece.toLowerCase() !== 'p') continue;
+45852|            
+45853|            const pieceIsWhite = piece === piece.toUpperCase();
+45854|            if (pieceIsWhite === isWhiteToMove) continue; // Our pawn, skip
+45855|            
+45856|            // Enemy pawn on our central square! Check if we can capture it
+45857|            if (canPieceCapture(filterBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+45858|                mustRecaptureCentralSq = centralSq;
+45859|                debugLog("[V40.48_FILTER]", `🎯 ENEMY PAWN ON ${centralSq} - MUST RECAPTURE!`);
+45860|                break;
+45861|            }
+45862|        }
+45863|        
+45864|        // If we MUST recapture, find the best capture move
+45865|        if (mustRecaptureCentralSq) {
+45866|            // Find ALL moves that capture the central pawn
+45867|            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+45868|            
+45869|            if (captureMovesAll.length > 0) {
+45870|                // Use the highest-scored capture move
+45871|                bestMove = captureMovesAll[0].move;
+45872|                debugLog("[V40.48_FILTER]", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+45873|                bestMoveWasRejected = false;
+45874|            } else {
+45875|                debugLog("[V40.48_FILTER]", `⚠️ No capture move found for ${mustRecaptureCentralSq} in alternatives!`);
+45876|            }
+45877|        }
+45878|        
+45879|        // v40.47 fallback: If bestMove was rejected and no alternative found
+45880|        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+45881|            debugLog("[V40.48_FILTER]", `🚨 ALL moves filtered! Using original best move as fallback.`);
+45882|            // Keep the original bestMove as last resort
+45883|        }
+45884|        
+45885|        alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;
+45886|        
+45887|        debugLog("[V40.47_FILTER]", `═══════════════════════════════════════════════════════`);
+45888|    }
+45889|    
+45890|    // Don't be creative if we only have one option
+45891|    if (alternatives.length < 2) {
+45892|        return bestMove;
+45893|    }
+45894|    
+45895|    // NEW v6.0.0: Update tactical and critical flags
+45896|    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+45897|    const currentEval = alternatives[0].score;
+45898|    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);
+45899|    
+45900|    // Update evaluation history
+45901|    updateEvaluationHistory(currentEval);
+45902|    
+45903|    // ═══════════════════════════════════════════════════════════════
+45904|    // NEW v17.0.0: ALPHAZERO ESSENCE MODE OVERLAY
+45905|    // ═══════════════════════════════════════════════════════════════
+45906|    
+45907|    // ═══════════════════════════════════════════════════════════════
+45908|    // NEW v18.0.0: TRUE ALPHAZERO Q+POLICY ARCHITECTURE
+45909|    // ═══════════════════════════════════════════════════════════════
+45910|    
+45911|    if (TRUE_ALPHAZERO.enabled && alternatives.length >= 2) {
+45912|        // Update trend reconciliation
+45913|        updateTrendReconciliation(currentEval);
+45914|        
+45915|        // Check trend floor
+45916|        const trendOK = checkTrendFloor();
+45917|        
+45918|        if (trendOK && !positionIsTactical && !positionIsCritical) {
+45919|            trueAlphaAttempted++;
+45920|            

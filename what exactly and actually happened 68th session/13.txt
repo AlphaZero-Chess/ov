@@ -1,0 +1,113 @@
+Let me add additional anti-blunder rules to the shouldRejectMove function:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.46: DON'T PUSH PAWNS WHEN PIECES ARE HANGING!
+            // If we have a piece attacked and not defended, we MUST defend it first!
+            // ═══════════════════════════════════════════════════════════════════
+            if (moveCount <= 20) {
+                const isWhite = currentFen.includes(' w ');
+                const movingPiece = filterBoard.get(fromSquare);
+                
+                if (movingPiece && movingPiece.toLowerCase() === 'p') {
+                    // We're pushing a pawn - check if we have hanging pieces
+                    const hangingPieces = findHangingPiecesV40_9(filterBoard, isWhite ? 'w' : 'b');
+                    
+                    // Only reject if valuable piece is hanging (knight/bishop/rook/queen)
+                    const valuableHanging = hangingPieces.filter(p => p.value >= 300);
+                    
+                    if (valuableHanging.length > 0) {
+                        debugLog(\"[V40.46_FILTER]\", `🚫🚫🚫 HARD REJECT: Pawn push ${move} when ${valuableHanging[0].piece}@${valuableHanging[0].square} is hanging!`);
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        };" --new-str "            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.46: DON'T PUSH PAWNS WHEN PIECES ARE HANGING!
+            // If we have a piece attacked and not defended, we MUST defend it first!
+            // ═══════════════════════════════════════════════════════════════════
+            if (moveCount <= 20) {
+                const isWhite = currentFen.includes(' w ');
+                const movingPiece = filterBoard.get(fromSquare);
+                
+                if (movingPiece && movingPiece.toLowerCase() === 'p') {
+                    // We're pushing a pawn - check if we have hanging pieces
+                    const hangingPieces = findHangingPiecesV40_9(filterBoard, isWhite ? 'w' : 'b');
+                    
+                    // Only reject if valuable piece is hanging (knight/bishop/rook/queen)
+                    const valuableHanging = hangingPieces.filter(p => p.value >= 300);
+                    
+                    if (valuableHanging.length > 0) {
+                        debugLog(\"[V40.46_FILTER]\", `🚫🚫🚫 HARD REJECT: Pawn push ${move} when ${valuableHanging[0].piece}@${valuableHanging[0].square} is hanging!`);
+                        return true;
+                    }
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.48: DON'T MOVE PIECES TO SQUARES WHERE THEY GET CAPTURED FOR FREE
+            // This prevents blunders like moving a knight to a square attacked by a pawn
+            // ═══════════════════════════════════════════════════════════════════
+            if (moveCount <= 30) {
+                const isWhite = currentFen.includes(' w ');
+                const movingPiece = filterBoard.get(fromSquare);
+                
+                if (movingPiece && movingPiece.toLowerCase() !== 'p') {
+                    // Moving a piece (not a pawn) - check if destination is attacked by lesser piece
+                    const pieceValue = getPieceValue(movingPiece);
+                    
+                    // Check if destination square is attacked by enemy pawn
+                    const enemyColor = isWhite ? 'b' : 'w';
+                    const pawnAttackers = v40GetPawnAttackersOfSquare(filterBoard, toSquare, enemyColor);
+                    
+                    if (pawnAttackers.length > 0 && pieceValue > 100) {
+                        // Our valuable piece would be captured by enemy pawn!
+                        // Check if the destination has any defender
+                        const isDefended = isSquareDefended(filterBoard, toSquare, isWhite ? 'w' : 'b');
+                        
+                        if (!isDefended) {
+                            debugLog(\"[V40.48_FILTER]\", `🚫🚫🚫 HARD REJECT: ${move} moves ${movingPiece} to pawn-attacked undefended square!`);
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.48: MUST CAPTURE HANGING ENEMY PIECE
+            // If enemy has a hanging valuable piece, we MUST capture it!
+            // ═══════════════════════════════════════════════════════════════════
+            if (moveCount <= 40) {
+                const isWhite = currentFen.includes(' w ');
+                const enemyColor = isWhite ? 'b' : 'w';
+                
+                // Find enemy hanging pieces
+                const enemyHanging = findHangingPiecesV40_9(filterBoard, enemyColor);
+                const valuableEnemyHanging = enemyHanging.filter(p => p.value >= 300);
+                
+                if (valuableEnemyHanging.length > 0) {
+                    // Check if we can capture any of them
+                    let canCaptureHanging = false;
+                    let hangingSquare = null;
+                    
+                    for (const hanging of valuableEnemyHanging) {
+                        if (canPieceCapture(filterBoard, hanging.square, isWhite ? 'w' : 'b')) {
+                            canCaptureHanging = true;
+                            hangingSquare = hanging.square;
+                            break;
+                        }
+                    }
+                    
+                    // If we CAN capture a hanging piece but this move DOESN'T capture it, reject!
+                    if (canCaptureHanging && toSquare !== hangingSquare) {
+                        debugLog(\"[V40.48_FILTER]\", `🚫🚫🚫 HARD REJECT: ${move} - MUST CAPTURE hanging piece at ${hangingSquare}!`);
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        };"
+Observation: Edit was successful.
