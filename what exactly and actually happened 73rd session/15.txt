@@ -1,0 +1,12 @@
+Let me check the current v40.51 implementation status by searching for existing v40.51 entries:
+Action: $ cd /app && grep -n "v40\.51" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.51 ABSOLUTE RECAPTURE SUPREME
+3:// @description  TRUE AlphaZero Replica v40.51 - ABSOLUTE RECAPTURE: Forces Nxd4 in Sicilian, deep mate threat detection, zero blunders! THE ULTIMATE FIX!
+4:// @author       AlphaZero TRUE REPLICA v40.51 ABSOLUTE RECAPTURE SUPREME
+47341:    // v40.51 CRITICAL: ABSOLUTE RECAPTURE SYSTEM - THE ULTIMATE FIX!
+47351:        // v40.51: Extended central squares to check - including diagonals
+47363:            // v40.51: Log every square check for debugging
+47368:            // v40.51: Check for ANY enemy piece on central square, not just pawns
+47375:            // v40.51: For d4/e4/d5/e5, MUST recapture if enemy pawn
+47402:    // v40.51: If we MUST recapture, use that move immediately!
+Exit code: 0

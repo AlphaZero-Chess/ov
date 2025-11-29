@@ -1,0 +1,23 @@
+Now let me add a new v40.51 function for ABSOLUTE DEEP MATE PREVENTION. First, let me find a good location to add it:
+Action: $ cd /app && grep -n "^function v40" "Lichess Bot-AlphaZero-Pure.user.js" | tail -20
+Observation: 28126:function v40CaptureThenAttackEval(fen, move, board, activeColor, moveNumber) {
+28226:function v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) {
+28298:function v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+28396:function v40FindPiecesUnderPawnAttack(board, activeColor) {
+28431:function v40GetPawnAttackers(board, square, activeColor) {
+28477:function v40IsSquareUnderPawnAttack(board, square, activeColor) {
+28487:function v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) {
+28548:function v40WasPieceUnderPawnAttackBefore(board, pieceSquare, activeColor, pawnSquare) {
+28561:function v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) {
+28605:function v40DetectLastPawnCapture(board, fen) {
+28630:function v40TwoMovePawnChainEval(fen, move, board, activeColor, moveNumber) {
+28712:function v40DontPushWhenHangingEval(fen, move, board, activeColor, moveNumber) {
+28744:function v40ProtectKnightFromPawnEval(fen, move, board, activeColor, moveNumber) {
+28805:function v40CentralPawnCaptureResponseEval(fen, move, board, activeColor, moveNumber) {
+28881:function v40GenerateCaptureMove(board, targetSquare, activeColor) {
+29019:function v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) {
+29070:function v40AbsoluteMoveFilter(fen, move, board, activeColor, moveNumber) {
+29157:function v40SicilianResponseEval(fen, move, board, activeColor, moveNumber) {
+29200:function v40OpeningBookEval(fen, move, board, activeColor, moveNumber) {
+29259:function v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

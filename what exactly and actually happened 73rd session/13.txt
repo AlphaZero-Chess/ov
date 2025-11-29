@@ -1,0 +1,7 @@
+Now let me continue with the v40.51 enhancements. The key issue from the analysis is that even with the mustRecaptureMove check, the bot still loses. Let me add a more comprehensive v40.51 that:
+
+1. Adds deeper mate threat detection
+2. Adds better opening enforcement
+3. Adds stronger tactical verification
+Action: $ cd /app && grep -n "// v40.50:" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: Exit code: 0

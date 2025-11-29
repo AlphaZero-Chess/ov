@@ -1,0 +1,8 @@
+
+Action: $ cd /app && grep -n "v40\.49\|v40\.48" "Lichess Bot-AlphaZero-Pure.user.js" | head -15
+Observation: 28877: * v40.49 CRITICAL: Generate a capture move for a target square
+45862:            // v40.48: DON'T MOVE PIECES TO SQUARES WHERE THEY GET CAPTURED FOR FREE
+45891:            // v40.48: MUST CAPTURE HANGING ENEMY PIECE
+45947:        // v40.48 ULTIMATE RECAPTURE FIX: ALWAYS prioritize central pawn captures
+45980:                // v40.49: CRITICAL FIX - Generate capture move ourselves if Stockfish didn't suggest it!
+Exit code: 0

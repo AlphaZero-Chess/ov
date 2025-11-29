@@ -1,0 +1,4 @@
+Syntax is valid. Now let me add a v40.51 enhancement to improve the deep mate detection. First, let me view the current computeCombinedScore function to see where we add the v40.51 improvements:
+Action: $ cd /app && grep -n "function computeCombinedScore" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 44308:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+Exit code: 0

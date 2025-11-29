@@ -1,0 +1,4 @@
+The computeCombinedScore function is very comprehensive. Now let me check the file length to see where to add new v40.51 improvements:
+Action: $ cd /app && wc -l "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 48363 Lichess Bot-AlphaZero-Pure.user.js
+Exit code: 0

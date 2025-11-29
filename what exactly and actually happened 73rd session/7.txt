@@ -1,0 +1,23 @@
+
+Action: $ cd /app && grep -n "function v40DeepMatingNetDetection\|function v40.*Mate" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 3624:function v40EvaluateMaterial(board, activeColor) {
+5106:function v40CheckBackRankMate(fen, move, board, activeColor) {
+5559:function v40DeepMatingNetDetection(fen, move, board, activeColor) {
+7225:function v40CheckCornerMateVulnerability(board, kingSquare, activeColor) {
+7291:function v40CheckBackRankMatePattern(board, kingSquare, activeColor) {
+7340:function v40CheckStaircaseMatePattern(board, kingSquare, activeColor) {
+7372:function v40CheckQRMatePattern(board, kingSquare, activeColor) {
+7406:function v40EstimateMateDistance(board, activeColor) {
+10159:function v40MaterialHemorrhageDetection(fen, move, board, activeColor) {
+13539:function v40ImmediateMaterialLossEval(fen, move, board, activeColor, moveNumber) {
+16040:function v40MaterialAwarenessEval(fen, move, board, activeColor, moveNumber) {
+20717:function v40CalculateMaterialBalance(board, activeColor) {
+20897:function v40CountTotalMaterial(board) {
+22604:function v40SacrificeleadsToMate(board, isWhite, depth) {
+22882:function v40QuickMaterialEval(board, isWhite) {
+24209:function v40CalculateMaterialBalance(board, isWhite) {
+25773:function v40MaterialSafetyVerificationEval(fen, move, board, activeColor, moveNumber) {
+25822:function v40CalculateMaterial(board, isWhite) {
+26030:function v40DetectMateThreats(board, color, depth) {
+26925:function v40ForcedMateDefenseEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

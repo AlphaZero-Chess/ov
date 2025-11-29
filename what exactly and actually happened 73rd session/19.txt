@@ -1,0 +1,44 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+29390|        const pFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+29391|        const pRank = parseInt(square[1]) - 1;
+29392|        
+29393|        if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, attackerColor)) {
+29394|            attackers.push({ square, piece });
+29395|        }
+29396|    }
+29397|    
+29398|    return attackers;
+29399|}
+29400|
+29401|/**
+29402| * v40.9 Helper: Check if a move defends a specific square
+29403| */
+29404|function isDefendingMoveV40_9(move, defendSquare, board, color) {
+29405|    const fromSquare = move.substring(0, 2);
+29406|    const toSquare = move.substring(2, 4);
+29407|    const movingPiece = board.get(fromSquare);
+29408|    
+29409|    if (!movingPiece) return false;
+29410|    
+29411|    // Simulate the move
+29412|    const simBoard = new Map(board);
+29413|    simBoard.delete(fromSquare);
+29414|    simBoard.set(toSquare, movingPiece);
+29415|    
+29416|    // Check if after the move, we now defend the target square
+29417|    const pieceType = movingPiece.toLowerCase();
+29418|    const tFile = defendSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+29419|    const tRank = parseInt(defendSquare[1]) - 1;
+29420|    const mFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+29421|    const mRank = parseInt(toSquare[1]) - 1;
+29422|    
+29423|    // Check if moved piece now defends the target
+29424|    return canPieceAttackSquareV40(pieceType, mFile, mRank, tFile, tRank, simBoard, color);
+29425|}
+29426|
+29427|/**
+29428| * v40.9 Helper: Check if move addresses a threat
+29429| */
+29430|function doesMoveAddressThreat(move, threatSquare, board, color, enemyColor) {

@@ -1,0 +1,33 @@
+Now let me also enhance the mate detection to prevent the bot from getting checkmated. The games show the bot is getting checkmated frequently. Let me check the current mate detection:
+Action: $ cd /app && grep -n "checkmate\|mateIn\|mate detection\|MATE" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 3:// @description  TRUE AlphaZero Replica v40.51 - ABSOLUTE RECAPTURE: Forces Nxd4 in Sicilian, deep mate threat detection, zero blunders! THE ULTIMATE FIX!
+26: * █    v40.6 ULTIMATE: TRUE PERSISTENT MCTS Tree Search, PUCT Selection (AlphaZero),      █
+34: * █    ABSOLUTE ZERO TACTICAL OVERSIGHTS - TRUE ALPHAZERO ULTIMATE REPLICA                █
+226:    // v36.0.0: BACK-RANK MATE PREVENTION - TRANSCENDENT SETTINGS
+227:    backRankMateDetection: true,    // Enable back-rank mate detection
+342:    checkmateThreatDepth: 40,       // v36: NEW - Look 40 moves for mate threats
+644:    v38MatingNetHorizon: 60,                 // Mating net detection depth (40→60) — SEE MATE COMING
+652:    v38BackRankMateHorizon: 50,              // Back rank mate detection (NEW)
+843:    // v40.3: TRUE PERSISTENT MCTS — AlphaZero's Core (ULTIMATE EDITION)
+907:    v40BackRankMateHorizon: 60,             // Back rank mate detection (50→60)
+1011:    // v40.3.0: ULTIMATE SUPERHUMAN BEAST — NEW PARAMETERS
+1167:    // v40.6 ULTIMATE: CRITICAL CENTER & TACTICAL BLINDSPOT FIXES
+1206:    // v40.6: ENHANCED 90% DOMINANCE — Make v40 ULTIMATE DOMINANT
+1228:    // v40.7: MATERIAL HEMORRHAGE DETECTION — Detect when we're losing material chain
+1486:    // v40.13 ULTIMATE TACTICAL SUPREME: ZERO BLUNDER TACTICAL SYSTEM
+1519:    // v40.13: BASIC MATERIAL AWARENESS — Count material before/after
+1536:    // v40.13: 100% ULTIMATE TACTICAL SUPREME DOMINANCE
+1642:    v40DeepLookAheadCheckmateThreatPenalty: -50000000, // If checkmate possible in 3 plies
+1683:    // v40.17: ABSOLUTE MATERIAL AWARENESS — Material is KING
+1848:    v40QueenRookBatteryHFilePenalty: -2500000000,   // Queen + Rook on h-file = MATE!
+1967:    // THIS IS THE ULTIMATE DEFENSIVE FIX — ABSOLUTE FORTRESS MODE!
+2323:    // v40.35.0: MATERIAL SAFETY & PASSIVE MOVE SUPREME
+2328:    // 3. Material losses led to inevitable checkmate
+2338:    // v40.35: MATERIAL SAFETY VERIFICATION - Don't allow pawn grabs
+2449:    // v40.38: FORCED MATE DEFENSE MODE - When mate threatened, ONLY defensive moves
+2457:    // v40.38: PASSIVE QUEEN UNDER MATE PROHIBITION - No Qd1/Qc1 when mate threatened
+2497:    // v40.40: MANDATORY RECAPTURE SUPREME - THE ULTIMATE FIX FOR PAWN CAPTURE BLINDNESS!
+2528:    // v40.41: PRE-MOVE PAWN THREAT SUPREME - THE ULTIMATE FIX!
+5714:                    debugLog("[V40_MATING_NET]", `🚨🚨🚨 ROOK ON SAME RANK AS EDGE KING - MATE THREAT!`);
+5727:                debugLog("[V40_MATING_NET]", `🚨🚨 LADDER MATE PATTERN DETECTED!`);
+Exit code: 0

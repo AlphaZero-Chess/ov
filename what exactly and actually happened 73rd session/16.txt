@@ -1,0 +1,54 @@
+Good, v40.51 is already partially implemented. Now let me add additional v40.51 improvements for deeper tactical evaluation and mate detection. Let me find a good place to add new v40.51 functions:
+Action: $ cd /app && grep -n "function v40ForcedMateDefenseEval" "Lichess Bot-AlphaZero-Pure.user.js" -A 50 | head -60
+Observation: 26925:function v40ForcedMateDefenseEval(fen, move, board, activeColor, moveNumber) {
+26926-    if (!CONFIG.v40ForcedMateDefenseEnabled) return 0;
+26927-    
+26928-    let score = 0;
+26929-    const isWhite = activeColor === 'w';
+26930-    const enemyColor = isWhite ? 'b' : 'w';
+26931-    
+26932-    // Find our king
+26933-    const kingSquare = findKingSquare(board, activeColor);
+26934-    if (!kingSquare) return 0;
+26935-    
+26936-    // Check if we're under mating attack (queen + other pieces near king)
+26937-    let enemyQueenNearKing = false;
+26938-    let enemyPiecesNearKing = 0;
+26939-    let enemyQueenSquare = null;
+26940-    
+26941-    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+26942-    const kingRank = parseInt(kingSquare.charAt(1));
+26943-    
+26944-    for (const [square, piece] of board) {
+26945-        if (!piece) continue;
+26946-        const pieceIsWhite = piece === piece.toUpperCase();
+26947-        if (pieceIsWhite === isWhite) continue;
+26948-        
+26949-        const pieceType = piece.toLowerCase();
+26950-        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+26951-        const rank = parseInt(square.charAt(1));
+26952-        
+26953-        const distance = Math.max(Math.abs(file - kingFile), Math.abs(rank - kingRank));
+26954-        
+26955-        if (pieceType === 'q' && distance <= 3) {
+26956-            enemyQueenNearKing = true;
+26957-            enemyQueenSquare = square;
+26958-        }
+26959-        
+26960-        if (distance <= 2 && pieceType !== 'k') {
+26961-            enemyPiecesNearKing++;
+26962-        }
+26963-    }
+26964-    
+26965-    // Check if we're under a mating attack pattern
+26966-    const underMatingAttack = enemyQueenNearKing && enemyPiecesNearKing >= 2;
+26967-    
+26968-    if (!underMatingAttack) return 0;
+26969-    
+26970-    // We're under mating attack - check if this move is defensive
+26971-    const fromSquare = move.substring(0, 2);
+26972-    const toSquare = move.substring(2, 4);
+26973-    const movingPiece = board.get(fromSquare);
+26974-    const capturedPiece = board.get(toSquare);
+26975-
+Exit code: 0
