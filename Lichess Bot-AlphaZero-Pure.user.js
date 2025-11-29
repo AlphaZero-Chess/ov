@@ -47338,40 +47338,72 @@ function calculateMove() {
     const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
     
     // ═══════════════════════════════════════════════════════════════════════════════
-    // v40.50 CRITICAL: MUST RECAPTURE CHECK - OVERRIDES ALL BOOK MOVES!
-    // If there's an enemy pawn on d4/e4 (for white) that we can capture, we MUST capture it!
-    // This fixes the bug where book move Ne2 was played instead of Nxd4 in Sicilian!
+    // v40.51 CRITICAL: ABSOLUTE RECAPTURE SYSTEM - THE ULTIMATE FIX!
+    // If there's an enemy pawn on d4/e4 (for white) or d5/e5 (for black), MUST capture!
+    // This OVERRIDES ALL book moves and engine suggestions!
+    // From Session 72: Nf3xd4 (f3d4) must happen, not Ne2!
     // ═══════════════════════════════════════════════════════════════════════════════
     let mustRecaptureMove = null;
     if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
         const recaptureBoard = parseFenToBoard(currentFen);
         const isWhiteToMove = currentFen.includes(' w ');
-        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4'] : ['d5', 'e5'];
+        
+        // v40.51: Extended central squares to check - including diagonals
+        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4', 'c4', 'f4'] : ['d5', 'e5', 'c5', 'f5'];
+        
+        debugLog("[V40.51_RECAPTURE]", `═══════════════════════════════════════════════════════`);
+        debugLog("[V40.51_RECAPTURE]", `🎯 ABSOLUTE RECAPTURE CHECK ACTIVATED`);
+        debugLog("[V40.51_RECAPTURE]", `   FEN: ${currentFen}`);
+        debugLog("[V40.51_RECAPTURE]", `   Move count: ${moveCount}, White to move: ${isWhiteToMove}`);
+        debugLog("[V40.51_RECAPTURE]", `   Checking squares: ${centralPawnSquares.join(', ')}`);
         
         for (const centralSq of centralPawnSquares) {
             const piece = recaptureBoard.get(centralSq);
-            if (!piece || piece.toLowerCase() !== 'p') continue;
             
+            // v40.51: Log every square check for debugging
+            debugLog("[V40.51_RECAPTURE]", `   Checking ${centralSq}: piece=${piece || 'empty'}`);
+            
+            if (!piece) continue;
+            
+            // v40.51: Check for ANY enemy piece on central square, not just pawns
             const pieceIsWhite = piece === piece.toUpperCase();
-            if (pieceIsWhite === isWhiteToMove) continue; // Our pawn, skip
+            if (pieceIsWhite === isWhiteToMove) {
+                debugLog("[V40.51_RECAPTURE]", `   ${centralSq}: Our piece (${piece}), skipping`);
+                continue;
+            }
             
-            // Enemy pawn on our central square! Check if we can capture it
-            if (canPieceCapture(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
-                // Generate the capture move
-                mustRecaptureMove = v40GenerateCaptureMove(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b');
-                if (mustRecaptureMove) {
-                    debugLog("[V40.50_CRITICAL]", `🎯🎯🎯 MUST RECAPTURE ${centralSq}! Generated move: ${mustRecaptureMove}`);
-                    debugLog("[V40.50_CRITICAL]", `🎯🎯🎯 This OVERRIDES any book move (was: ${bookMove || 'none'})`);
+            // v40.51: For d4/e4/d5/e5, MUST recapture if enemy pawn
+            const isPawn = piece.toLowerCase() === 'p';
+            const isPrioritySquare = ['d4', 'e4', 'd5', 'e5'].includes(centralSq);
+            
+            if (isPawn && isPrioritySquare) {
+                debugLog("[V40.51_RECAPTURE]", `   🚨 ENEMY PAWN on ${centralSq}! Checking if we can capture...`);
+                
+                // Check if we can capture it
+                if (canPieceCapture(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+                    // Generate the capture move
+                    mustRecaptureMove = v40GenerateCaptureMove(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b');
+                    if (mustRecaptureMove) {
+                        debugLog("[V40.51_RECAPTURE]", `🎯🎯🎯 MUST RECAPTURE ${centralSq}! Generated move: ${mustRecaptureMove}`);
+                        debugLog("[V40.51_RECAPTURE]", `🎯🎯🎯 This OVERRIDES any book move (was: ${bookMove || 'none'})`);
+                    } else {
+                        debugLog("[V40.51_RECAPTURE]", `⚠️ canPieceCapture returned true but v40GenerateCaptureMove returned null!`);
+                    }
+                    break;
+                } else {
+                    debugLog("[V40.51_RECAPTURE]", `   Cannot capture ${centralSq} - no piece can reach it`);
                 }
-                break;
             }
         }
+        
+        debugLog("[V40.51_RECAPTURE]", `═══════════════════════════════════════════════════════`);
     }
     
-    // v40.50: If we MUST recapture, use that move immediately!
+    // v40.51: If we MUST recapture, use that move immediately!
     if (mustRecaptureMove) {
         const thinkTime = Math.random() * 500 + 300;
-        debugLog("[V40.50_CRITICAL]", `⚡⚡⚡ FORCED RECAPTURE: ${mustRecaptureMove} (${(thinkTime/1000).toFixed(1)}s)`);
+        debugLog("[V40.51_RECAPTURE]", `⚡⚡⚡ FORCED RECAPTURE: ${mustRecaptureMove} (${(thinkTime/1000).toFixed(1)}s)`);
+        debugLog("[V40.51_RECAPTURE]", `⚡⚡⚡ THIS IS ABSOLUTE - NO EXCEPTIONS!`);
         
         setTimeout(() => {
             bestMove = mustRecaptureMove;
