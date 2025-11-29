@@ -1,0 +1,146 @@
+The knight logic is correct. So the knight on f3 CAN capture on d4. The move should be "f3d4".
+
+The problem might be in how `v40GenerateCaptureMove` iterates through the board. Let me check if it's finding the knight on f3:
+Action: $ cat > /tmp/test_capture.js << 'EOF'
+// Simulate the FEN parsing
+function parseFenToBoard(fen) {
+    const board = new Map();
+    const fenParts = fen.split(' ');
+    if (fenParts.length < 1) return board;
+    
+    const position = fenParts[0];
+    const ranks = position.split('/');
+    
+    for (let rankIdx = 0; rankIdx < ranks.length; rankIdx++) {
+        const rank = ranks[rankIdx];
+        const actualRank = 8 - rankIdx;
+        let file = 0;
+        
+        for (let char of rank) {
+            if (char >= '1' && char <= '8') {
+                file += parseInt(char);
+            } else {
+                const square = String.fromCharCode('a'.charCodeAt(0) + file) + actualRank;
+                board.set(square, char);
+                file++;
+            }
+        }
+    }
+    return board;
+}
+
+function canPieceMove(board, from, to, pieceType, isWhite) {
+    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(from.charAt(1)) - 1;
+    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(to.charAt(1)) - 1;
+    
+    const fileDiff = Math.abs(toFile - fromFile);
+    const rankDiff = Math.abs(toRank - fromRank);
+    
+    switch (pieceType) {
+        case 'n':
+            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+        case 'p':
+            const pawnDir = isWhite ? 1 : -1;
+            if (fileDiff === 1 && (toRank - fromRank) === pawnDir) {
+                return true;
+            }
+            return false;
+    }
+    return false;
+}
+
+// Position after 1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4
+// FEN should be something like: r1bqkbnr/pp1ppp1p/2n3p1/8/3pP3/2N2N2/PPP2PPP/R1BQKB1R w KQkq - 0 5
+const fen = 'r1bqkbnr/pp1ppp1p/2n3p1/8/3pP3/2N2N2/PPP2PPP/R1BQKB1R w KQkq - 0 5';
+const board = parseFenToBoard(fen);
+
+console.log('Board squares:');
+for (const [sq, piece] of board) {
+    console.log(`  ${sq}: ${piece}`);
+}
+
+console.log('\nPiece on d4:', board.get('d4'));
+console.log('Piece on f3:', board.get('f3'));
+console.log('Piece on c3:', board.get('c3'));
+
+// Check if we can capture d4
+const targetSquare = 'd4';
+const activeColor = 'w';
+const isWhite = activeColor === 'w';
+
+console.log('\nTrying to find capture for', targetSquare);
+
+const captureMoves = [];
+const piecePriority = { 'p': 1, 'n': 2, 'b': 3, 'r': 4, 'q': 5, 'k': 6 };
+
+for (const [square, piece] of board) {
+    if (!piece) continue;
+    const pieceIsWhite = piece === piece.toUpperCase();
+    if (pieceIsWhite !== isWhite) continue;
+    
+    const pieceType = piece.toLowerCase();
+    
+    if (canPieceMove(board, square, targetSquare, pieceType, pieceIsWhite)) {
+        console.log(`  Found: ${square} (${piece}) can capture ${targetSquare}`);
+        captureMoves.push({
+            from: square,
+            to: targetSquare,
+            move: square + targetSquare,
+            pieceType: pieceType,
+            priority: piecePriority[pieceType] || 10
+        });
+    }
+}
+
+if (captureMoves.length > 0) {
+    captureMoves.sort((a, b) => a.priority - b.priority);
+    console.log('\nBest capture:', captureMoves[0].move);
+} else {
+    console.log('\nNo captures found!');
+}
+EOF
+node /tmp/test_capture.js
+Observation: Board squares:
+  a8: r
+  c8: b
+  d8: q
+  e8: k
+  f8: b
+  g8: n
+  h8: r
+  a7: p
+  b7: p
+  d7: p
+  e7: p
+  f7: p
+  h7: p
+  c6: n
+  g6: p
+  d4: p
+  e4: P
+  c3: N
+  f3: N
+  a2: P
+  b2: P
+  c2: P
+  f2: P
+  g2: P
+  h2: P
+  a1: R
+  c1: B
+  d1: Q
+  e1: K
+  f1: B
+  h1: R
+
+Piece on d4: p
+Piece on f3: N
+Piece on c3: N
+
+Trying to find capture for d4
+  Found: f3 (N) can capture d4
+
+Best capture: f3d4
+Exit code: 0

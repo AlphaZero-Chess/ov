@@ -1,0 +1,65 @@
+Good, `moveCount` is set at line 47028, which is BEFORE the recapture check at 47346. So that should work.
+
+The problem might be the LOGIC of the recapture detection. Let me analyze the FEN after `1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4`:
+- The position after cxd4 would have the black pawn on d4
+- It's White's turn (5th move)
+- The code checks for BLACK pawn on d4 (enemy pawn for White) - which should be TRUE
+- Then it checks if White can capture at d4
+
+Wait! After `cxd4`, there IS a black pawn on d4, and the knight on c3 can capture it! Let me trace through more carefully:
+
+Actually, looking at the game: `1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Ne2`
+
+After `4. d4`, black plays `cxd4`. So we have:
+- White pawn was on d4, black pawn captured it (cxd4)
+- Now BLACK PAWN is on d4
+- White to move (move 5)
+
+The knight on c3 CAN capture on d4 (Nxd4)! But the bot played Ne2 instead.
+
+The issue is:
+1. Either `v40GenerateCaptureMove` isn't finding the Nc3-d4 move
+2. Or the position FEN isn't being parsed correctly
+
+Let me check if the knight detection in `canPieceMove` is correct:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28922|function canPieceMove(board, from, to, pieceType, isWhite) {
+28923|    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+28924|    const fromRank = parseInt(from.charAt(1)) - 1;
+28925|    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+28926|    const toRank = parseInt(to.charAt(1)) - 1;
+28927|    
+28928|    const fileDiff = Math.abs(toFile - fromFile);
+28929|    const rankDiff = Math.abs(toRank - fromRank);
+28930|    
+28931|    switch (pieceType) {
+28932|        case 'n':  // Knight
+28933|            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+28934|            
+28935|        case 'b':  // Bishop
+28936|            if (fileDiff !== rankDiff) return false;
+28937|            return !isPathBlockedDiagonal(board, from, to);
+28938|            
+28939|        case 'r':  // Rook
+28940|            if (fileDiff !== 0 && rankDiff !== 0) return false;
+28941|            return !isPathBlockedStraight(board, from, to);
+28942|            
+28943|        case 'q':  // Queen
+28944|            if (fileDiff === rankDiff) return !isPathBlockedDiagonal(board, from, to);
+28945|            if (fileDiff === 0 || rankDiff === 0) return !isPathBlockedStraight(board, from, to);
+28946|            return false;
+28947|            
+28948|        case 'p':  // Pawn
+28949|            const pawnDir = isWhite ? 1 : -1;
+28950|            // Pawn capture: diagonal, one square
+28951|            if (fileDiff === 1 && (toRank - fromRank) === pawnDir) {
+28952|                return true;  // Can capture
+28953|            }
+28954|            return false;
+28955|            
+28956|        case 'k':  // King
+28957|            return fileDiff <= 1 && rankDiff <= 1;
+28958|    }
+28959|    
+28960|    return false;

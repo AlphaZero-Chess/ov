@@ -1,0 +1,43 @@
+Let me check the existing functions and add critical v40.51 improvements:
+Action: $ cd /app && grep -n "v40.50\|v40.49\|CRITICAL\|mustRecapture" "Lichess Bot-AlphaZero-Pure.user.js" | head -40
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.50 TACTICAL DOMINANCE SUPREME
+3:// @description  TRUE AlphaZero Replica v40.50 - TACTICAL DOMINANCE: Deep forcing line detection, absolute opening enforcement, checkmate pattern recognition! CRUSHES opposition!
+4:// @author       AlphaZero TRUE REPLICA v40.50 TACTICAL DOMINANCE SUPREME
+150:    // CRITICAL FAILURES IDENTIFIED:
+180:    passedPawnThreatDepth: 100,     // v36: CRITICAL - passed pawn threats (75→100)
+193:    endGameSpeed: 7.0,              // v36: EXTENDED endgame - CRITICAL FIX (4.5→7.0)
+199:    pieceActivityBonus: 1500,       // v36: CRITICAL - active pieces WIN (1000→1500)
+202:    coordinationWeight: 60.0,       // v36: CRITICAL - piece harmony (40.0→60.0)
+204:    centerControlWeight: 80.0,      // v36: CRITICAL - central dominance (50.0→80.0)
+266:    // CRITICAL: When behind, FORCE threats - GAME ANALYSIS: White played passive!
+280:    // v36.0.0: Passed pawn settings - CRITICAL FOR ENDGAME PERFECTION
+289:    pawnStructureWeight: 120.0,     // v36: CRITICAL foundation (80.0→120.0)
+292:    passedPawnWeight: 150.0,        // v36: CRITICAL value (80.0→150.0)
+430:    // v36.0.0: ENEMY PASSED PAWN HANDLING - GAME ANALYSIS CRITICAL FIX
+452:    // v36.0.0: CRITICAL PIECE SAFETY - ABSOLUTE ZERO BLUNDERS WITH 80+ MOVE HORIZON
+668:    v38EndgameKeySquareControl: 5000,        // Key square bonus (3000→5000) — CRITICAL SQUARES
+1132:    // v40.5.0: CRITICAL TACTICAL BLINDSPOT FIXES — From Nimzowitsch Defense loss
+1167:    // v40.6 ULTIMATE: CRITICAL CENTER & TACTICAL BLINDSPOT FIXES
+1350:    // v40.10: CRITICAL EXCHANGE EVALUATION — Don't centralize enemy pieces
+1745:    v40EnemyPromotionIn2Penalty: -1000000000,       // Enemy can promote in 2 moves CRITICAL
+1776:    v40PawnPromotionSequencePenalty: -2000000000,   // CRITICAL: Pawn can promote in sequence
+1856:    v40F3WithEnemyQueenActivePenalty: -4000000000,  // f3 when enemy queen is active CRITICAL!
+1999:    v40EnemyQueenOnH4Penalty: -250000000000,        // Enemy queen on h4 is CRITICAL
+2219:    // CRITICAL FIX: HARD FILTER that REJECTS bad moves BEFORE scoring
+2250:    // CRITICAL: Bot STILL plays d3 because book moves BYPASS the hard filter!
+2285:    // CRITICAL: Bot STILL plays d3 even with filters! The engine is bypassing them!
+2325:    // CRITICAL: From game analysis:
+2364:    // CRITICAL: From Sicilian game analysis:
+2401:    // CRITICAL: From Sicilian game analysis:
+2433:    // CRITICAL: From Caro-Kann game analysis:
+2562:    // v40.43: SICILIAN DEFENSE SPECIFIC FIXES - CRITICAL!
+2605:    // v40.45: CRITICAL OPENING BOOK - Follow known good moves in first 10 moves
+3319:// v40.31: CRITICAL FIX - simulateMoveOnBoard was UNDEFINED causing ALL v40 evals to fail!
+3324: * v40.31: CRITICAL - Simulate a move on the board and return the new board state
+5616:                penalty -= 4000;  // CRITICAL: No escape, back rank mate imminent
+5741:                    penalty -= 5000;  // CRITICAL: Ra1# or Ra8# imminent
+6492:            score -= 3000;  // CRITICAL: King completely trapped
+8235:                // CRITICAL: Knight near our king's castled position
+8486:            debugLog("[V40_PAWNSHIELD]", `🚨 CRITICAL: ${criticalPawn} pawn missing!`);
+8503:// v40.5: CRITICAL TACTICAL BLINDSPOT FIXES
+Exit code: 0

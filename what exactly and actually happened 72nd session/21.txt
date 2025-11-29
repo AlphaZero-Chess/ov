@@ -1,0 +1,54 @@
+Now let me enhance the recapture detection. The current code only looks for enemy pawns on central squares, but after `cxd4`, we need to capture ANY piece that was just captured. Let me add a more robust recapture system:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+47340|    // ═══════════════════════════════════════════════════════════════════════════════
+47341|    // v40.50 CRITICAL: MUST RECAPTURE CHECK - OVERRIDES ALL BOOK MOVES!
+47342|    // If there's an enemy pawn on d4/e4 (for white) that we can capture, we MUST capture it!
+47343|    // This fixes the bug where book move Ne2 was played instead of Nxd4 in Sicilian!
+47344|    // ═══════════════════════════════════════════════════════════════════════════════
+47345|    let mustRecaptureMove = null;
+47346|    if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+47347|        const recaptureBoard = parseFenToBoard(currentFen);
+47348|        const isWhiteToMove = currentFen.includes(' w ');
+47349|        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4'] : ['d5', 'e5'];
+47350|        
+47351|        for (const centralSq of centralPawnSquares) {
+47352|            const piece = recaptureBoard.get(centralSq);
+47353|            if (!piece || piece.toLowerCase() !== 'p') continue;
+47354|            
+47355|            const pieceIsWhite = piece === piece.toUpperCase();
+47356|            if (pieceIsWhite === isWhiteToMove) continue; // Our pawn, skip
+47357|            
+47358|            // Enemy pawn on our central square! Check if we can capture it
+47359|            if (canPieceCapture(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+47360|                // Generate the capture move
+47361|                mustRecaptureMove = v40GenerateCaptureMove(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b');
+47362|                if (mustRecaptureMove) {
+47363|                    debugLog("[V40.50_CRITICAL]", `🎯🎯🎯 MUST RECAPTURE ${centralSq}! Generated move: ${mustRecaptureMove}`);
+47364|                    debugLog("[V40.50_CRITICAL]", `🎯🎯🎯 This OVERRIDES any book move (was: ${bookMove || 'none'})`);
+47365|                }
+47366|                break;
+47367|            }
+47368|        }
+47369|    }
+47370|    
+47371|    // v40.50: If we MUST recapture, use that move immediately!
+47372|    if (mustRecaptureMove) {
+47373|        const thinkTime = Math.random() * 500 + 300;
+47374|        debugLog("[V40.50_CRITICAL]", `⚡⚡⚡ FORCED RECAPTURE: ${mustRecaptureMove} (${(thinkTime/1000).toFixed(1)}s)`);
+47375|        
+47376|        setTimeout(() => {
+47377|            bestMove = mustRecaptureMove;
+47378|            calculationLock = false;
+47379|            calculationStartTime = 0;
+47380|            currentCalculatingColor = null;
+47381|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+47382|            sendMove(mustRecaptureMove);
+47383|        }, thinkTime);
+47384|        
+47385|        return;
+47386|    }
+47387|    
+47388|    // v31.0.0: Never use book moves when there's a critical threat!
+47389|    if (bookMove && gamePhase === "opening" && !window.__EMERGENCY_DEFENSE_MODE && !preSafetyResult.hasCriticalThreat) {
+47390|        const thinkTime = Math.random() * 900 + 500;

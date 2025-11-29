@@ -1,0 +1,14 @@
+Let me see what happens AFTER the filter - if there are early returns that bypass it:
+Action: $ cd /app && sed -n '45723,46050p' "Lichess Bot-AlphaZero-Pure.user.js" | grep -n "return " | head -30
+Observation: 20:            if (!move || move.length < 4) return false;
+29:                    return true;
+37:                    return true;
+49:                    return true;
+76:                            return true;
+112:                        return true;
+134:                        return true;
+162:                            return true;
+196:                        return true;
+201:            return false;
+287:        return bestMove;
+Exit code: 0

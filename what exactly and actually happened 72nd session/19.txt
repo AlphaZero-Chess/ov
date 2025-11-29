@@ -1,0 +1,26 @@
+The logic works correctly. So the issue must be elsewhere:
+
+1. Either `moveCount` is not being set correctly (>15)
+2. Or `CONFIG.v40MustRecaptureModeEnabled` is being overridden somewhere
+3. Or the FEN is not matching correctly
+
+Let me check if there's any issue with how the FEN is being parsed in the actual code. The key is that after the game `1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4`, the bot plays `5. Ne2` instead of `5. Nxd4`.
+
+This means the recapture check at line 47346 is either:
+1. Not being reached (moveCount > 15?)
+2. Not finding the capture
+3. Being bypassed somewhere
+
+Let me add additional debugging and also EXTEND the recapture check to include captures of ALL central pieces, not just pawns. Let me implement v40.51:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+1|// ==UserScript==
+2|// @name         Lichess Bot - TRUE ALPHAZERO v40.50 TACTICAL DOMINANCE SUPREME
+3|// @description  TRUE AlphaZero Replica v40.50 - TACTICAL DOMINANCE: Deep forcing line detection, absolute opening enforcement, checkmate pattern recognition! CRUSHES opposition!
+4|// @author       AlphaZero TRUE REPLICA v40.50 TACTICAL DOMINANCE SUPREME
+5|// @version      40.50.0-TACTICAL-DOMINANCE-SUPREME
+6|// @match         *://lichess.org/*
+7|// @run-at        document-idle
+8|// @grant         none
+9|// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+10|// ==/UserScript==

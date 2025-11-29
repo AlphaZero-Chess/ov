@@ -1,0 +1,20 @@
+
+Action: $ cd /app && grep -n "mustRecaptureMove\|v40GenerateCaptureMove\|canPieceCapture" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 28843:        const canRecapture = canPieceCapture(board, centralSq, activeColor);
+28857:function canPieceCapture(board, targetSquare, activeColor) {
+28881:function v40GenerateCaptureMove(board, targetSquare, activeColor) {
+29114:        if (canPieceCapture(board, centralSq, activeColor)) {
+45794:                    if (canPieceCapture(filterBoard, centralSq, isWhite ? 'w' : 'b')) {
+45908:                        if (canPieceCapture(filterBoard, hanging.square, isWhite ? 'w' : 'b')) {
+45962:            if (canPieceCapture(filterBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+45984:                const generatedCapture = v40GenerateCaptureMove(filterBoard, mustRecaptureCentralSq, isWhiteToMove ? 'w' : 'b');
+47345:    let mustRecaptureMove = null;
+47359:            if (canPieceCapture(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+47361:                mustRecaptureMove = v40GenerateCaptureMove(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b');
+47362:                if (mustRecaptureMove) {
+47363:                    debugLog("[V40.50_CRITICAL]", `🎯🎯🎯 MUST RECAPTURE ${centralSq}! Generated move: ${mustRecaptureMove}`);
+47372:    if (mustRecaptureMove) {
+47374:        debugLog("[V40.50_CRITICAL]", `⚡⚡⚡ FORCED RECAPTURE: ${mustRecaptureMove} (${(thinkTime/1000).toFixed(1)}s)`);
+47377:            bestMove = mustRecaptureMove;
+47382:            sendMove(mustRecaptureMove);
+Exit code: 0

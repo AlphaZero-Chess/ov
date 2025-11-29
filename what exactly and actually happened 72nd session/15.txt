@@ -1,0 +1,54 @@
+I see - `moveCount` is calculated at line 47028 using `currentWsV`. Let me check where this is called in relation to the recapture check:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+47000|    let fullFen = positionBoard;
+47001|    
+47002|    // Check if FEN already includes turn info (space-separated parts)
+47003|    if (positionBoard.split(' ').length < 2) {
+47004|        // Need to add turn info based on message.v
+47005|        // message.v is move count: even = White's turn, odd = Black's turn
+47006|        const isWhitesTurn = (currentWsV % 2 === 0);
+47007|        const turnColor = isWhitesTurn ? 'w' : 'b';
+47008|        fullFen = `${positionBoard} ${turnColor} KQkq - 0 1`;
+47009|        debugLog("[POS]", `  Constructed FEN with turn: ${turnColor}`);
+47010|    }
+47011|    
+47012|    // Extract authoritative turn color from FEN
+47013|    const fenActiveColor = getActiveColorFromFen(fullFen);
+47014|    
+47015|    if (!fenActiveColor) {
+47016|        debugLog("[POS]", "⚠️ Could not extract active color from FEN");
+47017|        return;
+47018|    }
+47019|    
+47020|    const isWhite = (fenActiveColor === 'w');
+47021|    const colorName = isWhite ? 'White' : 'Black';
+47022|    
+47023|    debugLog("[POS]", `  FEN active color: ${colorName} (authoritative)`);
+47024|    debugLog("[POS]", `  Last seen v: ${lastSeenPositionId}`);
+47025|    
+47026|    // Update current position
+47027|    currentFen = fullFen;
+47028|    moveCount = Math.floor((currentWsV + 1) / 2);
+47029|    gamePhase = getStrategicPhase(moveCount);
+47030|    positionComplexity = evaluateComplexity(currentFen);
+47031|    
+47032|    // NEW v5.0.0: Track position for repetition detection
+47033|    trackPosition(currentFen);
+47034|    
+47035|    debugLog("[POS]", `Move #${moveCount} ${gamePhase} ${colorName} to move`);
+47036|    debugLog("[POS]", `Complexity: ${positionComplexity.toFixed(2)}`);
+47037|    
+47038|    // Check if this is a new position (version increased)
+47039|    const isNewPosition = (lastSeenPositionId === null || currentWsV > lastSeenPositionId);
+47040|    
+47041|    if (!isNewPosition) {
+47042|        debugLog("[POS]", "⏸️ Same position (v unchanged), skipping");
+47043|        return;
+47044|    }
+47045|    
+47046|    // Update last seen state
+47047|    lastSeenPositionId = currentWsV;
+47048|    lastSeenFen = fullFen;
+47049|    
+47050|    // ═══════════════════════════════════════════════════════════════

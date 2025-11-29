@@ -1,0 +1,7 @@
+The mustRecaptureMove check looks good. The issue is that the CONFIG.v40MustRecaptureModeEnabled might be false. Let me check:
+Action: $ cd /app && grep -n "v40MustRecaptureModeEnabled" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 2602:    v40MustRecaptureModeEnabled: true,
+29118:                if (moveNumber <= 10 && CONFIG.v40MustRecaptureModeEnabled) {
+45780:            if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+47346:    if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+Exit code: 0

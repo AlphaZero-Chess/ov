@@ -1,0 +1,33 @@
+Now let me look at the OPENING BOOK section more carefully. In the games, the bot plays Sicilian positions badly. The book move might be bypassing the recapture check:
+Action: $ cd /app && grep -n "getAlphaZeroBookMove\|SICILIAN\|Sicilian" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 149:    // GAME ANALYSIS: AlphaZero vs Lichess AI Level 8 - Sicilian Defense
+2283:    // v40.33.0: ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY SUPREME
+2287:    // Also: Implement proper Sicilian handling with d4/f4 attack systems
+2296:    // v40.33: SICILIAN MASTERY — Proper anti-Sicilian systems
+2297:    v40SicilianMasteryEnabled: true,
+2298:    v40SicilianForceD4: true,                       // ALWAYS play d4 against Sicilian
+2299:    v40SicilianD4Bonus: 5000000000000,              // 5 trillion bonus for d4 in Sicilian
+2300:    v40SicilianOpenBonus: 3000000000000,            // 3 trillion for Open Sicilian lines
+2301:    v40SicilianF4Attack: true,                      // Enable f4 Grand Prix Attack
+2302:    v40SicilianF4Bonus: 2000000000000,              // 2 trillion for f4 attack
+2364:    // CRITICAL: From Sicilian game analysis:
+2401:    // CRITICAL: From Sicilian game analysis:
+2562:    // v40.43: SICILIAN DEFENSE SPECIFIC FIXES - CRITICAL!
+2616:    // v40.45: SICILIAN DEFENSE MASTERY - Specific handling for Sicilian positions
+2617:    v40SicilianDefenseEnabled: true,
+2618:    v40SicilianD4ResponseRequired: true, // After d4 cxd4, MUST recapture
+2620:    // v40.45: E5 PUSH PROHIBITION IN SICILIAN - Don't push e5 when pieces under attack
+25350:// v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY FUNCTIONS
+25409: * v40.33: SICILIAN MASTERY — Force proper anti-Sicilian play with d4
+25411:function v40SicilianMasteryEval(fen, move, board, activeColor, moveNumber) {
+25412:    if (!CONFIG.v40SicilianMasteryEnabled) return 0;
+25417:    // Only for White in Sicilian positions (after 1.e4 c5)
+25420:    // Check for Sicilian position (e4 played, c5 played)
+25425:    const isSicilian = e4Piece && e4Piece.toLowerCase() === 'p' && 
+25428:    if (!isSicilian) return 0;
+25436:    // In Sicilian, ALWAYS prefer d4
+25438:        debugLog("[V40.33_SICILIAN]", `✅✅✅ SICILIAN MASTERY: Playing d4! EXCELLENT!`);
+25439:        score += CONFIG.v40SicilianD4Bonus || 5000000000000;
+25442:    // In Sicilian, NEVER play d3
+25444:        debugLog("[V40.33_SICILIAN]", `🚫🚫🚫 SICILIAN DISASTER: d3 is TERRIBLE in Sicilian! Play d4!`);
+Exit code: 0

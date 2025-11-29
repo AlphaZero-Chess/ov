@@ -1,0 +1,104 @@
+Good - the mustRecaptureMove check at line 47345 was added. Now let me look at the complete flow to identify more issues. The problem is that even after these fixes, the bot still loses. Let me analyze the recent game more carefully:
+Action: $ cd /app && grep -n "function applyAlphaZeroLogic" "Lichess Bot-AlphaZero-Pure.user.js" -A 100 | head -120
+Observation: 45723:function applyAlphaZeroLogic(bestMove, alternatives) {
+45724-    // ═══════════════════════════════════════════════════════════════════════════════
+45725-    // v40.31: ABSOLUTE HARD MOVE FILTER — REJECT BAD MOVES BEFORE ANY SCORING
+45726-    // This filter runs FIRST and REJECTS moves that are absolutely forbidden
+45727-    // This is NOT a penalty - the move is EXCLUDED from consideration entirely
+45728-    // ═══════════════════════════════════════════════════════════════════════════════
+45729-    
+45730-    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+45731-        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+45732-        debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+45733-        
+45734-        // v40.46: Parse board from currentFen for advanced filtering
+45735-        const filterBoard = currentFen ? parseFenToBoard(currentFen) : new Map();
+45736-        
+45737-        // Skip advanced filtering if we couldn't parse the board
+45738-        const canDoAdvancedFilter = filterBoard && filterBoard.size > 0;
+45739-        
+45740-        // Filter function to check if move should be REJECTED
+45741-        const shouldRejectMove = (move) => {
+45742-            if (!move || move.length < 4) return false;
+45743-            
+45744-            const fromSquare = move.substring(0, 2);
+45745-            const toSquare = move.substring(2, 4);
+45746-            
+45747-            // RULE 1: REJECT d2d3 in first 10 moves
+45748-            if (CONFIG.v40RejectD3InOpening && moveCount <= 10) {
+45749-                if (fromSquare === 'd2' && toSquare === 'd3') {
+45750-                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: d2d3 is ABSOLUTELY FORBIDDEN!`);
+45751-                    return true;
+45752-                }
+45753-            }
+45754-            
+45755-            // RULE 2: REJECT e2e3 in first 10 moves (when e4 is possible)
+45756-            if (CONFIG.v40RejectE3InOpening && moveCount <= 10) {
+45757-                if (fromSquare === 'e2' && toSquare === 'e3') {
+45758-                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: e2e3 is ABSOLUTELY FORBIDDEN!`);
+45759-                    return true;
+45760-                }
+45761-            }
+45762-            
+45763-            // RULE 3: REJECT queen retreat in first 10 moves (Qd2-Qd1, etc.)
+45764-            if (CONFIG.v40RejectQueenRetreatEarly && moveCount <= 10) {
+45765-                // Common queen retreats
+45766-                if ((fromSquare === 'd2' && toSquare === 'd1') ||
+45767-                    (fromSquare === 'e2' && toSquare === 'e1') ||
+45768-                    (fromSquare === 'f3' && toSquare === 'd1') ||
+45769-                    (fromSquare === 'e3' && toSquare === 'd1')) {
+45770-                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: Queen retreat ${move} is FORBIDDEN!`);
+45771-                    return true;
+45772-                }
+45773-            }
+45774-            
+45775-            // ═══════════════════════════════════════════════════════════════════
+45776-            // v40.46: CRITICAL CENTRAL PAWN RECAPTURE RULE - THE ULTIMATE FIX!
+45777-            // If enemy pawn on d4/e4 (for white) or d5/e5 (for black), MUST recapture!
+45778-            // This fixes the bug where bot plays Ne2 instead of Nxd4 in Sicilian!
+45779-            // ═══════════════════════════════════════════════════════════════════
+45780-            if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+45781-                const isWhite = currentFen.includes(' w ');
+45782-                const centralSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+45783-                
+45784-                for (const centralSq of centralSquares) {
+45785-                    const piece = filterBoard.get(centralSq);
+45786-                    if (!piece || piece.toLowerCase() !== 'p') continue;
+45787-                    
+45788-                    const pieceIsWhite = piece === piece.toUpperCase();
+45789-                    // Check if it's an ENEMY pawn on OUR central square
+45790-                    if (pieceIsWhite === isWhite) continue;
+45791-                    
+45792-                    // There's an enemy pawn on our central square!
+45793-                    // Check if we CAN recapture
+45794-                    if (canPieceCapture(filterBoard, centralSq, isWhite ? 'w' : 'b')) {
+45795-                        // We CAN recapture, so we MUST recapture!
+45796-                        if (toSquare !== centralSq) {
+45797-                            debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - MUST RECAPTURE ${centralSq} pawn!`);
+45798-                            return true;
+45799-                        }
+45800-                    }
+45801-                }
+45802-            }
+45803-            
+45804-            // ═══════════════════════════════════════════════════════════════════
+45805-            // v40.46: KNIGHT UNDER PAWN ATTACK - MUST RESPOND!
+45806-            // If our knight is under pawn attack, we MUST move it or capture the pawn!
+45807-            // ═══════════════════════════════════════════════════════════════════
+45808-            if (CONFIG.v40AbsoluteKnightSafetyEnabled && moveCount <= 20) {
+45809-                const isWhite = currentFen.includes(' w ');
+45810-                const piecesUnderPawnAttack = v40FindPiecesUnderPawnAttack(filterBoard, isWhite ? 'w' : 'b');
+45811-                
+45812-                // Find knights under pawn attack
+45813-                const knightsUnderAttack = piecesUnderPawnAttack.filter(p => p.pieceType === 'n');
+45814-                
+45815-                if (knightsUnderAttack.length > 0) {
+45816-                    let addressesThreat = false;
+45817-                    
+45818-                    for (const knight of knightsUnderAttack) {
+45819-                        // Moving the attacked knight
+45820-                        if (fromSquare === knight.square) {
+45821-                            addressesThreat = true;
+45822-                            break;
+45823-                        }
+Exit code: 0

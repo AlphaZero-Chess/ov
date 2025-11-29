@@ -1,0 +1,66 @@
+Knight from c3 to d4:
+- c3: file=2, rank=2 (0-indexed)
+- d4: file=3, rank=3 (0-indexed)
+- fileDiff = |3-2| = 1
+- rankDiff = |3-2| = 1
+
+Hmm, that's fileDiff=1 AND rankDiff=1, which is NOT a valid knight move (a knight needs either 2,1 or 1,2)!
+
+WAIT - c3 to d4 is NOT a valid knight move! That's a DIAGONAL (bishop/queen) move!
+
+Let me recalculate:
+- c3: file='c'=2 (a=0), rank=3-1=2
+- d4: file='d'=3 (a=0), rank=4-1=3
+- fileDiff = |3-2| = 1
+- rankDiff = |3-2| = 1
+
+That's 1,1 which is diagonal, not a knight move. A knight from c3 would go to:
+- a2, a4, b1, b5, d1, d5, e2, e4
+
+So c3 to d4 is NOT a knight move! The knight CANNOT capture the pawn on d4 from c3!
+
+Looking at the game position after 1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4:
+- White knights are on c3 and f3
+- The knight on c3 CANNOT go to d4 (it's a diagonal, not a knight move)
+- The knight on f3 CAN go to d4! (f3 to d4: fileDiff = |3-5| = 2, rankDiff = |3-2| = 1) ✓
+
+So f3 to d4 is a valid knight move! Nf3xd4!
+
+The recapture move should be "f3d4" (Nxd4). Let me verify the logic is finding this:
+Action: $ cat > /tmp/test_knight.js << 'EOF'
+function canPieceMove(board, from, to, pieceType, isWhite) {
+    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = parseInt(from.charAt(1)) - 1;
+    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(to.charAt(1)) - 1;
+    
+    const fileDiff = Math.abs(toFile - fromFile);
+    const rankDiff = Math.abs(toRank - fromRank);
+    
+    switch (pieceType) {
+        case 'n':
+            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+    }
+    return false;
+}
+
+// Test knight from f3 to d4
+console.log('f3 to d4:', canPieceMove(null, 'f3', 'd4', 'n', true));
+// f3: file=5, rank=2
+// d4: file=3, rank=3
+// fileDiff = |3-5| = 2
+// rankDiff = |3-2| = 1
+// -> (2,1) is valid knight move!
+
+// Test knight from c3 to d4
+console.log('c3 to d4:', canPieceMove(null, 'c3', 'd4', 'n', true));
+// c3: file=2, rank=2
+// d4: file=3, rank=3
+// fileDiff = |3-2| = 1
+// rankDiff = |3-2| = 1
+// -> (1,1) is NOT valid knight move!
+EOF
+node /tmp/test_knight.js
+Observation: f3 to d4: true
+c3 to d4: false
+Exit code: 0
