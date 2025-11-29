@@ -1,0 +1,8 @@
+Now let me check how moveCount is updated:
+Action: $ grep -n "moveCount\s*=" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 40019:        const moveCount = pieceMovementHistory[pieceKey];
+40023:            if (moveCount === 1) {
+40025:            } else if (moveCount === 2) {
+41328:let moveCount = 0;
+47028:    moveCount = Math.floor((currentWsV + 1) / 2);
+Exit code: 0

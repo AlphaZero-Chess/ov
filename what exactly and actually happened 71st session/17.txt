@@ -1,0 +1,23 @@
+
+Action: $ grep -n "return bestMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" 2>&1 | head -20
+Observation: 2878:        return bestMove;
+3264:            return bestMove;
+3485:        return bestMove;
+42592:            return bestMove;
+45649:        return bestMove.move;
+45655:    return bestMove.move;
+46009:        return bestMove;
+46235:        return bestMove;
+46241:        return bestMove;
+46247:        return bestMove;
+46257:            return bestMove;
+46263:            return bestMove;
+46275:        return bestMove;
+46306:            return bestMove;
+46312:            return bestMove;
+46324:        return bestMove;
+46354:            return bestMove;
+46360:            return bestMove;
+46380:            return bestMove;
+46417:            return bestMove;
+Exit code: 0

@@ -1,0 +1,46 @@
+The knight move logic looks correct: f3 to d4 would be fileDiff=2 (f-d), rankDiff=1 (4-3), which matches the knight pattern!
+
+The issue might be in how the board is being parsed. Let me look at the parseFenToBoard function:
+Action: $ grep -n "function parseFenToBoard" "/app/Lichess Bot-AlphaZero-Pure.user.js" -A 40 | head -50
+Observation: 42274:function parseFenToBoard(fen) {
+42275-    try {
+42276-        const board = new Map();
+42277-        const fenParts = fen.split(' ');
+42278-        if (fenParts.length < 1) return board;
+42279-        
+42280-        const position = fenParts[0];
+42281-        const ranks = position.split('/');
+42282-        
+42283-        for (let rankIdx = 0; rankIdx < ranks.length; rankIdx++) {
+42284-            const rank = ranks[rankIdx];
+42285-            const actualRank = 8 - rankIdx; // FEN starts from rank 8
+42286-            let file = 0;
+42287-            
+42288-            for (let char of rank) {
+42289-                if (char >= '1' && char <= '8') {
+42290-                    file += parseInt(char);
+42291-                } else {
+42292-                    const square = String.fromCharCode('a'.charCodeAt(0) + file) + actualRank;
+42293-                    board.set(square, char);
+42294-                    file++;
+42295-                }
+42296-            }
+42297-        }
+42298-        
+42299-        return board;
+42300-    } catch (e) {
+42301-        debugLog("[SUPREME]", "⚠️ Error in parseFenToBoard:", e.message);
+42302-        return new Map();
+42303-    }
+42304-}
+42305-
+42306-/**
+42307- * v21.0.0 SUPREME: Find Queen position for given color
+42308- * Returns square string (e.g., "d1") or null if not found
+42309- */
+42310-function findQueenPosition(fen, color) {
+42311-    try {
+42312-        const board = parseFenToBoard(fen);
+42313-        const queenChar = color === 'w' ? 'Q' : 'q';
+42314-
+Exit code: 0

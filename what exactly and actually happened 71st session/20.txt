@@ -1,0 +1,33 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+47336|    // Opening book first - BUT SKIP IF IN EMERGENCY MODE
+47337|    const fenKey = currentFen.split(' ').slice(0, 4).join(' ');
+47338|    const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
+47339|    
+47340|    // v31.0.0: Never use book moves when there's a critical threat!
+47341|    if (bookMove && gamePhase === "opening" && !window.__EMERGENCY_DEFENSE_MODE && !preSafetyResult.hasCriticalThreat) {
+47342|        const thinkTime = Math.random() * 900 + 500;
+47343|        
+47344|        debugLog("[ENGINE]", `📖 Book move: ${bookMove} (${(thinkTime/1000).toFixed(1)}s)`);
+47345|        
+47346|        setTimeout(() => {
+47347|            bestMove = bookMove;
+47348|            calculationLock = false;
+47349|            calculationStartTime = 0;
+47350|            currentCalculatingColor = null;
+47351|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+47352|            sendMove(bookMove);
+47353|        }, thinkTime);
+47354|        
+47355|        return;
+47356|    }
+47357|    
+47358|    // v31.0.0: If book move would be used but there's a threat, skip book and use engine
+47359|    if (bookMove && preSafetyResult.hasCriticalThreat) {
+47360|        debugLog("[ENGINE]", `⚠️ SKIPPING book move ${bookMove} due to critical threat - using engine`);
+47361|    }
+47362|    
+47363|    // Engine calculation
+47364|    const isStrategic = isStrategicPosition(currentFen);
+47365|    const depth = getStrategicDepth(gamePhase, isStrategic, timeRemaining);

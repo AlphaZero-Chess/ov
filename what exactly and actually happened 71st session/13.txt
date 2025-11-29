@@ -1,0 +1,39 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+41325|let moveHistory = [];
+41326|let gamePhase = "opening";
+41327|let multiPVLines = [];
+41328|let moveCount = 0;
+41329|let timeRemaining = 60000;
+41330|let positionComplexity = 0;
+41331|let reconnectionAttempts = 0;
+41332|
+41333|// NEW v5.0.0: Position history for repetition detection
+41334|let positionHistory = [];        // Track all positions for repetition detection
+41335|let positionCounts = new Map();  // Count occurrences of each position
+41336|
+41337|// NEW v6.0.0: Tactical awareness and evaluation tracking
+41338|let evaluationHistory = [];      // Track evaluation over time
+41339|let lastOpponentMove = null;     // Track opponent's last move
+41340|let positionIsTactical = false;  // Flag for tactical positions
+41341|let positionIsCritical = false;  // Flag for critical positions
+41342|// Note: lastEvaluation is already declared above in crisis state tracking
+41343|
+41344|// NEW v7.0.0: Enhanced evaluation tracking
+41345|let evaluationTrend = 0;         // Positive = improving, Negative = declining
+41346|let evaluationStability = 1.0;   // 1.0 = stable, lower = unstable
+41347|
+41348|// ═══════════════════════════════════════════════════════════════════════
+41349|// LOCK-FREE STATE MANAGEMENT - DEADLOCK-PROOF SYSTEM
+41350|// ═══════════════════════════════════════════════════════════════════════
+41351|
+41352|// Core position tracking
+41353|let lastSeenPositionId = null;        // Track message.v
+41354|let lastSeenFen = null;               // Track FEN string
+41355|let currentCalculatingColor = null;   // Track which color is currently calculating ('w' or 'b')
+41356|
+41357|// Lock system - SIMPLIFIED
+41358|let calculationLock = false;          // Prevent overlapping calculations
+41359|let calculationStartTime = 0;         // When current calculation started
+41360|let lastSuccessfulMoveTime = 0;       // When last move was successfully sent

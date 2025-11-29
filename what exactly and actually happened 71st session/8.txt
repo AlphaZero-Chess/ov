@@ -1,0 +1,5 @@
+The parseFenToBoard function looks correct. Let me analyze where the actual issue lies. Looking at the game more carefully:
+
+After 4. d4 cxd4, the FEN would show a black pawn on d4. But perhaps the issue is timing - when does this filtering happen? Let me check if CONFIG.v40MoveFilterEnabled is true and where the filter runs:
+Action: $ grep -n "v40MoveFilterEnabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: Exit code: 0

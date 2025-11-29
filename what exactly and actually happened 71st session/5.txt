@@ -1,0 +1,67 @@
+Now I understand the issue! The recapture code looks for central pawns (d4/e4 for white, d5/e5 for black), but in the Sicilian game from the test, the pawn is on d4 which is a CENTRAL square that should be detected. Let me check the canPieceCapture function to see if it's working properly:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28857|function canPieceCapture(board, targetSquare, activeColor) {
+28858|    const isWhite = activeColor === 'w';
+28859|    
+28860|    for (const [square, piece] of board) {
+28861|        if (!piece) continue;
+28862|        const pieceIsWhite = piece === piece.toUpperCase();
+28863|        if (pieceIsWhite !== isWhite) continue;
+28864|        
+28865|        const pieceType = piece.toLowerCase();
+28866|        
+28867|        // Check if this piece can capture the target
+28868|        if (canPieceMove(board, square, targetSquare, pieceType, pieceIsWhite)) {
+28869|            return true;
+28870|        }
+28871|    }
+28872|    
+28873|    return false;
+28874|}
+28875|
+28876|/**
+28877| * v40.49 CRITICAL: Generate a capture move for a target square
+28878| * This is used when Stockfish doesn't suggest the capture move but we MUST capture!
+28879| * Returns the best capture move in UCI format (e.g., "f3d4")
+28880| */
+28881|function v40GenerateCaptureMove(board, targetSquare, activeColor) {
+28882|    const isWhite = activeColor === 'w';
+28883|    const captureMoves = [];
+28884|    
+28885|    // Priority order: Q > R > B > N > P (lower value pieces preferred for captures)
+28886|    // Actually for equal exchanges, we want to capture with LOWEST value piece
+28887|    const piecePriority = { 'p': 1, 'n': 2, 'b': 3, 'r': 4, 'q': 5, 'k': 6 };
+28888|    
+28889|    for (const [square, piece] of board) {
+28890|        if (!piece) continue;
+28891|        const pieceIsWhite = piece === piece.toUpperCase();
+28892|        if (pieceIsWhite !== isWhite) continue;
+28893|        
+28894|        const pieceType = piece.toLowerCase();
+28895|        
+28896|        // Check if this piece can capture the target
+28897|        if (canPieceMove(board, square, targetSquare, pieceType, pieceIsWhite)) {
+28898|            captureMoves.push({
+28899|                from: square,
+28900|                to: targetSquare,
+28901|                move: square + targetSquare,
+28902|                pieceType: pieceType,
+28903|                priority: piecePriority[pieceType] || 10
+28904|            });
+28905|        }
+28906|    }
+28907|    
+28908|    if (captureMoves.length === 0) {
+28909|        return null;
+28910|    }
+28911|    
+28912|    // Sort by priority (prefer capturing with lower-value pieces)
+28913|    captureMoves.sort((a, b) => a.priority - b.priority);
+28914|    
+28915|    // Return the best capture move (lowest value piece)
+28916|    return captureMoves[0].move;
+28917|}
+28918|
+28919|/**
+28920| * v40.44 Helper: Check if piece can legally move from -> to

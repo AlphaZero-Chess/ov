@@ -1,0 +1,9 @@
+Now I see! At line 45649 and 45655, the function returns bestMove from the opening book BEFORE the hard filter runs! The hard filter at line 45730 never gets a chance if it returns early!
+
+This is the bug! Let me find where the applyAlphaZeroLogic function is called:
+Action: $ grep -n "applyAlphaZeroLogic\|getAlphaZeroBookMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 45570:function getAlphaZeroBookMove(fen, activeColor) {
+45723:function applyAlphaZeroLogic(bestMove, alternatives) {
+47338:    const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
+47980:                const alphaMove = applyAlphaZeroLogic(bestMove, multiPVLines);
+Exit code: 0

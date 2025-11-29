@@ -1,0 +1,94 @@
+I see there are many return points for bestMove! The issue is likely that somewhere the bestMove is returned BEFORE the filter has a chance to run. Let me check the flow more carefully:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45640|        debugLog("[OPENING]", `📖 Opening phase (move ${moveCount}) - using PERFECT theory`);
+45641|        // ABSOLUTE ZERO novelties - PERFECT theory always
+45642|        
+45643|        // v20 TRUE ALPHAZERO: 100% priority for highest-weighted move (PERFECT mainlines)
+45644|        // 0% chance for alternatives (ZERO variation)
+45645|        
+45646|        // ALWAYS use highest-weighted move from FILTERED moves (mainline)
+45647|        const bestMove = filteredMoves.reduce((best, move) => move.weight > best.weight ? move : best, filteredMoves[0]);
+45648|        debugLog("[ENGINE]", `📖 BOOK MOVE (MAINLINE 100%): ${bestMove.name} - ${bestMove.move}`);
+45649|        return bestMove.move;
+45650|    }
+45651|    
+45652|    // Fallback to highest-weighted move from FILTERED moves
+45653|    const bestMove = filteredMoves.reduce((best, move) => move.weight > best.weight ? move : best, filteredMoves[0]);
+45654|    debugLog("[ENGINE]", `📖 BOOK MOVE (default): ${bestMove.name} - ${bestMove.move}`);
+45655|    return bestMove.move;
+45656|}
+45657|
+45658|/**
+45659| * Detect if move is elegant/prophylactic (AlphaZero signature)
+45660| */
+45661|function isElegantMove(move, alternatives, complexity) {
+45662|    const isCapture = move.includes('x') || move.length === 5;
+45663|    const isQuiet = !isCapture && move.length === 4;
+45664|    
+45665|    // Quiet moves in complex positions are often elegant
+45666|    if (isQuiet && complexity > 0.6) return true;
+45667|    
+45668|    // Check if it's not the most forcing move
+45669|    if (alternatives.length > 2) {
+45670|        const topScore = alternatives[0].score;
+45671|        const moveIndex = alternatives.findIndex(m => m.move === move);
+45672|        
+45673|        if (moveIndex >= 1 && moveIndex <= 2 && Math.abs(alternatives[moveIndex].score - topScore) < 40) {
+45674|            return true;
+45675|        }
+45676|    }
+45677|    
+45678|    return false;
+45679|}
+45680|
+45681|/**
+45682| * NEW v11.0.0: Detect PASSIVE opening moves that should be avoided
+45683| * AlphaZero plays AGGRESSIVELY from move 1
+45684| */
+45685|function isPassiveOpeningMove(move, moveNum) {
+45686|    if (moveNum > 10) return false; // Only check in opening
+45687|    
+45688|    // Terrible passive moves in opening
+45689|    const passiveMoves = [
+45690|        'd2d3',  // Passive d3 (instead of d4)
+45691|        'd7d6',  // Can be okay in some lines but often passive
+45692|        'g1h3',  // Horrible knight to h3
+45693|        'b1a3',  // Horrible knight to a3
+45694|        'g8h6',  // Horrible knight to h6
+45695|        'b8a6',  // Horrible knight to a6
+45696|        'a2a3',  // Ultra-passive a3 (except in specific lines)
+45697|        'h2h3',  // Often passive h3 (except prophylactic)
+45698|        'a7a6',  // Can be okay in Sicilian but often passive
+45699|        'h7h6',  // Often passive h6 (except prophylactic)
+45700|    ];
+45701|    
+45702|    // Check for passive moves UNLESS they're part of specific theory
+45703|    // For example, d3 is TERRIBLE unless in King's Indian Attack setup
+45704|    if (move === 'd2d3' && moveNum <= 3) {
+45705|        // d3 on moves 1-3 is almost always passive (except KIA after Nf3)
+45706|        debugLog("[PASSIVE]", "🚫 Detected passive d3 in early opening!");
+45707|        return true;
+45708|    }
+45709|    
+45710|    // Nh3 and Na3 are almost ALWAYS terrible
+45711|    if (move === 'g1h3' || move === 'b1a3' || move === 'g8h6' || move === 'b8a6') {
+45712|        debugLog("[PASSIVE]", `🚫 Detected horrible knight move: ${move}!`);
+45713|        return true;
+45714|    }
+45715|    
+45716|    return passiveMoves.includes(move);
+45717|}
+45718|
+45719|/**
+45720| * AlphaZero move selection - v17.0.0: ESSENCE MODE + TACTICAL PRECISION
+45721| * ENHANCED: With AlphaZero essence overlay and v16 safety validation
+45722| */
+45723|function applyAlphaZeroLogic(bestMove, alternatives) {
+45724|    // ═══════════════════════════════════════════════════════════════════════════════
+45725|    // v40.31: ABSOLUTE HARD MOVE FILTER — REJECT BAD MOVES BEFORE ANY SCORING
+45726|    // This filter runs FIRST and REJECTS moves that are absolutely forbidden
+45727|    // This is NOT a penalty - the move is EXCLUDED from consideration entirely
+45728|    // ═══════════════════════════════════════════════════════════════════════════════
+45729|    
+45730|    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {

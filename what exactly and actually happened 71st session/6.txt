@@ -1,0 +1,99 @@
+The issue is clear now! Looking at the game:
+```
+1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Ne2...
+```
+
+After 4...cxd4, the pawn is on d4. The code checks for "enemy pawn on central squares (d4, e4 for white)". But wait - the pawn on d4 is a BLACK pawn (from c5xd4), so it should be detected correctly.
+
+The real problem might be that after `cxd4`, it's now WHITE's turn and:
+- `d4` has a BLACK pawn
+- The code should check if white can capture at d4
+- The knight on f3 can capture at d4
+
+Let me trace through: the code checks `centralPawnSquares = ['d4', 'e4']` for white, then for each square checks if there's an enemy pawn. But actually after `cxd4`, the black pawn moved FROM c5 TO d4, so there's a pawn there!
+
+Let me check the canPieceMove function for knight moves:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28919|/**
+28920| * v40.44 Helper: Check if piece can legally move from -> to
+28921| */
+28922|function canPieceMove(board, from, to, pieceType, isWhite) {
+28923|    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+28924|    const fromRank = parseInt(from.charAt(1)) - 1;
+28925|    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+28926|    const toRank = parseInt(to.charAt(1)) - 1;
+28927|    
+28928|    const fileDiff = Math.abs(toFile - fromFile);
+28929|    const rankDiff = Math.abs(toRank - fromRank);
+28930|    
+28931|    switch (pieceType) {
+28932|        case 'n':  // Knight
+28933|            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+28934|            
+28935|        case 'b':  // Bishop
+28936|            if (fileDiff !== rankDiff) return false;
+28937|            return !isPathBlockedDiagonal(board, from, to);
+28938|            
+28939|        case 'r':  // Rook
+28940|            if (fileDiff !== 0 && rankDiff !== 0) return false;
+28941|            return !isPathBlockedStraight(board, from, to);
+28942|            
+28943|        case 'q':  // Queen
+28944|            if (fileDiff === rankDiff) return !isPathBlockedDiagonal(board, from, to);
+28945|            if (fileDiff === 0 || rankDiff === 0) return !isPathBlockedStraight(board, from, to);
+28946|            return false;
+28947|            
+28948|        case 'p':  // Pawn
+28949|            const pawnDir = isWhite ? 1 : -1;
+28950|            // Pawn capture: diagonal, one square
+28951|            if (fileDiff === 1 && (toRank - fromRank) === pawnDir) {
+28952|                return true;  // Can capture
+28953|            }
+28954|            return false;
+28955|            
+28956|        case 'k':  // King
+28957|            return fileDiff <= 1 && rankDiff <= 1;
+28958|    }
+28959|    
+28960|    return false;
+28961|}
+28962|
+28963|/**
+28964| * v40.44 Helper: Is diagonal path blocked?
+28965| */
+28966|function isPathBlockedDiagonal(board, from, to) {
+28967|    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+28968|    const fromRank = parseInt(from.charAt(1)) - 1;
+28969|    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+28970|    const toRank = parseInt(to.charAt(1)) - 1;
+28971|    
+28972|    const fileDir = toFile > fromFile ? 1 : -1;
+28973|    const rankDir = toRank > fromRank ? 1 : -1;
+28974|    
+28975|    let f = fromFile + fileDir;
+28976|    let r = fromRank + rankDir;
+28977|    
+28978|    while (f !== toFile && r !== toRank) {
+28979|        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+28980|        if (board.get(sq)) return true;
+28981|        f += fileDir;
+28982|        r += rankDir;
+28983|    }
+28984|    
+28985|    return false;
+28986|}
+28987|
+28988|/**
+28989| * v40.44 Helper: Is straight path blocked?
+28990| */
+28991|function isPathBlockedStraight(board, from, to) {
+28992|    const fromFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+28993|    const fromRank = parseInt(from.charAt(1)) - 1;
+28994|    const toFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+28995|    const toRank = parseInt(to.charAt(1)) - 1;
+28996|    
+28997|    if (fromFile === toFile) {
+28998|        // Vertical
+28999|        const dir = toRank > fromRank ? 1 : -1;
+29000|        for (let r = fromRank + dir; r !== toRank; r += dir) {

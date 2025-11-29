@@ -1,0 +1,114 @@
+Good, the function exists. Now let me check the main move selection area to see where the issues might be:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45900|                const valuableEnemyHanging = enemyHanging.filter(p => p.value >= 300);
+45901|                
+45902|                if (valuableEnemyHanging.length > 0) {
+45903|                    // Check if we can capture any of them
+45904|                    let canCaptureHanging = false;
+45905|                    let hangingSquare = null;
+45906|                    
+45907|                    for (const hanging of valuableEnemyHanging) {
+45908|                        if (canPieceCapture(filterBoard, hanging.square, isWhite ? 'w' : 'b')) {
+45909|                            canCaptureHanging = true;
+45910|                            hangingSquare = hanging.square;
+45911|                            break;
+45912|                        }
+45913|                    }
+45914|                    
+45915|                    // If we CAN capture a hanging piece but this move DOESN'T capture it, reject!
+45916|                    if (canCaptureHanging && toSquare !== hangingSquare) {
+45917|                        debugLog("[V40.48_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - MUST CAPTURE hanging piece at ${hangingSquare}!`);
+45918|                        return true;
+45919|                    }
+45920|                }
+45921|            }
+45922|            
+45923|            return false;
+45924|        };
+45925|        
+45926|        // Check if bestMove should be rejected
+45927|        let bestMoveWasRejected = false;
+45928|        if (shouldRejectMove(bestMove)) {
+45929|            debugLog("[V40.47_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+45930|            bestMoveWasRejected = true;
+45931|            
+45932|            // Find first alternative that passes the filter
+45933|            for (let i = 1; i < alternatives.length; i++) {
+45934|                const altMove = alternatives[i].move;
+45935|                if (!shouldRejectMove(altMove)) {
+45936|                    debugLog("[V40.47_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+45937|                    bestMove = altMove;
+45938|                    bestMoveWasRejected = false;
+45939|                    break;
+45940|                }
+45941|            }
+45942|        }
+45943|        
+45944|        // Also filter ALL alternatives to remove bad moves from consideration
+45945|        const filteredAlternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+45946|        
+45947|        // v40.48 ULTIMATE RECAPTURE FIX: ALWAYS prioritize central pawn captures
+45948|        // This runs REGARDLESS of whether bestMove was rejected or not!
+45949|        const isWhiteToMove = currentFen.includes(' w ');
+45950|        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4'] : ['d5', 'e5'];
+45951|        
+45952|        // Check if there's an enemy central pawn that MUST be captured
+45953|        let mustRecaptureCentralSq = null;
+45954|        for (const centralSq of centralPawnSquares) {
+45955|            const piece = filterBoard.get(centralSq);
+45956|            if (!piece || piece.toLowerCase() !== 'p') continue;
+45957|            
+45958|            const pieceIsWhite = piece === piece.toUpperCase();
+45959|            if (pieceIsWhite === isWhiteToMove) continue; // Our pawn, skip
+45960|            
+45961|            // Enemy pawn on our central square! Check if we can capture it
+45962|            if (canPieceCapture(filterBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+45963|                mustRecaptureCentralSq = centralSq;
+45964|                debugLog("[V40.48_FILTER]", `🎯 ENEMY PAWN ON ${centralSq} - MUST RECAPTURE!`);
+45965|                break;
+45966|            }
+45967|        }
+45968|        
+45969|        // If we MUST recapture, find the best capture move
+45970|        if (mustRecaptureCentralSq) {
+45971|            // Find ALL moves that capture the central pawn
+45972|            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+45973|            
+45974|            if (captureMovesAll.length > 0) {
+45975|                // Use the highest-scored capture move
+45976|                bestMove = captureMovesAll[0].move;
+45977|                debugLog("[V40.49_FILTER]", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+45978|                bestMoveWasRejected = false;
+45979|            } else {
+45980|                // v40.49: CRITICAL FIX - Generate capture move ourselves if Stockfish didn't suggest it!
+45981|                debugLog("[V40.49_FILTER]", `⚠️ No capture in alternatives! Generating capture move...`);
+45982|                
+45983|                // Find which of our pieces can capture the central pawn
+45984|                const generatedCapture = v40GenerateCaptureMove(filterBoard, mustRecaptureCentralSq, isWhiteToMove ? 'w' : 'b');
+45985|                
+45986|                if (generatedCapture) {
+45987|                    bestMove = generatedCapture;
+45988|                    debugLog("[V40.49_FILTER]", `✅ GENERATED RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+45989|                    bestMoveWasRejected = false;
+45990|                } else {
+45991|                    debugLog("[V40.49_FILTER]", `❌ Could not generate capture move for ${mustRecaptureCentralSq}!`);
+45992|                }
+45993|            }
+45994|        }
+45995|        
+45996|        // v40.47 fallback: If bestMove was rejected and no alternative found
+45997|        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+45998|            debugLog("[V40.48_FILTER]", `🚨 ALL moves filtered! Using original best move as fallback.`);
+45999|            // Keep the original bestMove as last resort
+46000|        }
+46001|        
+46002|        alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;
+46003|        
+46004|        debugLog("[V40.47_FILTER]", `═══════════════════════════════════════════════════════`);
+46005|    }
+46006|    
+46007|    // Don't be creative if we only have one option
+46008|    if (alternatives.length < 2) {
+46009|        return bestMove;
+46010|    }

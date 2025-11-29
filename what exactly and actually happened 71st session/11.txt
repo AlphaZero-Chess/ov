@@ -1,0 +1,33 @@
+This logic looks correct. The issue might be in the moveCount variable. Let me check how moveCount is calculated:
+Action: $ grep -n "moveCount\|moveNumber" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 3419:        const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+3453:                value = v40ValueNetworkEmulation(fen, node.move, board, activeColor, moveNumber);
+3469:        const temperature = moveNumber <= (CONFIG.v40TemperatureMoves || 30) ? 
+3561:function v40ValueNetworkEmulation(fen, move, board, activeColor, moveNumber) {
+3574:        const kingSafetyScore = v40EvaluateKingSafety(board, activeColor, moveNumber);
+3586:        const initiativeScore = v40EvaluateInitiative(board, activeColor, moveNumber);
+3599:            const moveScore = v40EvaluateMoveQuality(fen, move, board, activeColor, moveNumber);
+3676:function v40EvaluateKingSafety(board, activeColor, moveNumber) {
+3693:    if (moveNumber > 8 && ourKingFile >= 3 && ourKingFile <= 4) {
+3805:function v40EvaluateInitiative(board, activeColor, moveNumber) {
+3809:    if (moveNumber <= 15) {
+3904:function v40EvaluateMoveQuality(fen, move, board, activeColor, moveNumber) {
+3948:    if (pieceType === 'q' && moveNumber <= 8) {
+4041:        const moveNumber = parseInt(fen.split(' ')[5]) || 1;
+4062:        const rejectResult = v40ImmediateMoveRejection(candidateMove, board, activeColor, moveNumber);
+4072:        const valueScore = v40ValueNetworkEmulation(fen, candidateMove, board, activeColor, moveNumber) * 1000;
+4078:        const strategicScore = v40DeepStrategicEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+4102:        const delayedScore = v40DelayedGratificationEval(fen, candidateMove, board, activeColor, moveNumber);
+4114:        const initiativeScore = v40InitiativeEvaluation(fen, candidateMove, board, activeColor, moveNumber);
+4121:        const kingSafetyScore = v40DeepKingSafetyAnalysis(fen, candidateMove, board, activeColor, moveNumber);
+4175:function v40DeepKingSafetyAnalysis(fen, move, board, activeColor, moveNumber) {
+4189:        if (!hasCastled && moveNumber > 10) {
+4200:        if (moveNumber > 10 && kingFile >= 3 && kingFile <= 4) {
+5212:function v40ImmediateMoveRejection(move, board, activeColor, moveNumber) {
+5269:function v40DeepStrategicEvaluation(fen, move, board, activeColor, moveNumber) {
+5288:    if (moveNumber > 20 && isPatientManeuver(move, board, activeColor)) {
+5435:function v40DelayedGratificationEval(fen, move, board, activeColor, moveNumber) {
+5449:    if (moveNumber > 15 && isPatientManeuver(move, board, activeColor)) {
+5491:function v40InitiativeEvaluation(fen, move, board, activeColor, moveNumber) {
+5505:    if (moveNumber <= 12 && isDevelopmentMoveV40(move, board, activeColor)) {
+Exit code: 0

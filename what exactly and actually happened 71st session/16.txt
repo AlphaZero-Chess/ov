@@ -1,0 +1,11 @@
+Good - `moveCount` is calculated from `currentWsV`. After 4...cxd4, it should be move 5 for white. The filter runs for moves <= 12, so it should be active.
+
+Looking at this game: `1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Ne2`
+- After move 4 (d4), it's black's turn
+- Black plays cxd4
+- Now it's move 5 for white
+- moveCount should be around 5-9 depending on how it's calculated
+
+The logic looks correct, so the issue might be subtle. Let me search for anywhere that might bypass the filter:
+Action: $ grep -n "return bestMove" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: Failed to execute tool mcp_execute_bash: 
