@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.46 HARD FILTER SUPREME
-// @description  TRUE AlphaZero Replica v40.46 - CRITICAL FIX: Hard filter now includes central pawn recapture, knight safety, and hanging piece checks!
-// @author       AlphaZero TRUE REPLICA v40.46 HARD FILTER SUPREME
-// @version      40.46.0-HARD-FILTER-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.47 FORCE RECAPTURE SUPREME
+// @description  TRUE AlphaZero Replica v40.47 - CRITICAL FIX: Force recapture when all moves filtered, enhanced filter rejection handling!
+// @author       AlphaZero TRUE REPLICA v40.47 FORCE RECAPTURE SUPREME
+// @version      40.47.0-FORCE-RECAPTURE-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -45819,24 +45819,59 @@ function applyAlphaZeroLogic(bestMove, alternatives) {
         };
         
         // Check if bestMove should be rejected
+        let bestMoveWasRejected = false;
         if (shouldRejectMove(bestMove)) {
-            debugLog("[V40.31_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+            debugLog("[V40.47_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+            bestMoveWasRejected = true;
             
             // Find first alternative that passes the filter
             for (let i = 1; i < alternatives.length; i++) {
                 const altMove = alternatives[i].move;
                 if (!shouldRejectMove(altMove)) {
-                    debugLog("[V40.31_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+                    debugLog("[V40.47_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
                     bestMove = altMove;
+                    bestMoveWasRejected = false;
                     break;
                 }
             }
         }
         
         // Also filter ALL alternatives to remove bad moves from consideration
-        alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+        const filteredAlternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
         
-        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+        // v40.47 CRITICAL FIX: If bestMove was rejected and no alternative found, 
+        // search through ALL legal moves to find a valid recapture!
+        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+            debugLog("[V40.47_FILTER]", `🚨 ALL moves filtered! Searching for valid recapture...`);
+            
+            // Find the central square that needs recapturing
+            const isWhite = currentFen.includes(' w ');
+            const centralSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+            
+            for (const centralSq of centralSquares) {
+                const piece = filterBoard.get(centralSq);
+                if (!piece || piece.toLowerCase() !== 'p') continue;
+                
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) continue;
+                
+                // Found enemy pawn - find a piece that can capture it
+                for (const alt of alternatives) {
+                    const toSq = alt.move.substring(2, 4);
+                    if (toSq === centralSq) {
+                        debugLog("[V40.47_FILTER]", `✅ FORCE RECAPTURE: ${alt.move} captures ${centralSq}!`);
+                        bestMove = alt.move;
+                        bestMoveWasRejected = false;
+                        break;
+                    }
+                }
+                if (!bestMoveWasRejected) break;
+            }
+        }
+        
+        alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;
+        
+        debugLog("[V40.47_FILTER]", `═══════════════════════════════════════════════════════`);
     }
     
     // Don't be creative if we only have one option
