@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.50 TACTICAL DOMINANCE SUPREME
-// @description  TRUE AlphaZero Replica v40.50 - TACTICAL DOMINANCE: Deep forcing line detection, absolute opening enforcement, checkmate pattern recognition! CRUSHES opposition!
-// @author       AlphaZero TRUE REPLICA v40.50 TACTICAL DOMINANCE SUPREME
-// @version      40.50.0-TACTICAL-DOMINANCE-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.51 ABSOLUTE RECAPTURE SUPREME
+// @description  TRUE AlphaZero Replica v40.51 - ABSOLUTE RECAPTURE: Forces Nxd4 in Sicilian, deep mate threat detection, zero blunders! THE ULTIMATE FIX!
+// @author       AlphaZero TRUE REPLICA v40.51 ABSOLUTE RECAPTURE SUPREME
+// @version      40.51.0-ABSOLUTE-RECAPTURE-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
