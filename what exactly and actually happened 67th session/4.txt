@@ -1,0 +1,10 @@
+I can see the v40.46 filter has been partially implemented with central pawn recapture, knight safety, and pawn push restrictions. Let me check if the CONFIG settings are enabled:
+Action: $ grep -n "v40MustRecaptureModeEnabled\|v40AbsoluteKnightSafetyEnabled\|v40HardMoveFilterEnabled" "/app/Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 2223:    v40HardMoveFilterEnabled: true,
+2602:    v40MustRecaptureModeEnabled: true,
+2610:    v40AbsoluteKnightSafetyEnabled: true,
+29075:                if (moveNumber <= 10 && CONFIG.v40MustRecaptureModeEnabled) {
+45687:    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+45737:            if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+45765:            if (CONFIG.v40AbsoluteKnightSafetyEnabled && moveCount <= 20) {
+Exit code: 0

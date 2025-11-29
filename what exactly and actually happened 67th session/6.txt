@@ -1,0 +1,108 @@
+The functions exist. Now let me analyze the recent test games from the problem statement to understand what's still going wrong. Looking at the games in the problem statement:
+
+1. **Game with Ne2 instead of Nxd4** - This should be caught by the central pawn recapture rule
+2. **Games with passive play** - Need better anti-passivity 
+3. **Games with queen early out** - Need queen movement penalties
+
+Let me enhance the implementation with v40.47 that addresses the patterns I see in the recent games. First, let me look at one of the recent games more closely:
+Action: Looking at the recent games from the problem statement:
+
+GAME 1 (65th session): B23 Sicilian Defense: Closed, Traditional
+1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Ne2...
+ISSUE: Move 5. Ne2 instead of 5. Nxd4
+
+Let me trace through the v40.46 filter logic:
+- After 4...cxd4: Black pawn on d4
+- isWhite = true (it's white to move)
+- centralSquares = ['d4', 'e4']
+- For centralSq = 'd4':
+  - piece = filterBoard.get('d4') = 'p' (black pawn)
+  - pieceIsWhite = false (lowercase p)
+  - isWhite = true
+  - pieceIsWhite === isWhite → false === true → false, so we DON'T continue, we process!
+  - canPieceCapture(filterBoard, 'd4', 'w') - Can white capture d4?
+    - This should check if Nc3 can capture d4
+    - For knight on c3: fileDiff = |d-c| = 1, rankDiff = |4-3| = 1
+    - Knight move: (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2)
+    - = (1 === 2 && 1 === 1) || (1 === 1 && 1 === 2)
+    - = false || false = FALSE!
+    
+FOUND THE BUG! The knight on c3 CANNOT capture d4 according to canPieceMove because a knight move is either (2,1) or (1,2) but from c3 to d4 is a (1,1) move!
+
+Wait, that can't be right. Let me re-check:
+- c3 to d4: 
+  - fromFile = 'c' = 2 (0-indexed)
+  - fromRank = 3 - 1 = 2 (0-indexed)
+  - toFile = 'd' = 3
+  - toRank = 4 - 1 = 3
+  - fileDiff = |3 - 2| = 1
+  - rankDiff = |3 - 2| = 1
+  
+A knight CAN'T move (1,1) - that's a bishop move! Knights move (2,1) or (1,2).
+
+So the canPieceCapture function correctly returns FALSE because a knight on c3 CANNOT legally capture on d4!
+
+But wait - in the Sicilian after cxd4, white typically plays Nxd4. Let me check the actual game:
+After 1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4...
+
+If there's a knight on f3, that knight CAN capture d4:
+- f3 to d4:
+  - fromFile = 'f' = 5
+  - fromRank = 3 - 1 = 2
+  - toFile = 'd' = 3
+  - toRank = 4 - 1 = 3
+  - fileDiff = |3 - 5| = 2
+  - rankDiff = |3 - 2| = 1
+  - Knight move: (2 === 2 && 1 === 1) = TRUE!
+
+So Nf3xd4 IS a valid knight capture!
+
+The canPieceCapture function should find the Nf3 and return true. Let me check the implementation again...
+
+Ah, I see. The canPieceCapture function iterates through ALL pieces and checks if ANY of our pieces can capture the target. So even though Nc3 can't capture d4, Nf3 CAN, so canPieceCapture should return true.
+
+So the bug must be elsewhere. Let me check if the filter is actually being called...
+
+Actually, looking at the game more carefully:
+1. e4 c5 2. Nc3 Nc6 3. Nf3 g6 4. d4 cxd4 5. Ne2...
+
+After move 4.d4 cxd4, it's WHITE's turn (move 5). The moveCount would be 5 (assuming we're counting full moves, or 9 if counting half-moves).
+
+Wait, the filter says: `if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15)`
+
+So if moveCount is counted correctly (as half-moves, it would be 9), the filter should apply.
+
+But the condition is `moveCount <= 15` for half-moves which is about 7.5 full moves, and we're at move 5... so it should apply.
+
+The issue might be:
+1. The filter isn't being called at all (CONFIG not enabled)
+2. The filter is called but canPieceCapture returns false
+3. The filter returns true (reject) but the rejection isn't being applied
+
+Let me look at how the filter is applied... Looking at line 45821-45833:
+```javascript
+if (shouldRejectMove(bestMove)) {
+    // Find alternative
+}
+```
+
+But what if ALL alternatives also fail the filter? Then we'd have no alternatives left!
+
+Actually, the code filters alternatives at line 45837:
+```javascript
+alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+```
+
+If all alternatives are filtered out, alternatives.length would be 0 and at line 45843:
+```javascript
+if (alternatives.length < 2) {
+    return bestMove;
+}
+```
+
+Wait, this returns bestMove even if it was rejected! This is a bug!
+
+If bestMove is rejected and all alternatives are rejected, we still return bestMove (the bad move).
+
+This needs to be fixed! If bestMove is rejected, we should NOT return it even if alternatives are empty.
+Observation: Your thought has been logged.

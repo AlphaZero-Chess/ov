@@ -1,0 +1,79 @@
+Let me look at the current hard filter and enhance it:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45685|    // ═══════════════════════════════════════════════════════════════════════════════
+45686|    
+45687|    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+45688|        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+45689|        debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+45690|        
+45691|        // v40.46: Parse board from currentFen for advanced filtering
+45692|        const filterBoard = currentFen ? parseFenToBoard(currentFen) : new Map();
+45693|        
+45694|        // Skip advanced filtering if we couldn't parse the board
+45695|        const canDoAdvancedFilter = filterBoard && filterBoard.size > 0;
+45696|        
+45697|        // Filter function to check if move should be REJECTED
+45698|        const shouldRejectMove = (move) => {
+45699|            if (!move || move.length < 4) return false;
+45700|            
+45701|            const fromSquare = move.substring(0, 2);
+45702|            const toSquare = move.substring(2, 4);
+45703|            
+45704|            // RULE 1: REJECT d2d3 in first 10 moves
+45705|            if (CONFIG.v40RejectD3InOpening && moveCount <= 10) {
+45706|                if (fromSquare === 'd2' && toSquare === 'd3') {
+45707|                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: d2d3 is ABSOLUTELY FORBIDDEN!`);
+45708|                    return true;
+45709|                }
+45710|            }
+45711|            
+45712|            // RULE 2: REJECT e2e3 in first 10 moves (when e4 is possible)
+45713|            if (CONFIG.v40RejectE3InOpening && moveCount <= 10) {
+45714|                if (fromSquare === 'e2' && toSquare === 'e3') {
+45715|                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: e2e3 is ABSOLUTELY FORBIDDEN!`);
+45716|                    return true;
+45717|                }
+45718|            }
+45719|            
+45720|            // RULE 3: REJECT queen retreat in first 10 moves (Qd2-Qd1, etc.)
+45721|            if (CONFIG.v40RejectQueenRetreatEarly && moveCount <= 10) {
+45722|                // Common queen retreats
+45723|                if ((fromSquare === 'd2' && toSquare === 'd1') ||
+45724|                    (fromSquare === 'e2' && toSquare === 'e1') ||
+45725|                    (fromSquare === 'f3' && toSquare === 'd1') ||
+45726|                    (fromSquare === 'e3' && toSquare === 'd1')) {
+45727|                    debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: Queen retreat ${move} is FORBIDDEN!`);
+45728|                    return true;
+45729|                }
+45730|            }
+45731|            
+45732|            // ═══════════════════════════════════════════════════════════════════
+45733|            // v40.46: CRITICAL CENTRAL PAWN RECAPTURE RULE - THE ULTIMATE FIX!
+45734|            // If enemy pawn on d4/e4 (for white) or d5/e5 (for black), MUST recapture!
+45735|            // This fixes the bug where bot plays Ne2 instead of Nxd4 in Sicilian!
+45736|            // ═══════════════════════════════════════════════════════════════════
+45737|            if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+45738|                const isWhite = currentFen.includes(' w ');
+45739|                const centralSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+45740|                
+45741|                for (const centralSq of centralSquares) {
+45742|                    const piece = filterBoard.get(centralSq);
+45743|                    if (!piece || piece.toLowerCase() !== 'p') continue;
+45744|                    
+45745|                    const pieceIsWhite = piece === piece.toUpperCase();
+45746|                    // Check if it's an ENEMY pawn on OUR central square
+45747|                    if (pieceIsWhite === isWhite) continue;
+45748|                    
+45749|                    // There's an enemy pawn on our central square!
+45750|                    // Check if we CAN recapture
+45751|                    if (canPieceCapture(filterBoard, centralSq, isWhite ? 'w' : 'b')) {
+45752|                        // We CAN recapture, so we MUST recapture!
+45753|                        if (toSquare !== centralSq) {
+45754|                            debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - MUST RECAPTURE ${centralSq} pawn!`);
+45755|                            return true;
+45756|                        }
+45757|                    }
+45758|                }
+45759|            }
+45760|            

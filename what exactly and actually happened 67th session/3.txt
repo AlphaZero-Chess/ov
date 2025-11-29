@@ -1,0 +1,94 @@
+I see the v40.46 filter was partially implemented. Let me view more of the filter to see what's there:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45760|            
+45761|            // ═══════════════════════════════════════════════════════════════════
+45762|            // v40.46: KNIGHT UNDER PAWN ATTACK - MUST RESPOND!
+45763|            // If our knight is under pawn attack, we MUST move it or capture the pawn!
+45764|            // ═══════════════════════════════════════════════════════════════════
+45765|            if (CONFIG.v40AbsoluteKnightSafetyEnabled && moveCount <= 20) {
+45766|                const isWhite = currentFen.includes(' w ');
+45767|                const piecesUnderPawnAttack = v40FindPiecesUnderPawnAttack(filterBoard, isWhite ? 'w' : 'b');
+45768|                
+45769|                // Find knights under pawn attack
+45770|                const knightsUnderAttack = piecesUnderPawnAttack.filter(p => p.pieceType === 'n');
+45771|                
+45772|                if (knightsUnderAttack.length > 0) {
+45773|                    let addressesThreat = false;
+45774|                    
+45775|                    for (const knight of knightsUnderAttack) {
+45776|                        // Moving the attacked knight
+45777|                        if (fromSquare === knight.square) {
+45778|                            addressesThreat = true;
+45779|                            break;
+45780|                        }
+45781|                        
+45782|                        // Capturing an attacking pawn
+45783|                        if (knight.attackers.includes(toSquare)) {
+45784|                            addressesThreat = true;
+45785|                            break;
+45786|                        }
+45787|                    }
+45788|                    
+45789|                    if (!addressesThreat) {
+45790|                        debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - Knight ${knightsUnderAttack[0].square} under pawn attack!`);
+45791|                        return true;
+45792|                    }
+45793|                }
+45794|            }
+45795|            
+45796|            // ═══════════════════════════════════════════════════════════════════
+45797|            // v40.46: DON'T PUSH PAWNS WHEN PIECES ARE HANGING!
+45798|            // If we have a piece attacked and not defended, we MUST defend it first!
+45799|            // ═══════════════════════════════════════════════════════════════════
+45800|            if (moveCount <= 20) {
+45801|                const isWhite = currentFen.includes(' w ');
+45802|                const movingPiece = filterBoard.get(fromSquare);
+45803|                
+45804|                if (movingPiece && movingPiece.toLowerCase() === 'p') {
+45805|                    // We're pushing a pawn - check if we have hanging pieces
+45806|                    const hangingPieces = findHangingPiecesV40_9(filterBoard, isWhite ? 'w' : 'b');
+45807|                    
+45808|                    // Only reject if valuable piece is hanging (knight/bishop/rook/queen)
+45809|                    const valuableHanging = hangingPieces.filter(p => p.value >= 300);
+45810|                    
+45811|                    if (valuableHanging.length > 0) {
+45812|                        debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: Pawn push ${move} when ${valuableHanging[0].piece}@${valuableHanging[0].square} is hanging!`);
+45813|                        return true;
+45814|                    }
+45815|                }
+45816|            }
+45817|            
+45818|            return false;
+45819|        };
+45820|        
+45821|        // Check if bestMove should be rejected
+45822|        if (shouldRejectMove(bestMove)) {
+45823|            debugLog("[V40.31_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+45824|            
+45825|            // Find first alternative that passes the filter
+45826|            for (let i = 1; i < alternatives.length; i++) {
+45827|                const altMove = alternatives[i].move;
+45828|                if (!shouldRejectMove(altMove)) {
+45829|                    debugLog("[V40.31_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+45830|                    bestMove = altMove;
+45831|                    break;
+45832|                }
+45833|            }
+45834|        }
+45835|        
+45836|        // Also filter ALL alternatives to remove bad moves from consideration
+45837|        alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+45838|        
+45839|        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+45840|    }
+45841|    
+45842|    // Don't be creative if we only have one option
+45843|    if (alternatives.length < 2) {
+45844|        return bestMove;
+45845|    }
+45846|    
+45847|    // NEW v6.0.0: Update tactical and critical flags
+45848|    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+45849|    const currentEval = alternatives[0].score;
+45850|    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);

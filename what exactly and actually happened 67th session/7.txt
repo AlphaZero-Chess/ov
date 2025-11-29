@@ -1,0 +1,36 @@
+I found a critical bug! Let me look at the filter logic more closely:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45818|            return false;
+45819|        };
+45820|        
+45821|        // Check if bestMove should be rejected
+45822|        if (shouldRejectMove(bestMove)) {
+45823|            debugLog("[V40.31_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);
+45824|            
+45825|            // Find first alternative that passes the filter
+45826|            for (let i = 1; i < alternatives.length; i++) {
+45827|                const altMove = alternatives[i].move;
+45828|                if (!shouldRejectMove(altMove)) {
+45829|                    debugLog("[V40.31_FILTER]", `✅ Using alternative: ${altMove} (filtered out ${bestMove})`);
+45830|                    bestMove = altMove;
+45831|                    break;
+45832|                }
+45833|            }
+45834|        }
+45835|        
+45836|        // Also filter ALL alternatives to remove bad moves from consideration
+45837|        alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+45838|        
+45839|        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+45840|    }
+45841|    
+45842|    // Don't be creative if we only have one option
+45843|    if (alternatives.length < 2) {
+45844|        return bestMove;
+45845|    }
+45846|    
+45847|    // NEW v6.0.0: Update tactical and critical flags
+45848|    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+45849|    const currentEval = alternatives[0].score;
+45850|    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);
