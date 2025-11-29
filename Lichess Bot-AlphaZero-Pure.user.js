@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.49 ABSOLUTE RECAPTURE
-// @description  TRUE AlphaZero Replica v40.49 - ABSOLUTE FIX: Generate capture moves ourselves if Stockfish doesn't suggest them!
-// @author       AlphaZero TRUE REPLICA v40.49 ABSOLUTE RECAPTURE
-// @version      40.49.0-ABSOLUTE-RECAPTURE
+// @name         Lichess Bot - TRUE ALPHAZERO v40.50 TACTICAL DOMINANCE SUPREME
+// @description  TRUE AlphaZero Replica v40.50 - TACTICAL DOMINANCE: Deep forcing line detection, absolute opening enforcement, checkmate pattern recognition! CRUSHES opposition!
+// @author       AlphaZero TRUE REPLICA v40.50 TACTICAL DOMINANCE SUPREME
+// @version      40.50.0-TACTICAL-DOMINANCE-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
