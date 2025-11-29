@@ -1,0 +1,6 @@
+I see the function is inside `applyAlphaZeroLogic`. I need to check if `currentFen` and `currentBoard` are accessible:
+Action: $ cd /app && grep -n "let currentFen\|var currentFen\|const currentFen\|let currentBoard\|var currentBoard\|const currentBoard" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 17694:    let currentBoard = new Map(board);
+21939:    let currentBoard = new Map(board);
+41279:let currentFen = "";
+Exit code: 0

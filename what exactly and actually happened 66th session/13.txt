@@ -1,0 +1,16 @@
+I need to modify the code to parse the board from FEN inside the function. Let me update it:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+        debugLog(\"[V40.31_FILTER]\", `═══════════════════════════════════════════════════════`);
+        debugLog(\"[V40.31_FILTER]\", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+        
+        // Filter function to check if move should be REJECTED
+        const shouldRejectMove = (move) => {" --new-str "    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+        debugLog(\"[V40.31_FILTER]\", `═══════════════════════════════════════════════════════`);
+        debugLog(\"[V40.31_FILTER]\", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+        
+        // v40.46: Parse board from currentFen for advanced filtering
+        const filterBoard = parseFenToBoard(currentFen);
+        
+        // Filter function to check if move should be REJECTED
+        const shouldRejectMove = (move) => {"
+Observation: Edit was successful.

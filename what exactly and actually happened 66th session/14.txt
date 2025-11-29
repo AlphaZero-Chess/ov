@@ -1,0 +1,99 @@
+Now I need to replace `currentBoard` with `filterBoard` and `currentFen` references in the filter function:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45725|                    return true;
+45726|                }
+45727|            }
+45728|            
+45729|            // ═══════════════════════════════════════════════════════════════════
+45730|            // v40.46: CRITICAL CENTRAL PAWN RECAPTURE RULE - THE ULTIMATE FIX!
+45731|            // If enemy pawn on d4/e4 (for white) or d5/e5 (for black), MUST recapture!
+45732|            // This fixes the bug where bot plays Ne2 instead of Nxd4 in Sicilian!
+45733|            // ═══════════════════════════════════════════════════════════════════
+45734|            if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+45735|                const isWhite = currentFen.includes(' w ');
+45736|                const centralSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+45737|                
+45738|                for (const centralSq of centralSquares) {
+45739|                    const piece = currentBoard.get(centralSq);
+45740|                    if (!piece || piece.toLowerCase() !== 'p') continue;
+45741|                    
+45742|                    const pieceIsWhite = piece === piece.toUpperCase();
+45743|                    // Check if it's an ENEMY pawn on OUR central square
+45744|                    if (pieceIsWhite === isWhite) continue;
+45745|                    
+45746|                    // There's an enemy pawn on our central square!
+45747|                    // Check if we CAN recapture
+45748|                    if (canPieceCapture(currentBoard, centralSq, isWhite ? 'w' : 'b')) {
+45749|                        // We CAN recapture, so we MUST recapture!
+45750|                        if (toSquare !== centralSq) {
+45751|                            debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - MUST RECAPTURE ${centralSq} pawn!`);
+45752|                            return true;
+45753|                        }
+45754|                    }
+45755|                }
+45756|            }
+45757|            
+45758|            // ═══════════════════════════════════════════════════════════════════
+45759|            // v40.46: KNIGHT UNDER PAWN ATTACK - MUST RESPOND!
+45760|            // If our knight is under pawn attack, we MUST move it or capture the pawn!
+45761|            // ═══════════════════════════════════════════════════════════════════
+45762|            if (CONFIG.v40AbsoluteKnightSafetyEnabled && moveCount <= 20) {
+45763|                const isWhite = currentFen.includes(' w ');
+45764|                const piecesUnderPawnAttack = v40FindPiecesUnderPawnAttack(currentBoard, isWhite ? 'w' : 'b');
+45765|                
+45766|                // Find knights under pawn attack
+45767|                const knightsUnderAttack = piecesUnderPawnAttack.filter(p => p.pieceType === 'n');
+45768|                
+45769|                if (knightsUnderAttack.length > 0) {
+45770|                    let addressesThreat = false;
+45771|                    
+45772|                    for (const knight of knightsUnderAttack) {
+45773|                        // Moving the attacked knight
+45774|                        if (fromSquare === knight.square) {
+45775|                            addressesThreat = true;
+45776|                            break;
+45777|                        }
+45778|                        
+45779|                        // Capturing an attacking pawn
+45780|                        if (knight.attackers.includes(toSquare)) {
+45781|                            addressesThreat = true;
+45782|                            break;
+45783|                        }
+45784|                    }
+45785|                    
+45786|                    if (!addressesThreat) {
+45787|                        debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - Knight ${knightsUnderAttack[0].square} under pawn attack!`);
+45788|                        return true;
+45789|                    }
+45790|                }
+45791|            }
+45792|            
+45793|            // ═══════════════════════════════════════════════════════════════════
+45794|            // v40.46: DON'T PUSH PAWNS WHEN PIECES ARE HANGING!
+45795|            // If we have a piece attacked and not defended, we MUST defend it first!
+45796|            // ═══════════════════════════════════════════════════════════════════
+45797|            if (moveCount <= 20) {
+45798|                const isWhite = currentFen.includes(' w ');
+45799|                const movingPiece = currentBoard.get(fromSquare);
+45800|                
+45801|                if (movingPiece && movingPiece.toLowerCase() === 'p') {
+45802|                    // We're pushing a pawn - check if we have hanging pieces
+45803|                    const hangingPieces = findHangingPiecesV40_9(currentBoard, isWhite ? 'w' : 'b');
+45804|                    
+45805|                    // Only reject if valuable piece is hanging (knight/bishop/rook/queen)
+45806|                    const valuableHanging = hangingPieces.filter(p => p.value >= 300);
+45807|                    
+45808|                    if (valuableHanging.length > 0) {
+45809|                        debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: Pawn push ${move} when ${valuableHanging[0].piece}@${valuableHanging[0].square} is hanging!`);
+45810|                        return true;
+45811|                    }
+45812|                }
+45813|            }
+45814|            
+45815|            return false;
+45816|        };
+45817|        
+45818|        // Check if bestMove should be rejected
+45819|        if (shouldRejectMove(bestMove)) {
+45820|            debugLog("[V40.31_FILTER]", `🚫 Best move ${bestMove} REJECTED by hard filter!`);

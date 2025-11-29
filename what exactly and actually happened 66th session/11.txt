@@ -1,0 +1,49 @@
+Good, `currentFen` is a global variable at line 41279. But I need to check if there's a way to get the board in applyAlphaZeroLogic:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+41275|// GLOBAL STATE - RACE-CONDITION-FREE
+41276|// ═══════════════════════════════════════════════════════════════════════
+41277|
+41278|let chessEngine;
+41279|let currentFen = "";
+41280|let bestMove;
+41281|let webSocketWrapper = null;
+41282|let moveHistory = [];
+41283|let gamePhase = "opening";
+41284|let multiPVLines = [];
+41285|let moveCount = 0;
+41286|let timeRemaining = 60000;
+41287|let positionComplexity = 0;
+41288|let reconnectionAttempts = 0;
+41289|
+41290|// NEW v5.0.0: Position history for repetition detection
+41291|let positionHistory = [];        // Track all positions for repetition detection
+41292|let positionCounts = new Map();  // Count occurrences of each position
+41293|
+41294|// NEW v6.0.0: Tactical awareness and evaluation tracking
+41295|let evaluationHistory = [];      // Track evaluation over time
+41296|let lastOpponentMove = null;     // Track opponent's last move
+41297|let positionIsTactical = false;  // Flag for tactical positions
+41298|let positionIsCritical = false;  // Flag for critical positions
+41299|// Note: lastEvaluation is already declared above in crisis state tracking
+41300|
+41301|// NEW v7.0.0: Enhanced evaluation tracking
+41302|let evaluationTrend = 0;         // Positive = improving, Negative = declining
+41303|let evaluationStability = 1.0;   // 1.0 = stable, lower = unstable
+41304|
+41305|// ═══════════════════════════════════════════════════════════════════════
+41306|// LOCK-FREE STATE MANAGEMENT - DEADLOCK-PROOF SYSTEM
+41307|// ═══════════════════════════════════════════════════════════════════════
+41308|
+41309|// Core position tracking
+41310|let lastSeenPositionId = null;        // Track message.v
+41311|let lastSeenFen = null;               // Track FEN string
+41312|let currentCalculatingColor = null;   // Track which color is currently calculating ('w' or 'b')
+41313|
+41314|// Lock system - SIMPLIFIED
+41315|let calculationLock = false;          // Prevent overlapping calculations
+41316|let calculationStartTime = 0;         // When current calculation started
+41317|let lastSuccessfulMoveTime = 0;       // When last move was successfully sent
+41318|
+41319|// Position ready tracking - PER COLOR
+41320|let whitePositionReady = false;       // White has a position to calculate

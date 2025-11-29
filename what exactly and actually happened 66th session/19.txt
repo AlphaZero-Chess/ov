@@ -1,0 +1,17 @@
+The function exists. Now let me also add a safety check in case the FEN is empty:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45687|    if (CONFIG.v40HardMoveFilterEnabled && moveCount <= (CONFIG.v40MaxEarlyMoveNumber || 12)) {
+45688|        debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
+45689|        debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
+45690|        
+45691|        // v40.46: Parse board from currentFen for advanced filtering
+45692|        const filterBoard = parseFenToBoard(currentFen);
+45693|        
+45694|        // Filter function to check if move should be REJECTED
+45695|        const shouldRejectMove = (move) => {
+45696|            if (!move || move.length < 4) return false;
+45697|            
+45698|            const fromSquare = move.substring(0, 2);
+45699|            const toSquare = move.substring(2, 4);
+45700|            

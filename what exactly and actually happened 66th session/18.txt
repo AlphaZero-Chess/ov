@@ -1,0 +1,4 @@
+Let me also check if `parseFenToBoard` function exists:
+Action: $ cd /app && grep -n "function parseFenToBoard" "Lichess Bot-AlphaZero-Pure.user.js" | head -3
+Observation: 42231:function parseFenToBoard(fen) {
+Exit code: 0

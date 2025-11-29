@@ -1,0 +1,13 @@
+The functions look correct. Let me now analyze why the bot is still making bad moves despite all these penalties. Looking at the test games, the issue is consistently about not recapturing central pawns.
+
+Let me trace through the logic for one specific case and see if there are any gaps:
+Action: $ cd /app && grep -n "function computeCombinedScore\|shouldRejectMove\|moveFilterScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 44265:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+45059:                const shouldRejectMove = v40AbsoluteMoveFilter(fen, move, board, activeColor, moveNumber);
+45060:                const moveFilterScore = shouldRejectMove ? -Number.MAX_SAFE_INTEGER : 0;
+45171:                               moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore;
+45692:        const shouldRejectMove = (move) => {
+45730:        if (shouldRejectMove(bestMove)) {
+45736:                if (!shouldRejectMove(altMove)) {
+45745:        alternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
+Exit code: 0

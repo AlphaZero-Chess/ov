@@ -1,0 +1,108 @@
+The canPieceCapture and canPieceMove functions look correct. Now let me look at the v40FindPiecesUnderPawnAttack function to ensure it's working:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+28396|function v40FindPiecesUnderPawnAttack(board, activeColor) {
+28397|    const result = [];
+28398|    const isWhite = activeColor === 'w';
+28399|    
+28400|    for (const [square, piece] of board) {
+28401|        if (!piece) continue;
+28402|        
+28403|        const pieceIsWhite = piece === piece.toUpperCase();
+28404|        if (pieceIsWhite !== isWhite) continue;  // Only our pieces
+28405|        
+28406|        const pieceType = piece.toLowerCase();
+28407|        if (pieceType === 'p' || pieceType === 'k') continue;  // Skip pawns and king
+28408|        
+28409|        const attackers = v40GetPawnAttackers(board, square, activeColor);
+28410|        
+28411|        if (attackers.length > 0) {
+28412|            result.push({
+28413|                square,
+28414|                piece,
+28415|                pieceType,
+28416|                pieceValue: getPieceValueSimple(pieceType),
+28417|                attackers
+28418|            });
+28419|        }
+28420|    }
+28421|    
+28422|    // Sort by value (highest first)
+28423|    result.sort((a, b) => b.pieceValue - a.pieceValue);
+28424|    
+28425|    return result;
+28426|}
+28427|
+28428|/**
+28429| * v40.41 Helper: Get list of enemy pawns attacking a square
+28430| */
+28431|function v40GetPawnAttackers(board, square, activeColor) {
+28432|    const attackers = [];
+28433|    const isWhite = activeColor === 'w';
+28434|    
+28435|    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+28436|    const rank = parseInt(square.charAt(1));
+28437|    
+28438|    // CRITICAL FIX v40.42: Enemy pawn attack positions
+28439|    // Black pawns (attacking white pieces) are on HIGHER ranks and attack DOWN
+28440|    // White pawns (attacking black pieces) are on LOWER ranks and attack UP
+28441|    // So for WHITE pieces, enemy black pawns are on rank+1
+28442|    // For BLACK pieces, enemy white pawns are on rank-1
+28443|    const enemyPawnRank = isWhite ? rank + 1 : rank - 1;
+28444|    
+28445|    if (enemyPawnRank < 1 || enemyPawnRank > 8) return attackers;
+28446|    
+28447|    // Check left diagonal
+28448|    if (file > 0) {
+28449|        const leftSquare = String.fromCharCode('a'.charCodeAt(0) + file - 1) + enemyPawnRank;
+28450|        const leftPiece = board.get(leftSquare);
+28451|        if (leftPiece && leftPiece.toLowerCase() === 'p') {
+28452|            const pieceIsWhite = leftPiece === leftPiece.toUpperCase();
+28453|            if (pieceIsWhite !== isWhite) {
+28454|                attackers.push(leftSquare);
+28455|            }
+28456|        }
+28457|    }
+28458|    
+28459|    // Check right diagonal
+28460|    if (file < 7) {
+28461|        const rightSquare = String.fromCharCode('a'.charCodeAt(0) + file + 1) + enemyPawnRank;
+28462|        const rightPiece = board.get(rightSquare);
+28463|        if (rightPiece && rightPiece.toLowerCase() === 'p') {
+28464|            const pieceIsWhite = rightPiece === rightPiece.toUpperCase();
+28465|            if (pieceIsWhite !== isWhite) {
+28466|                attackers.push(rightSquare);
+28467|            }
+28468|        }
+28469|    }
+28470|    
+28471|    return attackers;
+28472|}
+28473|
+28474|/**
+28475| * v40.41 Helper: Check if a square is under pawn attack
+28476| */
+28477|function v40IsSquareUnderPawnAttack(board, square, activeColor) {
+28478|    const attackers = v40GetPawnAttackers(board, square, activeColor);
+28479|    return attackers.length > 0;
+28480|}
+28481|
+28482|/**
+28483| * v40.41: POST-CAPTURE PAWN POSITION EVALUATION
+28484| * After enemy pawn captures something, check what it NOW attacks
+28485| * Example: After cxd4, the d4 pawn now attacks Nc3!
+28486| */
+28487|function v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) {
+28488|    if (!CONFIG.v40PostCapturePawnEnabled) return 0;
+28489|    
+28490|    let score = 0;
+28491|    const isWhite = activeColor === 'w';
+28492|    
+28493|    // Simulate our move
+28494|    const testBoard = simulateMove(board, move);
+28495|    if (!testBoard) return 0;
+28496|    
+28497|    // After our move, check if any enemy pawn is positioned to attack our pieces
+28498|    // This catches the case where after cxd4, the d4 pawn attacks Nc3
+28499|    
+28500|    for (const [square, piece] of testBoard) {

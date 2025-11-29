@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -n "function canPieceCapture" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 28857:function canPieceCapture(board, targetSquare, activeColor) {
+Exit code: 0
