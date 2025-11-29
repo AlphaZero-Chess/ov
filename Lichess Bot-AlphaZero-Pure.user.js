@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.48 ULTIMATE RECAPTURE
-// @description  TRUE AlphaZero Replica v40.48 - ULTIMATE FIX: Force central pawn recapture ALWAYS, no more Ne2 instead of Nxd4!
-// @author       AlphaZero TRUE REPLICA v40.48 ULTIMATE RECAPTURE
-// @version      40.48.0-ULTIMATE-RECAPTURE
+// @name         Lichess Bot - TRUE ALPHAZERO v40.49 ABSOLUTE RECAPTURE
+// @description  TRUE AlphaZero Replica v40.49 - ABSOLUTE FIX: Generate capture moves ourselves if Stockfish doesn't suggest them!
+// @author       AlphaZero TRUE REPLICA v40.49 ABSOLUTE RECAPTURE
+// @version      40.49.0-ABSOLUTE-RECAPTURE
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -28874,6 +28874,49 @@ function canPieceCapture(board, targetSquare, activeColor) {
 }
 
 /**
+ * v40.49 CRITICAL: Generate a capture move for a target square
+ * This is used when Stockfish doesn't suggest the capture move but we MUST capture!
+ * Returns the best capture move in UCI format (e.g., "f3d4")
+ */
+function v40GenerateCaptureMove(board, targetSquare, activeColor) {
+    const isWhite = activeColor === 'w';
+    const captureMoves = [];
+    
+    // Priority order: Q > R > B > N > P (lower value pieces preferred for captures)
+    // Actually for equal exchanges, we want to capture with LOWEST value piece
+    const piecePriority = { 'p': 1, 'n': 2, 'b': 3, 'r': 4, 'q': 5, 'k': 6 };
+    
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pieceType = piece.toLowerCase();
+        
+        // Check if this piece can capture the target
+        if (canPieceMove(board, square, targetSquare, pieceType, pieceIsWhite)) {
+            captureMoves.push({
+                from: square,
+                to: targetSquare,
+                move: square + targetSquare,
+                pieceType: pieceType,
+                priority: piecePriority[pieceType] || 10
+            });
+        }
+    }
+    
+    if (captureMoves.length === 0) {
+        return null;
+    }
+    
+    // Sort by priority (prefer capturing with lower-value pieces)
+    captureMoves.sort((a, b) => a.priority - b.priority);
+    
+    // Return the best capture move (lowest value piece)
+    return captureMoves[0].move;
+}
+
+/**
  * v40.44 Helper: Check if piece can legally move from -> to
  */
 function canPieceMove(board, from, to, pieceType, isWhite) {
@@ -45931,10 +45974,22 @@ function applyAlphaZeroLogic(bestMove, alternatives) {
             if (captureMovesAll.length > 0) {
                 // Use the highest-scored capture move
                 bestMove = captureMovesAll[0].move;
-                debugLog("[V40.48_FILTER]", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+                debugLog("[V40.49_FILTER]", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
                 bestMoveWasRejected = false;
             } else {
-                debugLog("[V40.48_FILTER]", `⚠️ No capture move found for ${mustRecaptureCentralSq} in alternatives!`);
+                // v40.49: CRITICAL FIX - Generate capture move ourselves if Stockfish didn't suggest it!
+                debugLog("[V40.49_FILTER]", `⚠️ No capture in alternatives! Generating capture move...`);
+                
+                // Find which of our pieces can capture the central pawn
+                const generatedCapture = v40GenerateCaptureMove(filterBoard, mustRecaptureCentralSq, isWhiteToMove ? 'w' : 'b');
+                
+                if (generatedCapture) {
+                    bestMove = generatedCapture;
+                    debugLog("[V40.49_FILTER]", `✅ GENERATED RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+                    bestMoveWasRejected = false;
+                } else {
+                    debugLog("[V40.49_FILTER]", `❌ Could not generate capture move for ${mustRecaptureCentralSq}!`);
+                }
             }
         }
         
