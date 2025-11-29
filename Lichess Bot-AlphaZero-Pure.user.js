@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.47 FORCE RECAPTURE SUPREME
-// @description  TRUE AlphaZero Replica v40.47 - CRITICAL FIX: Force recapture when all moves filtered, enhanced filter rejection handling!
-// @author       AlphaZero TRUE REPLICA v40.47 FORCE RECAPTURE SUPREME
-// @version      40.47.0-FORCE-RECAPTURE-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.48 ULTIMATE RECAPTURE
+// @description  TRUE AlphaZero Replica v40.48 - ULTIMATE FIX: Force central pawn recapture ALWAYS, no more Ne2 instead of Nxd4!
+// @author       AlphaZero TRUE REPLICA v40.48 ULTIMATE RECAPTURE
+// @version      40.48.0-ULTIMATE-RECAPTURE
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -45815,6 +45815,68 @@ function applyAlphaZeroLogic(bestMove, alternatives) {
                 }
             }
             
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.48: DON'T MOVE PIECES TO SQUARES WHERE THEY GET CAPTURED FOR FREE
+            // This prevents blunders like moving a knight to a square attacked by a pawn
+            // ═══════════════════════════════════════════════════════════════════
+            if (moveCount <= 30) {
+                const isWhite = currentFen.includes(' w ');
+                const movingPiece = filterBoard.get(fromSquare);
+                
+                if (movingPiece && movingPiece.toLowerCase() !== 'p') {
+                    // Moving a piece (not a pawn) - check if destination is attacked by lesser piece
+                    const pieceValue = getPieceValue(movingPiece);
+                    
+                    // Check if destination square is attacked by enemy pawn
+                    const enemyColor = isWhite ? 'b' : 'w';
+                    const pawnAttackers = v40GetPawnAttackers(filterBoard, toSquare, enemyColor);
+                    
+                    if (pawnAttackers.length > 0 && pieceValue > 100) {
+                        // Our valuable piece would be captured by enemy pawn!
+                        // Check if the destination has any defender
+                        const isDefended = isSquareDefended(filterBoard, toSquare, isWhite ? 'w' : 'b');
+                        
+                        if (!isDefended) {
+                            debugLog("[V40.48_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} moves ${movingPiece} to pawn-attacked undefended square!`);
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.48: MUST CAPTURE HANGING ENEMY PIECE
+            // If enemy has a hanging valuable piece, we MUST capture it!
+            // ═══════════════════════════════════════════════════════════════════
+            if (moveCount <= 40) {
+                const isWhite = currentFen.includes(' w ');
+                const enemyColor = isWhite ? 'b' : 'w';
+                
+                // Find enemy hanging pieces
+                const enemyHanging = findHangingPiecesV40_9(filterBoard, enemyColor);
+                const valuableEnemyHanging = enemyHanging.filter(p => p.value >= 300);
+                
+                if (valuableEnemyHanging.length > 0) {
+                    // Check if we can capture any of them
+                    let canCaptureHanging = false;
+                    let hangingSquare = null;
+                    
+                    for (const hanging of valuableEnemyHanging) {
+                        if (canPieceCapture(filterBoard, hanging.square, isWhite ? 'w' : 'b')) {
+                            canCaptureHanging = true;
+                            hangingSquare = hanging.square;
+                            break;
+                        }
+                    }
+                    
+                    // If we CAN capture a hanging piece but this move DOESN'T capture it, reject!
+                    if (canCaptureHanging && toSquare !== hangingSquare) {
+                        debugLog("[V40.48_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - MUST CAPTURE hanging piece at ${hangingSquare}!`);
+                        return true;
+                    }
+                }
+            }
+            
             return false;
         };
         
@@ -45839,34 +45901,47 @@ function applyAlphaZeroLogic(bestMove, alternatives) {
         // Also filter ALL alternatives to remove bad moves from consideration
         const filteredAlternatives = alternatives.filter(alt => !shouldRejectMove(alt.move));
         
-        // v40.47 CRITICAL FIX: If bestMove was rejected and no alternative found, 
-        // search through ALL legal moves to find a valid recapture!
-        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
-            debugLog("[V40.47_FILTER]", `🚨 ALL moves filtered! Searching for valid recapture...`);
+        // v40.48 ULTIMATE RECAPTURE FIX: ALWAYS prioritize central pawn captures
+        // This runs REGARDLESS of whether bestMove was rejected or not!
+        const isWhiteToMove = currentFen.includes(' w ');
+        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4'] : ['d5', 'e5'];
+        
+        // Check if there's an enemy central pawn that MUST be captured
+        let mustRecaptureCentralSq = null;
+        for (const centralSq of centralPawnSquares) {
+            const piece = filterBoard.get(centralSq);
+            if (!piece || piece.toLowerCase() !== 'p') continue;
             
-            // Find the central square that needs recapturing
-            const isWhite = currentFen.includes(' w ');
-            const centralSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhiteToMove) continue; // Our pawn, skip
             
-            for (const centralSq of centralSquares) {
-                const piece = filterBoard.get(centralSq);
-                if (!piece || piece.toLowerCase() !== 'p') continue;
-                
-                const pieceIsWhite = piece === piece.toUpperCase();
-                if (pieceIsWhite === isWhite) continue;
-                
-                // Found enemy pawn - find a piece that can capture it
-                for (const alt of alternatives) {
-                    const toSq = alt.move.substring(2, 4);
-                    if (toSq === centralSq) {
-                        debugLog("[V40.47_FILTER]", `✅ FORCE RECAPTURE: ${alt.move} captures ${centralSq}!`);
-                        bestMove = alt.move;
-                        bestMoveWasRejected = false;
-                        break;
-                    }
-                }
-                if (!bestMoveWasRejected) break;
+            // Enemy pawn on our central square! Check if we can capture it
+            if (canPieceCapture(filterBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+                mustRecaptureCentralSq = centralSq;
+                debugLog("[V40.48_FILTER]", `🎯 ENEMY PAWN ON ${centralSq} - MUST RECAPTURE!`);
+                break;
             }
+        }
+        
+        // If we MUST recapture, find the best capture move
+        if (mustRecaptureCentralSq) {
+            // Find ALL moves that capture the central pawn
+            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+            
+            if (captureMovesAll.length > 0) {
+                // Use the highest-scored capture move
+                bestMove = captureMovesAll[0].move;
+                debugLog("[V40.48_FILTER]", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+                bestMoveWasRejected = false;
+            } else {
+                debugLog("[V40.48_FILTER]", `⚠️ No capture move found for ${mustRecaptureCentralSq} in alternatives!`);
+            }
+        }
+        
+        // v40.47 fallback: If bestMove was rejected and no alternative found
+        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+            debugLog("[V40.48_FILTER]", `🚨 ALL moves filtered! Using original best move as fallback.`);
+            // Keep the original bestMove as last resort
         }
         
         alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;
