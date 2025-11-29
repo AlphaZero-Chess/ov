@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.45 ABSOLUTE MOVE FILTER SUPREME
-// @description  TRUE AlphaZero Replica v40.45 - HARD MOVE FILTER + OPENING BOOK + SICILIAN MASTERY - THE FINAL FIX!
-// @author       AlphaZero TRUE REPLICA v40.45 ABSOLUTE MOVE FILTER SUPREME
-// @version      40.45.0-ABSOLUTE-MOVE-FILTER-SUPREME
+// @name         Lichess Bot - TRUE ALPHAZERO v40.46 HARD FILTER SUPREME
+// @description  TRUE AlphaZero Replica v40.46 - CRITICAL FIX: Hard filter now includes central pawn recapture, knight safety, and hanging piece checks!
+// @author       AlphaZero TRUE REPLICA v40.46 HARD FILTER SUPREME
+// @version      40.46.0-HARD-FILTER-SUPREME
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -45688,6 +45688,12 @@ function applyAlphaZeroLogic(bestMove, alternatives) {
         debugLog("[V40.31_FILTER]", `═══════════════════════════════════════════════════════`);
         debugLog("[V40.31_FILTER]", `🚫 v40.31 HARD MOVE FILTER ACTIVE (move ${moveCount})`);
         
+        // v40.46: Parse board from currentFen for advanced filtering
+        const filterBoard = currentFen ? parseFenToBoard(currentFen) : new Map();
+        
+        // Skip advanced filtering if we couldn't parse the board
+        const canDoAdvancedFilter = filterBoard && filterBoard.size > 0;
+        
         // Filter function to check if move should be REJECTED
         const shouldRejectMove = (move) => {
             if (!move || move.length < 4) return false;
@@ -45720,6 +45726,92 @@ function applyAlphaZeroLogic(bestMove, alternatives) {
                     (fromSquare === 'e3' && toSquare === 'd1')) {
                     debugLog("[V40.31_FILTER]", `🚫🚫🚫 HARD REJECT: Queen retreat ${move} is FORBIDDEN!`);
                     return true;
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.46: CRITICAL CENTRAL PAWN RECAPTURE RULE - THE ULTIMATE FIX!
+            // If enemy pawn on d4/e4 (for white) or d5/e5 (for black), MUST recapture!
+            // This fixes the bug where bot plays Ne2 instead of Nxd4 in Sicilian!
+            // ═══════════════════════════════════════════════════════════════════
+            if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+                const isWhite = currentFen.includes(' w ');
+                const centralSquares = isWhite ? ['d4', 'e4'] : ['d5', 'e5'];
+                
+                for (const centralSq of centralSquares) {
+                    const piece = filterBoard.get(centralSq);
+                    if (!piece || piece.toLowerCase() !== 'p') continue;
+                    
+                    const pieceIsWhite = piece === piece.toUpperCase();
+                    // Check if it's an ENEMY pawn on OUR central square
+                    if (pieceIsWhite === isWhite) continue;
+                    
+                    // There's an enemy pawn on our central square!
+                    // Check if we CAN recapture
+                    if (canPieceCapture(filterBoard, centralSq, isWhite ? 'w' : 'b')) {
+                        // We CAN recapture, so we MUST recapture!
+                        if (toSquare !== centralSq) {
+                            debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - MUST RECAPTURE ${centralSq} pawn!`);
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.46: KNIGHT UNDER PAWN ATTACK - MUST RESPOND!
+            // If our knight is under pawn attack, we MUST move it or capture the pawn!
+            // ═══════════════════════════════════════════════════════════════════
+            if (CONFIG.v40AbsoluteKnightSafetyEnabled && moveCount <= 20) {
+                const isWhite = currentFen.includes(' w ');
+                const piecesUnderPawnAttack = v40FindPiecesUnderPawnAttack(filterBoard, isWhite ? 'w' : 'b');
+                
+                // Find knights under pawn attack
+                const knightsUnderAttack = piecesUnderPawnAttack.filter(p => p.pieceType === 'n');
+                
+                if (knightsUnderAttack.length > 0) {
+                    let addressesThreat = false;
+                    
+                    for (const knight of knightsUnderAttack) {
+                        // Moving the attacked knight
+                        if (fromSquare === knight.square) {
+                            addressesThreat = true;
+                            break;
+                        }
+                        
+                        // Capturing an attacking pawn
+                        if (knight.attackers.includes(toSquare)) {
+                            addressesThreat = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!addressesThreat) {
+                        debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: ${move} - Knight ${knightsUnderAttack[0].square} under pawn attack!`);
+                        return true;
+                    }
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // v40.46: DON'T PUSH PAWNS WHEN PIECES ARE HANGING!
+            // If we have a piece attacked and not defended, we MUST defend it first!
+            // ═══════════════════════════════════════════════════════════════════
+            if (moveCount <= 20) {
+                const isWhite = currentFen.includes(' w ');
+                const movingPiece = filterBoard.get(fromSquare);
+                
+                if (movingPiece && movingPiece.toLowerCase() === 'p') {
+                    // We're pushing a pawn - check if we have hanging pieces
+                    const hangingPieces = findHangingPiecesV40_9(filterBoard, isWhite ? 'w' : 'b');
+                    
+                    // Only reject if valuable piece is hanging (knight/bishop/rook/queen)
+                    const valuableHanging = hangingPieces.filter(p => p.value >= 300);
+                    
+                    if (valuableHanging.length > 0) {
+                        debugLog("[V40.46_FILTER]", `🚫🚫🚫 HARD REJECT: Pawn push ${move} when ${valuableHanging[0].piece}@${valuableHanging[0].square} is hanging!`);
+                        return true;
+                    }
                 }
             }
             
