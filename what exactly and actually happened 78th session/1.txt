@@ -1,0 +1,74 @@
+═══════════════════════════════════════════════════════════════════════════════════════════
+SESSION 78: v40.53 CRITICAL BUG FIX - Bot Was NOT Moving!
+═══════════════════════════════════════════════════════════════════════════════════════════
+
+PROBLEM IDENTIFIED:
+==================
+The bot was NOT moving or calculating at all. The console showed no errors but the bot
+was completely non-functional. After investigation, the root cause was identified:
+
+The function `getAllLegalMoves` was being CALLED in multiple places but was NEVER DEFINED!
+
+Locations where getAllLegalMoves was called but undefined:
+- Line 22608: v40SacrificeleadsToMate function
+- Line 22621: v40SacrificeleadsToMate function (opponent moves)
+- Line 22645: v40HasConcreteFollowUp function
+- Line 22848: v40EvaluateForcingLine function (opponent moves)
+- Line 22864: v40EvaluateForcingLine function (our moves)
+
+Additionally, `isKingInCheck` and `isCheckmate` were also being called but never defined:
+- isKingInCheck called at lines: 22619, 22655, 22727, 22821, 22852
+- isCheckmate called at lines: 22614, 22670
+
+SOLUTION IMPLEMENTED (v40.53):
+==============================
+Added the following critical functions after line 31202 (after findKingSquare function):
+
+1. **isSquareAttacked(board, square, byColor)** - Lines 31216-31288
+   - Checks if a square is attacked by pieces of a specific color
+   - Handles all piece types: pawns, knights, bishops, rooks, queens, kings
+   - Uses path blocking for sliding pieces
+
+2. **isPathBlockedForAttack(board, from, to)** - Lines 31293-31316
+   - Helper function for sliding piece attack detection
+   - Checks if any pieces block the path between two squares
+
+3. **isKingInCheck(board, color)** - Lines 31324-31332
+   - CRITICAL FIX: Checks if the king of specified color is in check
+   - Uses findKingSquare to locate king, then isSquareAttacked to verify
+
+4. **isCheckmate(board, color)** - Lines 31340-31355
+   - CRITICAL FIX: Checks if position is checkmate
+   - Verifies king is in check AND no legal moves exist
+
+5. **getAllLegalMoves(board, color)** - Lines 31360-31379
+   - CRITICAL FIX: Generates all legal moves for a color
+   - Uses generateAllMoves for pseudo-legal moves
+   - Filters out moves that leave king in check
+
+6. **isStalemate(board, color)** - Lines 31384-31398
+   - Bonus function: Detects stalemate positions
+   - No check AND no legal moves
+
+VERSION UPDATE:
+===============
+- Updated @name from v40.52 to v40.53
+- Updated @description to reflect CRITICAL BUG FIX
+- Updated @version to 40.53.0-CRITICAL-BUG-FIX
+
+FILE STATS:
+===========
+- File: /app/Lichess Bot-AlphaZero-Pure.user.js
+- Lines before: 50,093
+- Lines after: 50,290
+- New lines added: 197
+
+EXPECTED RESULT:
+================
+The bot should now be able to:
+1. Calculate legal moves properly
+2. Detect check positions
+3. Detect checkmate positions
+4. Make moves during games (was completely broken before)
+
+This was a CRITICAL bug that prevented ALL bot functionality!
