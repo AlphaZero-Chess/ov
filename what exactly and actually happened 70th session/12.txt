@@ -1,0 +1,33 @@
+
+Action: $ cd /app && grep -n "function v40.*Eval\|function v40.*Score\|function v40.*Detection" "Lichess Bot-AlphaZero-Pure.user.js" | tail -30
+Observation: 26686:function v40UltraQueenCaptureProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26720:function v40PassiveUnderAttackProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26799:function v40GxF3ProhibitionEval(fen, move, board, activeColor, moveNumber) {
+26843:function v40KingDangerWalkEval(fen, move, board, activeColor, moveNumber) {
+26925:function v40ForcedMateDefenseEval(fen, move, board, activeColor, moveNumber) {
+27056:function v40PawnMoveUnderAttackEval(fen, move, board, activeColor, moveNumber) {
+27122:function v40PassiveQueenUnderMateEval(fen, move, board, activeColor, moveNumber) {
+27184:function v40BishopUselessSquareEval(fen, move, board, activeColor, moveNumber) {
+27267:function v40PawnCaptureChainEval(fen, move, board, activeColor, moveNumber) {
+27366:function v40PieceUnderPawnAttackEval(fen, move, board, activeColor, moveNumber) {
+27451:function v40PromotionThreatEval(fen, move, board, activeColor, moveNumber) {
+27506:function v40RecaptureChainEval(fen, move, board, activeColor, moveNumber) {
+27593:function v40PieceUnderPawnDangerEval(fen, move, board, activeColor, moveNumber) {
+27679:function v40PawnForkDetectionEval(fen, move, board, activeColor, moveNumber) {
+27761:function v40MandatoryRecaptureEval(fen, move, board, activeColor, moveNumber) {
+27879:function v40PawnNearPieceDangerEval(fen, move, board, activeColor, moveNumber) {
+27942:function v40ImmediatePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+28019:function v40MultiThreatPawnEval(fen, move, board, activeColor, moveNumber) {
+28126:function v40CaptureThenAttackEval(fen, move, board, activeColor, moveNumber) {
+28226:function v40PawnChainPromotionEval(fen, move, board, activeColor, moveNumber) {
+28298:function v40PreMovePawnThreatEval(fen, move, board, activeColor, moveNumber) {
+28487:function v40PostCapturePawnPositionEval(fen, move, board, activeColor, moveNumber) {
+28561:function v40AbsoluteMustRespondEval(fen, move, board, activeColor, moveNumber) {
+28630:function v40TwoMovePawnChainEval(fen, move, board, activeColor, moveNumber) {
+28712:function v40DontPushWhenHangingEval(fen, move, board, activeColor, moveNumber) {
+28744:function v40ProtectKnightFromPawnEval(fen, move, board, activeColor, moveNumber) {
+28805:function v40CentralPawnCaptureResponseEval(fen, move, board, activeColor, moveNumber) {
+29019:function v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) {
+29157:function v40SicilianResponseEval(fen, move, board, activeColor, moveNumber) {
+29200:function v40OpeningBookEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

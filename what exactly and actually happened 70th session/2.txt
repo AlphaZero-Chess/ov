@@ -1,0 +1,4 @@
+
+Action: $ cd /app && grep -n "function computeCombinedScore" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 44308:function computeCombinedScore(fen, move, alternatives, engineScore, rolloutScore) {
+Exit code: 0

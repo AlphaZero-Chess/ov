@@ -1,0 +1,22 @@
+The syntax is valid. Now let me analyze the games the user provided in the problem statement and implement the critical fixes. The issue is clear from the games:
+
+1. **Game Analysis**: All games show the bot losing, typically getting checkmated
+2. **Key Issues**:
+   - Bot plays passive openings (Leonardis Variation: 1.e4 e5 2.d3)
+   - Fails to detect forcing sequences leading to mate
+   - Doesn't recapture properly
+   - Misses tactical shots
+
+Let me create v40.50 improvements focusing on the specific patterns seen in the lost games:
+Action: $ cd /app && grep -n "v40.49\|ABSOLUTE RECAPTURE" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.49 ABSOLUTE RECAPTURE
+3:// @description  TRUE AlphaZero Replica v40.49 - ABSOLUTE FIX: Generate capture moves ourselves if Stockfish doesn't suggest them!
+4:// @author       AlphaZero TRUE REPLICA v40.49 ABSOLUTE RECAPTURE
+1662:    // v40.17: ABSOLUTE RECAPTURE — NEVER LEAVE FREE PIECES ON THE BOARD
+15832:// v40.17 ABSOLUTE RECAPTURE SUPREME — NEVER LEAVE FREE PIECES ON THE BOARD
+15838: * v40.17 ABSOLUTE RECAPTURE: If enemy just captured, we MUST recapture
+28877: * v40.49 CRITICAL: Generate a capture move for a target square
+44654:                // v40.17: ABSOLUTE RECAPTURE — NEVER leave free pieces on the board
+45154:                               // v40.17 ABSOLUTE RECAPTURE SUPREME additions:
+45980:                // v40.49: CRITICAL FIX - Generate capture move ourselves if Stockfish didn't suggest it!
+Exit code: 0

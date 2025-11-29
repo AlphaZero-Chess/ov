@@ -1,0 +1,134 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45970|        if (mustRecaptureCentralSq) {
+45971|            // Find ALL moves that capture the central pawn
+45972|            const captureMovesAll = alternatives.filter(alt => alt.move.substring(2, 4) === mustRecaptureCentralSq);
+45973|            
+45974|            if (captureMovesAll.length > 0) {
+45975|                // Use the highest-scored capture move
+45976|                bestMove = captureMovesAll[0].move;
+45977|                debugLog("[V40.49_FILTER]", `✅ FORCE RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+45978|                bestMoveWasRejected = false;
+45979|            } else {
+45980|                // v40.49: CRITICAL FIX - Generate capture move ourselves if Stockfish didn't suggest it!
+45981|                debugLog("[V40.49_FILTER]", `⚠️ No capture in alternatives! Generating capture move...`);
+45982|                
+45983|                // Find which of our pieces can capture the central pawn
+45984|                const generatedCapture = v40GenerateCaptureMove(filterBoard, mustRecaptureCentralSq, isWhiteToMove ? 'w' : 'b');
+45985|                
+45986|                if (generatedCapture) {
+45987|                    bestMove = generatedCapture;
+45988|                    debugLog("[V40.49_FILTER]", `✅ GENERATED RECAPTURE: ${bestMove} captures ${mustRecaptureCentralSq}!`);
+45989|                    bestMoveWasRejected = false;
+45990|                } else {
+45991|                    debugLog("[V40.49_FILTER]", `❌ Could not generate capture move for ${mustRecaptureCentralSq}!`);
+45992|                }
+45993|            }
+45994|        }
+45995|        
+45996|        // v40.47 fallback: If bestMove was rejected and no alternative found
+45997|        if (bestMoveWasRejected && filteredAlternatives.length === 0) {
+45998|            debugLog("[V40.48_FILTER]", `🚨 ALL moves filtered! Using original best move as fallback.`);
+45999|            // Keep the original bestMove as last resort
+46000|        }
+46001|        
+46002|        alternatives = filteredAlternatives.length > 0 ? filteredAlternatives : alternatives;
+46003|        
+46004|        debugLog("[V40.47_FILTER]", `═══════════════════════════════════════════════════════`);
+46005|    }
+46006|    
+46007|    // Don't be creative if we only have one option
+46008|    if (alternatives.length < 2) {
+46009|        return bestMove;
+46010|    }
+46011|    
+46012|    // NEW v6.0.0: Update tactical and critical flags
+46013|    positionIsTactical = detectTacticalPosition(currentFen, alternatives);
+46014|    const currentEval = alternatives[0].score;
+46015|    positionIsCritical = detectCriticalPosition(currentEval, evaluationHistory);
+46016|    
+46017|    // Update evaluation history
+46018|    updateEvaluationHistory(currentEval);
+46019|    
+46020|    // ═══════════════════════════════════════════════════════════════
+46021|    // NEW v17.0.0: ALPHAZERO ESSENCE MODE OVERLAY
+46022|    // ═══════════════════════════════════════════════════════════════
+46023|    
+46024|    // ═══════════════════════════════════════════════════════════════
+46025|    // NEW v18.0.0: TRUE ALPHAZERO Q+POLICY ARCHITECTURE
+46026|    // ═══════════════════════════════════════════════════════════════
+46027|    
+46028|    if (TRUE_ALPHAZERO.enabled && alternatives.length >= 2) {
+46029|        // Update trend reconciliation
+46030|        updateTrendReconciliation(currentEval);
+46031|        
+46032|        // Check trend floor
+46033|        const trendOK = checkTrendFloor();
+46034|        
+46035|        if (trendOK && !positionIsTactical && !positionIsCritical) {
+46036|            trueAlphaAttempted++;
+46037|            
+46038|            debugLog("[TRUE_AZ]", `🎯 TRUE ALPHAZERO mode active (attempt #${trueAlphaAttempted})`);
+46039|            
+46040|            // Evaluate top N candidates with Q+Policy merge
+46041|            const N = Math.min(4, alternatives.length);
+46042|            const candidatesWithQPolicy = [];
+46043|            
+46044|            for (let i = 0; i < N; i++) {
+46045|                const candidate = alternatives[i];
+46046|                const engine_Q = candidate.score;
+46047|                
+46048|                // For now, use engine score as rollout (async rollouts would be full implementation)
+46049|                const rollout_Q = engine_Q; // TODO: implement async playouts
+46050|                
+46051|                // Compute combined Q+Policy score
+46052|                const combinedScore = computeCombinedScore(currentFen, candidate.move, alternatives, engine_Q, rollout_Q);
+46053|                
+46054|                // Compute harmony for sacrifice validation
+46055|                const harmony = computeHarmonyScore(currentFen);
+46056|                
+46057|                candidatesWithQPolicy.push({
+46058|                    move: candidate.move,
+46059|                    engineScore: engine_Q,
+46060|                    rolloutScore: rollout_Q,
+46061|                    combinedScore: combinedScore,
+46062|                    policyPrior: computePolicyPrior(candidate.move, alternatives),
+46063|                    harmony: harmony
+46064|                });
+46065|            }
+46066|            
+46067|            // Sort by combined score (deterministic argmax, no temperature sampling)
+46068|            candidatesWithQPolicy.sort((a, b) => b.combinedScore - a.combinedScore);
+46069|            
+46070|            debugLog("[TRUE_AZ]", `Top Q+Policy candidates:`);
+46071|            for (let i = 0; i < Math.min(3, candidatesWithQPolicy.length); i++) {
+46072|                const c = candidatesWithQPolicy[i];
+46073|                debugLog("[TRUE_AZ]", `  ${i+1}. ${c.move}: Q=${c.engineScore.toFixed(1)}cp, rollout=${c.rolloutScore.toFixed(1)}cp, policy=${c.policyPrior.toFixed(3)}, combined=${c.combinedScore.toFixed(1)}cp`);
+46074|            }
+46075|            
+46076|            // Select best (argmax - deterministic)
+46077|            const selectedCandidate = candidatesWithQPolicy[0];
+46078|            const selectedMove = selectedCandidate.move;
+46079|            
+46080|            debugLog("[TRUE_AZ]", `🎯 Selected top Q+Policy: ${selectedMove}`);
+46081|            
+46082|            // ABSOLUTE SAFETY CHECK
+46083|            const engineTopScore = alternatives[0].score;
+46084|            const safetyPassed = checkAbsoluteSafety(engineTopScore, selectedCandidate.combinedScore, selectedMove);
+46085|            
+46086|            if (!safetyPassed) {
+46087|                trueAlphaRejected++;
+46088|                debugLog("[TRUE_AZ]", `❌ SAFETY LIMIT exceeded - forcing engine top move`);
+46089|                
+46090|                // Log to debug
+46091|                window.__AZ18_DEBUG.decisions.push({
+46092|                    move: moveCount,
+46093|                    attempted: selectedMove,
+46094|                    forced: alternatives[0].move,
+46095|                    reason: 'safety_drop_limit_exceeded',
+46096|                    evalDrop: engineTopScore - selectedCandidate.combinedScore
+46097|                });
+46098|                
+46099|                // FORCE engine top move
+46100|                return alternatives[0].move;

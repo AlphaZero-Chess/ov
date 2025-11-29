@@ -1,0 +1,224 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45200|                               gxf3ProhibitionScore + kingDangerWalkScore + forcedMateDefenseScore +
+45201|                               pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore +
+45202|                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+45203|                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+45204|                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+45205|                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+45206|                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+45207|                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore +
+45208|                               // v40.41 PRE-MOVE PAWN THREAT SUPREME additions — THE ULTIMATE FIX!
+45209|                               preMovePawnThreatScore + postCapturePawnScore + absoluteMustRespondScore +
+45210|                               // v40.44 CRITICAL MISSING IMPLEMENTATIONS — THE REAL FIX!
+45211|                               twoMovePawnChainScore + dontPushWhenHangingScore + protectKnightFromPawnScore +
+45212|                               centralPawnCaptureResponseScore + bishopB5HangingScore +
+45213|                               // v40.45 ABSOLUTE MOVE FILTER & OPENING BOOK SUPREME — THE FINAL FIX!
+45214|                               moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore;
+45215|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.45 ABSOLUTE MOVE FILTER SUPREME PARADIGM SHIFT
+45216|                
+45217|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+45218|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+45219|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+45220|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+45221|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+45222|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+45223|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+45224|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+45225|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+45226|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+45227|                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+45228|                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+45229|                debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+45230|                debugLog("[V40_INTEGRATE]", `   🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+45231|                debugLog("[V40_INTEGRATE]", `   🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+45232|                debugLog("[V40_INTEGRATE]", `   🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+45233|                debugLog("[V40_INTEGRATE]", `   🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
+45234|                debugLog("[V40_INTEGRATE]", `   🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
+45235|                debugLog("[V40_INTEGRATE]", `   🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
+45236|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ ForcedExchangeSequence: ${forcedExchangeSequenceScore.toFixed(1)}`);
+45237|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KnightForkShield: ${knightForkShieldScore.toFixed(1)}`);
+45238|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KingExposureIndex: ${kingExposureIndexScore.toFixed(1)}`);
+45239|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AbsoluteSacrificeVerification: ${absoluteSacrificeVerificationScore.toFixed(1)}`);
+45240|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackCoordination: ${attackCoordinationScore.toFixed(1)}`);
+45241|                debugLog("[V40_INTEGRATE]", `   🎯🎯 DeepForcingCalc: ${deepForcingCalcScore.toFixed(1)}`);
+45242|                debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceSacrificeAnalysis: ${pieceSacrificeAnalysisScore.toFixed(1)}`);
+45243|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackProgress: ${attackProgressScore.toFixed(1)}`);
+45244|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ DeepDefensiveAwareness: ${deepDefensiveAwarenessScore.toFixed(1)}`);
+45245|                debugLog("[V40_INTEGRATE]", `   🎵🎵🎵 PieceHarmony: ${pieceHarmonyScore.toFixed(1)}`);
+45246|                debugLog("[V40_INTEGRATE]", `   🔮🔮🔮 ProphylaxisPriority: ${prophylaxisPriorityScore.toFixed(1)}`);
+45247|                debugLog("[V40_INTEGRATE]", `   🐴🐴🐴 KnightInvasionPrevention: ${knightInvasionPreventionScore.toFixed(1)}`);
+45248|                debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ AntiForkSupreme: ${antiForkSupremeScore.toFixed(1)}`);
+45249|                debugLog("[V40_INTEGRATE]", `   🌿🌿🌿 QuietPosition: ${quietPositionScore.toFixed(1)}`);
+45250|                debugLog("[V40_INTEGRATE]", `   🤝🤝🤝 PieceCoordinationCheck: ${pieceCoordinationCheckScore.toFixed(1)}`);
+45251|                debugLog("[V40_INTEGRATE]", `   🔭🔭🔭 ThreatAnticipation: ${threatAnticipationScore.toFixed(1)}`);
+45252|                debugLog("[V40_INTEGRATE]", `   🚫🎯 AbsoluteOpeningProhibition: ${absoluteOpeningProhibitionScore.toFixed(1)}`);
+45253|                debugLog("[V40_INTEGRATE]", `   🐴🔮 DeepForkVision: ${deepForkVisionScore.toFixed(1)}`);
+45254|                debugLog("[V40_INTEGRATE]", `   ♗♗ BishopPairPreservation: ${bishopPairPreservationScore.toFixed(1)}`);
+45255|                debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceActivitySupreme: ${pieceActivitySupremeScore.toFixed(1)}`);
+45256|                debugLog("[V40_INTEGRATE]", `   🏛️🏛️ CenterControlAbsolute: ${centerControlAbsoluteScore.toFixed(1)}`);
+45257|                debugLog("[V40_INTEGRATE]", `   👁️👁️ TacticalBlindness: ${tacticalBlindnessScore.toFixed(1)}`);
+45258|                debugLog("[V40_INTEGRATE]", `   🚫🚫🚫 ABSOLUTE D3 PROHIBITION: ${absoluteD3ProhibitionScore.toFixed(1)}`);
+45259|                debugLog("[V40_INTEGRATE]", `   ♟️♟️♟️ SICILIAN MASTERY: ${sicilianMasteryScore.toFixed(1)}`);
+45260|                debugLog("[V40_INTEGRATE]", `   🔬🔬🔬 ENHANCED TACTICAL DEPTH: ${enhancedTacticalDepthScore.toFixed(1)}`);
+45261|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ PIECE SAFETY SUPREME: ${pieceSafetySupremeScore.toFixed(1)}`);
+45262|                debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ INITIATIVE MAINTENANCE: ${initiativeMaintenanceScore.toFixed(1)}`);
+45263|                debugLog("[V40_INTEGRATE]", `   🚫♟️ PASSIVE PAWN PROHIBITION: ${passivePawnProhibitionScore.toFixed(1)}`);
+45264|                debugLog("[V40_INTEGRATE]", `   💰💰 MATERIAL SAFETY: ${materialSafetyScore.toFixed(1)}`);
+45265|                debugLog("[V40_INTEGRATE]", `   🔍🔍 TACTICAL VERIFICATION: ${tacticalVerificationScore.toFixed(1)}`);
+45266|                debugLog("[V40_INTEGRATE]", `   🏛️⚔️ CENTRAL CONTROL PRIORITY: ${centralControlPriorityScore.toFixed(1)}`);
+45267|                debugLog("[V40_INTEGRATE]", `   🎵🎵 PIECE COORDINATION SUPREME: ${pieceCoordinationSupremeScore.toFixed(1)}`);
+45268|                debugLog("[V40_INTEGRATE]", `   👸🚫 QUEEN CAPTURE PROHIBITION: ${queenCaptureProhibitionScore.toFixed(1)}`);
+45269|                debugLog("[V40_INTEGRATE]", `   🐴🚫 KNIGHT SACRIFICE PREVENTION: ${knightSacrificePreventionScore.toFixed(1)}`);
+45270|                debugLog("[V40_INTEGRATE]", `   🏰🚫 CASTLING DIRECTION: ${castlingDirectionScore.toFixed(1)}`);
+45271|                debugLog("[V40_INTEGRATE]", `   🔄🚫 EXCHANGE QUALITY VERIFICATION: ${exchangeQualityVerificationScore.toFixed(1)}`);
+45272|                debugLog("[V40_INTEGRATE]", `   📍🚫 PIECE ACTIVITY REQUIREMENT: ${pieceActivityRequirementScore.toFixed(1)}`);
+45273|                debugLog("[V40_INTEGRATE]", `   🏰🚫 ROOK PASSIVE PROHIBITION: ${rookPassiveProhibitionScore.toFixed(1)}`);
+45274|                debugLog("[V40_INTEGRATE]", `   👑🚫 KING CORNER RETREAT: ${kingCornerRetreatScore.toFixed(1)}`);
+45275|                debugLog("[V40_INTEGRATE]", `   💣🚫 DESPERATION SACRIFICE: ${desperationSacrificeScore.toFixed(1)}`);
+45276|                debugLog("[V40_INTEGRATE]", `   👸💀 ULTRA QUEEN CAPTURE: ${ultraQueenCaptureScore.toFixed(1)}`);
+45277|                debugLog("[V40_INTEGRATE]", `   🚫⚔️ PASSIVE UNDER ATTACK: ${passiveUnderAttackScore.toFixed(1)}`);
+45278|                debugLog("[V40_INTEGRATE]", `   🚫♟️⚔️ GXF3 PROHIBITION: ${gxf3ProhibitionScore.toFixed(1)}`);
+45279|                debugLog("[V40_INTEGRATE]", `   👑🚶 KING DANGER WALK: ${kingDangerWalkScore.toFixed(1)}`);
+45280|                debugLog("[V40_INTEGRATE]", `   💀🛡️ FORCED MATE DEFENSE: ${forcedMateDefenseScore.toFixed(1)}`);
+45281|                debugLog("[V40_INTEGRATE]", `   ♟️🚫 PAWN MOVE UNDER ATTACK: ${pawnMoveUnderAttackScore.toFixed(1)}`);
+45282|                debugLog("[V40_INTEGRATE]", `   👸💤 PASSIVE QUEEN UNDER MATE: ${passiveQueenUnderMateScore.toFixed(1)}`);
+45283|                debugLog("[V40_INTEGRATE]", `   ♗🚫 BISHOP USELESS SQUARE: ${bishopUselessSquareScore.toFixed(1)}`);
+45284|                debugLog("[V40_INTEGRATE]", `   ♟️⛓️ PAWN CAPTURE CHAIN: ${pawnCaptureChainScore.toFixed(1)}`);
+45285|                debugLog("[V40_INTEGRATE]", `   ♟️⚔️ PIECE UNDER PAWN ATTACK: ${pieceUnderPawnAttackScore.toFixed(1)}`);
+45286|                debugLog("[V40_INTEGRATE]", `   ♟️🏆 PROMOTION THREAT V39: ${promotionThreatV39Score.toFixed(1)}`);
+45287|                debugLog("[V40_INTEGRATE]", `   ♟️🔄 RECAPTURE CHAIN: ${recaptureChainScore.toFixed(1)}`);
+45288|                debugLog("[V40_INTEGRATE]", `   ♟️☠️ PIECE UNDER PAWN DANGER: ${pieceUnderPawnDangerScore.toFixed(1)}`);
+45289|                debugLog("[V40_INTEGRATE]", `   ♟️🍴 PAWN FORK DETECTION: ${pawnForkDetectionScore.toFixed(1)}`);
+45290|                // v40.40 MANDATORY RECAPTURE SUPREME debug logs
+45291|                debugLog("[V40_INTEGRATE]", `   🚨♟️ MANDATORY RECAPTURE: ${mandatoryRecaptureScore.toFixed(1)}`);
+45292|                debugLog("[V40_INTEGRATE]", `   ⚠️♟️ PAWN NEAR PIECE DANGER: ${pawnNearPieceDangerScore.toFixed(1)}`);
+45293|                debugLog("[V40_INTEGRATE]", `   🔥♟️ IMMEDIATE PAWN THREAT: ${immediatePawnThreatScore.toFixed(1)}`);
+45294|                debugLog("[V40_INTEGRATE]", `   💀♟️ MULTI-THREAT PAWN: ${multiThreatPawnScore.toFixed(1)}`);
+45295|                debugLog("[V40_INTEGRATE]", `   🎯♟️ CAPTURE THEN ATTACK: ${captureThenAttackScore.toFixed(1)}`);
+45296|                debugLog("[V40_INTEGRATE]", `   👑♟️ PAWN CHAIN PROMOTION: ${pawnChainPromotionScore.toFixed(1)}`);
+45297|                // v40.41 PRE-MOVE PAWN THREAT SUPREME debug logs
+45298|                debugLog("[V40_INTEGRATE]", `   🚨🚨🚨 PRE-MOVE PAWN THREAT: ${preMovePawnThreatScore.toFixed(1)}`);
+45299|                debugLog("[V40_INTEGRATE]", `   🚨🚨🚨 POST-CAPTURE PAWN: ${postCapturePawnScore.toFixed(1)}`);
+45300|                debugLog("[V40_INTEGRATE]", `   🚨🚨🚨 ABSOLUTE MUST RESPOND: ${absoluteMustRespondScore.toFixed(1)}`);
+45301|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+45302|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+45303|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+45304|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+45305|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+45306|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+45307|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+45308|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+45309|                debugLog("[V40_INTEGRATE]", `   Prophylactic: ${prophylacticBonus.toFixed(1)}`);
+45310|                debugLog("[V40_INTEGRATE]", `   RookInfiltration: ${rookInfiltrationPenalty.toFixed(1)}`);
+45311|                debugLog("[V40_INTEGRATE]", `   KingSafetyCorridor: ${kingSafetyCorridorPenalty.toFixed(1)}`);
+45312|                debugLog("[V40_INTEGRATE]", `   AntiPassivity: ${antiPassivityBonus.toFixed(1)}`);
+45313|                debugLog("[V40_INTEGRATE]", `   DeepHorizon: ${deepHorizonBonus.toFixed(1)}`);
+45314|                debugLog("[V40_INTEGRATE]", `   SpaceDomination: ${spaceDominationBonus.toFixed(1)}`);
+45315|                debugLog("[V40_INTEGRATE]", `   Counterattack: ${counterattackBonus.toFixed(1)}`);
+45316|                debugLog("[V40_INTEGRATE]", `   InitiativePreserve: ${initiativePreservationBonus.toFixed(1)}`);
+45317|                debugLog("[V40_INTEGRATE]", `   ⭐ ImmediateMaterialLoss: ${immediateMaterialLossScore.toFixed(1)}`);
+45318|                debugLog("[V40_INTEGRATE]", `   ⭐ CaptureChain: ${captureChainScore.toFixed(1)}`);
+45319|                debugLog("[V40_INTEGRATE]", `   ⭐ QueenInfiltrationAbsolute: ${queenInfiltrationAbsoluteScore.toFixed(1)}`);
+45320|                debugLog("[V40_INTEGRATE]", `   ⭐ PreMoveSafety: ${preMoveSafetyScore.toFixed(1)}`);
+45321|                debugLog("[V40_INTEGRATE]", `   ⭐ OpeningBlunder: ${openingBlunderScore.toFixed(1)}`);
+45322|                debugLog("[V40_INTEGRATE]", `   ⭐ SimpleThreat: ${simpleThreatScore.toFixed(1)}`);
+45323|                debugLog("[V40_INTEGRATE]", `   🔥🔥 LookAheadBlunder: ${lookAheadBlunderScore.toFixed(1)}`);
+45324|                debugLog("[V40_INTEGRATE]", `   🔥🔥 TripleCheck: ${tripleCheckScore.toFixed(1)}`);
+45325|                debugLog("[V40_INTEGRATE]", `   🔥🔥 FailSafe: ${failSafeScore.toFixed(1)}`);
+45326|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ PiecePreservation: ${piecePreservationScore.toFixed(1)}`);
+45327|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ AllPiecesSafety: ${allPiecesSafetyScore.toFixed(1)}`);
+45328|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️ ProphylaxisMove: ${prophylaxisMoveScore.toFixed(1)}`);
+45329|                debugLog("[V40_INTEGRATE]", `   🏰🏰 FileOpeningTowardKing: ${fileOpeningTowardKingScore.toFixed(1)}`);
+45330|                debugLog("[V40_INTEGRATE]", `   🏰🏰 PawnStormDetection: ${pawnStormDetectionScore.toFixed(1)}`);
+45331|                debugLog("[V40_INTEGRATE]", `   🏰🏰 QueenInfiltrationPath: ${queenInfiltrationPathScore.toFixed(1)}`);
+45332|                debugLog("[V40_INTEGRATE]", `   🏰🏰 DeepLookAhead: ${deepLookAheadScore.toFixed(1)}`);
+45333|                debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsidePawnShelter: ${kingsidePawnShelterScore.toFixed(1)}`);
+45334|                debugLog("[V40_INTEGRATE]", `   🏰🏰 ForcingLineRejection: ${forcingLineRejectionScore.toFixed(1)}`);
+45335|                debugLog("[V40_INTEGRATE]", `   💰💰 AbsoluteRecapture: ${absoluteRecaptureScore.toFixed(1)}`);
+45336|                debugLog("[V40_INTEGRATE]", `   💰💰 ImmediateCaptureDetection: ${immediateCaptureDetectionScore.toFixed(1)}`);
+45337|                debugLog("[V40_INTEGRATE]", `   💰💰 MaterialAwareness: ${materialAwarenessScore.toFixed(1)}`);
+45338|                debugLog("[V40_INTEGRATE]", `   💰💰 AntiPawnGrab: ${antiPawnGrabScore.toFixed(1)}`);
+45339|                debugLog("[V40_INTEGRATE]", `   👑👑 KingEscapeRoute: ${kingEscapeRouteScore.toFixed(1)}`);
+45340|                debugLog("[V40_INTEGRATE]", `   👑👑 RookInvasionDetection: ${rookInvasionDetectionScore.toFixed(1)}`);
+45341|                debugLog("[V40_INTEGRATE]", `   👑👑 BackRankWeakness: ${backRankWeaknessScore.toFixed(1)}`);
+45342|                debugLog("[V40_INTEGRATE]", `   👑👑 DiscoveredAttackDetection: ${discoveredAttackDetectionScore.toFixed(1)}`);
+45343|                debugLog("[V40_INTEGRATE]", `   🔥🔥 MatingPattern: ${matingPatternScore.toFixed(1)}`);
+45344|                debugLog("[V40_INTEGRATE]", `   🔥🔥 KingCorridorDefense: ${kingCorridorDefenseScore.toFixed(1)}`);
+45345|                debugLog("[V40_INTEGRATE]", `   🔥🔥 LuftCreation: ${luftCreationScore.toFixed(1)}`);
+45346|                debugLog("[V40_INTEGRATE]", `   🔥🔥 WinningPosition: ${winningPositionScore.toFixed(1)}`);
+45347|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ PromotionThreat: ${promotionThreatScore.toFixed(1)}`);
+45348|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ ForcingSequence: ${forcingSequenceScore.toFixed(1)}`);
+45349|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ KingWeakening: ${kingWeakeningScore.toFixed(1)}`);
+45350|                debugLog("[V40_INTEGRATE]", `   ♟️♟️ PieceSafetyV40: ${pieceSafetyV40Score.toFixed(1)}`);
+45351|                debugLog("[V40_INTEGRATE]", `   🐴🐴 DeepPawnChain: ${deepPawnChainScore.toFixed(1)}`);
+45352|                debugLog("[V40_INTEGRATE]", `   🐴🐴 ForcingLine: ${forcingLineScore.toFixed(1)}`);
+45353|                debugLog("[V40_INTEGRATE]", `   🐴🐴 QuietMoveDanger: ${quietMoveDangerScore.toFixed(1)}`);
+45354|                debugLog("[V40_INTEGRATE]", `   🏇🏇 KnightInfiltration: ${knightInfiltrationScore.toFixed(1)}`);
+45355|                debugLog("[V40_INTEGRATE]", `   🏇🏇 CheckSequenceDetection: ${checkSequenceDetectionScore.toFixed(1)}`);
+45356|                debugLog("[V40_INTEGRATE]", `   🏇🏇 MustRespond: ${mustRespondScore.toFixed(1)}`);
+45357|                debugLog("[V40_INTEGRATE]", `   🏰🏰 RookLift: ${rookLiftScore.toFixed(1)}`);
+45358|                debugLog("[V40_INTEGRATE]", `   🏰🏰 QueenHFile: ${queenHFileScore.toFixed(1)}`);
+45359|                debugLog("[V40_INTEGRATE]", `   🏰🏰 F3G3Prohibition: ${f3g3ProhibitionScore.toFixed(1)}`);
+45360|                debugLog("[V40_INTEGRATE]", `   🏰🏰 MatingAttackPattern: ${matingAttackPatternScore.toFixed(1)}`);
+45361|                debugLog("[V40_INTEGRATE]", `   🏰🏰 KingsideFortress: ${kingsideFortressScore.toFixed(1)}`);
+45362|                debugLog("[V40_INTEGRATE]", `   👸👸 AbsoluteQueenSafety: ${absoluteQueenSafetyScore.toFixed(1)}`);
+45363|                debugLog("[V40_INTEGRATE]", `   👸👸 MustDefendQueen: ${mustDefendQueenScore.toFixed(1)}`);
+45364|                debugLog("[V40_INTEGRATE]", `   👸👸 KnightForkQueen: ${knightForkQueenScore.toFixed(1)}`);
+45365|                debugLog("[V40_INTEGRATE]", `   👸👸 PreMoveQueenSafety: ${preMoveQueenSafetyScore.toFixed(1)}`);
+45366|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+45367|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+45368|                debugLog("[V40_INTEGRATE]", `   CriticalExchange: ${criticalExchangeScore.toFixed(1)}`);
+45369|                debugLog("[V40_INTEGRATE]", `   MatingAttack: ${matingAttackScore.toFixed(1)}`);
+45370|                debugLog("[V40_INTEGRATE]", `   G-FILE ATTACK: ${gFileAttackScore.toFixed(1)}`);
+45371|                debugLog("[V40_INTEGRATE]", `   KINGSIDE ATTACK PATTERN: ${kingsideAttackPatternScore.toFixed(1)}`);
+45372|                debugLog("[V40_INTEGRATE]", `   PASSIVE QUEENSIDE: ${passiveQueensideScore.toFixed(1)}`);
+45373|                debugLog("[V40_INTEGRATE]", `   BAD EXCHANGE FILE: ${badExchangeFileScore.toFixed(1)}`);
+45374|                debugLog("[V40_INTEGRATE]", `   PAWN STORM: ${pawnStormScore.toFixed(1)}`);
+45375|                debugLog("[V40_INTEGRATE]", `   DEFEND KINGSIDE: ${defendKingsideScore.toFixed(1)}`);
+45376|                debugLog("[V40_INTEGRATE]", `   KINGSIDE PAWN WEAKNESS: ${kingsidePawnWeaknessScore.toFixed(1)}`);
+45377|                debugLog("[V40_INTEGRATE]", `   🆕 PROPHYLACTIC EXCHANGE: ${prophylacticExchangeScore.toFixed(1)}`);
+45378|                debugLog("[V40_INTEGRATE]", `   🆕 PAWN STORM ANTICIPATION: ${pawnStormAnticipationScore.toFixed(1)}`);
+45379|                debugLog("[V40_INTEGRATE]", `   🆕 DON'T CREATE WEAKNESSES: ${dontCreateWeaknessesScore.toFixed(1)}`);
+45380|                debugLog("[V40_INTEGRATE]", `   🆕 PRESERVE KING SHELTER: ${preserveKingShelterScore.toFixed(1)}`);
+45381|                debugLog("[V40_INTEGRATE]", `   🆕 ATTACK TRAJECTORY: ${attackTrajectoryScore.toFixed(1)}`);
+45382|                debugLog("[V40_INTEGRATE]", `   🆕 QUEEN TRAP PREVENTION: ${queenTrapPreventionScore.toFixed(1)}`);
+45383|                debugLog("[V40_INTEGRATE]", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+45384|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+45385|            } catch (e) {
+45386|                debugLog("[V40_INTEGRATE]", `⚠️ v40 evaluation error: ${e.message}`);
+45387|                v40Bonus = 0;
+45388|            }
+45389|        }
+45390|        
+45391|        // v40.10: TRUE ALPHAZERO GODLIKE weighted merge — v40 GODLIKE DOMINANT (100%)
+45392|        // Engine provides minimal baseline, but v40 superhuman evaluation is ABSOLUTELY GODLIKE
+45393|        const combinedScore = (
+45394|            TRUE_ALPHAZERO.qWeight * engine_Q * 0.00 +  // Engine reduced to 0% - v40 is GOD
+45395|            TRUE_ALPHAZERO.rolloutWeight * rollout_Q * 0.00 +
+45396|            normalizedPolicyPrior * 0.00 + // Policy bonus removed - v40 is GOD
+45397|            v40Bonus                      // v40 GODLIKE DOMINANT at 100%
+45398|        );
+45399|        
+45400|        debugLog("[Q+POLICY]", `Move ${move}: Q=${engine_Q.toFixed(1)}cp, rollout=${rollout_Q.toFixed(1)}cp, policy=${policyPrior.toFixed(3)}, v40=${v40Bonus.toFixed(1)} → combined=${combinedScore.toFixed(1)}cp (100% v40 GODLIKE)`);
+45401|        
+45402|        return combinedScore;
+45403|    } catch (e) {
+45404|        debugLog("[Q+POLICY]", "⚠️ Error computing combined score:", e.message);
+45405|        return engineScore;
+45406|    }
+45407|}
+45408|
+45409|/**
+45410| * NEW v18.0.0: Legacy stub for v17 compatibility
+45411| */
+45412|function computeLongHorizonScore(fen, move, alternatives, engineScore) {
+45413|    debugLog("[LEGACY]", "⚠️ computeLongHorizonScore called (use computeCombinedScore in v18)");
+45414|    return computeCombinedScore(fen, move, alternatives, engineScore, engineScore);
+45415|}
+45416|
+45417|/**
+45418| * NEW v17.0.0: Get creativity temperature for current move
+45419| * Anneals from high exploration (early game) to low (late game)
+45420| * Linear decay over temperatureDecayMoves

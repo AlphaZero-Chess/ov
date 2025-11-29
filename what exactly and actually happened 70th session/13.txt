@@ -1,0 +1,4 @@
+Let me find the end of the v40 functions and add v40.50:
+Action: $ cd /app && grep -n "function v40AbsolutePieceSafety\|v40AbsolutePieceSafetyEval" "Lichess Bot-AlphaZero-Pure.user.js" | head -5
+Observation: 29259:function v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) {
+Exit code: 0
