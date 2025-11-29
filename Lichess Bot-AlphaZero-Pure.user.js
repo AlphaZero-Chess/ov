@@ -30953,6 +30953,14 @@ function v40MoveQualityScore(fen, move, board, activeColor, moveNumber) {
     return score;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.9 HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.9 Helper: Find all attacked pieces
+ */
+function findAttackedPiecesV40_9(board, color) {
     const attacked = [];
     const isWhite = color === 'w';
     const enemyColor = isWhite ? 'b' : 'w';
@@ -30972,6 +30980,8 @@ function v40MoveQualityScore(fen, move, board, activeColor, moveNumber) {
             
             // If attacked by something of lower value, still need to consider
             const attackers = findAttackersOfSquare(board, square, enemyColor);
+            if (attackers.length === 0) continue;
+            
             const lowestAttackerValue = Math.min(...attackers.map(a => getPieceValueSimple(a.piece.toLowerCase())));
             const ourPieceValue = getPieceValueSimple(pieceType);
             
