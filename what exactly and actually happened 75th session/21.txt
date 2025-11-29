@@ -1,0 +1,4 @@
+The syntax is correct. Now let me add one more critical enhancement - a v40.52 function that explicitly handles the patterns from the recent game losses (like avoiding checkmate in 1-2 moves):
+Action: $ cd /app && grep -n "function v40CrushingExchangeEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 30558:function v40CrushingExchangeEval(fen, move, board, activeColor, moveNumber) {
+Exit code: 0

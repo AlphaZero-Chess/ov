@@ -1,0 +1,29 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+46585|                               twoMovePawnChainScore + dontPushWhenHangingScore + protectKnightFromPawnScore +
+46586|                               centralPawnCaptureResponseScore + bishopB5HangingScore +
+46587|                               // v40.45 ABSOLUTE MOVE FILTER & OPENING BOOK SUPREME — THE FINAL FIX!
+46588|                               moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore +
+46589|                               // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO ULTIMATE!
+46590|                               deepStrategicVisionScore + multiFrontPressureScore + antiMatingNetScore + 
+46591|                               absoluteCapturePriorityScore + forcingMoveChainScore;
+46592|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.51 DEEP STRATEGIC VISION SUPREME PARADIGM SHIFT
+46593|                
+46594|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+46595|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+46596|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+46597|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+46598|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+46599|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+46600|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+46601|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+46602|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+46603|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+46604|                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+46605|                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+46606|                debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+46607|                debugLog("[V40_INTEGRATE]", `   🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+46608|                debugLog("[V40_INTEGRATE]", `   🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+46609|                debugLog("[V40_INTEGRATE]", `   🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+46610|                debugLog("[V40_INTEGRATE]", `   🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);

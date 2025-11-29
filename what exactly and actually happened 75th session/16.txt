@@ -1,0 +1,20 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                               twoMovePawnChainScore + dontPushWhenHangingScore + protectKnightFromPawnScore +
+                               centralPawnCaptureResponseScore + bishopB5HangingScore +
+                               // v40.45 ABSOLUTE MOVE FILTER & OPENING BOOK SUPREME — THE FINAL FIX!
+                               moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore +
+                               // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO ULTIMATE!
+                               deepStrategicVisionScore + multiFrontPressureScore + antiMatingNetScore + 
+                               absoluteCapturePriorityScore + forcingMoveChainScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.51 DEEP STRATEGIC VISION SUPREME PARADIGM SHIFT" --new-str "                               twoMovePawnChainScore + dontPushWhenHangingScore + protectKnightFromPawnScore +
+                               centralPawnCaptureResponseScore + bishopB5HangingScore +
+                               // v40.45 ABSOLUTE MOVE FILTER & OPENING BOOK SUPREME — THE FINAL FIX!
+                               moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore +
+                               // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO ULTIMATE!
+                               deepStrategicVisionScore + multiFrontPressureScore + antiMatingNetScore + 
+                               absoluteCapturePriorityScore + forcingMoveChainScore +
+                               // v40.52 SUPREME TACTICAL VISION — TRUE ALPHAZERO GODLIKE ENHANCEMENT!
+                               antiPassiveOpeningScore + deepMatingThreatScore + immediateDangerScore +
+                               kingActivityScore + tempoCriticalScore + crushingExchangeScore;
+                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.52 SUPREME TACTICAL VISION SUPREME PARADIGM SHIFT"
+Observation: Edit was successful.

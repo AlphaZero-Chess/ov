@@ -1,0 +1,390 @@
+Now let me add more v40.52 enhancements for checkmate defense and better move quality:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    return score;
+}
+
+/**
+ * v40.52 Helper: Calculate material balance
+ */
+function calculateMaterialBalance(board, activeColor) {
+    let balance = 0;
+    const isWhite = activeColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pType = piece.toLowerCase();
+        if (pType === 'k') continue;
+        
+        const value = getPieceValueSimple(pType);
+        const pieceIsWhite = piece === piece.toUpperCase();
+        
+        if (pieceIsWhite === isWhite) {
+            balance += value;
+        } else {
+            balance -= value;
+        }
+    }
+    
+    return balance;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {" --new-str "    return score;
+}
+
+/**
+ * v40.52 Helper: Calculate material balance
+ */
+function calculateMaterialBalance(board, activeColor) {
+    let balance = 0;
+    const isWhite = activeColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pType = piece.toLowerCase();
+        if (pType === 'k') continue;
+        
+        const value = getPieceValueSimple(pType);
+        const pieceIsWhite = piece === piece.toUpperCase();
+        
+        if (pieceIsWhite === isWhite) {
+            balance += value;
+        } else {
+            balance -= value;
+        }
+    }
+    
+    return balance;
+}
+
+/**
+ * v40.52: CHECKMATE IN 1-2 MOVE PREVENTION
+ * Scans if the opponent has mate in 1-2 after our move
+ * This is CRITICAL - the bot must NEVER allow forced mate!
+ */
+function v40CheckmatePreventionScanner(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const enemyColor = isWhite ? 'b' : 'w';
+    
+    // Simulate our move
+    const testBoard = simulateMove(board, move);
+    if (!testBoard) return 0;
+    
+    // Find our king
+    const ourKing = findKingSquare(testBoard, activeColor);
+    if (!ourKing) return 0;
+    
+    // Check if we're in check after our move (illegal move!)
+    if (isSquareAttackedByColor(testBoard, ourKing, enemyColor)) {
+        return -100000000;  // ILLEGAL - still in check!
+    }
+    
+    // Now simulate ALL enemy responses to see if any lead to checkmate
+    const enemyMoves = generateAllMoves(testBoard, enemyColor);
+    
+    for (const enemyMove of enemyMoves) {
+        const afterEnemyBoard = simulateMove(testBoard, enemyMove);
+        if (!afterEnemyBoard) continue;
+        
+        // Find our king after enemy move
+        const ourKingAfter = findKingSquare(afterEnemyBoard, activeColor);
+        if (!ourKingAfter) continue;
+        
+        // Is our king in check?
+        if (isSquareAttackedByColor(afterEnemyBoard, ourKingAfter, enemyColor)) {
+            // King is in check - can we escape?
+            const escapeSquares = countKingEscapes(afterEnemyBoard, ourKingAfter, isWhite);
+            
+            if (escapeSquares === 0) {
+                // CHECK IF THIS IS CHECKMATE!
+                const canBlockOrCapture = canDefendFromCheck(afterEnemyBoard, ourKingAfter, activeColor, enemyColor);
+                
+                if (!canBlockOrCapture) {
+                    // THIS IS CHECKMATE! Our move allows mate in 1!
+                    score += -50000000;  // MASSIVE penalty
+                    debugLog(\"[V40.52_MATE_PREVENT]\", `☠️☠️☠️ ${move} allows MATE IN 1 via ${enemyMove}!!!`);
+                    return score;  // No need to check further
+                }
+            }
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.52 Helper: Check if we can defend from check (block or capture attacker)
+ */
+function canDefendFromCheck(board, kingSquare, activeColor, enemyColor) {
+    const isWhite = activeColor === 'w';
+    
+    // Find the attackers of our king
+    const attackers = findAttackersOfSquare(board, kingSquare, enemyColor);
+    if (attackers.length === 0) return true;  // Not actually in check
+    if (attackers.length > 1) return false;   // Double check - only king can move
+    
+    const attacker = attackers[0];
+    
+    // Can we capture the attacker?
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        if (piece.toLowerCase() === 'k') {
+            // Can king capture attacker?
+            const kFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            const kRank = parseInt(kingSquare[1]) - 1;
+            const aFile = attacker.square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const aRank = parseInt(attacker.square[1]) - 1;
+            
+            if (Math.max(Math.abs(kFile - aFile), Math.abs(kRank - aRank)) === 1) {
+                // King can reach attacker - is the square defended?
+                if (!isSquareAttackedByColor(board, attacker.square, enemyColor)) {
+                    return true;
+                }
+            }
+        } else {
+            // Can this piece capture the attacker?
+            if (canPieceMoveToSquare(board, sq, attacker.square, piece.toLowerCase(), isWhite)) {
+                return true;
+            }
+        }
+    }
+    
+    // Can we block the attack? (only for sliding pieces)
+    const attackerType = attacker.piece.toLowerCase();
+    if (attackerType === 'n' || attackerType === 'p') {
+        return false;  // Can't block knight or pawn attacks
+    }
+    
+    // Get squares between attacker and king
+    const blockSquares = getSquaresBetween(attacker.square, kingSquare);
+    
+    for (const blockSq of blockSquares) {
+        for (const [sq, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite !== isWhite) continue;
+            if (piece.toLowerCase() === 'k') continue;  // King can't block
+            
+            if (canPieceMoveToSquare(board, sq, blockSq, piece.toLowerCase(), isWhite)) {
+                return true;  // Can block
+            }
+        }
+    }
+    
+    return false;  // No escape
+}
+
+/**
+ * v40.52 Helper: Get squares between two squares (for blocking)
+ */
+function getSquaresBetween(from, to) {
+    const squares = [];
+    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fRank = parseInt(from[1]) - 1;
+    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(to[1]) - 1;
+    
+    const fileDiff = tFile - fFile;
+    const rankDiff = tRank - fRank;
+    
+    const fileStep = fileDiff === 0 ? 0 : fileDiff / Math.abs(fileDiff);
+    const rankStep = rankDiff === 0 ? 0 : rankDiff / Math.abs(rankDiff);
+    
+    let f = fFile + fileStep;
+    let r = fRank + rankStep;
+    
+    while (f !== tFile || r !== tRank) {
+        squares.push(String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1));
+        f += fileStep;
+        r += rankStep;
+    }
+    
+    return squares;
+}
+
+/**
+ * v40.52 Helper: Generate all legal moves for a color (simplified)
+ */
+function generateAllMoves(board, color) {
+    const moves = [];
+    const isWhite = color === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        
+        const pType = piece.toLowerCase();
+        
+        // Generate moves for this piece
+        for (let f = 0; f < 8; f++) {
+            for (let r = 0; r < 8; r++) {
+                const toSq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+                if (toSq === sq) continue;
+                
+                // Check if piece can move there
+                if (canPieceMoveToSquare(board, sq, toSq, pType, isWhite)) {
+                    moves.push(sq + toSq);
+                }
+            }
+        }
+    }
+    
+    return moves;
+}
+
+/**
+ * v40.52 Helper: Check if piece can move to target square
+ */
+function canPieceMoveToSquare(board, from, to, pieceType, isWhite) {
+    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fRank = parseInt(from[1]) - 1;
+    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(to[1]) - 1;
+    
+    const fileDiff = Math.abs(tFile - fFile);
+    const rankDiff = Math.abs(tRank - fRank);
+    
+    // Check if target square has own piece
+    const targetPiece = board.get(to);
+    if (targetPiece) {
+        const targetIsWhite = targetPiece === targetPiece.toUpperCase();
+        if (targetIsWhite === isWhite) return false;  // Can't capture own piece
+    }
+    
+    switch (pieceType) {
+        case 'p':
+            // Pawn logic
+            const direction = isWhite ? 1 : -1;
+            const startRank = isWhite ? 1 : 6;
+            
+            if (targetPiece) {
+                // Capture
+                return fileDiff === 1 && tRank - fRank === direction;
+            } else {
+                // Move forward
+                if (fileDiff !== 0) return false;
+                if (tRank - fRank === direction) return true;
+                if (fRank === startRank && tRank - fRank === 2 * direction) {
+                    const middleSq = from[0] + (fRank + 1 + direction);
+                    return !board.get(middleSq);
+                }
+                return false;
+            }
+            
+        case 'n':
+            return (fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2);
+            
+        case 'b':
+            if (fileDiff !== rankDiff) return false;
+            return !isPathBlocked(board, from, to);
+            
+        case 'r':
+            if (fileDiff !== 0 && rankDiff !== 0) return false;
+            return !isPathBlocked(board, from, to);
+            
+        case 'q':
+            if (fileDiff !== 0 && rankDiff !== 0 && fileDiff !== rankDiff) return false;
+            return !isPathBlocked(board, from, to);
+            
+        case 'k':
+            return fileDiff <= 1 && rankDiff <= 1;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.52 Helper: Check if path is blocked (for sliding pieces)
+ */
+function isPathBlocked(board, from, to) {
+    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fRank = parseInt(from[1]) - 1;
+    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(to[1]) - 1;
+    
+    const fileDiff = tFile - fFile;
+    const rankDiff = tRank - fRank;
+    
+    const fileStep = fileDiff === 0 ? 0 : fileDiff / Math.abs(fileDiff);
+    const rankStep = rankDiff === 0 ? 0 : rankDiff / Math.abs(rankDiff);
+    
+    let f = fFile + fileStep;
+    let r = fRank + rankStep;
+    
+    while (f !== tFile || r !== tRank) {
+        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+        if (board.get(sq)) return true;  // Blocked
+        f += fileStep;
+        r += rankStep;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.52: MOVE QUALITY SCORE - Prefer principled moves
+ * Rewards captures, checks, threats, and development
+ * Penalizes random piece shuffling
+ */
+function v40MoveQualityScore(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    const fromSquare = move.substring(0, 2);
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(fromSquare);
+    const capturedPiece = board.get(toSquare);
+    
+    if (!movingPiece) return 0;
+    
+    const pieceType = movingPiece.toLowerCase();
+    
+    // Captures are good (when favorable)
+    if (capturedPiece) {
+        const ourValue = getPieceValueSimple(pieceType);
+        const theirValue = getPieceValueSimple(capturedPiece.toLowerCase());
+        
+        if (theirValue >= ourValue) {
+            score += 20000 + (theirValue - ourValue) * 5000;  // Good capture
+        }
+    }
+    
+    // Simulate move to check for threats
+    const testBoard = simulateMove(board, move);
+    if (testBoard) {
+        const enemyKing = findKingSquare(testBoard, isWhite ? 'b' : 'w');
+        if (enemyKing) {
+            // Check if we're giving check
+            if (isSquareAttackedByColor(testBoard, enemyKing, activeColor)) {
+                score += 15000;  // Giving check is usually good
+            }
+        }
+        
+        // Count threats created
+        const threatsCreated = v40CountThreatsCreated(testBoard, isWhite, move);
+        score += threatsCreated * 5000;
+    }
+    
+    // Development bonus in opening
+    if (moveNumber <= 12 && (pieceType === 'n' || pieceType === 'b')) {
+        const startRanks = isWhite ? [1] : [8];
+        const fromRank = parseInt(fromSquare[1]);
+        
+        if (startRanks.includes(fromRank)) {
+            score += 10000;  // Developing piece
+        }
+    }
+    
+    // Castling is good
+    if (pieceType === 'k' && Math.abs(fromSquare.charCodeAt(0) - toSquare.charCodeAt(0)) === 2) {
+        score += 25000;  // Castling
+    }
+    
+    return score;
+}
+"
+Observation: Edit was successful.

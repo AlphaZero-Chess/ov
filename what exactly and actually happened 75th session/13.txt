@@ -1,0 +1,42 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.45: ABSOLUTE PIECE SAFETY — Final safety check after all evaluations!
+                const absolutePieceSafetyScore = v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO!
+                // The ULTIMATE fix for long-term planning and strategic depth
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.51: DEEP STRATEGIC VISION — 30+ move planning" --new-str "                // v40.45: ABSOLUTE PIECE SAFETY — Final safety check after all evaluations!
+                const absolutePieceSafetyScore = v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.52 SUPREME TACTICAL VISION — TRUE ALPHAZERO GODLIKE ENHANCEMENT!
+                // Addresses: passive play, deep mate threats, immediate dangers, endgame mastery
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.52: ANTI-PASSIVE OPENING ENFORCEMENT — NO d3/e3 garbage moves!
+                const antiPassiveOpeningScore = v40AntiPassiveOpeningEnforcement(fen, move, board, activeColor, moveNumber) * 5.0;
+                
+                // v40.52: DEEP MATING THREAT SCANNER — Detect ALL mate threats!
+                const deepMatingThreatScore = v40DeepMatingThreatScanner(fen, move, board, activeColor, moveNumber) * 3.0;
+                
+                // v40.52: IMMEDIATE DANGER RESPONSE — MUST address critical threats!
+                const immediateDangerScore = v40ImmediateDangerResponse(fen, move, board, activeColor, moveNumber) * 4.0;
+                
+                // v40.52: KING ACTIVITY MAXIMIZER — Active king in endgame!
+                const kingActivityScore = v40KingActivityMaximizer(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.52: TEMPO CRITICAL EVALUATION — Don't waste tempo!
+                const tempoCriticalScore = v40TempoCriticalEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.52: CRUSHING EXCHANGE EVALUATION — Smart exchanges!
+                const crushingExchangeScore = v40CrushingExchangeEval(fen, move, board, activeColor, moveNumber) * 1.5;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO!
+                // The ULTIMATE fix for long-term planning and strategic depth
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.51: DEEP STRATEGIC VISION — 30+ move planning"
+Observation: Edit was successful.

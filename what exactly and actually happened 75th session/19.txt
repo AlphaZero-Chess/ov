@@ -1,0 +1,15 @@
+Now let me verify the changes and check for any syntax errors:
+Action: $ cd /app && head -10 "Lichess Bot-AlphaZero-Pure.user.js" && echo "---" && grep -c "function v40" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: // ==UserScript==
+// @name         Lichess Bot - TRUE ALPHAZERO v40.52 SUPREME TACTICAL VISION
+// @description  TRUE AlphaZero Replica v40.52 - SUPREME TACTICAL VISION: Deep mate threat prevention, anti-passive enforcement, crushing endgame technique!
+// @author       AlphaZero TRUE REPLICA v40.52 SUPREME TACTICAL VISION
+// @version      40.52.0-SUPREME-TACTICAL-VISION
+// @match         *://lichess.org/*
+// @run-at        document-idle
+// @grant         none
+// @require       https://cdn.jsdelivr.net/gh/AlphaZero-Chess/vc@refs/heads/main/stockfish1.js
+// ==/UserScript==
+---
+407
+Exit code: 0

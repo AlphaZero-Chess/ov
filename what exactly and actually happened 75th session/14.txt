@@ -1,0 +1,4 @@
+Now I need to add the v40.52 scores to the combined score calculation. Let me find where the v40.51 scores are added:
+Action: $ cd /app && grep -n "deepStrategicVisionScore + multiFrontPressureScore" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 46590:                               deepStrategicVisionScore + multiFrontPressureScore + antiMatingNetScore +
+Exit code: 0

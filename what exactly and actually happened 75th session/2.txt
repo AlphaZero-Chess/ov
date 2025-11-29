@@ -1,0 +1,33 @@
+
+Action: $ cd /app && grep -n "v40\.52\|v40\.51" "Lichess Bot-AlphaZero-Pure.user.js" | head -30
+Observation: 2:// @name         Lichess Bot - TRUE ALPHAZERO v40.51 ABSOLUTE RECAPTURE SUPREME
+3:// @description  TRUE AlphaZero Replica v40.51 - ABSOLUTE RECAPTURE: Forces Nxd4 in Sicilian, deep mate threat detection, zero blunders! THE ULTIMATE FIX!
+4:// @author       AlphaZero TRUE REPLICA v40.51 ABSOLUTE RECAPTURE SUPREME
+29297:// v40.51 ENHANCEMENT FUNCTIONS - TRUE ALPHAZERO STRATEGIC DEPTH
+29301: * v40.51: DEEP STRATEGIC VISION - Evaluates long-term strategic consequences
+29342: * v40.51: Evaluate pawn structure trajectory
+29393: * v40.51: Check if a pawn is passed
+29422: * v40.51: Evaluate piece placement potential
+29466: * v40.51: Check if file is open (no pawns)
+29481: * v40.51: Check if file is semi-open (no friendly pawns)
+29496: * v40.51: Evaluate king safety trajectory
+29540: * v40.51: Evaluate pawn shield around king
+29563: * v40.51: Evaluate strategic coherence - do pieces work together?
+29612: * v40.51: Evaluate long-term weaknesses
+29642: * v40.51: MULTI-FRONT PRESSURE EVALUATION - AlphaZero's "web-weaving"
+29691: * v40.51: Count pressure on a specific front
+29747: * v40.51: ANTI-MATING NET EVALUATION - Prevents getting trapped in mating nets
+29819: * v40.51: Count king escape squares
+29865: * v40.51: Check if king has luft (escape square created by pawn move)
+29887: * v40.51: ABSOLUTE CAPTURE PRIORITY - Never miss free material
+29949: * v40.51: FORCING MOVE CHAIN - Detect and reward forcing sequences
+30004: * v40.51: Count threats created by a move
+45859:                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO!
+45863:                // v40.51: DEEP STRATEGIC VISION — 30+ move planning
+45866:                // v40.51: MULTI-FRONT PRESSURE — AlphaZero's "web-weaving" specialty
+45869:                // v40.51: ANTI-MATING NET — Prevent corner mates and back rank disasters
+45872:                // v40.51: ABSOLUTE CAPTURE PRIORITY — Never miss free material
+45875:                // v40.51: FORCING MOVE CHAIN — Reward forcing sequences
+45979:                               // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO ULTIMATE!
+45982:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.51 DEEP STRATEGIC VISION SUPREME PARADIGM SHIFT
+Exit code: 0

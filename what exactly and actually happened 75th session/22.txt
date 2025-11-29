@@ -1,0 +1,39 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+30595|        score += (theirValue - ourValue) * 10000;
+30596|    }
+30597|    
+30598|    return score;
+30599|}
+30600|
+30601|/**
+30602| * v40.52 Helper: Calculate material balance
+30603| */
+30604|function calculateMaterialBalance(board, activeColor) {
+30605|    let balance = 0;
+30606|    const isWhite = activeColor === 'w';
+30607|    
+30608|    for (const [sq, piece] of board) {
+30609|        if (!piece) continue;
+30610|        const pType = piece.toLowerCase();
+30611|        if (pType === 'k') continue;
+30612|        
+30613|        const value = getPieceValueSimple(pType);
+30614|        const pieceIsWhite = piece === piece.toUpperCase();
+30615|        
+30616|        if (pieceIsWhite === isWhite) {
+30617|            balance += value;
+30618|        } else {
+30619|            balance -= value;
+30620|        }
+30621|    }
+30622|    
+30623|    return balance;
+30624|}
+30625|
+30626|
+30627|// ═══════════════════════════════════════════════════════════════════════════════
+30628|function findAttackedPiecesV40_9(board, color) {
+30629|    const attacked = [];
+30630|    const isWhite = color === 'w';

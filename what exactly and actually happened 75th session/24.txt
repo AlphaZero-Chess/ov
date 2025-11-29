@@ -1,0 +1,4 @@
+Now let me add these two new functions to the computeCombinedScore integration:
+Action: $ cd /app && grep -n "crushingExchangeScore = v40CrushingExchangeEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 46793:                const crushingExchangeScore = v40CrushingExchangeEval(fen, move, board, activeColor, moveNumber) * 1.5;
+Exit code: 0

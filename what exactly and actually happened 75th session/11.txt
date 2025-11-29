@@ -1,0 +1,64 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+46520|                               absoluteQueenSafetyScore + mustDefendQueenScore + knightForkQueenScore + preMoveQueenSafetyScore +
+46521|                               // v40.25 STRATEGIC MASTERY SUPREME additions:
+46522|                               noEarlyQueenTradeScore + enhancedForkScore + pawnRaceScore + piecePreservationAbsoluteScore + initiativePreservationV25Score +
+46523|                               // v40.26 ABSOLUTE KINGSIDE FORTRESS SUPREME additions:
+46524|                               kingsidePawnProhibitionScore + bishopSacrificeScore + forcedDefenseModeScore + 
+46525|                               queenKingsideThreatScore + deepSacrificeCalcScore + kingsideCollapseScore +
+46526|                               // v40.27 ABSOLUTE TACTICAL SUPREMACY additions:
+46527|                               forcedExchangeSequenceScore + knightForkShieldScore + kingExposureIndexScore +
+46528|                               // v40.28 ABSOLUTE SACRIFICE VERIFICATION additions:
+46529|                               absoluteSacrificeVerificationScore + attackCoordinationScore + deepForcingCalcScore +
+46530|                               pieceSacrificeAnalysisScore + attackProgressScore +
+46531|                               // v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY additions:
+46532|                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+46533|                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+46534|                               pieceCoordinationCheckScore + threatAnticipationScore +
+46535|                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+46536|                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+46537|                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore +
+46538|                               // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
+46539|                               absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
+46540|                               pieceSafetySupremeScore + initiativeMaintenanceScore +
+46541|                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+46542|                               passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
+46543|                               centralControlPriorityScore + pieceCoordinationSupremeScore +
+46544|                               // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME additions!
+46545|                               queenCaptureProhibitionScore + knightSacrificePreventionScore + castlingDirectionScore +
+46546|                               exchangeQualityVerificationScore + pieceActivityRequirementScore +
+46547|                               // v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME additions!
+46548|                               rookPassiveProhibitionScore + kingCornerRetreatScore + desperationSacrificeScore +
+46549|                               ultraQueenCaptureScore + passiveUnderAttackScore +
+46550|                               // v40.38 GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME additions!
+46551|                               gxf3ProhibitionScore + kingDangerWalkScore + forcedMateDefenseScore +
+46552|                               pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore +
+46553|                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+46554|                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+46555|                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+46556|                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+46557|                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+46558|                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore +
+46559|                               // v40.41 PRE-MOVE PAWN THREAT SUPREME additions — THE ULTIMATE FIX!
+46560|                               preMovePawnThreatScore + postCapturePawnScore + absoluteMustRespondScore +
+46561|                               // v40.44 CRITICAL MISSING IMPLEMENTATIONS — THE REAL FIX!
+46562|                               twoMovePawnChainScore + dontPushWhenHangingScore + protectKnightFromPawnScore +
+46563|                               centralPawnCaptureResponseScore + bishopB5HangingScore +
+46564|                               // v40.45 ABSOLUTE MOVE FILTER & OPENING BOOK SUPREME — THE FINAL FIX!
+46565|                               moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore +
+46566|                               // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO ULTIMATE!
+46567|                               deepStrategicVisionScore + multiFrontPressureScore + antiMatingNetScore + 
+46568|                               absoluteCapturePriorityScore + forcingMoveChainScore;
+46569|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.51 DEEP STRATEGIC VISION SUPREME PARADIGM SHIFT
+46570|                
+46571|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+46572|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+46573|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+46574|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+46575|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+46576|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+46577|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+46578|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+46579|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+46580|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);

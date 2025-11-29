@@ -1,0 +1,26 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                debugLog(\"[V40_INTEGRATE]\", `   🚨🚨🚨 ABSOLUTE MUST RESPOND: ${absoluteMustRespondScore.toFixed(1)}`);
+                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE debug logs
+                debugLog(\"[V40_INTEGRATE]\", `   🧠🧠🧠 DEEP STRATEGIC VISION: ${deepStrategicVisionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🕸️🕸️🕸️ MULTI-FRONT PRESSURE: ${multiFrontPressureScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🛡️💀 ANTI-MATING NET: ${antiMatingNetScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   💰🎯 ABSOLUTE CAPTURE PRIORITY: ${absoluteCapturePriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⚡⚡ FORCING MOVE CHAIN: ${forcingMoveChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);" --new-str "                debugLog(\"[V40_INTEGRATE]\", `   🚨🚨🚨 ABSOLUTE MUST RESPOND: ${absoluteMustRespondScore.toFixed(1)}`);
+                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE debug logs
+                debugLog(\"[V40_INTEGRATE]\", `   🧠🧠🧠 DEEP STRATEGIC VISION: ${deepStrategicVisionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🕸️🕸️🕸️ MULTI-FRONT PRESSURE: ${multiFrontPressureScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🛡️💀 ANTI-MATING NET: ${antiMatingNetScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   💰🎯 ABSOLUTE CAPTURE PRIORITY: ${absoluteCapturePriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⚡⚡ FORCING MOVE CHAIN: ${forcingMoveChainScore.toFixed(1)}`);
+                // v40.52 SUPREME TACTICAL VISION debug logs
+                debugLog(\"[V40_INTEGRATE]\", `   🚫🐌 ANTI-PASSIVE OPENING: ${antiPassiveOpeningScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ☠️🔍 DEEP MATING THREAT: ${deepMatingThreatScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🚨⚡ IMMEDIATE DANGER: ${immediateDangerScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   👑🏃 KING ACTIVITY: ${kingActivityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⏱️⚡ TEMPO CRITICAL: ${tempoCriticalScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   💥🔄 CRUSHING EXCHANGE: ${crushingExchangeScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);"
+Observation: Edit was successful.
