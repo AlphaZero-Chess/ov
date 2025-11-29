@@ -47337,6 +47337,54 @@ function calculateMove() {
     const fenKey = currentFen.split(' ').slice(0, 4).join(' ');
     const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
     
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.50 CRITICAL: MUST RECAPTURE CHECK - OVERRIDES ALL BOOK MOVES!
+    // If there's an enemy pawn on d4/e4 (for white) that we can capture, we MUST capture it!
+    // This fixes the bug where book move Ne2 was played instead of Nxd4 in Sicilian!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    let mustRecaptureMove = null;
+    if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+        const recaptureBoard = parseFenToBoard(currentFen);
+        const isWhiteToMove = currentFen.includes(' w ');
+        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4'] : ['d5', 'e5'];
+        
+        for (const centralSq of centralPawnSquares) {
+            const piece = recaptureBoard.get(centralSq);
+            if (!piece || piece.toLowerCase() !== 'p') continue;
+            
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhiteToMove) continue; // Our pawn, skip
+            
+            // Enemy pawn on our central square! Check if we can capture it
+            if (canPieceCapture(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+                // Generate the capture move
+                mustRecaptureMove = v40GenerateCaptureMove(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b');
+                if (mustRecaptureMove) {
+                    debugLog("[V40.50_CRITICAL]", `🎯🎯🎯 MUST RECAPTURE ${centralSq}! Generated move: ${mustRecaptureMove}`);
+                    debugLog("[V40.50_CRITICAL]", `🎯🎯🎯 This OVERRIDES any book move (was: ${bookMove || 'none'})`);
+                }
+                break;
+            }
+        }
+    }
+    
+    // v40.50: If we MUST recapture, use that move immediately!
+    if (mustRecaptureMove) {
+        const thinkTime = Math.random() * 500 + 300;
+        debugLog("[V40.50_CRITICAL]", `⚡⚡⚡ FORCED RECAPTURE: ${mustRecaptureMove} (${(thinkTime/1000).toFixed(1)}s)`);
+        
+        setTimeout(() => {
+            bestMove = mustRecaptureMove;
+            calculationLock = false;
+            calculationStartTime = 0;
+            currentCalculatingColor = null;
+            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+            sendMove(mustRecaptureMove);
+        }, thinkTime);
+        
+        return;
+    }
+    
     // v31.0.0: Never use book moves when there's a critical threat!
     if (bookMove && gamePhase === "opening" && !window.__EMERGENCY_DEFENSE_MODE && !preSafetyResult.hasCriticalThreat) {
         const thinkTime = Math.random() * 900 + 500;
