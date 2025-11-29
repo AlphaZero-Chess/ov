@@ -1,0 +1,39 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+45845|                // v40.45: HARD MOVE FILTER - If returns true, move is REJECTED with -Infinity score!
+45846|                const shouldRejectMove = v40AbsoluteMoveFilter(fen, move, board, activeColor, moveNumber);
+45847|                const moveFilterScore = shouldRejectMove ? -Number.MAX_SAFE_INTEGER : 0;
+45848|                
+45849|                // v40.45: SICILIAN RESPONSE — Special handling for Sicilian positions!
+45850|                const sicilianResponseScore = v40SicilianResponseEval(fen, move, board, activeColor, moveNumber) * 50000.0;
+45851|                
+45852|                // v40.45: OPENING BOOK — Reward known good moves, penalize known bad moves!
+45853|                const openingBookScore = v40OpeningBookEval(fen, move, board, activeColor, moveNumber) * 25000.0;
+45854|                
+45855|                // v40.45: ABSOLUTE PIECE SAFETY — Final safety check after all evaluations!
+45856|                const absolutePieceSafetyScore = v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) * 10000.0;
+45857|                
+45858|                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE
+45859|                // This makes v40 the ABSOLUTE TACTICAL SUPREME factor
+45860|                v40DeepScore = v40Score + v40MatingNetPenalty + v40FileControlBonus + 
+45861|                               v40InitiativeBonus + queenPenalty + prophylacticBonus + 
+45862|                               rookInfiltrationPenalty + kingSafetyCorridorPenalty +
+45863|                               antiPassivityBonus + deepHorizonBonus + spaceDominationBonus +
+45864|                               counterattackBonus + initiativePreservationBonus +
+45865|                               // v40.4 additions:
+45866|                               openingPrinciplesScore + discoveredAttackPenalty + 
+45867|                               knightInvasionPenalty + queenMatingPenalty + pawnShieldScore +
+45868|                               // v40.5 additions:
+45869|                               queenInfiltrationScore + hangingPieceScore + kingCornerScore + checkSequenceScore +
+45870|                               // v40.6 ULTIMATE additions:
+45871|                               centerPawnScore + pawnTensionScore + queenRaidScore + 
+45872|                               tacticalPriorityScore + devSafetyScore + threatResponseScore +
+45873|                               // v40.7 DIVINE additions:
+45874|                               recaptureUrgencyScore + pieceOnAttackedScore + hemorrhageScore + blunderCheckScore +
+45875|                               // v40.8 TRANSCENDENT additions:
+45876|                               openingAggressionScore + exchangeQualityScore + activePieceRequirementScore + 
+45877|                               counterplayGenScore + centralControlSupremeScore +
+45878|                               // v40.9 OMNISCIENT additions:
+45879|                               attackedPiecePriorityScore + preMoveThreatScore + pieceSafetyAbsoluteScore + forcedMoveScore +
+45880|                               // v40.10 GODLIKE additions:

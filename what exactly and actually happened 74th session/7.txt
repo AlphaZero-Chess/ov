@@ -1,0 +1,755 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {" --new-str "    return score;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.51 ENHANCEMENT FUNCTIONS - TRUE ALPHAZERO STRATEGIC DEPTH
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.51: DEEP STRATEGIC VISION - Evaluates long-term strategic consequences
+ * AlphaZero-style planning that looks 30+ moves ahead conceptually
+ */
+function v40DeepStrategicVisionEval(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const testBoard = simulateMove(board, move);
+        if (!testBoard) return 0;
+        
+        // 1. PAWN STRUCTURE TRAJECTORY - Where are pawns heading?
+        const pawnStructureScore = v40EvaluatePawnStructureTrajectory(testBoard, isWhite);
+        score += pawnStructureScore * 500;
+        
+        // 2. PIECE PLACEMENT POTENTIAL - Are pieces improving or degrading?
+        const piecePlacementScore = v40EvaluatePiecePlacementPotential(testBoard, isWhite, move);
+        score += piecePlacementScore * 400;
+        
+        // 3. KING SAFETY TRAJECTORY - Is king getting safer or more exposed?
+        const kingSafetyTrajectoryScore = v40EvaluateKingSafetyTrajectory(testBoard, isWhite, moveNumber);
+        score += kingSafetyTrajectoryScore * 600;
+        
+        // 4. STRATEGIC COHERENCE - Do pieces work together towards a plan?
+        const coherenceScore = v40EvaluateStrategicCoherence(testBoard, isWhite);
+        score += coherenceScore * 350;
+        
+        // 5. LONG-TERM WEAKNESSES - Are we creating or eliminating weaknesses?
+        const weaknessScore = v40EvaluateLongTermWeaknesses(testBoard, isWhite);
+        score += weaknessScore * 450;
+        
+        debugLog(\"[V40.51_VISION]\", `Deep Strategic Vision for ${move}: pawn=${pawnStructureScore}, piece=${piecePlacementScore}, king=${kingSafetyTrajectoryScore}, coherence=${coherenceScore}, weakness=${weaknessScore}`);
+        
+    } catch (e) {
+        debugLog(\"[V40.51_VISION]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: Evaluate pawn structure trajectory
+ */
+function v40EvaluatePawnStructureTrajectory(board, isWhite) {
+    let score = 0;
+    const pawnChar = isWhite ? 'P' : 'p';
+    const advanceDirection = isWhite ? 1 : -1;
+    
+    let doubledPawns = 0;
+    let isolatedPawns = 0;
+    let passedPawns = 0;
+    let pawnsByFile = new Array(8).fill(0);
+    
+    for (const [square, piece] of board) {
+        if (piece !== pawnChar) continue;
+        
+        const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const rank = parseInt(square[1]);
+        pawnsByFile[file]++;
+        
+        // Check for passed pawn
+        if (v40IsPawnPassed(board, square, isWhite)) {
+            passedPawns++;
+            // Bonus based on advancement
+            const advancement = isWhite ? rank - 2 : 7 - rank;
+            score += advancement * 100;  // More advanced = better
+        }
+        
+        // Check for isolated pawn
+        const hasNeighbor = (file > 0 && pawnsByFile[file - 1] > 0) || 
+                          (file < 7 && pawnsByFile[file + 1] > 0);
+        if (!hasNeighbor) {
+            isolatedPawns++;
+            score -= 50;
+        }
+    }
+    
+    // Check doubled pawns
+    for (let f = 0; f < 8; f++) {
+        if (pawnsByFile[f] > 1) {
+            doubledPawns += pawnsByFile[f] - 1;
+            score -= 30 * (pawnsByFile[f] - 1);
+        }
+    }
+    
+    // Passed pawns are strategically valuable
+    score += passedPawns * 150;
+    
+    return score;
+}
+
+/**
+ * v40.51: Check if a pawn is passed
+ */
+function v40IsPawnPassed(board, pawnSquare, isWhite) {
+    const file = pawnSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = parseInt(pawnSquare[1]);
+    const enemyPawnChar = isWhite ? 'p' : 'P';
+    
+    // Check files: current, left, right
+    for (let f = Math.max(0, file - 1); f <= Math.min(7, file + 1); f++) {
+        const fileLetter = String.fromCharCode(97 + f);
+        
+        // Check ranks ahead of pawn
+        if (isWhite) {
+            for (let r = rank + 1; r <= 8; r++) {
+                const sq = fileLetter + r;
+                if (board.get(sq) === enemyPawnChar) return false;
+            }
+        } else {
+            for (let r = rank - 1; r >= 1; r--) {
+                const sq = fileLetter + r;
+                if (board.get(sq) === enemyPawnChar) return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * v40.51: Evaluate piece placement potential
+ */
+function v40EvaluatePiecePlacementPotential(board, isWhite, move) {
+    let score = 0;
+    const toSquare = move.substring(2, 4);
+    const toFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const toRank = parseInt(toSquare[1]);
+    
+    // Centralization bonus
+    const centerDistance = Math.abs(3.5 - toFile) + Math.abs(3.5 - toRank);
+    if (centerDistance < 2.5) {
+        score += 30;  // Central placement
+    }
+    
+    // Knight outpost detection
+    const movingPiece = board.get(move.substring(0, 2));
+    if (movingPiece && movingPiece.toLowerCase() === 'n') {
+        // Knights on 5th/6th rank (or 3rd/4th for black) are outposts
+        const isOutpost = isWhite ? (toRank >= 5) : (toRank <= 4);
+        if (isOutpost && toFile >= 2 && toFile <= 5) {
+            score += 80;  // Knight on outpost
+        }
+    }
+    
+    // Rook on open file
+    if (movingPiece && movingPiece.toLowerCase() === 'r') {
+        if (v40IsFileOpen(board, toFile)) {
+            score += 60;
+        } else if (v40IsFileSemiOpen(board, toFile, isWhite)) {
+            score += 40;
+        }
+    }
+    
+    // Bishop on long diagonal
+    if (movingPiece && movingPiece.toLowerCase() === 'b') {
+        if ((toFile === toRank) || (toFile === 7 - toRank)) {
+            score += 35;  // On a main diagonal
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: Check if file is open (no pawns)
+ */
+function v40IsFileOpen(board, fileIdx) {
+    const fileLetter = String.fromCharCode(97 + fileIdx);
+    for (let r = 1; r <= 8; r++) {
+        const sq = fileLetter + r;
+        const piece = board.get(sq);
+        if (piece && piece.toLowerCase() === 'p') {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * v40.51: Check if file is semi-open (no friendly pawns)
+ */
+function v40IsFileSemiOpen(board, fileIdx, isWhite) {
+    const fileLetter = String.fromCharCode(97 + fileIdx);
+    const friendlyPawn = isWhite ? 'P' : 'p';
+    for (let r = 1; r <= 8; r++) {
+        const sq = fileLetter + r;
+        if (board.get(sq) === friendlyPawn) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * v40.51: Evaluate king safety trajectory
+ */
+function v40EvaluateKingSafetyTrajectory(board, isWhite, moveNumber) {
+    let score = 0;
+    const kingChar = isWhite ? 'K' : 'k';
+    let kingSquare = null;
+    
+    // Find king
+    for (const [square, piece] of board) {
+        if (piece === kingChar) {
+            kingSquare = square;
+            break;
+        }
+    }
+    
+    if (!kingSquare) return 0;
+    
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    
+    // Pawn shield evaluation
+    const pawnShieldScore = v40EvaluatePawnShield(board, kingSquare, isWhite);
+    score += pawnShieldScore * 100;
+    
+    // In opening/middlegame, king should be castled
+    if (moveNumber <= 20) {
+        // King on g or h file (kingside castle) or a/b file (queenside)
+        const isCastled = kingFile <= 1 || kingFile >= 6;
+        if (!isCastled && kingRank === (isWhite ? 1 : 8)) {
+            score -= 100;  // King in center, not castled
+        }
+    }
+    
+    // Open files toward king are dangerous
+    for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+        if (v40IsFileOpen(board, f)) {
+            score -= 40;  // Open file near king
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: Evaluate pawn shield around king
+ */
+function v40EvaluatePawnShield(board, kingSquare, isWhite) {
+    let shieldScore = 0;
+    const pawnChar = isWhite ? 'P' : 'p';
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    const shieldRank = isWhite ? kingRank + 1 : kingRank - 1;
+    
+    if (shieldRank < 1 || shieldRank > 8) return 0;
+    
+    // Check pawns in front of king
+    for (let f = Math.max(0, kingFile - 1); f <= Math.min(7, kingFile + 1); f++) {
+        const sq = String.fromCharCode(97 + f) + shieldRank;
+        if (board.get(sq) === pawnChar) {
+            shieldScore += 1;  // Pawn in shield position
+        }
+    }
+    
+    return shieldScore;
+}
+
+/**
+ * v40.51: Evaluate strategic coherence - do pieces work together?
+ */
+function v40EvaluateStrategicCoherence(board, isWhite) {
+    let score = 0;
+    const ourPieces = [];
+    
+    // Collect our pieces
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhite) continue;
+        if (piece.toLowerCase() === 'k') continue;
+        
+        ourPieces.push({
+            square,
+            piece: piece.toLowerCase(),
+            file: square.charCodeAt(0) - 'a'.charCodeAt(0),
+            rank: parseInt(square[1])
+        });
+    }
+    
+    // Check for piece coordination
+    let coordinatedPairs = 0;
+    for (let i = 0; i < ourPieces.length; i++) {
+        for (let j = i + 1; j < ourPieces.length; j++) {
+            const dist = Math.abs(ourPieces[i].file - ourPieces[j].file) + 
+                        Math.abs(ourPieces[i].rank - ourPieces[j].rank);
+            
+            // Pieces that can support each other
+            if (dist <= 3) {
+                coordinatedPairs++;
+            }
+        }
+    }
+    
+    score += coordinatedPairs * 10;
+    
+    // Rooks on same file/rank bonus
+    const rooks = ourPieces.filter(p => p.piece === 'r');
+    if (rooks.length === 2) {
+        if (rooks[0].file === rooks[1].file || rooks[0].rank === rooks[1].rank) {
+            score += 50;  // Connected rooks
+        }
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: Evaluate long-term weaknesses
+ */
+function v40EvaluateLongTermWeaknesses(board, isWhite) {
+    let score = 0;
+    
+    // Count weak squares (squares we don't control that should be ours)
+    const enemyColor = isWhite ? 'b' : 'w';
+    const ourTerritory = isWhite ? [1, 2, 3, 4] : [5, 6, 7, 8];
+    
+    let weakSquares = 0;
+    for (let f = 0; f < 8; f++) {
+        for (let r of ourTerritory) {
+            const sq = String.fromCharCode(97 + f) + r;
+            // Check if enemy controls this square
+            if (isSquareAttackedByColor && typeof isSquareAttackedByColor === 'function') {
+                try {
+                    if (isSquareAttackedByColor(board, sq, enemyColor)) {
+                        weakSquares++;
+                    }
+                } catch (e) {}
+            }
+        }
+    }
+    
+    score -= weakSquares * 10;
+    
+    return score;
+}
+
+/**
+ * v40.51: MULTI-FRONT PRESSURE EVALUATION - AlphaZero's \"web-weaving\"
+ * Detects and rewards creating pressure on multiple fronts
+ */
+function v40MultiFrontPressureEval(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const testBoard = simulateMove(board, move);
+        if (!testBoard) return 0;
+        
+        // Count threats on each front
+        const kingsidePressure = v40CountPressureOnFront(testBoard, isWhite, 'kingside');
+        const queensidePressure = v40CountPressureOnFront(testBoard, isWhite, 'queenside');
+        const centerPressure = v40CountPressureOnFront(testBoard, isWhite, 'center');
+        
+        // Multi-front pressure bonus (AlphaZero's specialty)
+        let frontsWithPressure = 0;
+        if (kingsidePressure >= 2) frontsWithPressure++;
+        if (queensidePressure >= 2) frontsWithPressure++;
+        if (centerPressure >= 2) frontsWithPressure++;
+        
+        if (frontsWithPressure >= 2) {
+            score += 5000 * frontsWithPressure;  // Multi-front pressure bonus
+            debugLog(\"[V40.51_MULTIFRONT]\", `✅ MULTI-FRONT PRESSURE: ${frontsWithPressure} fronts active!`);
+        }
+        
+        // Total pressure score
+        score += (kingsidePressure + queensidePressure + centerPressure) * 200;
+        
+        // Extra bonus for kingside pressure when enemy king is there
+        const enemyKingSquare = findKingSquare(testBoard, !isWhite);
+        if (enemyKingSquare) {
+            const enemyKingFile = enemyKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            if (enemyKingFile >= 5 && kingsidePressure >= 2) {
+                score += 3000;  // Pressing enemy king's side
+            } else if (enemyKingFile <= 2 && queensidePressure >= 2) {
+                score += 3000;
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.51_MULTIFRONT]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: Count pressure on a specific front
+ */
+function v40CountPressureOnFront(board, isWhite, front) {
+    let pressure = 0;
+    let fileRange;
+    
+    switch (front) {
+        case 'kingside':
+            fileRange = [5, 6, 7];  // f, g, h files
+            break;
+        case 'queenside':
+            fileRange = [0, 1, 2];  // a, b, c files
+            break;
+        case 'center':
+            fileRange = [3, 4];     // d, e files
+            break;
+        default:
+            return 0;
+    }
+    
+    const enemyTerritory = isWhite ? [5, 6, 7, 8] : [1, 2, 3, 4];
+    
+    for (const f of fileRange) {
+        const fileLetter = String.fromCharCode(97 + f);
+        for (const r of enemyTerritory) {
+            const sq = fileLetter + r;
+            
+            // Count our pieces attacking this square
+            for (const [pieceSquare, piece] of board) {
+                if (!piece) continue;
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite !== isWhite) continue;
+                
+                const pieceType = piece.toLowerCase();
+                if (pieceType === 'k') continue;
+                
+                const pFile = pieceSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+                const pRank = parseInt(pieceSquare[1]) - 1;
+                const tFile = f;
+                const tRank = r - 1;
+                
+                if (canPieceAttackSquareV40 && typeof canPieceAttackSquareV40 === 'function') {
+                    try {
+                        if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, isWhite ? 'w' : 'b')) {
+                            pressure++;
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+    }
+    
+    return Math.min(pressure, 10);  // Cap at 10
+}
+
+/**
+ * v40.51: ANTI-MATING NET EVALUATION - Prevents getting trapped in mating nets
+ * Critical for preventing the corner mates seen in recent games
+ */
+function v40AntiMatingNetEval(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const testBoard = simulateMove(board, move);
+        if (!testBoard) return 0;
+        
+        const kingSquare = findKingSquare(testBoard, isWhite);
+        if (!kingSquare) return 0;
+        
+        const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+        const kingRank = parseInt(kingSquare[1]);
+        
+        // 1. KING IN CORNER WARNING
+        const isInCorner = (kingFile <= 1 || kingFile >= 6) && (kingRank <= 1 || kingRank >= 8);
+        if (isInCorner) {
+            // Check escape squares
+            const escapeSquares = v40CountKingEscapeSquares(testBoard, kingSquare, isWhite);
+            if (escapeSquares <= 1) {
+                score -= 8000;  // CRITICAL: King trapped!
+                debugLog(\"[V40.51_ANTIMATING]\", `🚨 KING TRAPPED IN CORNER! Only ${escapeSquares} escape squares!`);
+            } else if (escapeSquares <= 2) {
+                score -= 4000;
+            }
+        }
+        
+        // 2. BACK RANK WEAKNESS
+        const backRank = isWhite ? 1 : 8;
+        if (kingRank === backRank) {
+            const escapeSquares = v40CountKingEscapeSquares(testBoard, kingSquare, isWhite);
+            if (escapeSquares === 0) {
+                score -= 10000;  // CRITICAL: Back rank mate imminent!
+                debugLog(\"[V40.51_ANTIMATING]\", `🚨 BACK RANK WEAKNESS! NO ESCAPE!`);
+            }
+        }
+        
+        // 3. ROOK ON BACK RANK THREAT
+        const enemyColor = isWhite ? 'b' : 'w';
+        for (const [sq, piece] of testBoard) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;
+            
+            if (piece.toLowerCase() === 'r' || piece.toLowerCase() === 'q') {
+                const pieceRank = parseInt(sq[1]);
+                if (pieceRank === backRank) {
+                    // Enemy heavy piece on our back rank!
+                    score -= 5000;
+                }
+            }
+        }
+        
+        // 4. LUFT CHECK - Do we have escape for the king?
+        if (kingRank === backRank) {
+            const hasLuft = v40HasLuft(testBoard, kingSquare, isWhite);
+            if (!hasLuft) {
+                score -= 3000;  // No luft = dangerous
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.51_ANTIMATING]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: Count king escape squares
+ */
+function v40CountKingEscapeSquares(board, kingSquare, isWhite) {
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    const enemyColor = isWhite ? 'b' : 'w';
+    let escapeCount = 0;
+    
+    // Check all 8 adjacent squares
+    for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+            if (df === 0 && dr === 0) continue;
+            
+            const newFile = kingFile + df;
+            const newRank = kingRank + dr;
+            
+            if (newFile < 0 || newFile > 7 || newRank < 1 || newRank > 8) continue;
+            
+            const sq = String.fromCharCode(97 + newFile) + newRank;
+            const piece = board.get(sq);
+            
+            // Square must be empty or have enemy piece (capturable)
+            if (piece) {
+                const pieceIsWhite = piece === piece.toUpperCase();
+                if (pieceIsWhite === isWhite) continue;  // Our own piece blocks
+            }
+            
+            // Check if square is safe
+            if (isSquareAttackedByColor && typeof isSquareAttackedByColor === 'function') {
+                try {
+                    if (!isSquareAttackedByColor(board, sq, enemyColor)) {
+                        escapeCount++;
+                    }
+                } catch (e) {
+                    escapeCount++;  // Assume safe if can't check
+                }
+            } else {
+                escapeCount++;
+            }
+        }
+    }
+    
+    return escapeCount;
+}
+
+/**
+ * v40.51: Check if king has luft (escape square created by pawn move)
+ */
+function v40HasLuft(board, kingSquare, isWhite) {
+    const kingFile = kingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const kingRank = parseInt(kingSquare[1]);
+    const luftRank = isWhite ? 2 : 7;
+    
+    // Check if there's an escape square on rank 2 (for white) or rank 7 (for black)
+    for (let df = -1; df <= 1; df++) {
+        const newFile = kingFile + df;
+        if (newFile < 0 || newFile > 7) continue;
+        
+        const sq = String.fromCharCode(97 + newFile) + luftRank;
+        const piece = board.get(sq);
+        
+        if (!piece) return true;  // Empty square = luft exists
+    }
+    
+    return false;
+}
+
+/**
+ * v40.51: ABSOLUTE CAPTURE PRIORITY - Never miss free material
+ */
+function v40AbsoluteCapturePriorityEval(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        // Check if there's any hanging enemy piece we should capture
+        const hangingPieces = [];
+        const enemyColor = isWhite ? 'b' : 'w';
+        
+        for (const [square, piece] of board) {
+            if (!piece) continue;
+            const pieceIsWhite = piece === piece.toUpperCase();
+            if (pieceIsWhite === isWhite) continue;  // Only enemy pieces
+            
+            const pieceType = piece.toLowerCase();
+            if (pieceType === 'k') continue;
+            
+            // Is this enemy piece undefended?
+            const isDefended = isSquareDefendedByColor && typeof isSquareDefendedByColor === 'function' ?
+                isSquareDefendedByColor(board, square, enemyColor) : false;
+            
+            if (!isDefended) {
+                // Can we capture it?
+                if (canPieceCapture && typeof canPieceCapture === 'function') {
+                    if (canPieceCapture(board, square, activeColor)) {
+                        hangingPieces.push({
+                            square,
+                            piece: pieceType,
+                            value: getPieceValueSimple(pieceType)
+                        });
+                    }
+                }
+            }
+        }
+        
+        if (hangingPieces.length > 0) {
+            // Sort by value (highest first)
+            hangingPieces.sort((a, b) => b.value - a.value);
+            const bestCapture = hangingPieces[0];
+            
+            // Check if this move captures the best hanging piece
+            const toSquare = move.substring(2, 4);
+            if (toSquare === bestCapture.square) {
+                score += bestCapture.value * 100000;  // Massive bonus for taking free piece
+                debugLog(\"[V40.51_CAPTURE]\", `✅ CAPTURING HANGING ${bestCapture.piece}@${bestCapture.square}!`);
+            } else {
+                // We're NOT capturing the hanging piece - penalty!
+                score -= bestCapture.value * 50000;
+                debugLog(\"[V40.51_CAPTURE]\", `⚠️ MISSING HANGING ${bestCapture.piece}@${bestCapture.square}!`);
+            }
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.51_CAPTURE]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: FORCING MOVE CHAIN - Detect and reward forcing sequences
+ */
+function v40ForcingMoveChainEval(fen, move, board, activeColor, moveNumber) {
+    let score = 0;
+    const isWhite = activeColor === 'w';
+    
+    try {
+        const testBoard = simulateMove(board, move);
+        if (!testBoard) return 0;
+        
+        // Is this move a check?
+        const enemyKingSquare = findKingSquare(testBoard, !isWhite);
+        if (enemyKingSquare) {
+            const movingPieceSquare = move.substring(2, 4);
+            const movingPiece = board.get(move.substring(0, 2));
+            
+            if (movingPiece) {
+                const pieceType = movingPiece.toLowerCase();
+                const pFile = movingPieceSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+                const pRank = parseInt(movingPieceSquare[1]) - 1;
+                const kFile = enemyKingSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+                const kRank = parseInt(enemyKingSquare[1]) - 1;
+                
+                if (canPieceAttackSquareV40 && typeof canPieceAttackSquareV40 === 'function') {
+                    try {
+                        if (canPieceAttackSquareV40(pieceType, pFile, pRank, kFile, kRank, testBoard, activeColor)) {
+                            score += 2000;  // Check is forcing
+                            debugLog(\"[V40.51_FORCING]\", `✅ ${move} is a CHECK!`);
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+        
+        // Is this move a capture?
+        const capturedPiece = board.get(move.substring(2, 4));
+        if (capturedPiece) {
+            const capturedValue = getPieceValueSimple(capturedPiece.toLowerCase());
+            score += capturedValue * 500;  // Captures are forcing
+        }
+        
+        // Does this move create a threat?
+        const threatCount = v40CountThreatsCreated(testBoard, isWhite, move);
+        if (threatCount > 0) {
+            score += threatCount * 500;
+        }
+        
+    } catch (e) {
+        debugLog(\"[V40.51_FORCING]\", `Error: ${e.message}`);
+    }
+    
+    return score;
+}
+
+/**
+ * v40.51: Count threats created by a move
+ */
+function v40CountThreatsCreated(board, isWhite, move) {
+    let threats = 0;
+    const toSquare = move.substring(2, 4);
+    const movingPiece = board.get(toSquare);
+    
+    if (!movingPiece) return 0;
+    
+    const pieceType = movingPiece.toLowerCase();
+    const pFile = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+    const pRank = parseInt(toSquare[1]) - 1;
+    
+    // Check if this piece now attacks any enemy pieces
+    for (const [square, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite === isWhite) continue;  // Only enemy pieces
+        
+        if (piece.toLowerCase() === 'k') continue;  // King threats handled separately
+        
+        const tFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+        const tRank = parseInt(square[1]) - 1;
+        
+        if (canPieceAttackSquareV40 && typeof canPieceAttackSquareV40 === 'function') {
+            try {
+                if (canPieceAttackSquareV40(pieceType, pFile, pRank, tFile, tRank, board, isWhite ? 'w' : 'b')) {
+                    threats++;
+                }
+            } catch (e) {}
+        }
+    }
+    
+    return threats;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+function findAttackedPiecesV40_9(board, color) {"
+Observation: Edit was successful.

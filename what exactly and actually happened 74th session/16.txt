@@ -1,0 +1,6 @@
+
+Action: $ cd /app && grep -n "centralPawnCaptureResponseScore\|bishopB5HangingScore" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 45835:                const centralPawnCaptureResponseScore = v40CentralPawnCaptureResponseEval(fen, move, board, activeColor, moveNumber) * 12000.0;
+45838:                const bishopB5HangingScore = v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) * 9000.0;
+45976:                               centralPawnCaptureResponseScore + bishopB5HangingScore +
+Exit code: 0

@@ -1,0 +1,13 @@
+
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                debugLog(\"[V40_INTEGRATE]\", `   🚨🚨🚨 ABSOLUTE MUST RESPOND: ${absoluteMustRespondScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);" --new-str "                debugLog(\"[V40_INTEGRATE]\", `   🚨🚨🚨 ABSOLUTE MUST RESPOND: ${absoluteMustRespondScore.toFixed(1)}`);
+                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE debug logs
+                debugLog(\"[V40_INTEGRATE]\", `   🧠🧠🧠 DEEP STRATEGIC VISION: ${deepStrategicVisionScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🕸️🕸️🕸️ MULTI-FRONT PRESSURE: ${multiFrontPressureScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   🛡️💀 ANTI-MATING NET: ${antiMatingNetScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   💰🎯 ABSOLUTE CAPTURE PRIORITY: ${absoluteCapturePriorityScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   ⚡⚡ FORCING MOVE CHAIN: ${forcingMoveChainScore.toFixed(1)}`);
+                debugLog(\"[V40_INTEGRATE]\", `   TOTAL v40: ${v40DeepScore.toFixed(1)} → 100% bonus=${v40Bonus.toFixed(1)}cp`);
+                debugLog(\"[V40_INTEGRATE]\", `═══════════════════════════════════════════════════════`);"
+Observation: Edit was successful.

@@ -1,0 +1,29 @@
+Now I'll add the v40.51 function calls and integrate them. First, let me add the calls before the integration section:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.45: ABSOLUTE PIECE SAFETY — Final safety check after all evaluations!
+                const absolutePieceSafetyScore = v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE" --new-str "                // v40.45: ABSOLUTE PIECE SAFETY — Final safety check after all evaluations!
+                const absolutePieceSafetyScore = v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.51 DEEP STRATEGIC VISION & MULTI-FRONT PRESSURE — TRUE ALPHAZERO!
+                // The ULTIMATE fix for long-term planning and strategic depth
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.51: DEEP STRATEGIC VISION — 30+ move planning
+                const deepStrategicVisionScore = v40DeepStrategicVisionEval(fen, move, board, activeColor, moveNumber) * 2.0;
+                
+                // v40.51: MULTI-FRONT PRESSURE — AlphaZero's \"web-weaving\" specialty
+                const multiFrontPressureScore = v40MultiFrontPressureEval(fen, move, board, activeColor, moveNumber) * 2.5;
+                
+                // v40.51: ANTI-MATING NET — Prevent corner mates and back rank disasters
+                const antiMatingNetScore = v40AntiMatingNetEval(fen, move, board, activeColor, moveNumber) * 3.0;
+                
+                // v40.51: ABSOLUTE CAPTURE PRIORITY — Never miss free material
+                const absoluteCapturePriorityScore = v40AbsoluteCapturePriorityEval(fen, move, board, activeColor, moveNumber) * 5.0;
+                
+                // v40.51: FORCING MOVE CHAIN — Reward forcing sequences
+                const forcingMoveChainScore = v40ForcingMoveChainEval(fen, move, board, activeColor, moveNumber) * 1.5;
+                
+                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE"
+Observation: Edit was successful.

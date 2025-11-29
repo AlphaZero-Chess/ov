@@ -1,0 +1,154 @@
+Now let me see the v40.51 function and what was the plan to add:
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+47300|                window.__EMERGENCY_DEFENSE_MODE = true;
+47301|                window.__EMERGENCY_DEFENSE_MOVES = preSafetyResult.forcedDefenseMoves;
+47302|                window.__EMERGENCY_THREAT = preSafetyResult;
+47303|            }
+47304|        }
+47305|    } else if (preSafetyResult.hasCriticalThreat && preSafetyResult.threatLevel >= 2) {
+47306|        debugLog("[ENGINE]", "⚠️ DEFENSIVE MODE - Critical threat detected");
+47307|        window.__DEFENSIVE_MODE = true;
+47308|        window.__DEFENSIVE_THREAT = preSafetyResult;
+47309|    } else {
+47310|        // Clear any previous emergency state
+47311|        window.__EMERGENCY_DEFENSE_MODE = false;
+47312|        window.__DEFENSIVE_MODE = false;
+47313|    }
+47314|    
+47315|    // ═══════════════════════════════════════════════════════════════════
+47316|    // END v31.0.0 PRE-CALCULATION SAFETY SCAN
+47317|    // ═══════════════════════════════════════════════════════════════════
+47318|    
+47319|    // Set calculation lock and track color
+47320|    calculationLock = true;
+47321|    calculationStartTime = Date.now();
+47322|    currentCalculatingColor = fenActiveColor;
+47323|    debugLog("[LOCK]", `🔒 Calculation lock SET for ${colorName}`);
+47324|    
+47325|    // Clear position ready flag for this color (we're now calculating)
+47326|    if (isWhite) {
+47327|        whitePositionReady = false;
+47328|    } else {
+47329|        blackPositionReady = false;
+47330|    }
+47331|    
+47332|    debugLog("[ENGINE]", "🎯 Starting calculation...");
+47333|    debugLog("[ENGINE]", `  Color: ${colorName}`);
+47334|    debugLog("[ENGINE]", `  FEN: ${currentFen}`);
+47335|    
+47336|    // Opening book first - BUT SKIP IF IN EMERGENCY MODE
+47337|    const fenKey = currentFen.split(' ').slice(0, 4).join(' ');
+47338|    const bookMove = getAlphaZeroBookMove(fenKey, fenActiveColor);
+47339|    
+47340|    // ═══════════════════════════════════════════════════════════════════════════════
+47341|    // v40.51 CRITICAL: ABSOLUTE RECAPTURE SYSTEM - THE ULTIMATE FIX!
+47342|    // If there's an enemy pawn on d4/e4 (for white) or d5/e5 (for black), MUST capture!
+47343|    // This OVERRIDES ALL book moves and engine suggestions!
+47344|    // From Session 72: Nf3xd4 (f3d4) must happen, not Ne2!
+47345|    // ═══════════════════════════════════════════════════════════════════════════════
+47346|    let mustRecaptureMove = null;
+47347|    if (CONFIG.v40MustRecaptureModeEnabled && moveCount <= 15) {
+47348|        const recaptureBoard = parseFenToBoard(currentFen);
+47349|        const isWhiteToMove = currentFen.includes(' w ');
+47350|        
+47351|        // v40.51: Extended central squares to check - including diagonals
+47352|        const centralPawnSquares = isWhiteToMove ? ['d4', 'e4', 'c4', 'f4'] : ['d5', 'e5', 'c5', 'f5'];
+47353|        
+47354|        debugLog("[V40.51_RECAPTURE]", `═══════════════════════════════════════════════════════`);
+47355|        debugLog("[V40.51_RECAPTURE]", `🎯 ABSOLUTE RECAPTURE CHECK ACTIVATED`);
+47356|        debugLog("[V40.51_RECAPTURE]", `   FEN: ${currentFen}`);
+47357|        debugLog("[V40.51_RECAPTURE]", `   Move count: ${moveCount}, White to move: ${isWhiteToMove}`);
+47358|        debugLog("[V40.51_RECAPTURE]", `   Checking squares: ${centralPawnSquares.join(', ')}`);
+47359|        
+47360|        for (const centralSq of centralPawnSquares) {
+47361|            const piece = recaptureBoard.get(centralSq);
+47362|            
+47363|            // v40.51: Log every square check for debugging
+47364|            debugLog("[V40.51_RECAPTURE]", `   Checking ${centralSq}: piece=${piece || 'empty'}`);
+47365|            
+47366|            if (!piece) continue;
+47367|            
+47368|            // v40.51: Check for ANY enemy piece on central square, not just pawns
+47369|            const pieceIsWhite = piece === piece.toUpperCase();
+47370|            if (pieceIsWhite === isWhiteToMove) {
+47371|                debugLog("[V40.51_RECAPTURE]", `   ${centralSq}: Our piece (${piece}), skipping`);
+47372|                continue;
+47373|            }
+47374|            
+47375|            // v40.51: For d4/e4/d5/e5, MUST recapture if enemy pawn
+47376|            const isPawn = piece.toLowerCase() === 'p';
+47377|            const isPrioritySquare = ['d4', 'e4', 'd5', 'e5'].includes(centralSq);
+47378|            
+47379|            if (isPawn && isPrioritySquare) {
+47380|                debugLog("[V40.51_RECAPTURE]", `   🚨 ENEMY PAWN on ${centralSq}! Checking if we can capture...`);
+47381|                
+47382|                // Check if we can capture it
+47383|                if (canPieceCapture(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b')) {
+47384|                    // Generate the capture move
+47385|                    mustRecaptureMove = v40GenerateCaptureMove(recaptureBoard, centralSq, isWhiteToMove ? 'w' : 'b');
+47386|                    if (mustRecaptureMove) {
+47387|                        debugLog("[V40.51_RECAPTURE]", `🎯🎯🎯 MUST RECAPTURE ${centralSq}! Generated move: ${mustRecaptureMove}`);
+47388|                        debugLog("[V40.51_RECAPTURE]", `🎯🎯🎯 This OVERRIDES any book move (was: ${bookMove || 'none'})`);
+47389|                    } else {
+47390|                        debugLog("[V40.51_RECAPTURE]", `⚠️ canPieceCapture returned true but v40GenerateCaptureMove returned null!`);
+47391|                    }
+47392|                    break;
+47393|                } else {
+47394|                    debugLog("[V40.51_RECAPTURE]", `   Cannot capture ${centralSq} - no piece can reach it`);
+47395|                }
+47396|            }
+47397|        }
+47398|        
+47399|        debugLog("[V40.51_RECAPTURE]", `═══════════════════════════════════════════════════════`);
+47400|    }
+47401|    
+47402|    // v40.51: If we MUST recapture, use that move immediately!
+47403|    if (mustRecaptureMove) {
+47404|        const thinkTime = Math.random() * 500 + 300;
+47405|        debugLog("[V40.51_RECAPTURE]", `⚡⚡⚡ FORCED RECAPTURE: ${mustRecaptureMove} (${(thinkTime/1000).toFixed(1)}s)`);
+47406|        debugLog("[V40.51_RECAPTURE]", `⚡⚡⚡ THIS IS ABSOLUTE - NO EXCEPTIONS!`);
+47407|        
+47408|        setTimeout(() => {
+47409|            bestMove = mustRecaptureMove;
+47410|            calculationLock = false;
+47411|            calculationStartTime = 0;
+47412|            currentCalculatingColor = null;
+47413|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+47414|            sendMove(mustRecaptureMove);
+47415|        }, thinkTime);
+47416|        
+47417|        return;
+47418|    }
+47419|    
+47420|    // v31.0.0: Never use book moves when there's a critical threat!
+47421|    if (bookMove && gamePhase === "opening" && !window.__EMERGENCY_DEFENSE_MODE && !preSafetyResult.hasCriticalThreat) {
+47422|        const thinkTime = Math.random() * 900 + 500;
+47423|        
+47424|        debugLog("[ENGINE]", `📖 Book move: ${bookMove} (${(thinkTime/1000).toFixed(1)}s)`);
+47425|        
+47426|        setTimeout(() => {
+47427|            bestMove = bookMove;
+47428|            calculationLock = false;
+47429|            calculationStartTime = 0;
+47430|            currentCalculatingColor = null;
+47431|            debugLog("[LOCK]", "🔓 Calculation lock RELEASED");
+47432|            sendMove(bookMove);
+47433|        }, thinkTime);
+47434|        
+47435|        return;
+47436|    }
+47437|    
+47438|    // v31.0.0: If book move would be used but there's a threat, skip book and use engine
+47439|    if (bookMove && preSafetyResult.hasCriticalThreat) {
+47440|        debugLog("[ENGINE]", `⚠️ SKIPPING book move ${bookMove} due to critical threat - using engine`);
+47441|    }
+47442|    
+47443|    // Engine calculation
+47444|    const isStrategic = isStrategicPosition(currentFen);
+47445|    const depth = getStrategicDepth(gamePhase, isStrategic, timeRemaining);
+47446|    const thinkTime = getAlphaZeroThinkTime(gamePhase, isStrategic, timeRemaining);
+47447|    
+47448|    debugLog("[ENGINE]", `🧠 Depth ${depth}, Time ${(thinkTime/1000).toFixed(1)}s, Strategic: ${isStrategic}`);
+47449|    
+47450|    multiPVLines = [];

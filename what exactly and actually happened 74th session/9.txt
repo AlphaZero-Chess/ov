@@ -1,0 +1,6 @@
+Let me find where to add the v40.51 integration. Let me search for where the scores are summed up:
+Action: $ cd /app && grep -n "v40.45 ABSOLUTE MOVE FILTER\|absolutePieceSafetyScore;" "Lichess Bot-AlphaZero-Pure.user.js" | head -10
+Observation: 45957:                               // v40.45 ABSOLUTE MOVE FILTER & OPENING BOOK SUPREME — THE FINAL FIX!
+45958:                               moveFilterScore + sicilianResponseScore + openingBookScore + absolutePieceSafetyScore;
+45959:                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.45 ABSOLUTE MOVE FILTER SUPREME PARADIGM SHIFT
+Exit code: 0

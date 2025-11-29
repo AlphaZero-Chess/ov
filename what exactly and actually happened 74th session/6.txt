@@ -1,0 +1,29 @@
+Now I'll add the v40.51 enhancement functions after the v40AbsolutePieceSafetyCheck function. These will focus on:
+
+1. Deep Strategic Vision (30+ moves)
+2. Multi-Front Pressure Detection
+3. King Safety Enhancement
+4. Anti-Passivity System
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+29290|        }
+29291|    }
+29292|    
+29293|    return score;
+29294|}
+29295|
+29296|// ═══════════════════════════════════════════════════════════════════════════════
+29297|function findAttackedPiecesV40_9(board, color) {
+29298|    const attacked = [];
+29299|    const isWhite = color === 'w';
+29300|    const enemyColor = isWhite ? 'b' : 'w';
+29301|    
+29302|    for (const [square, piece] of board) {
+29303|        if (!piece) continue;
+29304|        const pieceIsWhite = piece === piece.toUpperCase();
+29305|        if (pieceIsWhite !== isWhite) continue;
+29306|        
+29307|        const pieceType = piece.toLowerCase();
+29308|        if (pieceType === 'k') continue;  // King attacks handled separately
+29309|        
+29310|        // Check if this square is attacked by enemy
