@@ -1,0 +1,13 @@
+
+Action: $ cd /app && grep -n "v40TwoMovePawnChainEval\|v40DontPushWhenHangingEval\|v40ProtectKnightFromPawnEval\|v40CentralPawnCaptureResponseEval\|v40BishopB5HangingEval" "Lichess Bot-AlphaZero-Pure.user.js" | head -20
+Observation: 28595:function v40TwoMovePawnChainEval(fen, move, board, activeColor, moveNumber) {
+28677:function v40DontPushWhenHangingEval(fen, move, board, activeColor, moveNumber) {
+28709:function v40ProtectKnightFromPawnEval(fen, move, board, activeColor, moveNumber) {
+28770:function v40CentralPawnCaptureResponseEval(fen, move, board, activeColor, moveNumber) {
+28941:function v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) {
+44769:                const twoMovePawnChainScore = v40TwoMovePawnChainEval(fen, move, board, activeColor, moveNumber) * 20000.0;
+44772:                const dontPushWhenHangingScore = v40DontPushWhenHangingEval(fen, move, board, activeColor, moveNumber) * 15000.0;
+44775:                const protectKnightFromPawnScore = v40ProtectKnightFromPawnEval(fen, move, board, activeColor, moveNumber) * 18000.0;
+44778:                const centralPawnCaptureResponseScore = v40CentralPawnCaptureResponseEval(fen, move, board, activeColor, moveNumber) * 12000.0;
+44781:                const bishopB5HangingScore = v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) * 9000.0;
+Exit code: 0

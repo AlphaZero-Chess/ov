@@ -1,0 +1,4 @@
+Now I need to integrate these v40.45 functions into the computeCombinedScore and add the hard filter. Let me find where the move evaluation happens:
+Action: $ cd /app && grep -n "twoMovePawnChainScore = v40TwoMovePawnChainEval" "Lichess Bot-AlphaZero-Pure.user.js"
+Observation: 45039:                const twoMovePawnChainScore = v40TwoMovePawnChainEval(fen, move, board, activeColor, moveNumber) * 20000.0;
+Exit code: 0

@@ -1,0 +1,4 @@
+Now let me also add debug logging for the v40.45 scores so we can track them:
+Action: $ cd /app && grep -n "debugLog.*V40_INTEGRATE.*ThreatAnticipation" "Lichess Bot-AlphaZero-Pure.user.js" | head -3
+Observation: 45208:                debugLog("[V40_INTEGRATE]", `   🔭🔭🔭 ThreatAnticipation: ${threatAnticipationScore.toFixed(1)}`);
+Exit code: 0

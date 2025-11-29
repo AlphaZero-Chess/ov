@@ -1,0 +1,44 @@
+Now I need to add v40.45 configuration and implement a critical function that acts as a HARD FILTER, not just a penalty. Let me add this to the CONFIG:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "    // v40.43: BISHOP HANGING ON B5 - Must move if attacked by pawn chain
+    v40BishopB5HangingEnabled: true,
+    v40BishopB5HangingPenalty: -900000000000000, // 900 trillion
+};" --new-str "    // v40.43: BISHOP HANGING ON B5 - Must move if attacked by pawn chain
+    v40BishopB5HangingEnabled: true,
+    v40BishopB5HangingPenalty: -900000000000000, // 900 trillion
+    
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // v40.45: ABSOLUTE MOVE FILTER SUPREME - HARD REJECTION OF BAD MOVES!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // From games: Despite HUGE penalties, bot STILL plays bad moves!
+    // The issue is that Stockfish evaluation can override our penalties.
+    // FIX: Instead of just penalizing, we HARD REJECT moves that violate rules!
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    // v40.45: ABSOLUTE MOVE FILTER - Enable hard rejection of bad moves
+    v40AbsoluteMoveFilterEnabled: true,
+    v40MoveFilterScoreThreshold: -1000000000000000, // If score < this, REJECT the move
+    
+    // v40.45: MUST RECAPTURE MODE - When piece captured, ONLY recapture moves allowed
+    v40MustRecaptureModeEnabled: true,
+    v40MustRecaptureEnforcement: 'hard', // 'hard' = reject other moves, 'soft' = just penalty
+    
+    // v40.45: CRITICAL OPENING BOOK - Follow known good moves in first 10 moves
+    v40CriticalOpeningBookEnabled: true,
+    v40OpeningBookDepth: 10,
+    
+    // v40.45: ABSOLUTE KNIGHT SAFETY - Knight under pawn attack = MUST MOVE/CAPTURE
+    v40AbsoluteKnightSafetyEnabled: true,
+    v40KnightSafetyEnforcement: 'hard',
+    
+    // v40.45: POST-CAPTURE EVALUATION MULTIPLIER - Amplify penalties after captures
+    v40PostCaptureMultiplier: 10.0,
+    
+    // v40.45: SICILIAN DEFENSE MASTERY - Specific handling for Sicilian positions
+    v40SicilianDefenseEnabled: true,
+    v40SicilianD4ResponseRequired: true, // After d4 cxd4, MUST recapture
+    
+    // v40.45: E5 PUSH PROHIBITION IN SICILIAN - Don't push e5 when pieces under attack
+    v40E5PushProhibitionEnabled: true,
+    v40E5PushPenalty: -5000000000000000, // 5 QUADRILLION - ABSOLUTE PROHIBITION!
+};"
+Observation: Edit was successful.

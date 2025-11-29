@@ -1,0 +1,27 @@
+Now let me add the v40.45 functions to the computeCombinedScore. First, I'll add the evaluation calls and integrate them into the score:
+Action: file_editor str_replace /app/Lichess Bot-AlphaZero-Pure.user.js --old-str "                // v40.44: BISHOP B5 HANGING — Don't ignore bishop under pawn attack!
+                const bishopB5HangingScore = v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) * 9000.0;
+                
+                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE" --new-str "                // v40.44: BISHOP B5 HANGING — Don't ignore bishop under pawn attack!
+                const bishopB5HangingScore = v40BishopB5HangingEval(fen, move, board, activeColor, moveNumber) * 9000.0;
+                
+                // ═══════════════════════════════════════════════════════════════════
+                // v40.45: ABSOLUTE MOVE FILTER & OPENING BOOK SUPREME!
+                // HARD REJECTION of catastrophic moves + Opening book bonuses
+                // ═══════════════════════════════════════════════════════════════════
+                
+                // v40.45: HARD MOVE FILTER - If returns true, move is REJECTED with -Infinity score!
+                const shouldRejectMove = v40AbsoluteMoveFilter(fen, move, board, activeColor, moveNumber);
+                const moveFilterScore = shouldRejectMove ? -Number.MAX_SAFE_INTEGER : 0;
+                
+                // v40.45: SICILIAN RESPONSE — Special handling for Sicilian positions!
+                const sicilianResponseScore = v40SicilianResponseEval(fen, move, board, activeColor, moveNumber) * 50000.0;
+                
+                // v40.45: OPENING BOOK — Reward known good moves, penalize known bad moves!
+                const openingBookScore = v40OpeningBookEval(fen, move, board, activeColor, moveNumber) * 25000.0;
+                
+                // v40.45: ABSOLUTE PIECE SAFETY — Final safety check after all evaluations!
+                const absolutePieceSafetyScore = v40AbsolutePieceSafetyCheck(fen, move, board, activeColor, moveNumber) * 10000.0;
+                
+                // v40.41: COMBINED v40 SCORE — 100% PRE-MOVE PAWN THREAT SUPREME INFLUENCE"
+Observation: Edit was successful.

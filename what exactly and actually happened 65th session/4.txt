@@ -1,0 +1,74 @@
+
+Action: file_editor view /app/Lichess Bot-AlphaZero-Pure.user.js
+Observation: /app/Lichess Bot-AlphaZero-Pure.user.js:
+44850|                               deepDefensiveAwarenessScore + pieceHarmonyScore + prophylaxisPriorityScore +
+44851|                               knightInvasionPreventionScore + antiForkSupremeScore + quietPositionScore +
+44852|                               pieceCoordinationCheckScore + threatAnticipationScore +
+44853|                               // v40.30 ABSOLUTE OPENING MASTERY & ANTI-FORK SUPREME additions:
+44854|                               absoluteOpeningProhibitionScore + deepForkVisionScore + bishopPairPreservationScore +
+44855|                               pieceActivitySupremeScore + centerControlAbsoluteScore + tacticalBlindnessScore +
+44856|                               // v40.33 ABSOLUTE D3 PROHIBITION & SICILIAN MASTERY additions - NUCLEAR LEVEL!
+44857|                               absoluteD3ProhibitionScore + sicilianMasteryScore + enhancedTacticalDepthScore +
+44858|                               pieceSafetySupremeScore + initiativeMaintenanceScore +
+44859|                               // v40.35 MATERIAL SAFETY & PASSIVE MOVE SUPREME additions - FINAL FIX!
+44860|                               passivePawnProhibitionScore + materialSafetyScore + tacticalVerificationScore +
+44861|                               centralControlPriorityScore + pieceCoordinationSupremeScore +
+44862|                               // v40.36 QUEEN CAPTURE PROHIBITION & CASTLING DIRECTION SUPREME additions!
+44863|                               queenCaptureProhibitionScore + knightSacrificePreventionScore + castlingDirectionScore +
+44864|                               exchangeQualityVerificationScore + pieceActivityRequirementScore +
+44865|                               // v40.37 ROOK PASSIVE & KING CORNER RETREAT SUPREME additions!
+44866|                               rookPassiveProhibitionScore + kingCornerRetreatScore + desperationSacrificeScore +
+44867|                               ultraQueenCaptureScore + passiveUnderAttackScore +
+44868|                               // v40.38 GXF3 PROHIBITION & KING DANGER WALK & MATING NET SUPREME additions!
+44869|                               gxf3ProhibitionScore + kingDangerWalkScore + forcedMateDefenseScore +
+44870|                               pawnMoveUnderAttackScore + passiveQueenUnderMateScore + bishopUselessSquareScore +
+44871|                               // v40.39 PAWN CAPTURE CHAIN SUPREME additions — THE ULTIMATE TACTICAL FIX!
+44872|                               pawnCaptureChainScore + pieceUnderPawnAttackScore + promotionThreatV39Score +
+44873|                               recaptureChainScore + pieceUnderPawnDangerScore + pawnForkDetectionScore +
+44874|                               // v40.40 MANDATORY RECAPTURE SUPREME additions — THE ULTIMATE PAWN BLINDNESS FIX!
+44875|                               mandatoryRecaptureScore + pawnNearPieceDangerScore + immediatePawnThreatScore +
+44876|                               multiThreatPawnScore + captureThenAttackScore + pawnChainPromotionScore +
+44877|                               // v40.41 PRE-MOVE PAWN THREAT SUPREME additions — THE ULTIMATE FIX!
+44878|                               preMovePawnThreatScore + postCapturePawnScore + absoluteMustRespondScore +
+44879|                               // v40.44 CRITICAL MISSING IMPLEMENTATIONS — THE REAL FIX!
+44880|                               twoMovePawnChainScore + dontPushWhenHangingScore + protectKnightFromPawnScore +
+44881|                               centralPawnCaptureResponseScore + bishopB5HangingScore;
+44882|                v40Bonus = v40DeepScore * 1.0;  // 100% influence — v40.41 PRE-MOVE PAWN THREAT SUPREME PARADIGM SHIFT
+44883|                
+44884|                debugLog("[V40_INTEGRATE]", `═══════════════════════════════════════════════════════`);
+44885|                debugLog("[V40_INTEGRATE]", `⚔️ SUPERHUMAN BEAST v40.29 DEEP DEFENSIVE AWARENESS & PIECE HARMONY EVALUATION`);
+44886|                debugLog("[V40_INTEGRATE]", `Move ${move}:`);
+44887|                debugLog("[V40_INTEGRATE]", `   Base v40: ${v40Score.toFixed(1)}`);
+44888|                debugLog("[V40_INTEGRATE]", `   MatingNet: ${v40MatingNetPenalty.toFixed(1)}`);
+44889|                debugLog("[V40_INTEGRATE]", `   FileControl: ${v40FileControlBonus.toFixed(1)}`);
+44890|                debugLog("[V40_INTEGRATE]", `   Initiative: ${v40InitiativeBonus.toFixed(1)}`);
+44891|                debugLog("[V40_INTEGRATE]", `   QueenPenalty: ${queenPenalty.toFixed(1)}`);
+44892|                debugLog("[V40_INTEGRATE]", `   👸 NoEarlyQueenTrade: ${noEarlyQueenTradeScore.toFixed(1)}`);
+44893|                debugLog("[V40_INTEGRATE]", `   🐴 EnhancedFork: ${enhancedForkScore.toFixed(1)}`);
+44894|                debugLog("[V40_INTEGRATE]", `   🏁 PawnRace: ${pawnRaceScore.toFixed(1)}`);
+44895|                debugLog("[V40_INTEGRATE]", `   🛡️ PiecePreservationAbsolute: ${piecePreservationAbsoluteScore.toFixed(1)}`);
+44896|                debugLog("[V40_INTEGRATE]", `   ⚡ InitiativePreservationV25: ${initiativePreservationV25Score.toFixed(1)}`);
+44897|                debugLog("[V40_INTEGRATE]", `   🏰 KingsidePawnProhibition: ${kingsidePawnProhibitionScore.toFixed(1)}`);
+44898|                debugLog("[V40_INTEGRATE]", `   🏰 BishopSacrifice: ${bishopSacrificeScore.toFixed(1)}`);
+44899|                debugLog("[V40_INTEGRATE]", `   🏰 ForcedDefenseMode: ${forcedDefenseModeScore.toFixed(1)}`);
+44900|                debugLog("[V40_INTEGRATE]", `   🏰 QueenKingsideThreat: ${queenKingsideThreatScore.toFixed(1)}`);
+44901|                debugLog("[V40_INTEGRATE]", `   🏰 DeepSacrificeCalc: ${deepSacrificeCalcScore.toFixed(1)}`);
+44902|                debugLog("[V40_INTEGRATE]", `   🏰 KingsideCollapse: ${kingsideCollapseScore.toFixed(1)}`);
+44903|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ ForcedExchangeSequence: ${forcedExchangeSequenceScore.toFixed(1)}`);
+44904|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KnightForkShield: ${knightForkShieldScore.toFixed(1)}`);
+44905|                debugLog("[V40_INTEGRATE]", `   ⚔️⚔️ KingExposureIndex: ${kingExposureIndexScore.toFixed(1)}`);
+44906|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AbsoluteSacrificeVerification: ${absoluteSacrificeVerificationScore.toFixed(1)}`);
+44907|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackCoordination: ${attackCoordinationScore.toFixed(1)}`);
+44908|                debugLog("[V40_INTEGRATE]", `   🎯🎯 DeepForcingCalc: ${deepForcingCalcScore.toFixed(1)}`);
+44909|                debugLog("[V40_INTEGRATE]", `   🎯🎯 PieceSacrificeAnalysis: ${pieceSacrificeAnalysisScore.toFixed(1)}`);
+44910|                debugLog("[V40_INTEGRATE]", `   🎯🎯 AttackProgress: ${attackProgressScore.toFixed(1)}`);
+44911|                debugLog("[V40_INTEGRATE]", `   🛡️🛡️🛡️ DeepDefensiveAwareness: ${deepDefensiveAwarenessScore.toFixed(1)}`);
+44912|                debugLog("[V40_INTEGRATE]", `   🎵🎵🎵 PieceHarmony: ${pieceHarmonyScore.toFixed(1)}`);
+44913|                debugLog("[V40_INTEGRATE]", `   🔮🔮🔮 ProphylaxisPriority: ${prophylaxisPriorityScore.toFixed(1)}`);
+44914|                debugLog("[V40_INTEGRATE]", `   🐴🐴🐴 KnightInvasionPrevention: ${knightInvasionPreventionScore.toFixed(1)}`);
+44915|                debugLog("[V40_INTEGRATE]", `   ⚡⚡⚡ AntiForkSupreme: ${antiForkSupremeScore.toFixed(1)}`);
+44916|                debugLog("[V40_INTEGRATE]", `   🌿🌿🌿 QuietPosition: ${quietPositionScore.toFixed(1)}`);
+44917|                debugLog("[V40_INTEGRATE]", `   🤝🤝🤝 PieceCoordinationCheck: ${pieceCoordinationCheckScore.toFixed(1)}`);
+44918|                debugLog("[V40_INTEGRATE]", `   🔭🔭🔭 ThreatAnticipation: ${threatAnticipationScore.toFixed(1)}`);
+44919|                debugLog("[V40_INTEGRATE]", `   🚫🎯 AbsoluteOpeningProhibition: ${absoluteOpeningProhibitionScore.toFixed(1)}`);
+44920|                debugLog("[V40_INTEGRATE]", `   🐴🔮 DeepForkVision: ${deepForkVisionScore.toFixed(1)}`);
