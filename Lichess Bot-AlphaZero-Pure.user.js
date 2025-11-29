@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Lichess Bot - TRUE ALPHAZERO v40.52 SUPREME TACTICAL VISION
-// @description  TRUE AlphaZero Replica v40.52 - SUPREME TACTICAL VISION: Deep mate threat prevention, anti-passive enforcement, crushing endgame technique!
-// @author       AlphaZero TRUE REPLICA v40.52 SUPREME TACTICAL VISION
-// @version      40.52.0-SUPREME-TACTICAL-VISION
+// @name         Lichess Bot - TRUE ALPHAZERO v40.53 CRITICAL BUG FIX
+// @description  TRUE AlphaZero Replica v40.53 - CRITICAL FIX: getAllLegalMoves, isKingInCheck, isCheckmate now DEFINED - Bot can now MOVE!
+// @author       AlphaZero TRUE REPLICA v40.53 CRITICAL BUG FIX
+// @version      40.53.0-CRITICAL-BUG-FIX
 // @match         *://lichess.org/*
 // @run-at        document-idle
 // @grant         none
@@ -31200,6 +31200,203 @@ function findQueenSquare(board, color) {
     
     return null;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// v40.53: CRITICAL BUG FIX - Missing getAllLegalMoves, isKingInCheck, isCheckmate
+// These functions were being called but NEVER DEFINED causing the bot to NOT MOVE!
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * v40.53: CRITICAL FIX - Check if a square is attacked by the opponent
+ * @param {Map} board - The board state
+ * @param {string} square - The square to check (e.g., 'e4')
+ * @param {string} byColor - The attacking color ('w' or 'b')
+ * @returns {boolean} - True if the square is attacked
+ */
+function isSquareAttacked(board, square, byColor) {
+    if (!square || !board) return false;
+    
+    const targetFile = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const targetRank = parseInt(square[1]) - 1;
+    const isWhiteAttacking = byColor === 'w';
+    
+    for (const [sq, piece] of board) {
+        if (!piece) continue;
+        const pieceIsWhite = piece === piece.toUpperCase();
+        if (pieceIsWhite !== isWhiteAttacking) continue;
+        
+        const pieceType = piece.toLowerCase();
+        const fromFile = sq.charCodeAt(0) - 'a'.charCodeAt(0);
+        const fromRank = parseInt(sq[1]) - 1;
+        const fileDiff = Math.abs(targetFile - fromFile);
+        const rankDiff = Math.abs(targetRank - fromRank);
+        
+        switch (pieceType) {
+            case 'p':
+                // Pawns attack diagonally
+                const pawnDirection = isWhiteAttacking ? 1 : -1;
+                if (fileDiff === 1 && (targetRank - fromRank) === pawnDirection) {
+                    return true;
+                }
+                break;
+                
+            case 'n':
+                // Knights
+                if ((fileDiff === 2 && rankDiff === 1) || (fileDiff === 1 && rankDiff === 2)) {
+                    return true;
+                }
+                break;
+                
+            case 'b':
+                // Bishops
+                if (fileDiff === rankDiff && fileDiff > 0) {
+                    if (!isPathBlockedForAttack(board, sq, square)) {
+                        return true;
+                    }
+                }
+                break;
+                
+            case 'r':
+                // Rooks
+                if ((fileDiff === 0 || rankDiff === 0) && (fileDiff > 0 || rankDiff > 0)) {
+                    if (!isPathBlockedForAttack(board, sq, square)) {
+                        return true;
+                    }
+                }
+                break;
+                
+            case 'q':
+                // Queens (rook + bishop combined)
+                if ((fileDiff === rankDiff && fileDiff > 0) || 
+                    ((fileDiff === 0 || rankDiff === 0) && (fileDiff > 0 || rankDiff > 0))) {
+                    if (!isPathBlockedForAttack(board, sq, square)) {
+                        return true;
+                    }
+                }
+                break;
+                
+            case 'k':
+                // Kings
+                if (fileDiff <= 1 && rankDiff <= 1 && (fileDiff > 0 || rankDiff > 0)) {
+                    return true;
+                }
+                break;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * v40.53: Helper - Check if path is blocked between two squares
+ */
+function isPathBlockedForAttack(board, from, to) {
+    const fFile = from.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fRank = parseInt(from[1]) - 1;
+    const tFile = to.charCodeAt(0) - 'a'.charCodeAt(0);
+    const tRank = parseInt(to[1]) - 1;
+    
+    const fileDiff = tFile - fFile;
+    const rankDiff = tRank - fRank;
+    
+    const fileStep = fileDiff === 0 ? 0 : fileDiff / Math.abs(fileDiff);
+    const rankStep = rankDiff === 0 ? 0 : rankDiff / Math.abs(rankDiff);
+    
+    let f = fFile + fileStep;
+    let r = fRank + rankStep;
+    
+    while (f !== tFile || r !== tRank) {
+        const sq = String.fromCharCode('a'.charCodeAt(0) + f) + (r + 1);
+        if (board.get(sq)) return true;
+        f += fileStep;
+        r += rankStep;
+    }
+    
+    return false;
+}
+
+/**
+ * v40.53: CRITICAL FIX - Check if king is in check
+ * @param {Map} board - The board state
+ * @param {string} color - The color of the king to check ('w' or 'b')
+ * @returns {boolean} - True if king is in check
+ */
+function isKingInCheck(board, color) {
+    if (!board) return false;
+    
+    const kingSquare = findKingSquare(board, color);
+    if (!kingSquare) return false;
+    
+    const attackingColor = color === 'w' ? 'b' : 'w';
+    return isSquareAttacked(board, kingSquare, attackingColor);
+}
+
+/**
+ * v40.53: CRITICAL FIX - Check if position is checkmate
+ * @param {Map} board - The board state
+ * @param {string} color - The color to check for checkmate ('w' or 'b')
+ * @returns {boolean} - True if it's checkmate
+ */
+function isCheckmate(board, color) {
+    if (!board) return false;
+    
+    // First, check if king is in check
+    if (!isKingInCheck(board, color)) {
+        return false;
+    }
+    
+    // If in check, see if there are any legal moves that escape check
+    const legalMoves = getAllLegalMoves(board, color);
+    return legalMoves.length === 0;
+}
+
+/**
+ * v40.53: CRITICAL FIX - Get all legal moves for a color
+ * This generates pseudo-legal moves and filters out ones that leave king in check
+ * @param {Map} board - The board state
+ * @param {string} color - The color to generate moves for ('w' or 'b')
+ * @returns {Array} - Array of legal moves in UCI format
+ */
+function getAllLegalMoves(board, color) {
+    if (!board) return [];
+    
+    const pseudoLegalMoves = generateAllMoves(board, color);
+    const legalMoves = [];
+    
+    for (const move of pseudoLegalMoves) {
+        const afterBoard = simulateMoveOnBoard(board, move);
+        
+        // Move is legal if it doesn't leave our king in check
+        if (!isKingInCheck(afterBoard, color)) {
+            legalMoves.push(move);
+        }
+    }
+    
+    return legalMoves;
+}
+
+/**
+ * v40.53: Check if position is stalemate
+ * @param {Map} board - The board state
+ * @param {string} color - The color to check for stalemate ('w' or 'b')
+ * @returns {boolean} - True if it's stalemate
+ */
+function isStalemate(board, color) {
+    if (!board) return false;
+    
+    // Not stalemate if king is in check
+    if (isKingInCheck(board, color)) {
+        return false;
+    }
+    
+    // Stalemate if no legal moves
+    const legalMoves = getAllLegalMoves(board, color);
+    return legalMoves.length === 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// END v40.53 CRITICAL BUG FIX
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * v40: Evaluate goal alignment with strategic plan
